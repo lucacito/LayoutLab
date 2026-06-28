@@ -4,6 +4,7 @@
   "data": { "object": {
     "id": "sub_123",
     "status": "active",
+    "customer": "cus_123",
     "current_period_end": 1788000000
   } }
 }

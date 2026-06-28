@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { and, eq } from 'drizzle-orm';
+import { and, eq, isNull, or } from 'drizzle-orm';
 import { db } from '@/db/client';
 import { users, orders, entitlements, subscriptions, stripeEvents } from '@/db/schema';
 import type { FulfillmentStore } from './fulfillment';
@@ -24,6 +24,17 @@ export const dbStore: FulfillmentStore = {
     const rows = await db.select({ userId: subscriptions.userId }).from(subscriptions)
       .where(eq(subscriptions.stripeSubscriptionId, subId)).limit(1);
     return rows[0]?.userId ?? null;
+  },
+  async linkStripeCustomer(userId, customerId) {
+    await db.update(users)
+      .set({ stripeCustomerId: customerId })
+      .where(and(eq(users.id, userId), or(isNull(users.stripeCustomerId), eq(users.stripeCustomerId, customerId))));
+  },
+  async findUserByStripeCustomerId(customerId) {
+    if (!customerId) return null;
+    const rows = await db.select({ id: users.id }).from(users)
+      .where(eq(users.stripeCustomerId, customerId)).limit(1);
+    return rows[0]?.id ?? null;
   },
   async recordOrder(o) {
     await db.insert(orders).values({

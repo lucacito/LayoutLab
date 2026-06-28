@@ -5,6 +5,7 @@
     "id": "cs_pack_1",
     "mode": "payment",
     "amount_total": 4900,
+    "customer": "cus_123",
     "customer_details": { "email": "buyer@example.com" },
     "metadata": { "kind": "pack", "packId": "pack_saas" }
   } }

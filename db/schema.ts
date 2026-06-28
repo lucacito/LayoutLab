@@ -21,7 +21,10 @@ export const users = pgTable('users', {
   image: text('image'),
   role: userRole('role').notNull().default('user'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
-});
+  stripeCustomerId: text('stripe_customer_id'),
+}, (t) => ({
+  stripeCustomerUq: uniqueIndex('users_stripe_customer_uq').on(t.stripeCustomerId),
+}));
 
 export const accounts = pgTable('accounts', {
   userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
