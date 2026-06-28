@@ -3,7 +3,9 @@ import { env } from '@/lib/env';
 import { sitemapEntries } from '@/lib/seo/sitemap';
 import { listAllPublishedLayoutSlugs, listAllPublishedPackSlugs } from '@/lib/catalog/queries';
 
-export const revalidate = 3600;
+// Sitemap rows come from the live DB; render on-demand instead of
+// prerendering at build time (which would fail without a real connection).
+export const dynamic = 'force-dynamic';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const [layouts, packs] = await Promise.all([
