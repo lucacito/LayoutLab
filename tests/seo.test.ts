@@ -23,6 +23,13 @@ describe('buildPackMetadata', () => {
     const m = buildPackMetadata({ title: '100 Landing Pages', slug: 'landing-100', siteUrl: SITE });
     expect(m.alternates?.canonical).toBe(`${SITE}/packs/landing-100`);
   });
+
+  it('falls back to a pack-oriented description when none given', () => {
+    const m = buildPackMetadata({ title: '100 Landing Pages', slug: 'landing-100', siteUrl: SITE });
+    const desc = m.description as string;
+    expect(desc).toContain('pack');
+    expect(desc).not.toContain('layout:');
+  });
 });
 
 describe('json-ld', () => {
@@ -31,6 +38,11 @@ describe('json-ld', () => {
     expect(ld['@type']).toBe('Product');
     expect((ld as any).offers.price).toBe('49.00');
     expect((ld as any).offers.priceCurrency).toBe('USD');
+  });
+
+  it('productJsonLd omits offers when no price is given', () => {
+    const ld = productJsonLd({ name: 'Layout', url: `${SITE}/layouts/x` });
+    expect('offers' in ld).toBe(false);
   });
 
   it('itemListJsonLd numbers positions from 1', () => {

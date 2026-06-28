@@ -9,8 +9,8 @@ interface EntityMetaInput {
   siteUrl: string;
 }
 
-function baseMetadata(i: EntityMetaInput, canonical: string): Metadata {
-  const description = i.description?.trim() || `Divi 5 layout: ${i.title}. Download-ready, validated, and ready to import.`;
+function baseMetadata(i: EntityMetaInput, canonical: string, fallbackTemplate: string): Metadata {
+  const description = i.description?.trim() || fallbackTemplate;
   const images = i.ogImage ? [{ url: i.ogImage }] : [];
   return {
     title: i.title,
@@ -23,9 +23,11 @@ function baseMetadata(i: EntityMetaInput, canonical: string): Metadata {
 }
 
 export function buildLayoutMetadata(i: EntityMetaInput): Metadata {
-  return baseMetadata(i, `${i.siteUrl}/layouts/${i.slug}`);
+  const fallbackDescription = `Divi 5 layout: ${i.title}. Download-ready, validated, and ready to import.`;
+  return baseMetadata(i, `${i.siteUrl}/layouts/${i.slug}`, fallbackDescription);
 }
 
 export function buildPackMetadata(i: EntityMetaInput): Metadata {
-  return baseMetadata(i, `${i.siteUrl}/packs/${i.slug}`);
+  const fallbackDescription = `Divi 5 layout pack: ${i.title}. A curated collection of validated, ready-to-import layouts.`;
+  return baseMetadata(i, `${i.siteUrl}/packs/${i.slug}`, fallbackDescription);
 }
