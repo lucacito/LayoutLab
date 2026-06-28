@@ -15,6 +15,20 @@
       "when": 1782657352656,
       "tag": "0001_smart_katie_power",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1782674882030,
+      "tag": "0002_breezy_shen",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1782676962070,
+      "tag": "0003_curly_scarlet_witch",
+      "breakpoints": true
     }
   ]
 }

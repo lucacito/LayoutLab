@@ -3,7 +3,7 @@ import { describe, it, expect } from 'vitest';
 import {
   layouts, packs, packLayouts, tags, layoutTags,
   users, orders, orderItems, subscriptions, entitlements,
-  downloads, emailCaptures,
+  downloads, emailCaptures, stripeEvents,
 } from '@/db/schema';
 
 describe('db schema (Phase 1 full model)', () => {
@@ -33,5 +33,12 @@ describe('db schema (Phase 1 full model)', () => {
     for (const t of [users, orders, orderItems, subscriptions, entitlements, downloads, emailCaptures]) {
       expect(t).toBeDefined();
     }
+  });
+});
+
+describe('commerce schema (Phase 4a)', () => {
+  it('exposes the stripe_events idempotency ledger', () => {
+    expect((stripeEvents as any).id).toBeDefined();
+    expect((stripeEvents as any).type).toBeDefined();
   });
 });

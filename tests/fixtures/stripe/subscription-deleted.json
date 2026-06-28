@@ -1,0 +1,10 @@
+{
+  "id": "evt_sub_del_1",
+  "type": "customer.subscription.deleted",
+  "data": { "object": {
+    "id": "sub_123",
+    "status": "canceled",
+    "customer": "cus_123",
+    "current_period_end": 1788000000
+  } }
+}

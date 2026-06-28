@@ -21,7 +21,10 @@ export const users = pgTable('users', {
   image: text('image'),
   role: userRole('role').notNull().default('user'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
-});
+  stripeCustomerId: text('stripe_customer_id'),
+}, (t) => ({
+  stripeCustomerUq: uniqueIndex('users_stripe_customer_uq').on(t.stripeCustomerId),
+}));
 
 export const accounts = pgTable('accounts', {
   userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
@@ -130,7 +133,9 @@ export const orders = pgTable('orders', {
   amountCents: integer('amount_cents').notNull().default(0),
   status: orderStatus('status').notNull().default('pending'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
-});
+}, (t) => ({
+  stripeCheckoutUq: uniqueIndex('orders_stripe_checkout_uq').on(t.stripeCheckoutId),
+}));
 
 export const orderItems = pgTable('order_items', {
   id: text('id').primaryKey(),
@@ -145,7 +150,9 @@ export const subscriptions = pgTable('subscriptions', {
   stripeSubscriptionId: text('stripe_subscription_id'),
   status: subscriptionStatus('status').notNull().default('active'),
   currentPeriodEnd: timestamp('current_period_end'),
-});
+}, (t) => ({
+  stripeSubUq: uniqueIndex('subscriptions_stripe_sub_uq').on(t.stripeSubscriptionId),
+}));
 
 export const entitlements = pgTable('entitlements', {
   id: text('id').primaryKey(),
@@ -154,6 +161,14 @@ export const entitlements = pgTable('entitlements', {
   source: text('source').notNull(), // 'order' | 'subscription' | 'free'
   grantedAt: timestamp('granted_at').notNull().defaultNow(),
   expiresAt: timestamp('expires_at'),
+}, (t) => ({
+  userScopeUq: uniqueIndex('entitlements_user_scope_uq').on(t.userId, t.scope),
+}));
+
+export const stripeEvents = pgTable('stripe_events', {
+  id: text('id').primaryKey(), // Stripe event id
+  type: text('type').notNull(),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
 });
 
 export const downloads = pgTable('downloads', {
