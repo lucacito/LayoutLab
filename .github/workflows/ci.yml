@@ -1,0 +1,22 @@
+name: CI
+on:
+  pull_request:
+  push:
+    branches: [main]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20, cache: npm }
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm run test
+        env:
+          # Minimal env so `lib/env.ts` parses during module load in tests.
+          NEXT_PUBLIC_SITE_URL: https://layoutlab.com
+          DATABASE_URL: postgres://u:p@localhost/db
+          AUTH_SECRET: test-secret-test-secret-32chars!!
+          NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: pk_test_ci
