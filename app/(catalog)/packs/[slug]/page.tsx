@@ -10,6 +10,7 @@ import { Breadcrumbs } from '@/components/Breadcrumbs';
 import { JsonLd } from '@/components/JsonLd';
 import { Container } from '@/components/ui/Container';
 import { Button } from '@/components/ui/Button';
+import { BuyButton } from '@/components/BuyButton';
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
@@ -54,10 +55,11 @@ export default async function PackPage({ params }: { params: Promise<{ slug: str
           </div>
           <div className="text-right">
             <div className="text-h3 text-action">{price}</div>
-            {/* Commerce is Phase 4 — CTA is a stub link to pricing. */}
-            <Button href="/pricing" className="mt-2">
-              {pack.kind === 'free' ? 'Get this pack' : 'Buy this pack'}
-            </Button>
+            <div className="mt-2">
+              {pack.kind === 'paid'
+                ? <BuyButton kind="pack" packId={pack.id} label="Buy this pack" />
+                : <Button href="/pricing">Get this pack</Button>}
+            </div>
           </div>
         </div>
 

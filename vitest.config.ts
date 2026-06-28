@@ -11,6 +11,8 @@ export default defineConfig({
     environment: 'node',
     // .test.tsx files render React components → run them under jsdom.
     environmentMatchGlobs: [['tests/**/*.test.tsx', 'jsdom']],
+    // Setup for jsdom tests: makes window.location configurable for vi.spyOn.
+    setupFiles: ['tests/jsdom-setup.ts'],
     globals: true,
     // Minimal env so `lib/env.ts`'s eager singleton parses on import during tests
     // (mirrors the vars CI injects in .github/workflows/ci.yml).
