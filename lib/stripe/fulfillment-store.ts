@@ -1,8 +1,11 @@
 import { randomUUID } from 'node:crypto';
 import { and, eq, isNull, or } from 'drizzle-orm';
 import { db } from '@/db/client';
-import { users, orders, entitlements, subscriptions, stripeEvents } from '@/db/schema';
+import { users, orders, entitlements, subscriptions, stripeEvents, packs } from '@/db/schema';
 import { findOrCreateUserByEmail } from '@/lib/users/find-or-create';
+import { createMagicSignInUrl, signInUrlDeps } from '@/lib/auth/sign-in-url';
+import { purchaseReceiptEmail } from '@/lib/email/receipt';
+import { sendEmail } from '@/lib/email';
 import type { FulfillmentStore } from './fulfillment';
 
 export const dbStore: FulfillmentStore = {
@@ -58,5 +61,15 @@ export const dbStore: FulfillmentStore = {
   },
   async revokeAllAccess(userId) {
     await db.delete(entitlements).where(and(eq(entitlements.userId, userId), eq(entitlements.scope, 'all_access')));
+  },
+  async notifyPurchase(input) {
+    const signInUrl = await createMagicSignInUrl(input.email, '/account/downloads', signInUrlDeps);
+    let packTitle: string | undefined;
+    if (input.packId) {
+      const rows = await db.select({ title: packs.title }).from(packs).where(eq(packs.id, input.packId)).limit(1);
+      packTitle = rows[0]?.title;
+    }
+    const { subject, html, text } = purchaseReceiptEmail({ kind: input.kind, packTitle, amountCents: input.amountCents, signInUrl });
+    await sendEmail({ to: input.email, subject, html, text });
   },
 };

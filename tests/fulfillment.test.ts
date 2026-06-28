@@ -19,6 +19,7 @@ function fakeStore(over: Partial<FulfillmentStore> = {}): FulfillmentStore {
     upsertSubscription: vi.fn(async () => {}),
     grantAllAccess: vi.fn(async () => {}),
     revokeAllAccess: vi.fn(async () => {}),
+    notifyPurchase: vi.fn(async () => {}),
     ...over,
   };
 }
@@ -104,5 +105,31 @@ describe('handleStripeEvent', () => {
     expect(s.findOrCreateUserByEmail).not.toHaveBeenCalled();
     expect(s.grantPackEntitlement).not.toHaveBeenCalled();
     expect(s.markEventProcessed).not.toHaveBeenCalled();
+  });
+
+  it('sends a one-click receipt on a pack checkout', async () => {
+    const s = fakeStore();
+    await handleStripeEvent(pack as unknown as Stripe.Event, s);
+    expect(s.notifyPurchase).toHaveBeenCalledWith(
+      expect.objectContaining({ email: 'buyer@example.com', kind: 'pack', packId: 'pack_saas', amountCents: 4900 }),
+    );
+  });
+
+  it('sends a receipt on a membership checkout', async () => {
+    const s = fakeStore();
+    await handleStripeEvent(membership as unknown as Stripe.Event, s);
+    expect(s.notifyPurchase).toHaveBeenCalledWith(expect.objectContaining({ kind: 'membership' }));
+  });
+
+  it('does NOT send a receipt on subscription.updated', async () => {
+    const s = fakeStore();
+    await handleStripeEvent(subUpdated as unknown as Stripe.Event, s);
+    expect(s.notifyPurchase).not.toHaveBeenCalled();
+  });
+
+  it('a failing notifyPurchase does not fail the webhook (event still processed)', async () => {
+    const s = fakeStore({ notifyPurchase: vi.fn(async () => { throw new Error('resend down'); }) });
+    await expect(handleStripeEvent(pack as unknown as Stripe.Event, s)).resolves.toBeUndefined();
+    expect(s.markEventProcessed).toHaveBeenCalled();
   });
 });
