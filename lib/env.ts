@@ -12,6 +12,7 @@ const schema = z.object({
   RESEND_API_KEY: z.string().optional(),
   LOOPS_API_KEY: z.string().optional(),
   INGEST_API_TOKEN: z.string().optional(),
+  ADMIN_EMAILS: z.string().optional(),
 });
 
 export type Env = z.infer<typeof schema>;

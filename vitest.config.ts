@@ -19,6 +19,8 @@ export default defineConfig({
       DATABASE_URL: 'postgres://u:p@localhost/db',
       AUTH_SECRET: 'test-secret-test-secret-32chars!!',
       NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: 'pk_test_ci',
+      INGEST_API_TOKEN: 'test-ingest-token',
+      ADMIN_EMAILS: 'admin@layoutlab.com',
     },
   },
 });
