@@ -1,8 +1,9 @@
 import { randomUUID } from 'node:crypto';
 import { and, eq } from 'drizzle-orm';
 import { db } from '@/db/client';
-import { packs, emailCaptures, entitlements, users } from '@/db/schema';
+import { packs, emailCaptures, entitlements } from '@/db/schema';
 import { syncContact } from '@/lib/email/loops';
+import { findOrCreateUserByEmail } from '@/lib/users/find-or-create';
 import type { CaptureDeps } from './capture';
 
 export const captureDeps: CaptureDeps = {
@@ -27,14 +28,7 @@ export const captureDeps: CaptureDeps = {
 
   syncContact,
 
-  async findOrCreateUserByEmail(email) {
-    const existing = await db.select({ id: users.id }).from(users).where(eq(users.email, email)).limit(1);
-    if (existing[0]) return existing[0].id;
-    const id = randomUUID();
-    await db.insert(users).values({ id, email, role: 'user' }).onConflictDoNothing();
-    const after = await db.select({ id: users.id }).from(users).where(eq(users.email, email)).limit(1);
-    return after[0]?.id ?? id;
-  },
+  findOrCreateUserByEmail,
 
   async grantFreeEntitlement(userId, packId) {
     await db

@@ -1,7 +1,11 @@
 import { randomUUID } from 'node:crypto';
 import { and, eq, isNull, or } from 'drizzle-orm';
 import { db } from '@/db/client';
-import { users, orders, entitlements, subscriptions, stripeEvents } from '@/db/schema';
+import { users, orders, entitlements, subscriptions, stripeEvents, packs } from '@/db/schema';
+import { findOrCreateUserByEmail } from '@/lib/users/find-or-create';
+import { createMagicSignInUrl, signInUrlDeps } from '@/lib/auth/sign-in-url';
+import { purchaseReceiptEmail } from '@/lib/email/receipt';
+import { sendEmail } from '@/lib/email';
 import type { FulfillmentStore } from './fulfillment';
 
 export const dbStore: FulfillmentStore = {
@@ -12,14 +16,7 @@ export const dbStore: FulfillmentStore = {
   async markEventProcessed(id, type) {
     await db.insert(stripeEvents).values({ id, type }).onConflictDoNothing();
   },
-  async findOrCreateUserByEmail(email) {
-    const existing = await db.select({ id: users.id }).from(users).where(eq(users.email, email)).limit(1);
-    if (existing[0]) return existing[0].id;
-    const id = randomUUID();
-    await db.insert(users).values({ id, email, role: 'user' }).onConflictDoNothing();
-    const row = await db.select({ id: users.id }).from(users).where(eq(users.email, email)).limit(1);
-    return row[0]?.id ?? id;
-  },
+  findOrCreateUserByEmail,
   async findUserBySubscriptionId(subId) {
     const rows = await db.select({ userId: subscriptions.userId }).from(subscriptions)
       .where(eq(subscriptions.stripeSubscriptionId, subId)).limit(1);
@@ -64,5 +61,16 @@ export const dbStore: FulfillmentStore = {
   },
   async revokeAllAccess(userId) {
     await db.delete(entitlements).where(and(eq(entitlements.userId, userId), eq(entitlements.scope, 'all_access')));
+  },
+  async notifyPurchase(input) {
+    const signInUrl = await createMagicSignInUrl(input.email, '/account/downloads', signInUrlDeps);
+    let packTitle: string | undefined;
+    if (input.packId) {
+      const rows = await db.select({ title: packs.title }).from(packs).where(eq(packs.id, input.packId)).limit(1);
+      packTitle = rows[0]?.title;
+    }
+    const { subject, html, text } = purchaseReceiptEmail({ kind: input.kind, packTitle, amountCents: input.amountCents, signInUrl });
+    const { sent } = await sendEmail({ to: input.email, subject, html, text });
+    if (!sent) console.log(`[receipt:dev] sign-in link for ${input.email}:\n${signInUrl}`);
   },
 };

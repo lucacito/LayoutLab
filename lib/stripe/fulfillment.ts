@@ -12,6 +12,7 @@ export interface FulfillmentStore {
   upsertSubscription(s: { userId: string; stripeSubscriptionId: string; status: 'active' | 'past_due' | 'canceled'; currentPeriodEnd: Date | null }): Promise<void>;
   grantAllAccess(userId: string, expiresAt: Date | null): Promise<void>;
   revokeAllAccess(userId: string): Promise<void>;
+  notifyPurchase(input: { email: string; kind: 'pack' | 'membership'; packId?: string; amountCents?: number }): Promise<void>;
 }
 
 function mapStatus(s: string): 'active' | 'past_due' | 'canceled' {
@@ -40,6 +41,15 @@ export async function handleStripeEvent(event: Stripe.Event, store: FulfillmentS
         if (typeof s.subscription === 'string') {
           await store.upsertSubscription({ userId, stripeSubscriptionId: s.subscription, status: 'active', currentPeriodEnd: null });
         }
+      }
+      try {
+        if (meta.kind === 'pack' && meta.packId) {
+          await store.notifyPurchase({ email, kind: 'pack', packId: meta.packId, amountCents: s.amount_total ?? 0 });
+        } else if (meta.kind === 'membership') {
+          await store.notifyPurchase({ email, kind: 'membership' });
+        }
+      } catch (err) {
+        console.error('[webhook] receipt email failed:', err);
       }
       break;
     }
