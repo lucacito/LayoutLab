@@ -6,6 +6,7 @@ import { captureDeps } from './store';
 
 export async function captureFreePackAction(packId: string, formData: FormData): Promise<void> {
   const email = String(formData.get('email') ?? '');
+  if (!email.trim()) redirect('/packs?capture=error');
   try {
     await captureFreePack({ email, packId }, captureDeps);
   } catch (err) {

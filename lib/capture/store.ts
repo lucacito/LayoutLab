@@ -33,7 +33,7 @@ export const captureDeps: CaptureDeps = {
     const id = randomUUID();
     await db.insert(users).values({ id, email, role: 'user' }).onConflictDoNothing();
     const after = await db.select({ id: users.id }).from(users).where(eq(users.email, email)).limit(1);
-    return after[0]!.id;
+    return after[0]?.id ?? id;
   },
 
   async grantFreeEntitlement(userId, packId) {

@@ -7,6 +7,7 @@ import { rateLimit } from '@/lib/rate-limit';
 export const runtime = 'nodejs';
 
 const Body = z.object({
+  // plain email-shape regex (zod v3 .email() rejects single-char TLDs like a@b.c); the magic link is the real verification
   email: z.string().regex(/^[^\s@]+@[^\s@]+\.[^\s@]+$/),
   packId: z.string().min(1),
 });
