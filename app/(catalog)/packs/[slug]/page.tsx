@@ -11,6 +11,7 @@ import { JsonLd } from '@/components/JsonLd';
 import { Container } from '@/components/ui/Container';
 import { Button } from '@/components/ui/Button';
 import { BuyButton } from '@/components/BuyButton';
+import { FreePackForm } from '@/components/FreePackForm';
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
@@ -58,7 +59,7 @@ export default async function PackPage({ params }: { params: Promise<{ slug: str
             <div className="mt-2">
               {pack.kind === 'paid'
                 ? <BuyButton kind="pack" packId={pack.id} label="Buy this pack" />
-                : <Button href="/pricing">Get this pack</Button>}
+                : <FreePackForm packId={pack.id} />}
             </div>
           </div>
         </div>
