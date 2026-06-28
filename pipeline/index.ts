@@ -1,7 +1,7 @@
 // LayoutLab generation pipeline — CLI entry (Phase 3a, no render).
 //   npm run pipeline -- drip --count=N [--dry-run]
 //   npm run pipeline -- batch [--dry-run]
-import { writeFile, unlink, mkdtemp } from 'node:fs/promises';
+import { writeFile, mkdtemp, rm } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { eq } from 'drizzle-orm';
@@ -21,7 +21,7 @@ async function withTempFile<T>(json: string, fn: (file: string) => Promise<T>): 
   try {
     return await fn(file);
   } finally {
-    await unlink(file).catch(() => {});
+    await rm(dir, { recursive: true, force: true }).catch(() => {});
   }
 }
 
