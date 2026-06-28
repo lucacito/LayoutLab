@@ -1,5 +1,8 @@
 // app/(marketing)/page.tsx
-import { listPacks } from '@/lib/catalog/queries';
+import Image from 'next/image';
+import { listPacks, listLayouts } from '@/lib/catalog/queries';
+import { parseFilters } from '@/lib/catalog/filters';
+import { assetUrl } from '@/lib/blob/url';
 import { Container } from '@/components/ui/Container';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
@@ -24,6 +27,17 @@ export default async function HomePage() {
     packs = [];
   }
 
+  let heroImageUrl: string | null = null;
+  try {
+    const heroLayouts = await listLayouts(parseFilters({}));
+    const first = heroLayouts.find((l) => l.previewImageKeys && l.previewImageKeys.length > 0);
+    if (first?.previewImageKeys?.[0]) {
+      heroImageUrl = assetUrl(first.previewImageKeys[0]);
+    }
+  } catch {
+    heroImageUrl = null;
+  }
+
   return (
     <main>
       {/* Hero */}
@@ -41,7 +55,20 @@ export default async function HomePage() {
           <div className="relative">
             <GradientBlob className="right-[-10%] top-[10%] h-[360px] w-[360px]" />
             <Card className="overflow-hidden p-2">
-              <div className="aspect-[4/3] w-full rounded-[12px] bg-fog" />
+              {heroImageUrl ? (
+                <div className="relative aspect-[4/3] w-full overflow-hidden rounded-[12px]">
+                  <Image
+                    src={heroImageUrl}
+                    alt="Divi 5 layout preview"
+                    fill
+                    sizes="(max-width: 768px) 100vw, 50vw"
+                    className="object-cover"
+                    priority
+                  />
+                </div>
+              ) : (
+                <div className="aspect-[4/3] w-full rounded-[12px] bg-fog" />
+              )}
             </Card>
           </div>
         </Container>
