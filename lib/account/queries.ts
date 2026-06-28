@@ -69,3 +69,8 @@ export async function getDownloadableLayouts(userId: string): Promise<LayoutRow[
 export async function recordDownload(userId: string | null, layoutId: string, ip: string | null): Promise<void> {
   await db.insert(downloads).values({ id: randomUUID(), userId: userId ?? undefined, layoutId, ip: ip ?? undefined });
 }
+
+export async function getStripeCustomerIdByEmail(email: string): Promise<string | null> {
+  const rows = await db.select({ cid: users.stripeCustomerId }).from(users).where(eq(users.email, email)).limit(1);
+  return rows[0]?.cid ?? null;
+}
