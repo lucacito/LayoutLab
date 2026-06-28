@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { eq } from 'drizzle-orm';
+import type Stripe from 'stripe';
 import { env } from '@/lib/env';
 import { db } from '@/db/client';
 import { packs } from '@/db/schema';
@@ -44,13 +45,23 @@ export async function POST(req: Request): Promise<Response> {
     siteUrl: env.NEXT_PUBLIC_SITE_URL, packPriceId, membershipPriceId, automaticTax,
   });
 
+  const urlOr500 = (session: Stripe.Checkout.Session) => {
+    if (!session.url) {
+      console.error('[checkout] session has no url', session.id);
+      return NextResponse.json({ error: 'session_url_missing' }, { status: 500 });
+    }
+    return NextResponse.json({ url: session.url });
+  };
+
   try {
-    const session = await stripe.checkout.sessions.create(buildCheckoutSessionParams(input, makeCtx(true)));
-    return NextResponse.json({ url: session.url });
-  } catch {
-    // Stripe Tax graceful degrade: if automatic_tax can't be applied (Tax not set
-    // up in the sandbox), retry once without it so dev isn't blocked.
-    const session = await stripe.checkout.sessions.create(buildCheckoutSessionParams(input, makeCtx(false)));
-    return NextResponse.json({ url: session.url });
+    return urlOr500(await stripe.checkout.sessions.create(buildCheckoutSessionParams(input, makeCtx(true))));
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    if (!/tax/i.test(msg)) {
+      console.error('[checkout] session create failed', err);
+      return NextResponse.json({ error: 'checkout_failed' }, { status: 502 });
+    }
+    console.warn('[checkout] automatic_tax failed; retrying without tax:', msg);
+    return urlOr500(await stripe.checkout.sessions.create(buildCheckoutSessionParams(input, makeCtx(false))));
   }
 }
