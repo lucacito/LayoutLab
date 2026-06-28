@@ -652,16 +652,18 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 
 ---
 
-### Task 4: Sitemap builder + sitemap & robots routes
+### Task 4: Sitemap builder (pure) + robots route
+
+> The dynamic `app/sitemap.ts` route depends on query functions created in Task 6, so it is built there — not here. This task delivers the pure, fully-testable builder plus `app/robots.ts` (which needs only `env`), keeping the whole branch typecheck-clean at every commit.
 
 **Files:**
-- Create: `lib/seo/sitemap.ts`, `app/sitemap.ts`, `app/robots.ts`
+- Create: `lib/seo/sitemap.ts`, `app/robots.ts`
 - Modify: `lib/seo/index.ts` (re-export `sitemapEntries`)
 - Test: `tests/sitemap.test.ts`
 
 **Interfaces:**
-- Consumes: `env.NEXT_PUBLIC_SITE_URL` (in the route), `listLayouts`/`listPacks` from Task 6 (in the route only — the route is wired in Task 6's follow-up; the pure builder here has no deps).
-- Produces: `sitemapEntries(i: { siteUrl: string; layouts: { slug: string; publishedAt: Date | null }[]; packs: { slug: string; createdAt: Date }[] }): MetadataRoute.Sitemap`.
+- Consumes: `env.NEXT_PUBLIC_SITE_URL` (in `robots.ts`). The pure builder has no deps.
+- Produces: `sitemapEntries(i: { siteUrl: string; layouts: { slug: string; publishedAt: Date | null }[]; packs: { slug: string; createdAt: Date }[] }): MetadataRoute.Sitemap`. (The `app/sitemap.ts` route that consumes this builder is created in Task 6.)
 
 - [ ] **Step 1: Write the failing test**
 
@@ -704,7 +706,7 @@ describe('sitemapEntries', () => {
 Run: `npm run test -- tests/sitemap.test.ts`
 Expected: FAIL — cannot find `@/lib/seo/sitemap`.
 
-- [ ] **Step 3: Write the builder + routes**
+- [ ] **Step 3: Write the builder + robots route**
 
 ```ts
 // lib/seo/sitemap.ts
@@ -739,24 +741,6 @@ export function sitemapEntries(i: {
 ```
 
 ```ts
-// app/sitemap.ts
-import type { MetadataRoute } from 'next';
-import { env } from '@/lib/env';
-import { sitemapEntries } from '@/lib/seo/sitemap';
-import { listAllPublishedLayoutSlugs, listAllPublishedPackSlugs } from '@/lib/catalog/queries';
-
-export const revalidate = 3600;
-
-export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const [layouts, packs] = await Promise.all([
-    listAllPublishedLayoutSlugs(),
-    listAllPublishedPackSlugs(),
-  ]);
-  return sitemapEntries({ siteUrl: env.NEXT_PUBLIC_SITE_URL, layouts, packs });
-}
-```
-
-```ts
 // app/robots.ts
 import type { MetadataRoute } from 'next';
 import { env } from '@/lib/env';
@@ -775,18 +759,23 @@ Add to `lib/seo/index.ts`:
 export { sitemapEntries } from './sitemap';
 ```
 
-> Note: `app/sitemap.ts` imports `listAllPublishedLayoutSlugs` / `listAllPublishedPackSlugs` from Task 6. If executing strictly in order, this route will not typecheck until Task 6 lands — that's expected; the pure builder + its test are complete and green now. Run the full typecheck at the end of Task 6.
+> The `app/sitemap.ts` route that calls `sitemapEntries` with live DB rows is created in Task 6, after its `listAllPublished*` query dependencies exist — that keeps the branch typecheck-clean at this commit.
 
 - [ ] **Step 4: Run to verify the builder test passes**
 
 Run: `npm run test -- tests/sitemap.test.ts`
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [ ] **Step 5: Typecheck (must stay clean)**
+
+Run: `npm run typecheck`
+Expected: PASS — no forward references; `app/robots.ts` and the builder resolve.
+
+- [ ] **Step 6: Commit**
 
 ```bash
-git add lib/seo/sitemap.ts lib/seo/index.ts app/sitemap.ts app/robots.ts tests/sitemap.test.ts
-git commit -m "feat: dynamic sitemap builder + sitemap/robots routes
+git add lib/seo/sitemap.ts lib/seo/index.ts app/robots.ts tests/sitemap.test.ts
+git commit -m "feat: sitemap entry builder + robots route
 
 Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 ```
@@ -1049,7 +1038,7 @@ Expected: PASS.
 - [ ] **Step 6: Typecheck**
 
 Run: `npm run typecheck`
-Expected: PASS (note: `app/sitemap.ts` still references Task 6 functions; if you are executing in strict order it may error here — proceed; it goes green at the end of Task 6).
+Expected: PASS — no forward references remain (the sitemap route is created in Task 6).
 
 - [ ] **Step 7: Commit**
 
@@ -1062,14 +1051,14 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 
 ---
 
-### Task 6: Catalog query layer
+### Task 6: Catalog query layer + sitemap route
 
 **Files:**
-- Create: `lib/catalog/queries.ts`, `lib/catalog/index.ts`
+- Create: `lib/catalog/queries.ts`, `lib/catalog/index.ts`, `app/sitemap.ts`
 - Test: `tests/catalog-queries.test.ts`
 
 **Interfaces:**
-- Consumes: `db` (`@/db/client`), catalog tables, `buildLayoutFilters`/`CatalogFilters` (Task 2).
+- Consumes: `db` (`@/db/client`), catalog tables, `buildLayoutFilters`/`CatalogFilters` (Task 2), `sitemapEntries` + `env` (Task 4) for the route.
 - Produces (all return only `published` rows):
   - `type LayoutRow = typeof layouts.$inferSelect`, `type PackRow = typeof packs.$inferSelect`
   - `listLayouts(f: CatalogFilters): Promise<LayoutRow[]>`
@@ -1213,21 +1202,41 @@ export * from './filters';
 export * from './queries';
 ```
 
-- [ ] **Step 4: Full typecheck (now that the sitemap route's deps exist)**
+- [ ] **Step 4: Wire the dynamic sitemap route (its query deps now exist)**
+
+```ts
+// app/sitemap.ts
+import type { MetadataRoute } from 'next';
+import { env } from '@/lib/env';
+import { sitemapEntries } from '@/lib/seo/sitemap';
+import { listAllPublishedLayoutSlugs, listAllPublishedPackSlugs } from '@/lib/catalog/queries';
+
+export const revalidate = 3600;
+
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const [layouts, packs] = await Promise.all([
+    listAllPublishedLayoutSlugs(),
+    listAllPublishedPackSlugs(),
+  ]);
+  return sitemapEntries({ siteUrl: env.NEXT_PUBLIC_SITE_URL, layouts, packs });
+}
+```
+
+- [ ] **Step 5: Full typecheck (sitemap route + queries resolve)**
 
 Run: `npm run typecheck`
 Expected: PASS — `app/sitemap.ts` resolves its imports.
 
-- [ ] **Step 5: Run the suite**
+- [ ] **Step 6: Run the suite**
 
 Run: `npm run test`
 Expected: PASS — filters, seo, sitemap, seed-data, blob, db green; catalog-queries skips without a DB.
 
-- [ ] **Step 6: Commit**
+- [ ] **Step 7: Commit**
 
 ```bash
-git add lib/catalog/queries.ts lib/catalog/index.ts tests/catalog-queries.test.ts
-git commit -m "feat: catalog query layer (published-only) + facet counts
+git add lib/catalog/queries.ts lib/catalog/index.ts app/sitemap.ts tests/catalog-queries.test.ts
+git commit -m "feat: catalog query layer (published-only) + facet counts + sitemap route
 
 Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 ```
