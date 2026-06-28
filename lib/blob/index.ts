@@ -17,3 +17,5 @@ export async function signedDownloadUrl(key: string, _ttlSeconds = 300): Promise
   // TODO(Phase 4): switch to private blobs + generated signed URLs.
   return `https://blob.vercel-storage.com/${key}`;
 }
+
+export { assetUrl } from './url';
