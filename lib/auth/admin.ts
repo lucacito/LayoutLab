@@ -17,3 +17,13 @@ export async function requireAdmin(): Promise<Session> {
   if (gate === 'forbidden') notFound();
   return session as Session;
 }
+
+export function userGateDecision(session: Session | null): 'ok' | 'unauthenticated' {
+  return session?.user ? 'ok' : 'unauthenticated';
+}
+
+export async function requireUser(): Promise<Session> {
+  const session = await auth();
+  if (!session?.user) redirect('/login');
+  return session as Session;
+}
