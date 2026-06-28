@@ -47,7 +47,9 @@ export async function getOrdersForUser(userId: string) {
 }
 
 export async function getActiveSubscription(userId: string) {
-  const rows = await db.select().from(subscriptions).where(eq(subscriptions.userId, userId)).orderBy(desc(subscriptions.currentPeriodEnd)).limit(1);
+  const rows = await db.select().from(subscriptions)
+    .where(and(eq(subscriptions.userId, userId), eq(subscriptions.status, 'active')))
+    .orderBy(desc(subscriptions.currentPeriodEnd)).limit(1);
   return rows[0] ?? null;
 }
 
