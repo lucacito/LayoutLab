@@ -132,10 +132,8 @@ async function main() {
   const data = buildSeedData();
   // Idempotent: upsert parents, then replace join rows.
   await db.insert(tags).values(data.tags).onConflictDoNothing();
-  await db.insert(layouts).values(data.layouts)
-    .onConflictDoUpdate({ target: layouts.slug, set: { status: layouts.status } });
-  await db.insert(packs).values(data.packs)
-    .onConflictDoUpdate({ target: packs.slug, set: { status: packs.status } });
+  await db.insert(layouts).values(data.layouts).onConflictDoNothing();
+  await db.insert(packs).values(data.packs).onConflictDoNothing();
   await db.insert(packLayouts).values(data.packLayouts).onConflictDoNothing();
   await db.insert(layoutTags).values(data.layoutTags).onConflictDoNothing();
   console.log(`Seeded ${data.layouts.length} layouts, ${data.packs.length} packs, ${data.tags.length} tags.`);
