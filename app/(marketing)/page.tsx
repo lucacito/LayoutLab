@@ -1,8 +1,6 @@
 // app/(marketing)/page.tsx
-import Image from 'next/image';
 import { listPacks, listLayouts } from '@/lib/catalog/queries';
 import { parseFilters } from '@/lib/catalog/filters';
-import { assetUrl } from '@/lib/blob/url';
 import { Container } from '@/components/ui/Container';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
@@ -10,6 +8,7 @@ import { SectionTitle } from '@/components/ui/SectionTitle';
 import { IconFeature } from '@/components/ui/IconFeature';
 import { GradientBlob } from '@/components/ui/GradientBlob';
 import { PackCard } from '@/components/PackCard';
+import { PreviewImage } from '@/components/PreviewImage';
 
 export const dynamic = 'force-dynamic';
 
@@ -27,15 +26,13 @@ export default async function HomePage() {
     packs = [];
   }
 
-  let heroImageUrl: string | null = null;
+  let heroPreviewKey: string | null = null;
   try {
     const heroLayouts = await listLayouts(parseFilters({}));
     const first = heroLayouts.find((l) => l.previewImageKeys && l.previewImageKeys.length > 0);
-    if (first?.previewImageKeys?.[0]) {
-      heroImageUrl = assetUrl(first.previewImageKeys[0]);
-    }
+    heroPreviewKey = first?.previewImageKeys?.[0] ?? null;
   } catch {
-    heroImageUrl = null;
+    heroPreviewKey = null;
   }
 
   return (
@@ -55,20 +52,12 @@ export default async function HomePage() {
           <div className="relative">
             <GradientBlob className="right-[-10%] top-[10%] h-[360px] w-[360px]" />
             <Card className="overflow-hidden p-2">
-              {heroImageUrl ? (
-                <div className="relative aspect-[4/3] w-full overflow-hidden rounded-[12px]">
-                  <Image
-                    src={heroImageUrl}
-                    alt="Divi 5 layout preview"
-                    fill
-                    sizes="(max-width: 768px) 100vw, 50vw"
-                    className="object-cover"
-                    priority
-                  />
-                </div>
-              ) : (
-                <div className="aspect-[4/3] w-full rounded-[12px] bg-fog" />
-              )}
+              <PreviewImage
+                src={heroPreviewKey}
+                alt="Divi 5 layout preview"
+                sizes="(max-width: 768px) 100vw, 50vw"
+                className="aspect-[4/3] w-full rounded-[12px]"
+              />
             </Card>
           </div>
         </Container>
