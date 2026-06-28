@@ -15,7 +15,7 @@ export function isAdminEmail(email?: string | null): boolean {
 
 export const authConfig: NextAuthConfig = {
   session: { strategy: 'jwt' },
-  pages: { signIn: '/login' },
+  pages: { signIn: '/login', verifyRequest: '/verify-request' },
   providers: [], // Email/credentials providers added below in index.ts
   callbacks: {
     session({ session, token }) {

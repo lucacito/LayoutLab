@@ -19,6 +19,7 @@
     "pipeline": "tsx pipeline/index.ts"
   },
   "dependencies": {
+    "@auth/drizzle-adapter": "^1.11.2",
     "@types/pg": "^8.20.0",
     "@vercel/blob": "^0.27.0",
     "@vercel/postgres": "^0.10.0",

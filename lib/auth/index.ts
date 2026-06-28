@@ -1,23 +1,34 @@
 import NextAuth from 'next-auth';
-import Credentials from 'next-auth/providers/credentials';
+import type { EmailConfig } from 'next-auth/providers';
+import { DrizzleAdapter } from '@auth/drizzle-adapter';
+import { db } from '@/db/client';
+import { users, accounts, sessions, verificationTokens } from '@/db/schema';
 import { authConfig } from './config';
+import { sendMagicLink } from '@/lib/email';
+
+// Hand-built magic-link provider. We do NOT use next-auth/providers/email or
+// /nodemailer — those throw "Nodemailer requires a `server` configuration" at
+// construction. type:'email' drives Auth.js's verification-token flow; our
+// sendVerificationRequest delivers the link via Resend (or console in dev).
+const magicLink: EmailConfig = {
+  id: 'email',
+  type: 'email',
+  name: 'Email',
+  from: process.env.RESEND_FROM || 'LayoutLab <onboarding@resend.dev>',
+  maxAge: 24 * 60 * 60,
+  options: {},
+  sendVerificationRequest: async ({ identifier, url }: { identifier: string; url: string }) => {
+    await sendMagicLink(identifier, url);
+  },
+} as EmailConfig;
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   ...authConfig,
-  providers: [
-    // Phase 0: minimal credentials provider so login flow exists end-to-end.
-    // Phase 5 swaps/adds magic-link (Resend) + proper password hashing.
-    Credentials({
-      credentials: { email: {}, password: {} },
-      authorize: async (creds) => {
-        // SECURITY (Phase 2): this is a password-less Phase-0 stub. Combined with
-        // the ADMIN_EMAILS allowlist it would grant admin to anyone who knows an
-        // admin email. Refuse in production until real password auth lands (Phase 4/5).
-        if (process.env.NODE_ENV === 'production') return null;
-        // TODO(Phase 4/5): look up user in db, verify hashed password.
-        if (creds?.email) return { id: 'temp', email: String(creds.email), role: 'user' } as any;
-        return null;
-      },
-    }),
-  ],
+  adapter: DrizzleAdapter(db, {
+    usersTable: users,
+    accountsTable: accounts,
+    sessionsTable: sessions,
+    verificationTokensTable: verificationTokens,
+  }),
+  providers: [magicLink],
 });
