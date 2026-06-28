@@ -53,7 +53,7 @@ async function main() {
 
   const ingestUrl = process.env.INGEST_URL ?? 'http://localhost:3000';
   const ingestToken = process.env.INGEST_API_TOKEN ?? '';
-  const maxBudget = process.env.PIPELINE_MAX_BUDGET_USD ? Number(process.env.PIPELINE_MAX_BUDGET_USD) : 1;
+  const maxBudget = process.env.PIPELINE_MAX_BUDGET_USD ? Number(process.env.PIPELINE_MAX_BUDGET_USD) : 1; // per-LLM-call cap (applied to generate + each repair + SEO); not a per-run total
 
   const stubLlm = { complete: async () => '{"content":[]}' };
   const deps: RunDeps = {
