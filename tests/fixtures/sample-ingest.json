@@ -1,0 +1,22 @@
+{
+  "slug": "sample-hero-saas",
+  "title": "Sample SaaS Hero",
+  "description": "A sample validated Divi 5 hero for ingest testing.",
+  "type": "hero",
+  "niche": "saas",
+  "style": "minimal",
+  "colors": ["blue", "monochrome"],
+  "diviJsonBlobKey": "layouts/sample-hero-saas.json",
+  "previewImageKeys": ["https://picsum.photos/seed/sample-hero/1200/900"],
+  "contentHash": "sample-content-hash-0001",
+  "validatorPassed": true,
+  "seo": {
+    "metaTitle": "Sample SaaS Hero — Divi 5 Layout",
+    "metaDescription": "A sample validated Divi 5 hero section.",
+    "keywords": ["hero", "saas", "divi 5"]
+  },
+  "tags": [
+    { "axis": "type", "slug": "hero" },
+    { "axis": "niche", "slug": "saas" }
+  ]
+}
