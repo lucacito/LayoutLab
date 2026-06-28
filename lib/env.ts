@@ -8,6 +8,8 @@ const schema = z.object({
   // Optional in Phase 0 — required by their owning features later.
   STRIPE_SECRET_KEY: z.string().optional(),
   STRIPE_WEBHOOK_SECRET: z.string().optional(),
+  STRIPE_PRICE_MEMBERSHIP_MONTHLY: z.string().optional(),
+  STRIPE_PRICE_MEMBERSHIP_YEARLY: z.string().optional(),
   BLOB_READ_WRITE_TOKEN: z.string().optional(),
   RESEND_API_KEY: z.string().optional(),
   LOOPS_API_KEY: z.string().optional(),

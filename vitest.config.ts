@@ -21,6 +21,10 @@ export default defineConfig({
       NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: 'pk_test_ci',
       INGEST_API_TOKEN: 'test-ingest-token',
       ADMIN_EMAILS: 'admin@layoutlab.com',
+      STRIPE_SECRET_KEY: 'sk_test_dummy',
+      STRIPE_WEBHOOK_SECRET: 'whsec_test_dummy',
+      STRIPE_PRICE_MEMBERSHIP_MONTHLY: 'price_test_monthly',
+      STRIPE_PRICE_MEMBERSHIP_YEARLY: 'price_test_yearly',
     },
   },
 });
