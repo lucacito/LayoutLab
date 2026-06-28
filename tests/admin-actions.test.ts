@@ -36,10 +36,12 @@ describe('admin actions', () => {
     await rejectLayout('l2');
     expect(requireAdmin).toHaveBeenCalledOnce();
     expect((setLayoutStatus.mock.calls[0] as any[])[1]).toBe('rejected');
+    expect(revalidatePath).toHaveBeenCalledWith('/admin/queue');
   });
 
   it('unpublishLayout sets approved (de-listed)', async () => {
     await unpublishLayout('l3');
+    expect(requireAdmin).toHaveBeenCalledOnce();
     expect((setLayoutStatus.mock.calls[0] as any[])[1]).toBe('approved');
     expect(revalidatePath).toHaveBeenCalledWith('/browse');
   });
@@ -47,8 +49,9 @@ describe('admin actions', () => {
   it('bulkApprove requires admin then publishes many', async () => {
     await bulkApprove(['a', 'b']);
     expect(requireAdmin).toHaveBeenCalledOnce();
-    const [ids, status] = setLayoutsStatus.mock.calls[0] as any[];
+    const [ids, status, opts] = setLayoutsStatus.mock.calls[0] as any[];
     expect(ids).toEqual(['a', 'b']);
     expect(status).toBe('published');
+    expect(opts?.publishedAt).toBeInstanceOf(Date);
   });
 });
