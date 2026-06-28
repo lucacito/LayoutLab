@@ -1,8 +1,7 @@
 // components/LayoutCard.tsx
 import Link from 'next/link';
-import Image from 'next/image';
 import type { LayoutRow } from '@/lib/catalog/queries';
-import { assetUrl } from '@/lib/blob/url';
+import { PreviewImage } from '@/components/PreviewImage';
 
 export function LayoutCard({ layout }: { layout: LayoutRow }) {
   const cover = layout.previewImageKeys[0];
@@ -11,12 +10,14 @@ export function LayoutCard({ layout }: { layout: LayoutRow }) {
       href={`/layouts/${layout.slug}`}
       className="group block overflow-hidden rounded-card border border-border bg-paper shadow-soft transition hover:-translate-y-0.5"
     >
-      <div className="relative aspect-[4/3] bg-fog">
-        {cover && (
-          <Image src={assetUrl(cover)} alt={layout.title} fill sizes="(max-width: 768px) 100vw, 33vw"
-            className="object-cover transition group-hover:scale-[1.02]" />
-        )}
-      </div>
+      <PreviewImage
+        src={cover}
+        alt={layout.title}
+        label={layout.type}
+        sizes="(max-width: 768px) 100vw, 33vw"
+        className="aspect-[4/3]"
+        imageClassName="transition group-hover:scale-[1.02]"
+      />
       <div className="p-5">
         <h3 className="truncate text-body font-semibold text-navy">{layout.title}</h3>
         <p className="mt-1 text-small capitalize text-muted">{layout.type} · {layout.niche} · {layout.style}</p>
