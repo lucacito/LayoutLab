@@ -36,7 +36,7 @@ describe('handleStripeEvent', () => {
     await handleStripeEvent(membership as unknown as Stripe.Event, s);
     expect(s.findOrCreateUserByEmail).toHaveBeenCalledWith('member@example.com');
     expect((s.upsertSubscription as any).mock.calls[0][0]).toMatchObject({ userId: 'user_1', stripeSubscriptionId: 'sub_123', status: 'active' });
-    expect(s.grantAllAccess).toHaveBeenCalled();
+    expect(s.grantAllAccess).toHaveBeenCalledWith('user_1', null);
   });
 
   it('subscription.updated active → grants all_access with the period end', async () => {
@@ -46,12 +46,14 @@ describe('handleStripeEvent', () => {
     const [userId, expiresAt] = (s.grantAllAccess as any).mock.calls[0];
     expect(userId).toBe('user_1');
     expect(expiresAt).toBeInstanceOf(Date);
+    expect((expiresAt as Date).getTime()).toBe(1788000000 * 1000);
   });
 
   it('subscription.deleted → revokes all_access', async () => {
     const s = fakeStore();
     await handleStripeEvent(subDeleted as unknown as Stripe.Event, s);
     expect(s.revokeAllAccess).toHaveBeenCalledWith('user_1');
+    expect((s.upsertSubscription as any).mock.calls[0][0]).toMatchObject({ status: 'canceled' });
   });
 
   it('is idempotent: a processed event writes nothing', async () => {
