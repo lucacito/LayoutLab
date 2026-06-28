@@ -1,0 +1,28 @@
+COMMERCIAL LICENSE AGREEMENT
+
+Copyright © 2026 Lucas Lopvet - Lucas Lopvet
+
+This license grants the purchaser the right to use the purchased Divi layout files
+for creating websites for themselves or their clients.
+
+Allowed:
+- Use the layout on unlimited websites owned by the purchaser.
+- Use the layout to build websites for clients.
+- Modify, customize, and adapt the layout.
+- Use the finished websites for commercial purposes.
+
+Not allowed:
+- Redistribute, resell, sublicense, or share the original layout JSON files.
+- Include the layout files in another product, marketplace, bundle, or template library.
+- Claim the original layout design as your own product.
+
+Ownership:
+The original layout files and design assets remain the property of
+Lucas Lopvet.
+
+By downloading these files, you agree to these terms.
+
+For support:
+
+layoutlab.com
+info@layoutlab.com
