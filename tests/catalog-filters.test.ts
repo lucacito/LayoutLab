@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { parseFilters, buildLayoutFilters, PAGE_SIZE } from '@/lib/catalog/filters';
+import { parseFilters, PAGE_SIZE } from '@/lib/catalog/filters';
+import { buildLayoutFilters } from '@/lib/catalog/query-builder';
 
 describe('parseFilters', () => {
   it('defaults to empty facets, newest sort, page 1', () => {

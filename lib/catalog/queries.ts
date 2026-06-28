@@ -1,7 +1,8 @@
 import { and, eq, asc } from 'drizzle-orm';
 import { db } from '@/db/client';
 import { layouts, packs, packLayouts } from '@/db/schema';
-import { buildLayoutFilters, type CatalogFilters } from './filters';
+import { buildLayoutFilters } from './query-builder';
+import { type CatalogFilters } from './filters';
 
 export type LayoutRow = typeof layouts.$inferSelect;
 export type PackRow = typeof packs.$inferSelect;

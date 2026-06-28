@@ -2,7 +2,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import type { LayoutRow } from '@/lib/catalog/queries';
-import { assetUrl } from '@/lib/blob';
+import { assetUrl } from '@/lib/blob/url';
 
 export function LayoutCard({ layout }: { layout: LayoutRow }) {
   const cover = layout.previewImageKeys[0];

@@ -2,7 +2,7 @@
 'use client';
 import { useState } from 'react';
 import Image from 'next/image';
-import { assetUrl } from '@/lib/blob';
+import { assetUrl } from '@/lib/blob/url';
 
 export function ScreenshotGallery({ keys, title }: { keys: string[]; title: string }) {
   const [active, setActive] = useState<number | null>(null);

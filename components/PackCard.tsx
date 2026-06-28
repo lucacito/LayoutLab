@@ -2,7 +2,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import type { PackRow } from '@/lib/catalog/queries';
-import { assetUrl } from '@/lib/blob';
+import { assetUrl } from '@/lib/blob/url';
 
 export function PackCard({ pack }: { pack: PackRow }) {
   const price = pack.kind === 'free' ? 'Free'

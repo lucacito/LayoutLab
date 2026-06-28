@@ -1,6 +1,3 @@
-import { and, eq, inArray, ilike, or, arrayOverlaps, asc, desc, type SQL } from 'drizzle-orm';
-import { layouts } from '@/db/schema';
-
 export const AXIS_VALUES = {
   type: ['hero', 'pricing', 'testimonials', 'cta', 'features', 'faq', 'footer', 'header', 'contact', 'gallery', 'blog', 'full_landing'],
   niche: ['saas', 'agency', 'restaurant', 'real_estate', 'fitness', 'coaching', 'ecommerce', 'nonprofit', 'portfolio', 'events'],
@@ -47,27 +44,4 @@ export function parseFilters(searchParams: Record<string, string | string[] | un
   const page = Number.isInteger(parsedPage) && parsedPage >= 1 ? parsedPage : 1;
 
   return { type, niche, style, color, q, sort, page };
-}
-
-export function buildLayoutFilters(f: CatalogFilters) {
-  const conditions: SQL[] = [eq(layouts.status, 'published')];
-  if (f.type.length) conditions.push(inArray(layouts.type, f.type));
-  if (f.niche.length) conditions.push(inArray(layouts.niche, f.niche));
-  if (f.style.length) conditions.push(inArray(layouts.style, f.style));
-  if (f.color.length) conditions.push(arrayOverlaps(layouts.colors, f.color));
-  if (f.q) {
-    conditions.push(or(ilike(layouts.title, `%${f.q}%`), ilike(layouts.description, `%${f.q}%`)) as SQL);
-  }
-
-  const orderBy = f.sort === 'oldest' ? asc(layouts.createdAt)
-    : f.sort === 'title' ? asc(layouts.title)
-    : desc(layouts.createdAt);
-
-  return {
-    conditions,
-    where: and(...conditions),
-    orderBy,
-    limit: PAGE_SIZE,
-    offset: (f.page - 1) * PAGE_SIZE,
-  };
 }
