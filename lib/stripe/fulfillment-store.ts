@@ -70,6 +70,7 @@ export const dbStore: FulfillmentStore = {
       packTitle = rows[0]?.title;
     }
     const { subject, html, text } = purchaseReceiptEmail({ kind: input.kind, packTitle, amountCents: input.amountCents, signInUrl });
-    await sendEmail({ to: input.email, subject, html, text });
+    const { sent } = await sendEmail({ to: input.email, subject, html, text });
+    if (!sent) console.log(`[receipt:dev] sign-in link for ${input.email}:\n${signInUrl}`);
   },
 };
