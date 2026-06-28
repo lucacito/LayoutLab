@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { Card } from '@/components/ui/Card';
 import { statusCounts } from '@/lib/admin/queries';
 
 export default async function AdminDashboard() {
@@ -11,14 +12,14 @@ export default async function AdminDashboard() {
   ];
   return (
     <main>
-      <h1 className="mb-6 text-2xl font-semibold">Dashboard</h1>
+      <h1 className="mb-6 text-2xl font-semibold text-navy">Dashboard</h1>
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
         {cards.map((c) => {
           const body = (
-            <div className="rounded border border-gray-200 p-4">
-              <div className="text-3xl font-bold">{counts[c.key]}</div>
-              <div className="mt-1 text-sm text-gray-500">{c.label}</div>
-            </div>
+            <Card className="p-5">
+              <div className="text-h3 font-bold text-navy">{counts[c.key]}</div>
+              <div className="mt-1 text-small text-muted">{c.label}</div>
+            </Card>
           );
           return c.href ? <Link key={c.key} href={c.href}>{body}</Link> : <div key={c.key}>{body}</div>;
         })}

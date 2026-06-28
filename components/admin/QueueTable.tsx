@@ -1,6 +1,7 @@
 'use client';
 import { useState } from 'react';
 import Image from 'next/image';
+import { Button } from '@/components/ui/Button';
 import { assetUrl } from '@/lib/blob/url';
 import { approveLayout, rejectLayout, bulkApprove } from '@/lib/admin/actions';
 
@@ -24,45 +25,41 @@ export function QueueTable({ rows }: { rows: QueueRow[] }) {
     });
 
   if (!rows.length) {
-    return <p className="py-12 text-center text-gray-500">No pending layouts to review. 🎉</p>;
+    return <p className="py-12 text-center text-muted">No pending layouts to review. 🎉</p>;
   }
 
   return (
     <div>
       <div className="mb-4">
         <form action={() => bulkApprove([...selected])}>
-          <button
-            type="submit"
-            disabled={!selected.size}
-            className="rounded bg-black px-3 py-1.5 text-sm text-white disabled:opacity-40"
-          >
+          <Button disabled={!selected.size}>
             Approve {selected.size || ''} selected
-          </button>
+          </Button>
         </form>
       </div>
       <ul className="space-y-3">
         {rows.map((r) => (
-          <li key={r.id} className="flex items-center gap-4 rounded border border-gray-200 p-3">
+          <li key={r.id} className="flex items-center gap-4 rounded-card border border-border bg-paper p-4">
             <input
               type="checkbox"
               aria-label={`Select ${r.title}`}
               checked={selected.has(r.id)}
               onChange={() => toggle(r.id)}
             />
-            <div className="relative h-16 w-24 shrink-0 overflow-hidden rounded bg-gray-100">
+            <div className="relative h-16 w-24 shrink-0 overflow-hidden rounded-card bg-fog">
               {r.preview && (
                 <Image src={assetUrl(r.preview)} alt={r.title} fill sizes="96px" className="object-cover" />
               )}
             </div>
             <div className="min-w-0 flex-1">
-              <p className="truncate font-medium text-gray-900">{r.title}</p>
-              <p className="text-xs text-gray-500">{r.type} · {r.niche} · {r.style}</p>
+              <p className="truncate font-semibold text-body text-navy">{r.title}</p>
+              <p className="text-small text-muted">{r.type} · {r.niche} · {r.style}</p>
             </div>
             <form action={approveLayout.bind(null, r.id)}>
-              <button type="submit" className="rounded bg-green-600 px-3 py-1.5 text-sm text-white">Approve</button>
+              <Button type="submit">Approve</Button>
             </form>
             <form action={rejectLayout.bind(null, r.id)}>
-              <button type="submit" className="rounded border border-gray-300 px-3 py-1.5 text-sm">Reject</button>
+              <Button type="submit" variant="secondary">Reject</Button>
             </form>
           </li>
         ))}

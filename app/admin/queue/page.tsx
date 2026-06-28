@@ -14,7 +14,7 @@ export default async function AdminQueuePage() {
   }));
   return (
     <main>
-      <h1 className="mb-6 text-2xl font-semibold">Review queue ({rows.length} pending)</h1>
+      <h1 className="mb-6 text-2xl font-semibold text-navy">Review queue ({rows.length} pending)</h1>
       <QueueTable rows={rows} />
     </main>
   );
