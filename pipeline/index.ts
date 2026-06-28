@@ -1,27 +1,81 @@
-// LayoutLab generation pipeline — CLI entry point.
-//
-// Modes:
-//   npm run pipeline -- batch              # big-bang catalog generation
-//   npm run pipeline -- drip --count=N     # steady drip
-//
-// Per-layout flow (idempotent + resumable), see CLAUDE.md §10:
-//   plan → generate → validate → dedupe → render → seo → upload → ingest
-//
-// Build each step test-first under pipeline/*.ts. This is a Phase 3 stub.
+// LayoutLab generation pipeline — CLI entry (Phase 3a, no render).
+//   npm run pipeline -- drip --count=N [--dry-run]
+//   npm run pipeline -- batch [--dry-run]
+import { writeFile, mkdtemp, rm } from 'node:fs/promises';
+import { join } from 'node:path';
+import { tmpdir } from 'node:os';
+import { eq } from 'drizzle-orm';
+import { db } from '@/db/client';
+import { layouts } from '@/db/schema';
+import { claudeCliClient } from './llm';
+import { MATRIX, planTargets, loadGrounding } from './recipes';
+import { validateLayout } from './validate';
+import { uploadLayout } from './upload';
+import { postIngest } from './ingest';
+import { runPipeline, type RunDeps } from './run';
+
+async function withTempFile<T>(json: string, fn: (file: string) => Promise<T>): Promise<T> {
+  const dir = await mkdtemp(join(tmpdir(), 'layout-'));
+  const file = join(dir, 'layout.json');
+  await writeFile(file, json);
+  try {
+    return await fn(file);
+  } finally {
+    await rm(dir, { recursive: true, force: true }).catch(() => {});
+  }
+}
+
+function arg(name: string): string | undefined {
+  const hit = process.argv.find((a) => a.startsWith(`--${name}=`));
+  return hit ? hit.split('=')[1] : undefined;
+}
+const hasFlag = (name: string) => process.argv.includes(`--${name}`);
+
+async function coveredKeys(): Promise<Set<string>> {
+  const rows = await db.select({ type: layouts.type, niche: layouts.niche, style: layouts.style }).from(layouts);
+  return new Set(rows.map((r) => `${r.type}|${r.niche ?? ''}|${r.style ?? ''}`));
+}
 
 async function main() {
   const mode = process.argv[2];
-  switch (mode) {
-    case 'batch':
-      console.log('[pipeline] batch mode — not yet implemented (Phase 3)');
-      break;
-    case 'drip':
-      console.log('[pipeline] drip mode — not yet implemented (Phase 3)');
-      break;
-    default:
-      console.log('Usage: npm run pipeline -- <batch|drip [--count=N]>');
-      process.exitCode = 1;
+  if (mode !== 'batch' && mode !== 'drip') {
+    console.log('Usage: npm run pipeline -- <batch|drip [--count=N]> [--dry-run]');
+    process.exitCode = 1;
+    return;
   }
+  const dryRun = hasFlag('dry-run');
+  const count = mode === 'drip' ? Number(arg('count') ?? '1') : undefined;
+
+  const validatorDir = process.env.VALIDATOR_DIR ?? '../Divi 5 Deterministic Validator';
+  const guide = loadGrounding(validatorDir);
+  const covered = dryRun ? new Set<string>() : await coveredKeys();
+  const targets = planTargets(MATRIX, covered, count);
+
+  const ingestUrl = process.env.INGEST_URL ?? 'http://localhost:3000';
+  const ingestToken = process.env.INGEST_API_TOKEN ?? '';
+  const maxBudget = process.env.PIPELINE_MAX_BUDGET_USD ? Number(process.env.PIPELINE_MAX_BUDGET_USD) : 1; // per-LLM-call cap (applied to generate + each repair + SEO); not a per-run total
+
+  const stubLlm = { complete: async () => '{"content":[]}' };
+  const deps: RunDeps = {
+    targets,
+    guide,
+    llm: dryRun ? stubLlm : claudeCliClient(),
+    validate: dryRun ? async () => ({ valid: true, violations: [] }) : (json) => withTempFile(json, (f) => validateLayout(f)),
+    isDuplicate: async (hash) => {
+      if (dryRun) return false;
+      const hit = await db.select({ id: layouts.id }).from(layouts).where(eq(layouts.contentHash, hash)).limit(1);
+      return hit.length > 0;
+    },
+    upload: (hash, json) => uploadLayout(hash, json, { hasBlobToken: !!process.env.BLOB_READ_WRITE_TOKEN, outDir: 'pipeline/out' }),
+    ingest: dryRun ? async () => ({ deduped: false }) : (payload) => postIngest(payload, { url: ingestUrl, token: ingestToken }),
+    maxRepairs: 2,
+    maxBudgetUsd: maxBudget,
+    log: (m) => console.log(`[pipeline] ${m}`),
+  };
+
+  console.log(`[pipeline] ${mode}${count ? ` count=${count}` : ''}${dryRun ? ' (dry-run)' : ''} — ${targets.length} target(s)`);
+  const summary = await runPipeline(deps);
+  console.log('[pipeline] summary:', summary);
 }
 
 main().catch((err) => {

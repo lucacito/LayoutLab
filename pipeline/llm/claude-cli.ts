@@ -1,0 +1,32 @@
+import { spawn } from 'node:child_process';
+import type { LlmClient, RunCommand } from './types';
+import { LlmError } from './types';
+import { parseClaudeEnvelope } from './parse';
+
+const defaultRun: RunCommand = (cmd, args, input) =>
+  new Promise((resolve, reject) => {
+    const child = spawn(cmd, args, { stdio: ['pipe', 'pipe', 'pipe'] });
+    let stdout = '';
+    let stderr = '';
+    child.stdout.on('data', (d) => (stdout += d));
+    child.stderr.on('data', (d) => (stderr += d));
+    child.on('error', reject);
+    child.on('close', (code) => resolve({ stdout, stderr, code: code ?? 0 }));
+    if (input != null) child.stdin.write(input);
+    child.stdin.end();
+  });
+
+export function claudeCliClient(opts: { run?: RunCommand; model?: string } = {}): LlmClient {
+  const run = opts.run ?? defaultRun;
+  return {
+    async complete({ prompt, system, maxBudgetUsd }) {
+      const args = ['-p', '--output-format', 'json'];
+      if (maxBudgetUsd != null) args.push('--max-budget-usd', String(maxBudgetUsd));
+      if (system) args.push('--append-system-prompt', system);
+      if (opts.model) args.push('--model', opts.model);
+      const { stdout, stderr, code } = await run('claude', args, prompt);
+      if (code !== 0) throw new LlmError(`claude CLI exited ${code}: ${stderr.slice(0, 200)}`);
+      return parseClaudeEnvelope(stdout);
+    },
+  };
+}
