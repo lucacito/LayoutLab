@@ -30,14 +30,14 @@ export function FacetFilters({ counts }: { counts: Record<string, Record<string,
         const selected = new Set((params.get(key)?.split(',') ?? []).filter(Boolean));
         return (
           <fieldset key={key}>
-            <legend className="mb-2 text-sm font-semibold text-gray-900">{label}</legend>
+            <legend className="mb-2 text-body font-semibold text-navy">{label}</legend>
             <ul className="space-y-1">
               {AXIS_VALUES[key].map((value) => (
                 <li key={value}>
-                  <label className="flex cursor-pointer items-center gap-2 text-sm text-gray-700">
+                  <label className="flex cursor-pointer items-center gap-2 text-body text-navy">
                     <input type="checkbox" checked={selected.has(value)} onChange={() => toggle(key, value)} />
                     <span className="capitalize">{value.replace('_', ' ')}</span>
-                    <span className="ml-auto text-xs text-gray-400">{counts[key]?.[value] ?? 0}</span>
+                    <span className="ml-auto text-small text-muted">{counts[key]?.[value] ?? 0}</span>
                   </label>
                 </li>
               ))}
