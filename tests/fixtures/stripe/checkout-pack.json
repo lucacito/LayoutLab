@@ -1,0 +1,11 @@
+{
+  "id": "evt_pack_1",
+  "type": "checkout.session.completed",
+  "data": { "object": {
+    "id": "cs_pack_1",
+    "mode": "payment",
+    "amount_total": 4900,
+    "customer_details": { "email": "buyer@example.com" },
+    "metadata": { "kind": "pack", "packId": "pack_saas" }
+  } }
+}

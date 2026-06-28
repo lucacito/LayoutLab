@@ -1,0 +1,11 @@
+{
+  "id": "evt_mem_1",
+  "type": "checkout.session.completed",
+  "data": { "object": {
+    "id": "cs_mem_1",
+    "mode": "subscription",
+    "subscription": "sub_123",
+    "customer_details": { "email": "member@example.com" },
+    "metadata": { "kind": "membership", "plan": "monthly" }
+  } }
+}
