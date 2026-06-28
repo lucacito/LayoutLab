@@ -6,7 +6,7 @@ import { parseFilters } from '@/lib/catalog/filters';
 // Skip the whole suite when that connection string is absent (no real DB wired up).
 const hasDb = !!process.env.POSTGRES_URL;
 
-describe.skipIf(!hasDb)('catalog queries (integration — needs a seeded DATABASE_URL)', () => {
+describe.skipIf(!hasDb)('catalog queries (integration — needs a seeded POSTGRES_URL)', () => {
   let q: typeof import('@/lib/catalog/queries');
 
   beforeAll(async () => {

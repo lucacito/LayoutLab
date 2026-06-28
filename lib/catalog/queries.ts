@@ -1,4 +1,4 @@
-import { and, eq, asc, inArray } from 'drizzle-orm';
+import { and, eq, asc } from 'drizzle-orm';
 import { db } from '@/db/client';
 import { layouts, packs, packLayouts } from '@/db/schema';
 import { buildLayoutFilters, type CatalogFilters } from './filters';
