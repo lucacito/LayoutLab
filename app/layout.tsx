@@ -2,6 +2,7 @@ import './globals.css';
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
 import { Inter } from 'next/font/google';
+import { Analytics } from '@vercel/analytics/react';
 import { Header } from '@/components/site/Header';
 import { Footer } from '@/components/site/Footer';
 
@@ -19,6 +20,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <Header />
         {children}
         <Footer />
+        <Analytics />
       </body>
     </html>
   );
