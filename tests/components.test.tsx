@@ -4,6 +4,7 @@ import { render } from '@testing-library/react';
 import { JsonLd } from '@/components/JsonLd';
 import { Breadcrumbs } from '@/components/Breadcrumbs';
 import { LayoutCard } from '@/components/LayoutCard';
+import { BookmarksProvider } from '@/components/bookmarks/BookmarksProvider';
 
 const layout = {
   id: 'l1', slug: 'bold-saas-hero', title: 'Bold SaaS Hero', description: 'desc',
@@ -28,7 +29,7 @@ describe('components', () => {
   });
 
   it('LayoutCard links to the layout detail page and shows the title', () => {
-    const { getByText, container } = render(<LayoutCard layout={layout} />);
+    const { getByText, container } = render(<LayoutCard layout={layout} />, { wrapper: BookmarksProvider });
     expect(getByText('Bold SaaS Hero')).toBeTruthy();
     expect(container.querySelector('a[href="/layouts/bold-saas-hero"]')).not.toBeNull();
   });

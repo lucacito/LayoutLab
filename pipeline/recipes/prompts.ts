@@ -55,13 +55,25 @@ function pickExamples(target: Target, guide: Guide): string[] {
   return (guide.examples ?? []).slice(0, MAX_EXAMPLES);
 }
 
+function directives(target: Target): string {
+  const lines = ['Write realistic, specific copy for this niche — real headlines and benefits, no lorem ipsum.'];
+  if (target.color) lines.push(`Use a ${target.color} color palette.`);
+  if (target.layout) lines.push(`Composition: ${target.layout}.`);
+  lines.push(
+    'For images, derive a keyword from the business and use https://loremflickr.com/{w}/{h}/{keyword} for RELEVANT photos ' +
+      '(e.g. a restaurant → "restaurant,food"); for people/avatars (testimonials, team) use https://i.pravatar.cc/{size}?u={unique-id}; ' +
+      'for plain placeholders use https://placehold.co/{w}x{h}. Pick images that actually fit the business — never a random/mismatched photo, never an empty src.',
+  );
+  return lines.join('\n');
+}
+
 export function buildGenerationPrompt(target: Target, guide: Guide): { system: string; prompt: string } {
   const examples = pickExamples(target, guide)
     .map((e, i) => `Example ${i + 1}:\n${e}`)
     .join('\n\n');
   const prompt = [
     `Generate a Divi 5 "${target.type}" section for a ${target.style} ${target.niche} website.`,
-    'Write realistic, specific copy for this niche (no lorem ipsum). Use https://picsum.photos/seed/{keyword}/{w}/{h} for any images.',
+    directives(target),
     '',
     '=== DIVI 5 SCHEMA ===',
     guide.schema,

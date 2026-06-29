@@ -23,6 +23,8 @@ export interface RunDeps {
   guide: Guide;
   llm: LlmClient;
   validate: (json: string) => Promise<ValidationResult>;
+  /** Swap keyword placeholder image URLs for real stock photos (e.g. Pexels). */
+  resolveImages?: (json: string) => Promise<string>;
   isDuplicate: (hash: string) => Promise<boolean>;
   upload: (hash: string, json: string) => Promise<UploadResult>;
   /** Render the section to real screenshots; returns preview keys + a perceptual hash. */
@@ -59,6 +61,10 @@ export async function runPipeline(deps: RunDeps): Promise<RunSummary> {
         continue;
       }
 
+      // Swap placeholder images for real stock photos (after validation; URL-for-URL,
+      // so structure is unchanged). Hash + render + download all see the real images.
+      if (deps.resolveImages) json = await deps.resolveImages(json);
+
       const hash = contentHash(json);
       if (await deps.isDuplicate(hash)) {
         summary.deduped++;
@@ -88,7 +94,8 @@ export async function runPipeline(deps: RunDeps): Promise<RunSummary> {
         type: seo.axes.type,
         niche: seo.axes.niche,
         style: seo.axes.style,
-        colors: seo.axes.colors,
+        // Record the driven variation color first, then any colors the SEO step inferred.
+        colors: target.color ? [target.color, ...seo.axes.colors.filter((c) => c !== target.color)] : seo.axes.colors,
         diviJsonBlobKey,
         previewImageKeys,
         contentHash: hash,
