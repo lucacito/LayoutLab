@@ -1,4 +1,4 @@
-import { and, eq, ne, asc, desc } from 'drizzle-orm';
+import { and, eq, ne, asc, desc, sql } from 'drizzle-orm';
 import { db } from '@/db/client';
 import { layouts, packs, packLayouts } from '@/db/schema';
 import { buildLayoutFilters } from './query-builder';
@@ -27,6 +27,14 @@ export async function listRelatedLayouts(type: string, excludeId: string, limit 
     .where(and(eq(layouts.status, 'published'), eq(layouts.type, type), ne(layouts.id, excludeId)))
     .orderBy(desc(layouts.publishedAt))
     .limit(limit);
+}
+
+/** Published siblings in a variant group (same family, different columns/icons). */
+export async function listVariantSiblings(group: string): Promise<LayoutRow[]> {
+  return db
+    .select()
+    .from(layouts)
+    .where(and(eq(layouts.status, 'published'), sql`${layouts.variant}->>'group' = ${group}`));
 }
 
 export async function getLayoutBySlug(slug: string): Promise<LayoutRow | null> {

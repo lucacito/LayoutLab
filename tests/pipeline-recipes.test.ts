@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { MATRIX, targetKey, planTargets, buildVariants, buildGenerationPrompt, buildRepairPrompt } from '@/pipeline/recipes';
+import { MATRIX, targetKey, planTargets, buildVariants, buildVariantSet, buildGenerationPrompt, buildRepairPrompt } from '@/pipeline/recipes';
 import { AXIS_VALUES } from '@/lib/catalog/filters';
 
 describe('coverage matrix + plan', () => {
@@ -37,6 +37,18 @@ describe('buildVariants', () => {
   it('handles multiple types and is deterministic', () => {
     expect(buildVariants(['hero', 'cta'], 3)).toHaveLength(6);
     expect(buildVariants(['hero'], 4)).toEqual(buildVariants(['hero'], 4));
+  });
+});
+
+describe('buildVariantSet', () => {
+  it('crosses columns × icons into one switchable group', () => {
+    const set = buildVariantSet({ type: 'features', niche: 'saas', style: 'minimal' }, [2, 3, 4], ['none', 'top', 'left']);
+    expect(set).toHaveLength(9);
+    expect(new Set(set.map((t) => t.variant!.group)).size).toBe(1);
+    expect(set.every((t) => t.type === 'features' && t.layout?.includes('columns'))).toBe(true);
+    const c3top = set.find((t) => t.variant!.columns === 3 && t.variant!.icons === 'top');
+    expect(c3top?.layout).toContain('3 equal columns');
+    expect(c3top?.layout).toContain('on top');
   });
 });
 

@@ -10,7 +10,7 @@ import { eq } from 'drizzle-orm';
 import { db } from '@/db/client';
 import { layouts } from '@/db/schema';
 import { claudeCliClient } from './llm';
-import { MATRIX, planTargets, buildVariants, loadGrounding, type Target } from './recipes';
+import { MATRIX, planTargets, buildVariants, buildVariantSet, loadGrounding, type Target } from './recipes';
 import { validateLayout } from './validate';
 import { uploadLayout, uploadScreenshot } from './upload';
 import { realRenderDeps, renderLayout } from './render';
@@ -42,8 +42,8 @@ async function coveredKeys(): Promise<Set<string>> {
 
 async function main() {
   const mode = process.argv[2];
-  if (mode !== 'batch' && mode !== 'drip' && mode !== 'vary') {
-    console.log('Usage: npm run pipeline -- <batch|drip [--count=N]|vary [--type=hero,cta,…] [--count=N]> [--dry-run]');
+  if (mode !== 'batch' && mode !== 'drip' && mode !== 'vary' && mode !== 'set') {
+    console.log('Usage: npm run pipeline -- <batch|drip [--count=N]|vary [--type=] [--count=N]|set [--type= --niche= --style= --columns=2,3,4 --icons=none,top,left]> [--dry-run]');
     process.exitCode = 1;
     return;
   }
@@ -56,7 +56,12 @@ async function main() {
   // it intentionally bypasses the type|niche|style coverage skip — content-hash dedup
   // still prevents exact repeats. `batch`/`drip` walk the curated matrix, skipping covered combos.
   let targets: Target[];
-  if (mode === 'vary') {
+  if (mode === 'set') {
+    const base = { type: arg('type') ?? 'features', niche: arg('niche') ?? 'saas', style: arg('style') ?? 'minimal', color: arg('color') };
+    const columns = (arg('columns') ?? '2,3,4').split(',').map(Number).filter((n) => n > 0);
+    const icons = (arg('icons') ?? 'none,top,left').split(',').map((s) => s.trim()).filter(Boolean) as ('none' | 'top' | 'left')[];
+    targets = buildVariantSet(base, columns, icons);
+  } else if (mode === 'vary') {
     const types = (arg('type') ?? 'hero,cta,features,pricing,testimonials,faq,contact,gallery')
       .split(',').map((s) => s.trim()).filter(Boolean);
     targets = buildVariants(types, Number(arg('count') ?? '3'));

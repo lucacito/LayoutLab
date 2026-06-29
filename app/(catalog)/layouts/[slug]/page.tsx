@@ -3,7 +3,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { env } from '@/lib/env';
-import { getLayoutBySlug, getPacksForLayout, listRelatedLayouts } from '@/lib/catalog/queries';
+import { getLayoutBySlug, getPacksForLayout, listRelatedLayouts, listVariantSiblings } from '@/lib/catalog/queries';
 import { assetUrl } from '@/lib/blob';
 import { buildLayoutMetadata, productJsonLd, breadcrumbJsonLd } from '@/lib/seo';
 import { axisLabel } from '@/lib/seo/taxonomy-copy';
@@ -20,6 +20,7 @@ import { auth } from '@/lib/auth';
 import { FreeDownloadGate } from '@/components/FreeDownloadGate';
 import { BookmarkButton } from '@/components/bookmarks/BookmarkButton';
 import { RelatedElements } from '@/components/RelatedElements';
+import { VariantSwitcher } from '@/components/VariantSwitcher';
 import { StarRating } from '@/components/ratings/StarRating';
 import { Stars } from '@/components/ratings/Stars';
 import { RewardsProgress } from '@/components/rewards/RewardsProgress';
@@ -46,6 +47,7 @@ export default async function LayoutPage({ params }: { params: Promise<{ slug: s
 
   const packs = await getPacksForLayout(layout.id);
   const related = await listRelatedLayouts(layout.type, layout.id, 6);
+  const siblings = layout.variant?.group ? await listVariantSiblings(layout.variant.group) : [];
   const [captureEmail, session] = await Promise.all([readCaptureEmail(), auth()]);
   const captured = Boolean(captureEmail || session?.user);
   const site = env.NEXT_PUBLIC_SITE_URL;
@@ -77,6 +79,8 @@ export default async function LayoutPage({ params }: { params: Promise<{ slug: s
         </div>
         {layout.ratingCount > 0 && <Stars average={ratingAvg} count={layout.ratingCount} className="mt-3" />}
         {layout.description && <p className="mt-4 max-w-2xl text-body text-muted">{layout.description}</p>}
+
+        <VariantSwitcher current={layout} siblings={siblings} />
 
         <Card className="mt-6 flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
           <div>

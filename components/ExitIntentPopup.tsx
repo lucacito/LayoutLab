@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import { Icon } from '@/components/ui/Icon';
 
-const SHOWN_KEY = 'll_exit_shown';
+const SHOWN_KEY = 'll_offer_shown'; // shared with the scroll offer — only one offer per session
 
 // Exit-intent lead capture: when the cursor leaves the top of the viewport (intent
 // to leave), offer a free-pack lead magnet. Shows once per session; arms after a
