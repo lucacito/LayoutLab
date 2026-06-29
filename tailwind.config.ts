@@ -6,7 +6,7 @@ export default {
     extend: {
       colors: {
         navy: '#0B3558',
-        action: '#006BFF',
+        action: '#635BFF',
         paper: '#FFFFFF',
         mist: '#F8F9FB',
         fog: '#E7EDF6',

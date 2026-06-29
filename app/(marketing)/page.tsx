@@ -42,55 +42,58 @@ export default async function HomePage() {
 
   return (
     <main>
-      {/* Hero */}
-      <section className="px-4 pt-6">
-        <Container>
-          <div className="relative overflow-hidden rounded-[28px] bg-navy px-6 py-20 text-center md:py-28">
-            <div
-              className="pointer-events-none absolute inset-0"
-              style={{
-                background:
-                  'radial-gradient(55% 80% at 18% 0%, rgba(0,107,255,0.55), transparent), radial-gradient(50% 75% at 88% 25%, rgba(124,58,237,0.45), transparent), radial-gradient(45% 60% at 60% 100%, rgba(14,159,110,0.30), transparent)',
-              }}
+      {/* Hero — full-bleed */}
+      <section className="relative isolate overflow-hidden bg-ink text-paper">
+        {/* colored mesh base (shows until /hero-bg.jpg is added; the image covers it) */}
+        <div
+          className="absolute inset-0 -z-20"
+          style={{
+            background:
+              'radial-gradient(60% 90% at 30% 0%, rgba(99,91,255,0.55), transparent), radial-gradient(55% 80% at 85% 30%, rgba(0,153,255,0.45), transparent), #07070B',
+          }}
+        />
+        <div className="absolute inset-0 -z-10 bg-cover bg-center" style={{ backgroundImage: "url('/hero-bg.jpg')" }} />
+        <div className="absolute inset-0 -z-10 bg-gradient-to-b from-ink/70 via-ink/40 to-ink/80" />
+        <div className="mx-auto max-w-3xl px-4 py-24 text-center md:py-36">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-paper/10 px-3 py-1 text-small font-semibold text-paper backdrop-blur">
+            <Icon name="bolt" size={16} className="text-action" /> Free Divi 5 layouts — no account needed
+          </span>
+          <h1 className="mt-5 text-h1 text-paper">Free Divi 5 sections, ready to import.</h1>
+          <p className="mx-auto mt-5 max-w-xl text-lead text-paper/85">
+            Browse a growing library of validated layouts. Click a section, download the JSON, and import it into Divi 5 in
+            seconds — free to start, premium packs when you scale.
+          </p>
+
+          <form action="/browse" className="mx-auto mt-9 flex max-w-2xl items-center gap-1 rounded-full bg-paper p-2 shadow-lg">
+            <Icon name="search" size={22} className="ml-3 text-muted" />
+            <input
+              name="q"
+              type="search"
+              placeholder="Search heroes, pricing, landing pages…"
+              aria-label="Search layouts"
+              className="min-w-0 flex-1 bg-transparent px-2 py-2 text-body text-navy outline-none placeholder:text-muted"
             />
-            <div className="relative mx-auto max-w-3xl">
-              <h1 className="text-h1 text-paper">Stop starting from a blank page.</h1>
-              <p className="mx-auto mt-5 max-w-xl text-lead text-paper/80">
-                Browse a growing library of validated, import-ready Divi 5 layouts — download the JSON and import in seconds.
-              </p>
+            <button
+              type="submit"
+              aria-label="Search"
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-action text-paper transition hover:brightness-110"
+            >
+              <Icon name="arrow_forward" size={22} />
+            </button>
+          </form>
 
-              <form action="/browse" className="mx-auto mt-9 flex max-w-2xl items-center gap-1 rounded-full bg-paper p-2 shadow-lg">
-                <Icon name="search" size={22} className="ml-3 text-muted" />
-                <input
-                  name="q"
-                  type="search"
-                  placeholder="What kind of layout do you need?"
-                  aria-label="Search layouts"
-                  className="min-w-0 flex-1 bg-transparent px-2 py-2 text-body text-navy outline-none placeholder:text-muted"
-                />
-                <button
-                  type="submit"
-                  aria-label="Search"
-                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-action text-paper transition hover:brightness-110"
-                >
-                  <Icon name="arrow_forward" size={22} />
-                </button>
-              </form>
-
-              <div className="mt-5 flex flex-wrap justify-center gap-2">
-                {PILLS.map((p) => (
-                  <a
-                    key={p.href}
-                    href={p.href}
-                    className="rounded-full bg-paper/15 px-4 py-1.5 text-small font-medium text-paper backdrop-blur transition hover:bg-paper/25"
-                  >
-                    {p.label}
-                  </a>
-                ))}
-              </div>
-            </div>
+          <div className="mt-5 flex flex-wrap justify-center gap-2">
+            {PILLS.map((p) => (
+              <a
+                key={p.href}
+                href={p.href}
+                className="rounded-full bg-paper/10 px-4 py-1.5 text-small font-medium text-paper backdrop-blur transition hover:bg-paper/20"
+              >
+                {p.label}
+              </a>
+            ))}
           </div>
-        </Container>
+        </div>
       </section>
 
       {/* Listed recently */}
