@@ -16,7 +16,8 @@
     "db:migrate": "drizzle-kit migrate",
     "db:seed": "tsx db/seed.ts",
     "stripe:setup": "tsx scripts/stripe-setup.ts",
-    "pipeline": "tsx pipeline/index.ts"
+    "pipeline": "tsx pipeline/index.ts",
+    "seo:copy": "tsx pipeline/seo-copy.ts"
   },
   "dependencies": {
     "@auth/drizzle-adapter": "^1.11.2",
