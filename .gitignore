@@ -15,3 +15,6 @@ test-results
 next-env.d.ts
 .claude/settings.local.json
 db/migrations/meta/_journal.json.bak
+
+# Phase 3b local render demo artifacts
+public/screenshots/
