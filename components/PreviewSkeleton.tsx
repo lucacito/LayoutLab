@@ -118,14 +118,22 @@ function Skeleton({ archetype, skin }: { archetype: PreviewArchetype; skin: Prev
           <div className="grid flex-1 grid-cols-2 gap-2">{[0, 1].map((i) => <div key={i} style={{ background: skin.block, borderRadius: 5 }} />)}</div>
         </div>
       );
-    case 'pack':
+    case 'pack': {
+      // a deck of layout cards: two offset cards behind + a front card with a
+      // mini thumbnail + lines, so it reads as "a bundle of layouts".
+      const ink = skin.onDark ? 'rgba(255,255,255,0.22)' : 'rgba(11,53,88,0.13)';
       return (
         <div className="relative h-full">
-          {[0, 1, 2].map((i) => (
-            <div key={i} className="absolute rounded-md" style={{ inset: 0, background: skin.block, opacity: 0.5 + i * 0.18, transform: `translate(${i * 7}px, ${i * 7}px)` }} />
-          ))}
+          <div className="absolute rounded-md" style={{ inset: 0, background: skin.block, opacity: 0.45, transform: 'translate(16px, 16px)' }} />
+          <div className="absolute rounded-md" style={{ inset: 0, background: skin.block, opacity: 0.7, transform: 'translate(8px, 8px)' }} />
+          <div className="absolute flex flex-col gap-2 rounded-md p-3" style={{ inset: 0, background: skin.block }}>
+            <div style={{ height: '46%', borderRadius: 4, background: ink }} />
+            <div style={{ height: 7, width: '70%', borderRadius: 3, background: ink }} />
+            <div style={{ height: 7, width: '48%', borderRadius: 3, background: ink }} />
+          </div>
         </div>
       );
+    }
   }
 }
 
