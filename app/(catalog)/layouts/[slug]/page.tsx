@@ -11,6 +11,9 @@ import { JsonLd } from '@/components/JsonLd';
 import { PackCard } from '@/components/PackCard';
 import { TrackView } from '@/components/TrackView';
 import { Container } from '@/components/ui/Container';
+import { readCaptureEmail } from '@/lib/capture/cookie';
+import { auth } from '@/lib/auth';
+import { FreeDownloadGate } from '@/components/FreeDownloadGate';
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
@@ -32,6 +35,8 @@ export default async function LayoutPage({ params }: { params: Promise<{ slug: s
   if (!layout) notFound();
 
   const packs = await getPacksForLayout(layout.id);
+  const [captureEmail, session] = await Promise.all([readCaptureEmail(), auth()]);
+  const captured = Boolean(captureEmail || session?.user);
   const site = env.NEXT_PUBLIC_SITE_URL;
   const url = `${site}/layouts/${layout.slug}`;
   const cover = layout.previewImageKeys[0] ? assetUrl(layout.previewImageKeys[0]) : undefined;
@@ -47,6 +52,11 @@ export default async function LayoutPage({ params }: { params: Promise<{ slug: s
         <h1 className="mt-4 text-h2 text-navy">{layout.title}</h1>
         <p className="mt-1 text-muted">{layout.type} · {layout.niche} · {layout.style}</p>
         {layout.description && <p className="mt-3 max-w-2xl text-body text-muted">{layout.description}</p>}
+
+        <div className="mt-5">
+          <FreeDownloadGate layoutId={layout.id} slug={layout.slug} captured={captured} />
+          <p className="mt-2 text-small text-muted">Free · no account needed · imports into Divi 5.</p>
+        </div>
 
         <div className="mt-6"><ScreenshotGallery keys={layout.previewImageKeys} title={layout.title} type={layout.type} color={layout.colors?.[0]} layoutStyle={layout.style} /></div>
 
