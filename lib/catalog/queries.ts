@@ -1,4 +1,4 @@
-import { and, eq, asc, desc } from 'drizzle-orm';
+import { and, eq, ne, asc, desc } from 'drizzle-orm';
 import { db } from '@/db/client';
 import { layouts, packs, packLayouts } from '@/db/schema';
 import { buildLayoutFilters } from './query-builder';
@@ -17,6 +17,16 @@ export async function listPublishedLayouts(): Promise<LayoutRow[]> {
   return db.select().from(layouts)
     .where(eq(layouts.status, 'published'))
     .orderBy(desc(layouts.publishedAt), desc(layouts.createdAt));
+}
+
+/** Sibling elements of the same type (variant navigation) — same type, others first by niche match. */
+export async function listRelatedLayouts(type: string, excludeId: string, limit = 6): Promise<LayoutRow[]> {
+  return db
+    .select()
+    .from(layouts)
+    .where(and(eq(layouts.status, 'published'), eq(layouts.type, type), ne(layouts.id, excludeId)))
+    .orderBy(desc(layouts.publishedAt))
+    .limit(limit);
 }
 
 export async function getLayoutBySlug(slug: string): Promise<LayoutRow | null> {

@@ -1,4 +1,4 @@
-import { listPacks, listLayouts, listPublishedLayouts, type LayoutRow } from '@/lib/catalog/queries';
+import { listPacks, listLayouts, listPublishedLayouts, facetCounts, type LayoutRow } from '@/lib/catalog/queries';
 import { parseFilters } from '@/lib/catalog/filters';
 import { AXIS_META, NICHE_LABELS } from '@/lib/nav/menu-data';
 import { Container } from '@/components/ui/Container';
@@ -9,6 +9,7 @@ import { Icon } from '@/components/ui/Icon';
 import { PackCard } from '@/components/PackCard';
 import { RecentCarousel } from '@/components/RecentCarousel';
 import { CategorySection } from '@/components/CategorySection';
+import { ElementDirectory } from '@/components/ElementDirectory';
 
 export const dynamic = 'force-dynamic';
 
@@ -57,6 +58,13 @@ export default async function HomePage() {
       .sort((a, b) => b.items.length - a.items.length);
   } catch {
     industries = [];
+  }
+
+  let counts: Awaited<ReturnType<typeof facetCounts>> = { type: {}, niche: {}, style: {}, color: {} };
+  try {
+    counts = await facetCounts();
+  } catch {
+    /* keep empty counts */
   }
 
   return (
@@ -123,6 +131,9 @@ export default async function HomePage() {
           </Container>
         </section>
       )}
+
+      {/* Every kind of element — compact, exhaustive directory (megamenu-style) */}
+      <ElementDirectory counts={counts} />
 
       {/* Browse by industry — one section per niche */}
       {industries.length > 0 && (

@@ -3,7 +3,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { env } from '@/lib/env';
-import { getLayoutBySlug, getPacksForLayout } from '@/lib/catalog/queries';
+import { getLayoutBySlug, getPacksForLayout, listRelatedLayouts } from '@/lib/catalog/queries';
 import { assetUrl } from '@/lib/blob';
 import { buildLayoutMetadata, productJsonLd, breadcrumbJsonLd } from '@/lib/seo';
 import { axisLabel } from '@/lib/seo/taxonomy-copy';
@@ -18,6 +18,12 @@ import { Icon } from '@/components/ui/Icon';
 import { readCaptureEmail } from '@/lib/capture/cookie';
 import { auth } from '@/lib/auth';
 import { FreeDownloadGate } from '@/components/FreeDownloadGate';
+import { BookmarkButton } from '@/components/bookmarks/BookmarkButton';
+import { RelatedElements } from '@/components/RelatedElements';
+import { StarRating } from '@/components/ratings/StarRating';
+import { Stars } from '@/components/ratings/Stars';
+import { RewardsProgress } from '@/components/rewards/RewardsProgress';
+import { ratingAverage } from '@/lib/ratings/compute';
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
@@ -39,11 +45,13 @@ export default async function LayoutPage({ params }: { params: Promise<{ slug: s
   if (!layout) notFound();
 
   const packs = await getPacksForLayout(layout.id);
+  const related = await listRelatedLayouts(layout.type, layout.id, 6);
   const [captureEmail, session] = await Promise.all([readCaptureEmail(), auth()]);
   const captured = Boolean(captureEmail || session?.user);
   const site = env.NEXT_PUBLIC_SITE_URL;
   const url = `${site}/layouts/${layout.slug}`;
   const cover = layout.previewImageKeys[0] ? assetUrl(layout.previewImageKeys[0]) : undefined;
+  const ratingAvg = ratingAverage(layout.ratingSum, layout.ratingCount);
 
   return (
     <main className="py-12">
@@ -67,7 +75,18 @@ export default async function LayoutPage({ params }: { params: Promise<{ slug: s
               </Link>
             ))}
         </div>
+        {layout.ratingCount > 0 && <Stars average={ratingAvg} count={layout.ratingCount} className="mt-3" />}
         {layout.description && <p className="mt-4 max-w-2xl text-body text-muted">{layout.description}</p>}
+
+        <Card className="mt-6 flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-small font-semibold uppercase tracking-wide text-muted">Rate this element</p>
+            <div className="mt-2">
+              <StarRating layoutId={layout.id} slug={layout.slug} initialAverage={ratingAvg} initialCount={layout.ratingCount} />
+            </div>
+          </div>
+          <RewardsProgress className="w-full sm:w-80" />
+        </Card>
 
         <Card className="mt-6 flex flex-col gap-5 p-6 sm:flex-row sm:items-center sm:justify-between">
           <div>
@@ -80,7 +99,8 @@ export default async function LayoutPage({ params }: { params: Promise<{ slug: s
               ))}
             </ul>
           </div>
-          <div className="shrink-0">
+          <div className="flex shrink-0 items-center gap-3">
+            <BookmarkButton slug={layout.slug} />
             <FreeDownloadGate layoutId={layout.id} slug={layout.slug} captured={captured} />
           </div>
         </Card>
@@ -95,6 +115,8 @@ export default async function LayoutPage({ params }: { params: Promise<{ slug: s
             </div>
           </section>
         )}
+
+        <RelatedElements type={layout.type} currentStyle={layout.style} related={related} />
       </Container>
     </main>
   );

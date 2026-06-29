@@ -74,6 +74,9 @@ export const layouts = pgTable('layouts', {
     keywords?: string[];
   }>(),
   status: layoutStatus('status').notNull().default('pending'),
+  // Denormalized rating aggregate for fast catalog display (avg = sum / count).
+  ratingCount: integer('rating_count').notNull().default(0),
+  ratingSum: integer('rating_sum').notNull().default(0),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   publishedAt: timestamp('published_at'),
 }, (t) => ({
@@ -186,6 +189,21 @@ export const emailCaptures = pgTable('email_captures', {
   createdAt: timestamp('created_at').notNull().defaultNow(),
   loopsSynced: boolean('loops_synced').notNull().default(false),
 });
+
+// ---- Element ratings ------------------------------------------------------
+// One rating per (layout, rater). raterId is an anonymous client id (no account
+// needed) or the user id when signed in.
+export const ratings = pgTable('ratings', {
+  id: text('id').primaryKey(),
+  layoutId: text('layout_id').notNull().references(() => layouts.id, { onDelete: 'cascade' }),
+  raterId: text('rater_id').notNull(),
+  userId: text('user_id').references(() => users.id, { onDelete: 'set null' }),
+  stars: integer('stars').notNull(),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+}, (t) => ({
+  layoutRaterUniq: uniqueIndex('ratings_layout_rater_uniq').on(t.layoutId, t.raterId),
+  layoutIdx: index('ratings_layout_idx').on(t.layoutId),
+}));
 
 // ---- Taxonomy landing pages (Phase 6a) -----------------------------------
 export const taxonomyPages = pgTable('taxonomy_pages', {
