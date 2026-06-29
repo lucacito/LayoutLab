@@ -17,7 +17,9 @@
     "db:seed": "tsx db/seed.ts",
     "stripe:setup": "tsx scripts/stripe-setup.ts",
     "pipeline": "tsx pipeline/index.ts",
-    "seo:copy": "tsx pipeline/seo-copy.ts"
+    "seo:copy": "tsx pipeline/seo-copy.ts",
+    "render": "tsx pipeline/render-cli.ts",
+    "render:demo": "tsx scripts/render-demo.ts"
   },
   "dependencies": {
     "@auth/drizzle-adapter": "^1.11.2",

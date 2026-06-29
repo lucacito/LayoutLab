@@ -8,7 +8,11 @@ import { PreviewSkeleton } from '@/components/PreviewSkeleton';
 // screenshot is present, this renders the actual image automatically.
 function isRealScreenshot(src: string | null | undefined): boolean {
   if (!src) return false;
-  return /blob\.vercel-storage\.com/.test(src) || /^layouts\/.+\.(png|jpe?g|webp)$/i.test(src);
+  return (
+    /blob\.vercel-storage\.com/.test(src) ||
+    /^layouts\/.+\.(png|jpe?g|webp)$/i.test(src) ||
+    /^\/screenshots\/.+\.(png|jpe?g|webp)$/i.test(src) // locally-served renders (Phase 3b demo)
+  );
 }
 
 export function PreviewImage({
