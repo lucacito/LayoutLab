@@ -88,7 +88,8 @@ export async function runPipeline(deps: RunDeps): Promise<RunSummary> {
         type: seo.axes.type,
         niche: seo.axes.niche,
         style: seo.axes.style,
-        colors: seo.axes.colors,
+        // Record the driven variation color first, then any colors the SEO step inferred.
+        colors: target.color ? [target.color, ...seo.axes.colors.filter((c) => c !== target.color)] : seo.axes.colors,
         diviJsonBlobKey,
         previewImageKeys,
         contentHash: hash,
