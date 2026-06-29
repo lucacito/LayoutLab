@@ -3,17 +3,20 @@ import Link from 'next/link';
 import type { LayoutRow } from '@/lib/catalog/queries';
 import { PreviewImage } from '@/components/PreviewImage';
 
-export function LayoutCard({ layout }: { layout: LayoutRow }) {
+export function LayoutCard({ layout, flat = false }: { layout: LayoutRow; flat?: boolean }) {
   const cover = layout.previewImageKeys[0];
   return (
     <Link
       href={`/layouts/${layout.slug}`}
-      className="group block overflow-hidden rounded-card border border-border bg-paper shadow-soft transition hover:-translate-y-0.5"
+      className={`group block overflow-hidden rounded-card border border-border bg-paper transition hover:-translate-y-0.5 ${flat ? '' : 'shadow-soft'}`}
     >
       <PreviewImage
         src={cover}
         alt={layout.title}
         label={layout.type}
+        type={layout.type}
+        color={layout.colors?.[0]}
+        layoutStyle={layout.style}
         sizes="(max-width: 768px) 100vw, 33vw"
         className="aspect-[4/3]"
         imageClassName="transition group-hover:scale-[1.02]"

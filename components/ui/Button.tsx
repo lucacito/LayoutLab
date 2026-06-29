@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 
-const base = 'inline-flex h-12 items-center justify-center rounded-button px-6 text-base font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-action focus-visible:ring-offset-2 disabled:opacity-40';
+const base = 'inline-flex h-10 items-center justify-center rounded-full px-5 text-small font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-action focus-visible:ring-offset-2 disabled:opacity-40';
 const variants = {
   primary: 'bg-action text-paper hover:brightness-110',
   secondary: 'bg-paper text-navy border border-border hover:bg-fog',

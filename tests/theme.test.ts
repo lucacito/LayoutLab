@@ -5,7 +5,7 @@ describe('brand theme tokens', () => {
   const colors = (config.theme?.extend?.colors ?? {}) as Record<string, string>;
   it('defines the core brand colors with exact hex values', () => {
     expect(colors.navy).toBe('#0B3558');
-    expect(colors.action).toBe('#006BFF');
+    expect(colors.action).toBe('#635BFF');
     expect(colors.mist).toBe('#F8F9FB');
     expect(colors.fog).toBe('#E7EDF6');
     expect(colors.muted).toBe('#476788');

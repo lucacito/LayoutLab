@@ -1,0 +1,49 @@
+// Shared navigation data for the desktop megamenu + the mobile menu. Pure +
+// client-safe (no DB). Icons are Material Icons (outlined) ligature names.
+
+export type NavAxis = 'type' | 'niche' | 'style';
+
+export const AXIS_META: Record<NavAxis, Record<string, { icon: string; blurb: string }>> = {
+  type: {
+    hero: { icon: 'web', blurb: 'Above-the-fold openers' },
+    pricing: { icon: 'sell', blurb: 'Plans & price tables' },
+    testimonials: { icon: 'format_quote', blurb: 'Social proof & reviews' },
+    cta: { icon: 'ads_click', blurb: 'Conversion call-to-actions' },
+    features: { icon: 'grid_view', blurb: 'Benefit & feature grids' },
+    faq: { icon: 'quiz', blurb: 'Question & answer blocks' },
+    footer: { icon: 'border_bottom', blurb: 'Site footers' },
+    header: { icon: 'border_top', blurb: 'Navigation headers' },
+    contact: { icon: 'mail', blurb: 'Contact & lead forms' },
+    gallery: { icon: 'photo_library', blurb: 'Image galleries' },
+    blog: { icon: 'article', blurb: 'Article & blog layouts' },
+    full_landing: { icon: 'web_asset', blurb: 'Complete landing pages' },
+  },
+  niche: {
+    saas: { icon: 'cloud', blurb: 'Software & apps' },
+    agency: { icon: 'campaign', blurb: 'Studios & agencies' },
+    restaurant: { icon: 'restaurant', blurb: 'Food & dining' },
+    real_estate: { icon: 'home_work', blurb: 'Property & realty' },
+    fitness: { icon: 'fitness_center', blurb: 'Gyms & wellness' },
+    coaching: { icon: 'school', blurb: 'Coaches & courses' },
+    ecommerce: { icon: 'shopping_cart', blurb: 'Online stores' },
+    nonprofit: { icon: 'volunteer_activism', blurb: 'Causes & charities' },
+    portfolio: { icon: 'palette', blurb: 'Personal & creative' },
+    events: { icon: 'event', blurb: 'Events & conferences' },
+  },
+  style: {
+    minimal: { icon: 'air', blurb: 'Clean & spacious' },
+    bold: { icon: 'bolt', blurb: 'High-impact & loud' },
+    dark: { icon: 'dark_mode', blurb: 'Dark-themed' },
+    corporate: { icon: 'apartment', blurb: 'Professional & formal' },
+    playful: { icon: 'celebration', blurb: 'Fun & friendly' },
+    elegant: { icon: 'diamond', blurb: 'Refined & premium' },
+  },
+};
+
+export type NavMenu = { key: string; label: string; axis: NavAxis; prefix: string; blurb: string };
+
+export const NAV_MENUS: NavMenu[] = [
+  { key: 'type', label: 'Layouts', axis: 'type', prefix: '/type', blurb: 'Browse by section type' },
+  { key: 'niche', label: 'Industries', axis: 'niche', prefix: '/niche', blurb: 'Browse by industry' },
+  { key: 'style', label: 'Styles', axis: 'style', prefix: '/style', blurb: 'Browse by aesthetic' },
+];

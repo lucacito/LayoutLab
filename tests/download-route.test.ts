@@ -1,54 +1,66 @@
 // tests/download-route.test.ts
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-const {
-  requireUser,
-  getUserIdByEmail,
-  getLayoutForDownload,
-  getLayoutPackContext,
-  getEntitlementsForUser,
-  recordDownload,
-  fetchAsset,
-} = vi.hoisted(() => ({
-  requireUser: vi.fn(async () => ({ user: { email: 'buyer@example.com' } })),
-  getUserIdByEmail: vi.fn(async () => 'u1'),
+const h = vi.hoisted(() => ({
+  readCaptureEmail: vi.fn(async () => null as string | null),
+  auth: vi.fn(async () => null as { user?: { email?: string } } | null),
   getLayoutForDownload: vi.fn(async () => ({ id: 'l1', slug: 'bold-saas-hero', diviJsonBlobKey: 'pipeline/out/x.json' })),
-  getLayoutPackContext: vi.fn(async () => ({ packIds: ['p1'], packKindById: { p1: 'paid' } })),
-  getEntitlementsForUser: vi.fn(async () => [] as any[]),
+  getUserIdByEmail: vi.fn(async () => 'u1'),
   recordDownload: vi.fn(async () => {}),
   fetchAsset: vi.fn(async (): Promise<Buffer | null> => Buffer.from('{"content":[]}')),
+  rateLimit: vi.fn(() => ({ ok: true, remaining: 39 })),
 }));
 
-vi.mock('@/lib/auth/admin', () => ({ requireUser }));
-vi.mock('@/lib/account/queries', () => ({ getUserIdByEmail, getLayoutForDownload, getLayoutPackContext, getEntitlementsForUser, recordDownload }));
-vi.mock('@/lib/blob', () => ({ fetchAsset }));
+vi.mock('@/lib/capture/cookie', () => ({ readCaptureEmail: h.readCaptureEmail }));
+vi.mock('@/lib/auth', () => ({ auth: h.auth }));
+vi.mock('@/lib/account/queries', () => ({ getLayoutForDownload: h.getLayoutForDownload, getUserIdByEmail: h.getUserIdByEmail, recordDownload: h.recordDownload }));
+vi.mock('@/lib/blob', () => ({ fetchAsset: h.fetchAsset }));
+vi.mock('@/lib/rate-limit', () => ({ rateLimit: h.rateLimit }));
 
 import { GET } from '@/app/api/download/[layoutId]/route';
-
 const ctx = (id: string) => ({ params: Promise.resolve({ layoutId: id }) });
 const req = () => new Request('http://test/api/download/l1');
 
-beforeEach(() => { getEntitlementsForUser.mockResolvedValue([]); fetchAsset.mockResolvedValue(Buffer.from('{"content":[]}')); recordDownload.mockClear(); });
+beforeEach(() => {
+  h.readCaptureEmail.mockResolvedValue(null);
+  h.auth.mockResolvedValue(null);
+  h.fetchAsset.mockResolvedValue(Buffer.from('{"content":[]}'));
+  h.rateLimit.mockReturnValue({ ok: true, remaining: 39 });
+  h.recordDownload.mockClear();
+});
 
 describe('GET /api/download/[layoutId]', () => {
-  it('403 when the user is not entitled', async () => {
+  it('403 email_required when neither a capture cookie nor a session', async () => {
     const res = await GET(req(), ctx('l1'));
     expect(res.status).toBe(403);
-    expect(recordDownload).not.toHaveBeenCalled();
+    expect(h.recordDownload).not.toHaveBeenCalled();
   });
 
-  it('200 zip when entitled (owns the pack)', async () => {
-    getEntitlementsForUser.mockResolvedValue([{ scope: 'pack:p1', source: 'order', expiresAt: null }]);
+  it('200 zip when a valid capture cookie is present (anonymous)', async () => {
+    h.readCaptureEmail.mockResolvedValue('a@b.com');
     const res = await GET(req(), ctx('l1'));
     expect(res.status).toBe(200);
     expect(res.headers.get('content-type')).toBe('application/zip');
     expect(res.headers.get('content-disposition')).toContain('bold-saas-hero.zip');
-    expect(recordDownload).toHaveBeenCalledWith('u1', 'l1', null);
+    expect(h.recordDownload).toHaveBeenCalled();
   });
 
-  it('404 when the asset is unavailable', async () => {
-    getEntitlementsForUser.mockResolvedValue([{ scope: 'all_access', source: 'subscription', expiresAt: null }]);
-    fetchAsset.mockResolvedValue(null);
+  it('200 zip when signed in without a cookie', async () => {
+    h.auth.mockResolvedValue({ user: { email: 'u@x.com' } });
+    const res = await GET(req(), ctx('l1'));
+    expect(res.status).toBe(200);
+  });
+
+  it('429 when rate-limited (no download)', async () => {
+    h.rateLimit.mockReturnValue({ ok: false, remaining: 0 });
+    const res = await GET(req(), ctx('l1'));
+    expect(res.status).toBe(429);
+    expect(h.recordDownload).not.toHaveBeenCalled();
+  });
+
+  it('404 when the asset is unavailable (entitled by cookie)', async () => {
+    h.readCaptureEmail.mockResolvedValue('a@b.com');
+    h.fetchAsset.mockResolvedValue(null);
     const res = await GET(req(), ctx('l1'));
     expect(res.status).toBe(404);
   });
