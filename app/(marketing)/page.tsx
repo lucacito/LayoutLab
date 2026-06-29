@@ -10,6 +10,13 @@ import { PackCard } from '@/components/PackCard';
 import { RecentCarousel } from '@/components/RecentCarousel';
 import { CategorySection } from '@/components/CategorySection';
 import { ElementDirectory } from '@/components/ElementDirectory';
+import { SocialProof } from '@/components/marketing/SocialProof';
+import { ProblemSolutionProof } from '@/components/marketing/ProblemSolutionProof';
+import { TrustBadges } from '@/components/marketing/TrustBadges';
+import { Testimonials } from '@/components/marketing/Testimonials';
+import { FaqSection } from '@/components/marketing/FaqSection';
+import { CustomBuildCta } from '@/components/marketing/CustomBuildCta';
+import { CtaNote } from '@/components/ui/CtaNote';
 
 export const dynamic = 'force-dynamic';
 
@@ -123,6 +130,10 @@ export default async function HomePage() {
         </div>
       </section>
 
+      {/* Social proof + the classic problem → solution → proof flow */}
+      <SocialProof />
+      <ProblemSolutionProof />
+
       {/* Listed recently */}
       {recent.length > 0 && (
         <section className="py-16">
@@ -131,6 +142,9 @@ export default async function HomePage() {
           </Container>
         </section>
       )}
+
+      {/* Trust signals */}
+      <TrustBadges />
 
       {/* Every kind of element — compact, exhaustive directory (megamenu-style) */}
       <ElementDirectory counts={counts} />
@@ -159,6 +173,9 @@ export default async function HomePage() {
         </section>
       )}
 
+      {/* Testimonials */}
+      <Testimonials />
+
       {/* Featured packs */}
       {packs.length > 0 && (
         <section className="pb-16">
@@ -185,14 +202,21 @@ export default async function HomePage() {
         </Container>
       </section>
 
+      {/* FAQ */}
+      <FaqSection />
+
+      {/* Custom build lead-gen */}
+      <CustomBuildCta />
+
       {/* CTA */}
       <section className="py-16">
         <Container>
           <div className="rounded-card bg-navy px-8 py-16 text-center">
             <h2 className="text-h2 text-paper">Ready to skip the blank page?</h2>
             <p className="mx-auto mt-4 max-w-xl text-lead text-paper/80">Browse the catalog and import a validated Divi 5 layout today.</p>
-            <div className="mt-8 flex justify-center">
+            <div className="mt-8 flex flex-col items-center gap-3">
               <Button href="/browse">Browse layouts</Button>
+              <CtaNote className="text-paper/70" />
             </div>
           </div>
         </Container>

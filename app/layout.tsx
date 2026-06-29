@@ -6,6 +6,7 @@ import { Inter } from 'next/font/google';
 import { Analytics } from '@vercel/analytics/react';
 import { Header } from '@/components/site/Header';
 import { Footer } from '@/components/site/Footer';
+import { AnnouncementBar } from '@/components/site/AnnouncementBar';
 import { BookmarksProvider } from '@/components/bookmarks/BookmarksProvider';
 import { ExitIntentPopup } from '@/components/ExitIntentPopup';
 import { ScrollOffer } from '@/components/ScrollOffer';
@@ -22,6 +23,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     <html lang="en" className={inter.variable}>
       <body className="font-sans">
         <BookmarksProvider>
+          <AnnouncementBar />
           <Header />
           {children}
           <Footer />
