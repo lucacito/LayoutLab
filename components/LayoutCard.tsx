@@ -3,12 +3,12 @@ import Link from 'next/link';
 import type { LayoutRow } from '@/lib/catalog/queries';
 import { PreviewImage } from '@/components/PreviewImage';
 
-export function LayoutCard({ layout }: { layout: LayoutRow }) {
+export function LayoutCard({ layout, flat = false }: { layout: LayoutRow; flat?: boolean }) {
   const cover = layout.previewImageKeys[0];
   return (
     <Link
       href={`/layouts/${layout.slug}`}
-      className="group block overflow-hidden rounded-card border border-border bg-paper shadow-soft transition hover:-translate-y-0.5"
+      className={`group block overflow-hidden rounded-card border border-border bg-paper transition hover:-translate-y-0.5 ${flat ? '' : 'shadow-soft'}`}
     >
       <PreviewImage
         src={cover}

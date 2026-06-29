@@ -1,30 +1,74 @@
 'use client';
 import { useState } from 'react';
 import Link from 'next/link';
+import { AXIS_VALUES } from '@/lib/catalog/filters';
+import { axisLabel } from '@/lib/seo/taxonomy-copy';
+import { Icon } from '@/components/ui/Icon';
+import { Button } from '@/components/ui/Button';
+import { AXIS_META, NAV_MENUS } from '@/lib/nav/menu-data';
 
-export function MobileNav({ links }: { links: { href: string; label: string }[] }) {
+export function MobileNav() {
   const [open, setOpen] = useState(false);
+  const [section, setSection] = useState<string | null>(null);
+  const close = () => {
+    setOpen(false);
+    setSection(null);
+  };
+
   return (
     <div className="md:hidden">
-      <button
-        aria-label="Toggle menu"
-        aria-expanded={open}
-        onClick={() => setOpen((v) => !v)}
-        className="rounded-button p-2 text-navy"
-      >
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="18" x2="21" y2="18" />
-        </svg>
+      <button aria-label="Toggle menu" aria-expanded={open} onClick={() => setOpen((v) => !v)} className="rounded-button p-2 text-navy">
+        <Icon name={open ? 'close' : 'menu'} size={26} />
       </button>
+
       {open && (
-        <div className="absolute left-0 right-0 top-full border-b border-border bg-paper px-6 py-4">
-          <nav className="flex flex-col gap-3">
-            {links.map((l) => (
-              <Link key={l.href} href={l.href} className="text-body text-navy" onClick={() => setOpen(false)}>
-                {l.label}
-              </Link>
-            ))}
-          </nav>
+        <div className="absolute left-0 right-0 top-full max-h-[80vh] overflow-y-auto border-b border-border bg-paper px-4 py-4">
+          <Link href="/browse" onClick={close} className="flex items-center gap-2 rounded-button px-2 py-2.5 text-body font-medium text-navy">
+            <Icon name="grid_view" size={20} className="text-muted" /> Browse all
+          </Link>
+
+          {NAV_MENUS.map((m) => {
+            const isOpen = section === m.key;
+            const meta = AXIS_META[m.axis];
+            return (
+              <div key={m.key} className="border-t border-fog">
+                <button
+                  type="button"
+                  onClick={() => setSection(isOpen ? null : m.key)}
+                  aria-expanded={isOpen}
+                  className="flex w-full items-center justify-between px-2 py-3 text-body font-medium text-navy"
+                >
+                  <span className="flex items-center gap-2">
+                    {m.label}
+                    <span className="rounded-full bg-emerald-100 px-1.5 py-0.5 text-[10px] font-bold leading-none text-emerald-700">FREE</span>
+                  </span>
+                  <Icon name="expand_more" size={20} className={`text-muted transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+                </button>
+                {isOpen && (
+                  <div className="grid grid-cols-2 gap-0.5 pb-2">
+                    {AXIS_VALUES[m.axis].map((v) => (
+                      <Link key={v} href={`${m.prefix}/${v}`} onClick={close} className="flex items-center gap-2.5 rounded-button px-2 py-2 text-small text-navy">
+                        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-button bg-mist text-muted">
+                          <Icon name={meta[v]?.icon ?? 'crop_square'} size={16} />
+                        </span>
+                        <span className="truncate">{axisLabel(v)}</span>
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+
+          <Link href="/pricing" onClick={close} className="flex items-center gap-2 border-t border-fog px-2 py-3 text-body font-medium text-navy">
+            <Icon name="sell" size={20} className="text-muted" /> Pricing
+          </Link>
+          <Link href="/login" onClick={close} className="flex items-center gap-2 border-t border-fog px-2 py-3 text-body font-medium text-navy">
+            <Icon name="login" size={20} className="text-muted" /> Sign in
+          </Link>
+          <div className="mt-3">
+            <Button href="/browse" className="w-full" onClick={close}>Browse layouts</Button>
+          </div>
         </div>
       )}
     </div>
