@@ -20,6 +20,10 @@ import { auth } from '@/lib/auth';
 import { FreeDownloadGate } from '@/components/FreeDownloadGate';
 import { BookmarkButton } from '@/components/bookmarks/BookmarkButton';
 import { RelatedElements } from '@/components/RelatedElements';
+import { StarRating } from '@/components/ratings/StarRating';
+import { Stars } from '@/components/ratings/Stars';
+import { RewardsProgress } from '@/components/rewards/RewardsProgress';
+import { ratingAverage } from '@/lib/ratings/compute';
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
@@ -47,6 +51,7 @@ export default async function LayoutPage({ params }: { params: Promise<{ slug: s
   const site = env.NEXT_PUBLIC_SITE_URL;
   const url = `${site}/layouts/${layout.slug}`;
   const cover = layout.previewImageKeys[0] ? assetUrl(layout.previewImageKeys[0]) : undefined;
+  const ratingAvg = ratingAverage(layout.ratingSum, layout.ratingCount);
 
   return (
     <main className="py-12">
@@ -70,7 +75,18 @@ export default async function LayoutPage({ params }: { params: Promise<{ slug: s
               </Link>
             ))}
         </div>
+        {layout.ratingCount > 0 && <Stars average={ratingAvg} count={layout.ratingCount} className="mt-3" />}
         {layout.description && <p className="mt-4 max-w-2xl text-body text-muted">{layout.description}</p>}
+
+        <Card className="mt-6 flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-small font-semibold uppercase tracking-wide text-muted">Rate this element</p>
+            <div className="mt-2">
+              <StarRating layoutId={layout.id} slug={layout.slug} initialAverage={ratingAvg} initialCount={layout.ratingCount} />
+            </div>
+          </div>
+          <RewardsProgress className="w-full sm:w-80" />
+        </Card>
 
         <Card className="mt-6 flex flex-col gap-5 p-6 sm:flex-row sm:items-center sm:justify-between">
           <div>

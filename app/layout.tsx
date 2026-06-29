@@ -7,6 +7,7 @@ import { Analytics } from '@vercel/analytics/react';
 import { Header } from '@/components/site/Header';
 import { Footer } from '@/components/site/Footer';
 import { BookmarksProvider } from '@/components/bookmarks/BookmarksProvider';
+import { ExitIntentPopup } from '@/components/ExitIntentPopup';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-sans', display: 'swap' });
 
@@ -24,6 +25,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           {children}
           <Footer />
         </BookmarksProvider>
+        <ExitIntentPopup />
         <Analytics />
       </body>
     </html>
