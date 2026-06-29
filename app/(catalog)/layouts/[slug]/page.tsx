@@ -9,6 +9,7 @@ import { ScreenshotGallery } from '@/components/ScreenshotGallery';
 import { Breadcrumbs } from '@/components/Breadcrumbs';
 import { JsonLd } from '@/components/JsonLd';
 import { PackCard } from '@/components/PackCard';
+import { TrackView } from '@/components/TrackView';
 import { Container } from '@/components/ui/Container';
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
@@ -38,6 +39,7 @@ export default async function LayoutPage({ params }: { params: Promise<{ slug: s
   return (
     <main className="py-12">
       <Container>
+        <TrackView event="product_viewed" props={{ kind: 'layout', slug: layout.slug }} />
         <Breadcrumbs crumbs={[{ name: 'Home', url: site }, { name: 'Browse', url: `${site}/browse` }, { name: layout.title, url }]} />
         <JsonLd data={productJsonLd({ name: layout.title, description: layout.description, image: cover, url })} />
         <JsonLd data={breadcrumbJsonLd([{ name: 'Home', url: site }, { name: 'Browse', url: `${site}/browse` }, { name: layout.title, url }])} />

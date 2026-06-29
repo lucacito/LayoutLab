@@ -1,6 +1,7 @@
 // components/BuyButton.tsx
 'use client';
 import { useState } from 'react';
+import { trackEvent } from '@/lib/analytics';
 
 type Props =
   | { kind: 'pack'; packId: string; label: string; plan?: never }
@@ -9,6 +10,7 @@ type Props =
 export function BuyButton(props: Props) {
   const [loading, setLoading] = useState(false);
   async function go() {
+    trackEvent('checkout_started', props.kind === 'pack' ? { kind: 'pack', packId: props.packId } : { kind: 'membership', plan: props.plan });
     setLoading(true);
     try {
       const body = props.kind === 'pack' ? { kind: 'pack', packId: props.packId } : { kind: 'membership', plan: props.plan };

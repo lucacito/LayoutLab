@@ -12,6 +12,7 @@ import { Container } from '@/components/ui/Container';
 import { Button } from '@/components/ui/Button';
 import { BuyButton } from '@/components/BuyButton';
 import { FreePackForm } from '@/components/FreePackForm';
+import { TrackView } from '@/components/TrackView';
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
@@ -40,6 +41,7 @@ export default async function PackPage({ params }: { params: Promise<{ slug: str
   return (
     <main className="py-12">
       <Container>
+        <TrackView event="product_viewed" props={{ kind: 'pack', slug: pack.slug }} />
         <Breadcrumbs crumbs={[{ name: 'Home', url: site }, { name: 'Pricing', url: `${site}/pricing` }, { name: pack.title, url }]} />
         <JsonLd data={productJsonLd({
           name: pack.title, description: pack.description, image: pack.coverImageKey ? assetUrl(pack.coverImageKey) : undefined, url,

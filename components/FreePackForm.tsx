@@ -1,8 +1,10 @@
+'use client';
 import { captureFreePackAction } from '@/lib/capture/actions';
+import { trackEvent } from '@/lib/analytics';
 
 export function FreePackForm({ packId }: { packId: string }) {
   return (
-    <form action={captureFreePackAction.bind(null, packId)} className="flex flex-col gap-2 sm:flex-row sm:items-center">
+    <form action={captureFreePackAction.bind(null, packId)} onSubmit={() => trackEvent('free_capture_submitted', { packId })} className="flex flex-col gap-2 sm:flex-row sm:items-center">
       <input
         name="email"
         type="email"
