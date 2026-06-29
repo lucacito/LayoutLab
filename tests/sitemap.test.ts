@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { sitemapEntries } from '@/lib/seo/sitemap';
+import { AXIS_VALUES } from '@/lib/catalog/filters';
 
 const SITE = 'https://layoutlab.com';
 
@@ -24,7 +25,18 @@ describe('sitemapEntries', () => {
     expect(urls).toContain(`${SITE}/packs/p1`);
   });
 
-  it('total = static(5) + 1 pack + 2 layouts', () => {
-    expect(out).toHaveLength(8);
+  it('includes a URL for every taxonomy axis value', () => {
+    const urls = out.map((e) => e.url);
+    for (const axis of ['type', 'niche', 'style', 'color'] as const) {
+      for (const value of AXIS_VALUES[axis]) {
+        expect(urls).toContain(`${SITE}/${axis}/${value}`);
+      }
+    }
+  });
+
+  it('still includes the static + browse pages', () => {
+    const urls = out.map((e) => e.url);
+    expect(urls).toContain(`${SITE}`);
+    expect(urls).toContain(`${SITE}/browse`);
   });
 });

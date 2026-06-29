@@ -1,4 +1,5 @@
 import type { MetadataRoute } from 'next';
+import { AXIS_VALUES } from '@/lib/catalog/filters';
 
 export function sitemapEntries(i: {
   siteUrl: string;
@@ -12,6 +13,13 @@ export function sitemapEntries(i: {
     { url: `${i.siteUrl}/license`, changeFrequency: 'yearly', priority: 0.3 },
     { url: `${i.siteUrl}/about`, changeFrequency: 'yearly', priority: 0.3 },
   ];
+  const taxonomyEntries: MetadataRoute.Sitemap = (['type', 'niche', 'style', 'color'] as const).flatMap((axis) =>
+    AXIS_VALUES[axis].map((value) => ({
+      url: `${i.siteUrl}/${axis}/${value}`,
+      changeFrequency: 'weekly' as const,
+      priority: 0.7,
+    })),
+  );
   const packEntries: MetadataRoute.Sitemap = i.packs.map((p) => ({
     url: `${i.siteUrl}/packs/${p.slug}`,
     lastModified: p.createdAt,
@@ -24,5 +32,5 @@ export function sitemapEntries(i: {
     changeFrequency: 'monthly',
     priority: 0.6,
   }));
-  return [...staticPages, ...packEntries, ...layoutEntries];
+  return [...staticPages, ...taxonomyEntries, ...packEntries, ...layoutEntries];
 }
