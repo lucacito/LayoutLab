@@ -74,3 +74,15 @@ export async function getStripeCustomerIdByEmail(email: string): Promise<string 
   const rows = await db.select({ cid: users.stripeCustomerId }).from(users).where(eq(users.email, email)).limit(1);
   return rows[0]?.cid ?? null;
 }
+
+export async function getPackForDownload(packId: string): Promise<{ id: string; slug: string } | null> {
+  const rows = await db.select({ id: packs.id, slug: packs.slug }).from(packs)
+    .where(and(eq(packs.id, packId), eq(packs.status, 'published'))).limit(1);
+  return rows[0] ?? null;
+}
+
+export async function getPackLayoutsForDownload(packId: string): Promise<{ id: string; slug: string; diviJsonBlobKey: string }[]> {
+  return db.select({ id: layouts.id, slug: layouts.slug, diviJsonBlobKey: layouts.diviJsonBlobKey })
+    .from(packLayouts).innerJoin(layouts, eq(packLayouts.layoutId, layouts.id))
+    .where(and(eq(packLayouts.packId, packId), eq(layouts.status, 'published')));
+}

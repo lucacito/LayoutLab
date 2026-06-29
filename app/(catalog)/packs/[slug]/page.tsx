@@ -10,9 +10,11 @@ import { Breadcrumbs } from '@/components/Breadcrumbs';
 import { JsonLd } from '@/components/JsonLd';
 import { Container } from '@/components/ui/Container';
 import { Button } from '@/components/ui/Button';
-import { BuyButton } from '@/components/BuyButton';
-import { FreePackForm } from '@/components/FreePackForm';
+import { PackCta } from '@/components/PackCta';
 import { TrackView } from '@/components/TrackView';
+import { auth } from '@/lib/auth';
+import { getUserIdByEmail, getEntitlementsForUser } from '@/lib/account/queries';
+import { canDownloadPack } from '@/lib/stripe/entitlements';
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
@@ -34,6 +36,12 @@ export default async function PackPage({ params }: { params: Promise<{ slug: str
   if (!pack) notFound();
 
   const layouts = await getLayoutsForPack(pack.id);
+
+  const session = await auth();
+  const userId = session?.user?.email ? await getUserIdByEmail(session.user.email) : null;
+  const entitlements = userId ? await getEntitlementsForUser(userId) : [];
+  const entitled = canDownloadPack({ packId: pack.id, userEntitlements: entitlements });
+
   const site = env.NEXT_PUBLIC_SITE_URL;
   const url = `${site}/packs/${pack.slug}`;
   const price = pack.kind === 'free' ? 'Free' : pack.priceCents != null ? `$${(pack.priceCents / 100).toFixed(0)}` : '';
@@ -59,9 +67,7 @@ export default async function PackPage({ params }: { params: Promise<{ slug: str
           <div className="text-right">
             <div className="text-h3 text-action">{price}</div>
             <div className="mt-2">
-              {pack.kind === 'paid'
-                ? <BuyButton kind="pack" packId={pack.id} label="Buy this pack" />
-                : <FreePackForm packId={pack.id} />}
+              <PackCta pack={{ id: pack.id, slug: pack.slug, kind: pack.kind }} entitled={entitled} />
             </div>
           </div>
         </div>

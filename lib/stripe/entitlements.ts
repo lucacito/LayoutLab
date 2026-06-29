@@ -34,3 +34,10 @@ export function canDownloadLayout(input: CanDownloadInput): boolean {
   }
   return false;
 }
+
+/** A pack bundle is downloadable with active all-access OR ownership of pack:<id>. */
+export function canDownloadPack(input: { packId: string; userEntitlements: UserEntitlement[]; now?: Date }): boolean {
+  const now = input.now ?? new Date();
+  if (input.userEntitlements.some((e) => isActiveAllAccess(e, now))) return true;
+  return input.userEntitlements.some((e) => e.scope === `pack:${input.packId}`);
+}
