@@ -8,6 +8,7 @@ import { Header } from '@/components/site/Header';
 import { Footer } from '@/components/site/Footer';
 import { BookmarksProvider } from '@/components/bookmarks/BookmarksProvider';
 import { ExitIntentPopup } from '@/components/ExitIntentPopup';
+import { ScrollOffer } from '@/components/ScrollOffer';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-sans', display: 'swap' });
 
@@ -26,6 +27,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           <Footer />
         </BookmarksProvider>
         <ExitIntentPopup />
+        <ScrollOffer />
         <Analytics />
       </body>
     </html>

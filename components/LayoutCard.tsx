@@ -3,7 +3,7 @@ import Link from 'next/link';
 import type { LayoutRow } from '@/lib/catalog/queries';
 import { PreviewImage } from '@/components/PreviewImage';
 import { BookmarkButton } from '@/components/bookmarks/BookmarkButton';
-import { Stars } from '@/components/ratings/Stars';
+import { CardRating } from '@/components/ratings/CardRating';
 import { ratingAverage } from '@/lib/ratings/compute';
 
 export function LayoutCard({ layout, flat = false }: { layout: LayoutRow; flat?: boolean }) {
@@ -28,7 +28,7 @@ export function LayoutCard({ layout, flat = false }: { layout: LayoutRow; flat?:
       <div className="p-5">
         <h3 className="truncate text-body font-semibold text-navy">{layout.title}</h3>
         <p className="mt-1 text-small capitalize text-muted">{layout.type} · {layout.niche} · {layout.style}</p>
-        <Stars average={ratingAverage(layout.ratingSum, layout.ratingCount)} count={layout.ratingCount} className="mt-2" />
+        <CardRating layoutId={layout.id} slug={layout.slug} initialAverage={ratingAverage(layout.ratingSum, layout.ratingCount)} initialCount={layout.ratingCount} />
       </div>
     </Link>
   );
