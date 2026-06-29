@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { and, eq, inArray, desc } from 'drizzle-orm';
 import { db } from '@/db/client';
 import { users, layouts, packs, packLayouts, entitlements, orders, subscriptions, downloads } from '@/db/schema';
-import type { LayoutRow } from '@/lib/catalog/queries';
+import type { LayoutRow, PackRow } from '@/lib/catalog/queries';
 import { type UserEntitlement, isActiveAllAccess } from '@/lib/stripe/entitlements';
 
 export function summarizeEntitlements(
@@ -51,6 +51,18 @@ export async function getActiveSubscription(userId: string) {
     .where(and(eq(subscriptions.userId, userId), eq(subscriptions.status, 'active')))
     .orderBy(desc(subscriptions.currentPeriodEnd)).limit(1);
   return rows[0] ?? null;
+}
+
+// Packs the user can download the bundle for: all published packs if they hold
+// active all-access, else the published packs they own (pack:<id> entitlement).
+export async function getOwnedPacks(userId: string): Promise<PackRow[]> {
+  const ents = await getEntitlementsForUser(userId);
+  const { allAccess, ownedPackIds } = summarizeEntitlements(ents);
+  if (allAccess) {
+    return db.select().from(packs).where(eq(packs.status, 'published')).orderBy(desc(packs.createdAt));
+  }
+  if (ownedPackIds.length === 0) return [];
+  return db.select().from(packs).where(and(inArray(packs.id, ownedPackIds), eq(packs.status, 'published'))).orderBy(desc(packs.createdAt));
 }
 
 export async function getDownloadableLayouts(userId: string): Promise<LayoutRow[]> {
