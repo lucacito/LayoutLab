@@ -13,6 +13,16 @@ describe('extractJson', () => {
   it('throws when there is no JSON', () => {
     expect(() => extractJson('no json here')).toThrow();
   });
+  it('parses a whole-JSON object whose string values contain braces (Divi block markup)', () => {
+    // Naive brace counting would slice mid-string at the first `}` inside post_content.
+    const obj = { post_title: 'Hero', post_content: '<!-- wp:divi/section {"a":{"b":1}} --><!-- /wp:divi/section -->' };
+    expect(extractJson(JSON.stringify(obj))).toEqual(obj);
+  });
+  it('extracts a brace-heavy JSON object embedded in prose', () => {
+    const obj = { post_content: 'x {"k":"v"} } y' };
+    const text = `Sure!\n${JSON.stringify(obj)}\nHope that helps.`;
+    expect(extractJson(text)).toEqual(obj);
+  });
 });
 
 describe('parseClaudeEnvelope', () => {

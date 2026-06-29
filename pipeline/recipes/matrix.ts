@@ -17,6 +17,13 @@ export const MATRIX: Target[] = [
   { type: 'footer', niche: 'agency', style: 'dark' },
   { type: 'contact', niche: 'real_estate', style: 'corporate' },
   { type: 'gallery', niche: 'portfolio', style: 'playful' },
+  // Fresh section targets (uncovered combos) for live generation.
+  { type: 'hero', niche: 'ecommerce', style: 'bold' },
+  { type: 'cta', niche: 'saas', style: 'minimal' },
+  { type: 'features', niche: 'agency', style: 'bold' },
+  { type: 'testimonials', niche: 'saas', style: 'minimal' },
+  { type: 'pricing', niche: 'fitness', style: 'bold' },
+  { type: 'features', niche: 'coaching', style: 'elegant' },
 ];
 
 export function targetKey(t: Target): string {

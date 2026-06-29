@@ -19,7 +19,8 @@
     "pipeline": "tsx pipeline/index.ts",
     "seo:copy": "tsx pipeline/seo-copy.ts",
     "render": "tsx pipeline/render-cli.ts",
-    "render:demo": "tsx scripts/render-demo.ts"
+    "render:demo": "tsx scripts/render-demo.ts",
+    "rerender": "tsx scripts/rerender.ts"
   },
   "dependencies": {
     "@auth/drizzle-adapter": "^1.11.2",

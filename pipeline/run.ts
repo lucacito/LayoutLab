@@ -25,6 +25,8 @@ export interface RunDeps {
   validate: (json: string) => Promise<ValidationResult>;
   isDuplicate: (hash: string) => Promise<boolean>;
   upload: (hash: string, json: string) => Promise<UploadResult>;
+  /** Render the section to real screenshots; returns preview keys + a perceptual hash. */
+  render?: (input: { title: string; postContent: string; hash: string }) => Promise<{ previewImageKeys: string[]; perceptualHash?: string }>;
   ingest: (payload: IngestPayload) => Promise<{ deduped: boolean }>;
   maxRepairs: number;
   maxBudgetUsd?: number;
@@ -65,7 +67,19 @@ export async function runPipeline(deps: RunDeps): Promise<RunSummary> {
       }
 
       const seo = await generateSeo(json, target, { llm: deps.llm, maxBudgetUsd: deps.maxBudgetUsd });
-      const { diviJsonBlobKey, previewImageKeys } = await deps.upload(hash, json);
+      const { diviJsonBlobKey, previewImageKeys: placeholderPreviews } = await deps.upload(hash, json);
+
+      // Render real screenshots when a renderer is wired; else keep the placeholders.
+      let previewImageKeys = placeholderPreviews;
+      let perceptualHash: string | undefined;
+      if (deps.render) {
+        const parsed = JSON.parse(json) as { post_title?: string; post_content?: string };
+        if (parsed.post_content) {
+          const r = await deps.render({ title: parsed.post_title ?? seo.title, postContent: parsed.post_content, hash });
+          if (r.previewImageKeys.length) previewImageKeys = r.previewImageKeys;
+          perceptualHash = r.perceptualHash;
+        }
+      }
 
       const payload: IngestPayload = {
         slug: seo.slug,
@@ -78,6 +92,7 @@ export async function runPipeline(deps: RunDeps): Promise<RunSummary> {
         diviJsonBlobKey,
         previewImageKeys,
         contentHash: hash,
+        perceptualHash,
         validatorPassed: true,
         seo: { metaTitle: seo.title, metaDescription: seo.metaDescription, keywords: seo.keywords },
         tags: [
