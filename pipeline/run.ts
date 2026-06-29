@@ -23,6 +23,8 @@ export interface RunDeps {
   guide: Guide;
   llm: LlmClient;
   validate: (json: string) => Promise<ValidationResult>;
+  /** Swap keyword placeholder image URLs for real stock photos (e.g. Pexels). */
+  resolveImages?: (json: string) => Promise<string>;
   isDuplicate: (hash: string) => Promise<boolean>;
   upload: (hash: string, json: string) => Promise<UploadResult>;
   /** Render the section to real screenshots; returns preview keys + a perceptual hash. */
@@ -58,6 +60,10 @@ export async function runPipeline(deps: RunDeps): Promise<RunSummary> {
         log(`drop ${target.type}/${target.niche}/${target.style}: ${result.violations.map((v) => v.code).join(',')}`);
         continue;
       }
+
+      // Swap placeholder images for real stock photos (after validation; URL-for-URL,
+      // so structure is unchanged). Hash + render + download all see the real images.
+      if (deps.resolveImages) json = await deps.resolveImages(json);
 
       const hash = contentHash(json);
       if (await deps.isDuplicate(hash)) {

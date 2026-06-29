@@ -14,6 +14,7 @@ import { MATRIX, planTargets, buildVariants, loadGrounding, type Target } from '
 import { validateLayout } from './validate';
 import { uploadLayout, uploadScreenshot } from './upload';
 import { realRenderDeps, renderLayout } from './render';
+import { resolveLayoutImages, pexelsSearcher } from './images';
 import { postIngest } from './ingest';
 import { runPipeline, type RunDeps } from './run';
 
@@ -71,6 +72,7 @@ async function main() {
 
   const hasBlobToken = !!process.env.BLOB_READ_WRITE_TOKEN;
   const renderer = dryRun ? null : await realRenderDeps();
+  const pexelsKey = process.env.PEXELS_API_KEY;
 
   const stubLlm = { complete: async () => '{"content":[]}' };
   const deps: RunDeps = {
@@ -78,6 +80,7 @@ async function main() {
     guide,
     llm: dryRun ? stubLlm : claudeCliClient(),
     validate: dryRun ? async () => ({ valid: true, violations: [] }) : (json) => withTempFile(json, (f) => validateLayout(f)),
+    resolveImages: !dryRun && pexelsKey ? (json) => resolveLayoutImages(json, pexelsSearcher(pexelsKey)) : undefined,
     isDuplicate: async (hash) => {
       if (dryRun) return false;
       const hit = await db.select({ id: layouts.id }).from(layouts).where(eq(layouts.contentHash, hash)).limit(1);
