@@ -24,6 +24,28 @@ export const MATRIX: Target[] = [
   { type: 'testimonials', niche: 'saas', style: 'minimal' },
   { type: 'pricing', niche: 'fitness', style: 'bold' },
   { type: 'features', niche: 'coaching', style: 'elegant' },
+  // Broader fill across the main section types × niches × styles.
+  { type: 'hero', niche: 'restaurant', style: 'bold' },
+  { type: 'hero', niche: 'coaching', style: 'elegant' },
+  { type: 'hero', niche: 'real_estate', style: 'corporate' },
+  { type: 'hero', niche: 'fitness', style: 'bold' },
+  { type: 'cta', niche: 'agency', style: 'dark' },
+  { type: 'cta', niche: 'ecommerce', style: 'bold' },
+  { type: 'cta', niche: 'nonprofit', style: 'minimal' },
+  { type: 'features', niche: 'ecommerce', style: 'bold' },
+  { type: 'features', niche: 'fitness', style: 'bold' },
+  { type: 'features', niche: 'real_estate', style: 'corporate' },
+  { type: 'pricing', niche: 'saas', style: 'minimal' },
+  { type: 'pricing', niche: 'agency', style: 'bold' },
+  { type: 'pricing', niche: 'coaching', style: 'elegant' },
+  { type: 'testimonials', niche: 'agency', style: 'bold' },
+  { type: 'testimonials', niche: 'fitness', style: 'bold' },
+  { type: 'faq', niche: 'saas', style: 'minimal' },
+  { type: 'faq', niche: 'ecommerce', style: 'corporate' },
+  { type: 'contact', niche: 'agency', style: 'dark' },
+  { type: 'contact', niche: 'saas', style: 'minimal' },
+  { type: 'gallery', niche: 'restaurant', style: 'elegant' },
+  { type: 'gallery', niche: 'real_estate', style: 'corporate' },
 ];
 
 export function targetKey(t: Target): string {
