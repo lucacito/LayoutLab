@@ -1,16 +1,20 @@
 // app/(catalog)/layouts/[slug]/page.tsx
 import type { Metadata } from 'next';
+import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { env } from '@/lib/env';
 import { getLayoutBySlug, getPacksForLayout } from '@/lib/catalog/queries';
 import { assetUrl } from '@/lib/blob';
 import { buildLayoutMetadata, productJsonLd, breadcrumbJsonLd } from '@/lib/seo';
+import { axisLabel } from '@/lib/seo/taxonomy-copy';
 import { ScreenshotGallery } from '@/components/ScreenshotGallery';
 import { Breadcrumbs } from '@/components/Breadcrumbs';
 import { JsonLd } from '@/components/JsonLd';
 import { PackCard } from '@/components/PackCard';
 import { TrackView } from '@/components/TrackView';
 import { Container } from '@/components/ui/Container';
+import { Card } from '@/components/ui/Card';
+import { Icon } from '@/components/ui/Icon';
 import { readCaptureEmail } from '@/lib/capture/cookie';
 import { auth } from '@/lib/auth';
 import { FreeDownloadGate } from '@/components/FreeDownloadGate';
@@ -50,13 +54,36 @@ export default async function LayoutPage({ params }: { params: Promise<{ slug: s
         <JsonLd data={breadcrumbJsonLd([{ name: 'Home', url: site }, { name: 'Browse', url: `${site}/browse` }, { name: layout.title, url }])} />
 
         <h1 className="mt-4 text-h2 text-navy">{layout.title}</h1>
-        <p className="mt-1 text-muted">{layout.type} · {layout.niche} · {layout.style}</p>
-        {layout.description && <p className="mt-3 max-w-2xl text-body text-muted">{layout.description}</p>}
-
-        <div className="mt-5">
-          <FreeDownloadGate layoutId={layout.id} slug={layout.slug} captured={captured} />
-          <p className="mt-2 text-small text-muted">Free · no account needed · imports into Divi 5.</p>
+        <div className="mt-3 flex flex-wrap gap-2">
+          {[
+            { axis: 'type', value: layout.type },
+            { axis: 'niche', value: layout.niche },
+            { axis: 'style', value: layout.style },
+          ]
+            .filter((c): c is { axis: string; value: string } => Boolean(c.value))
+            .map((c) => (
+              <Link key={c.axis} href={`/${c.axis}/${c.value}`} className="rounded-full bg-mist px-3 py-1 text-small font-medium text-navy transition hover:bg-fog">
+                {axisLabel(c.value)}
+              </Link>
+            ))}
         </div>
+        {layout.description && <p className="mt-4 max-w-2xl text-body text-muted">{layout.description}</p>}
+
+        <Card className="mt-6 flex flex-col gap-5 p-6 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h2 className="text-section text-navy">Download this section — free</h2>
+            <ul className="mt-3 space-y-1.5 text-small text-muted">
+              {['Divi 5 JSON — import in seconds', 'Commercial license included', 'No account needed'].map((t) => (
+                <li key={t} className="flex items-center gap-2">
+                  <Icon name="check_circle" size={18} className="text-action" /> {t}
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div className="shrink-0">
+            <FreeDownloadGate layoutId={layout.id} slug={layout.slug} captured={captured} />
+          </div>
+        </Card>
 
         <div className="mt-6"><ScreenshotGallery keys={layout.previewImageKeys} title={layout.title} type={layout.type} color={layout.colors?.[0]} layoutStyle={layout.style} /></div>
 
