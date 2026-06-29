@@ -121,14 +121,22 @@ export async function realRenderDeps(): Promise<{ deps: RenderDeps; close: () =>
     async screenshot(url, { width, height }) {
       const page = await browser.newPage({ viewport: { width, height }, deviceScaleFactor: 1 });
       try {
-        await page.goto(url, { waitUntil: 'networkidle', timeout: 45000 });
-        await page.addStyleTag({ content: HIDE_CHROME });
-        await page.waitForTimeout(700);
-        const wrapper = page.locator('.et-l--post').first();
-        if (await wrapper.count()) {
-          const buf = await wrapper.screenshot();
-          return buf;
+        // WP can intermittently prepend PHP warnings (translations_api / "headers
+        // already sent") that blank the render. Reload until the Divi content
+        // wrapper actually has height.
+        for (let attempt = 1; attempt <= 3; attempt++) {
+          await page.goto(url, { waitUntil: 'networkidle', timeout: 45000 });
+          await page.waitForTimeout(700);
+          const wrapper = page.locator('.et-l--post').first();
+          const box = (await wrapper.count()) ? await wrapper.boundingBox() : null;
+          if (box && box.height > 150) {
+            await page.addStyleTag({ content: HIDE_CHROME });
+            await page.waitForTimeout(250);
+            return await wrapper.screenshot();
+          }
+          if (attempt < 3) await page.waitForTimeout(1000);
         }
+        await page.addStyleTag({ content: HIDE_CHROME });
         return await page.screenshot({ fullPage: true });
       } finally {
         await page.close();

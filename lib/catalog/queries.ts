@@ -1,4 +1,4 @@
-import { and, eq, asc } from 'drizzle-orm';
+import { and, eq, asc, desc } from 'drizzle-orm';
 import { db } from '@/db/client';
 import { layouts, packs, packLayouts } from '@/db/schema';
 import { buildLayoutFilters } from './query-builder';
@@ -10,6 +10,13 @@ export type PackRow = typeof packs.$inferSelect;
 export async function listLayouts(f: CatalogFilters): Promise<LayoutRow[]> {
   const { where, orderBy, limit, offset } = buildLayoutFilters(f);
   return db.select().from(layouts).where(where).orderBy(orderBy).limit(limit).offset(offset);
+}
+
+/** All published layouts, newest first — used to build the homepage category sections. */
+export async function listPublishedLayouts(): Promise<LayoutRow[]> {
+  return db.select().from(layouts)
+    .where(eq(layouts.status, 'published'))
+    .orderBy(desc(layouts.publishedAt), desc(layouts.createdAt));
 }
 
 export async function getLayoutBySlug(slug: string): Promise<LayoutRow | null> {

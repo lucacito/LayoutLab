@@ -40,6 +40,36 @@ export const AXIS_META: Record<NavAxis, Record<string, { icon: string; blurb: st
   },
 };
 
+// Human-friendly section titles for each layout type (used on homepage category rows).
+export const TYPE_LABELS: Record<string, string> = {
+  hero: 'Hero sections',
+  pricing: 'Pricing tables',
+  testimonials: 'Testimonials',
+  cta: 'Call-to-action',
+  features: 'Feature grids',
+  faq: 'FAQ sections',
+  footer: 'Footers',
+  header: 'Headers',
+  contact: 'Contact forms',
+  gallery: 'Galleries',
+  blog: 'Blog layouts',
+  full_landing: 'Full landing pages',
+};
+
+// Human-friendly section titles for each industry/niche (homepage category rows).
+export const NICHE_LABELS: Record<string, string> = {
+  saas: 'SaaS',
+  agency: 'Agencies',
+  restaurant: 'Restaurants',
+  real_estate: 'Real estate',
+  fitness: 'Fitness',
+  coaching: 'Coaching',
+  ecommerce: 'E-commerce',
+  nonprofit: 'Nonprofits',
+  portfolio: 'Portfolios',
+  events: 'Events',
+};
+
 export type NavMenu = { key: string; label: string; axis: NavAxis; prefix: string; blurb: string };
 
 export const NAV_MENUS: NavMenu[] = [

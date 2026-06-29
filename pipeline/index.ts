@@ -1,6 +1,8 @@
-// LayoutLab generation pipeline — CLI entry (Phase 3a, no render).
+// LayoutLab generation pipeline — CLI entry (generate → validate → render → ingest).
 //   npm run pipeline -- drip --count=N [--dry-run]
 //   npm run pipeline -- batch [--dry-run]
+// A real run needs: the Docker WP+Divi env up (render), VALIDATOR_CMD set, the web
+// app running (ingest, INGEST_API_TOKEN), and env sourced. Layouts land as `pending`.
 import { writeFile, mkdtemp, rm } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
@@ -10,7 +12,8 @@ import { layouts } from '@/db/schema';
 import { claudeCliClient } from './llm';
 import { MATRIX, planTargets, loadGrounding } from './recipes';
 import { validateLayout } from './validate';
-import { uploadLayout } from './upload';
+import { uploadLayout, uploadScreenshot } from './upload';
+import { realRenderDeps, renderLayout } from './render';
 import { postIngest } from './ingest';
 import { runPipeline, type RunDeps } from './run';
 
@@ -55,6 +58,9 @@ async function main() {
   const ingestToken = process.env.INGEST_API_TOKEN ?? '';
   const maxBudget = process.env.PIPELINE_MAX_BUDGET_USD ? Number(process.env.PIPELINE_MAX_BUDGET_USD) : 1; // per-LLM-call cap (applied to generate + each repair + SEO); not a per-run total
 
+  const hasBlobToken = !!process.env.BLOB_READ_WRITE_TOKEN;
+  const renderer = dryRun ? null : await realRenderDeps();
+
   const stubLlm = { complete: async () => '{"content":[]}' };
   const deps: RunDeps = {
     targets,
@@ -66,7 +72,23 @@ async function main() {
       const hit = await db.select({ id: layouts.id }).from(layouts).where(eq(layouts.contentHash, hash)).limit(1);
       return hit.length > 0;
     },
-    upload: (hash, json) => uploadLayout(hash, json, { hasBlobToken: !!process.env.BLOB_READ_WRITE_TOKEN, outDir: 'pipeline/out' }),
+    upload: (hash, json) => uploadLayout(hash, json, { hasBlobToken, outDir: 'pipeline/out' }),
+    render: renderer
+      ? async ({ title, postContent, hash }) => {
+          try {
+            const { shots, perceptualHash } = await renderLayout({ title, postContent }, renderer.deps);
+            const keys: string[] = [];
+            for (const label of ['desktop', 'mobile'] as const) {
+              const shot = shots.find((s) => s.label === label);
+              if (shot) keys.push(await uploadScreenshot(hash, label, shot.buffer, { hasBlobToken }));
+            }
+            return { previewImageKeys: keys, perceptualHash };
+          } catch (e) {
+            console.warn(`[pipeline] render failed for ${hash.slice(0, 12)}: ${(e as Error).message}`);
+            return { previewImageKeys: [] };
+          }
+        }
+      : undefined,
     ingest: dryRun ? async () => ({ deduped: false }) : (payload) => postIngest(payload, { url: ingestUrl, token: ingestToken }),
     maxRepairs: 2,
     maxBudgetUsd: maxBudget,
@@ -75,6 +97,7 @@ async function main() {
 
   console.log(`[pipeline] ${mode}${count ? ` count=${count}` : ''}${dryRun ? ' (dry-run)' : ''} — ${targets.length} target(s)`);
   const summary = await runPipeline(deps);
+  await renderer?.close();
   console.log('[pipeline] summary:', summary);
 }
 

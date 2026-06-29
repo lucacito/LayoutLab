@@ -1,5 +1,6 @@
-import { listPacks, listLayouts } from '@/lib/catalog/queries';
+import { listPacks, listLayouts, listPublishedLayouts, type LayoutRow } from '@/lib/catalog/queries';
 import { parseFilters } from '@/lib/catalog/filters';
+import { AXIS_META, NICHE_LABELS } from '@/lib/nav/menu-data';
 import { Container } from '@/components/ui/Container';
 import { Button } from '@/components/ui/Button';
 import { SectionTitle } from '@/components/ui/SectionTitle';
@@ -7,6 +8,7 @@ import { IconFeature } from '@/components/ui/IconFeature';
 import { Icon } from '@/components/ui/Icon';
 import { PackCard } from '@/components/PackCard';
 import { RecentCarousel } from '@/components/RecentCarousel';
+import { CategorySection } from '@/components/CategorySection';
 
 export const dynamic = 'force-dynamic';
 
@@ -38,6 +40,23 @@ export default async function HomePage() {
     recent = (await listLayouts(parseFilters({}))).slice(0, 10);
   } catch {
     recent = [];
+  }
+
+  // Group all published layouts by industry → one homepage section per niche, busiest first.
+  let industries: { niche: string; items: LayoutRow[] }[] = [];
+  try {
+    const map = new Map<string, LayoutRow[]>();
+    for (const l of await listPublishedLayouts()) {
+      if (!l.niche) continue;
+      const arr = map.get(l.niche);
+      if (arr) arr.push(l);
+      else map.set(l.niche, [l]);
+    }
+    industries = [...map.entries()]
+      .map(([niche, items]) => ({ niche, items }))
+      .sort((a, b) => b.items.length - a.items.length);
+  } catch {
+    industries = [];
   }
 
   return (
@@ -102,6 +121,30 @@ export default async function HomePage() {
           <Container>
             <RecentCarousel layouts={recent} />
           </Container>
+        </section>
+      )}
+
+      {/* Browse by industry — one section per niche */}
+      {industries.length > 0 && (
+        <section className="border-y border-border bg-mist py-16">
+          <Container>
+            <SectionTitle eyebrow="Industries" title="Browse by industry">
+              Find Divi 5 layouts built for your kind of business.
+            </SectionTitle>
+          </Container>
+          <div className="mt-12 space-y-16">
+            {industries.map(({ niche, items }) => (
+              <CategorySection
+                key={niche}
+                label={NICHE_LABELS[niche] ?? niche}
+                blurb={AXIS_META.niche[niche]?.blurb ?? ''}
+                icon={AXIS_META.niche[niche]?.icon ?? 'category'}
+                href={`/niche/${niche}`}
+                count={items.length}
+                layouts={items.slice(0, 4)}
+              />
+            ))}
+          </div>
         </section>
       )}
 
