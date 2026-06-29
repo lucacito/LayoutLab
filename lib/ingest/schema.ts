@@ -26,6 +26,9 @@ export const ingestPayloadSchema = z.object({
   previewImageKeys: z.array(z.string()).default([]),
   contentHash: z.string().min(1),
   perceptualHash: z.string().optional(),
+  variant: z
+    .object({ group: z.string().min(1), columns: z.number().int(), icons: z.enum(['none', 'top', 'left']) })
+    .optional(),
   validatorPassed: z.boolean(),
   seo: seoSchema,
   tags: z.array(tagSchema).optional(),

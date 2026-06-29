@@ -100,6 +100,7 @@ export async function runPipeline(deps: RunDeps): Promise<RunSummary> {
         previewImageKeys,
         contentHash: hash,
         perceptualHash,
+        variant: target.variant,
         validatorPassed: true,
         seo: { metaTitle: seo.title, metaDescription: seo.metaDescription, keywords: seo.keywords },
         tags: [

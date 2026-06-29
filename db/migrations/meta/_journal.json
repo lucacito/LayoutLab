@@ -43,6 +43,13 @@
       "when": 1782772828699,
       "tag": "0005_blushing_thor",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1782775192231,
+      "tag": "0006_clever_vulcan",
+      "breakpoints": true
     }
   ]
 }

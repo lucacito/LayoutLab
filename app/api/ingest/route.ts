@@ -61,6 +61,7 @@ export async function POST(req: Request): Promise<Response> {
       previewImageKeys: p.previewImageKeys,
       contentHash: p.contentHash,
       perceptualHash: p.perceptualHash,
+      variant: p.variant,
       validatorPassed: true,
       seo: p.seo,
       status: 'pending',

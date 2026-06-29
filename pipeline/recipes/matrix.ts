@@ -8,6 +8,39 @@ export interface Target {
   color?: string;
   /** Composition / placement instruction for the prompt — variation axis. */
   layout?: string;
+  /** Structured variant attributes, persisted for sibling cross-linking. */
+  variant?: { group: string; columns: number; icons: 'none' | 'top' | 'left' };
+}
+
+const ICON_PHRASE: Record<'none' | 'top' | 'left', string> = {
+  none: 'no icons',
+  top: 'an icon centered on top of each card',
+  left: 'an icon to the left of each card title',
+};
+
+// Build a switchable SET of card-section variants: every column count × icon
+// placement for one niche/style, all sharing a `group` so the UI can cross-link
+// them (Columns: 2·3·4, Icons: none·top·left).
+export function buildVariantSet(
+  base: { type: string; niche: string; style: string; color?: string },
+  columns: number[],
+  icons: ('none' | 'top' | 'left')[],
+): Target[] {
+  const group = `${base.type}-${base.niche}-${base.style}`;
+  const out: Target[] = [];
+  for (const c of columns) {
+    for (const ic of icons) {
+      out.push({
+        type: base.type,
+        niche: base.niche,
+        style: base.style,
+        color: base.color,
+        layout: `${c} equal columns of cards, with ${ICON_PHRASE[ic]}`,
+        variant: { group, columns: c, icons: ic },
+      });
+    }
+  }
+  return out;
 }
 
 // Curated starter coverage. Axis values must exist in AXIS_VALUES
