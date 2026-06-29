@@ -10,6 +10,9 @@ export function PackCard({ pack }: { pack: PackRow }) {
       <PreviewImage
         src={pack.coverImageKey}
         alt={pack.title}
+        type="pack"
+        color={pack.kind === 'free' ? 'green' : 'blue'}
+        label={pack.kind === 'free' ? 'Free pack' : 'Pack'}
         sizes="(max-width: 768px) 100vw, 33vw"
         className="aspect-[3/2]"
       />

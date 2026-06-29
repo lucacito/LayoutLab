@@ -55,6 +55,8 @@ export default async function HomePage() {
               <PreviewImage
                 src={heroPreviewKey}
                 alt="Divi 5 layout preview"
+                type="hero"
+                color="blue"
                 sizes="(max-width: 768px) 100vw, 50vw"
                 className="aspect-[4/3] w-full rounded-[12px]"
               />

@@ -3,7 +3,19 @@
 import { useState } from 'react';
 import { PreviewImage } from '@/components/PreviewImage';
 
-export function ScreenshotGallery({ keys, title }: { keys: string[]; title: string }) {
+export function ScreenshotGallery({
+  keys,
+  title,
+  type,
+  color,
+  layoutStyle,
+}: {
+  keys: string[];
+  title: string;
+  type?: string | null;
+  color?: string | null;
+  layoutStyle?: string | null;
+}) {
   const [active, setActive] = useState<number | null>(null);
   if (!keys.length) return null;
   return (
@@ -15,7 +27,7 @@ export function ScreenshotGallery({ keys, title }: { keys: string[]; title: stri
             onClick={() => setActive(i)}
             className="overflow-hidden rounded-card border border-border bg-paper shadow-soft transition hover:-translate-y-0.5"
           >
-            <PreviewImage src={k} alt={`${title} screenshot ${i + 1}`} sizes="(max-width: 768px) 100vw, 50vw" className="aspect-[4/3]" />
+            <PreviewImage src={k} alt={`${title} screenshot ${i + 1}`} type={type} color={color} layoutStyle={layoutStyle} sizes="(max-width: 768px) 100vw, 50vw" className="aspect-[4/3]" />
           </button>
         ))}
       </div>
@@ -24,6 +36,9 @@ export function ScreenshotGallery({ keys, title }: { keys: string[]; title: stri
           <PreviewImage
             src={keys[active]}
             alt={`${title} full`}
+            type={type}
+            color={color}
+            layoutStyle={layoutStyle}
             sizes="100vw"
             className="h-[80vh] w-full max-w-5xl rounded-card"
             imageClassName="!object-contain"

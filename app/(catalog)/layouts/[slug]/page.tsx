@@ -48,7 +48,7 @@ export default async function LayoutPage({ params }: { params: Promise<{ slug: s
         <p className="mt-1 text-muted">{layout.type} · {layout.niche} · {layout.style}</p>
         {layout.description && <p className="mt-3 max-w-2xl text-body text-muted">{layout.description}</p>}
 
-        <div className="mt-6"><ScreenshotGallery keys={layout.previewImageKeys} title={layout.title} /></div>
+        <div className="mt-6"><ScreenshotGallery keys={layout.previewImageKeys} title={layout.title} type={layout.type} color={layout.colors?.[0]} layoutStyle={layout.style} /></div>
 
         {packs.length > 0 && (
           <section className="mt-10">

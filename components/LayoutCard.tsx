@@ -14,6 +14,9 @@ export function LayoutCard({ layout }: { layout: LayoutRow }) {
         src={cover}
         alt={layout.title}
         label={layout.type}
+        type={layout.type}
+        color={layout.colors?.[0]}
+        layoutStyle={layout.style}
         sizes="(max-width: 768px) 100vw, 33vw"
         className="aspect-[4/3]"
         imageClassName="transition group-hover:scale-[1.02]"
