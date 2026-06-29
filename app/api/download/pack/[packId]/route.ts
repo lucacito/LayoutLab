@@ -11,6 +11,7 @@ import { canDownloadPack } from '@/lib/stripe/entitlements';
 import { fetchAsset } from '@/lib/blob';
 import { buildPackZip } from '@/lib/download/zip';
 import { readLicense } from '@/lib/license';
+import { rateLimit } from '@/lib/rate-limit';
 
 export const runtime = 'nodejs';
 
@@ -18,6 +19,10 @@ export async function GET(
   req: Request,
   { params }: { params: Promise<{ packId: string }> },
 ): Promise<Response> {
+  const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
+  if (!rateLimit(`dl-pack:${ip}`, { limit: 40, windowMs: 60_000 }).ok) {
+    return NextResponse.json({ error: 'rate_limited' }, { status: 429 });
+  }
   const session = await requireUser();
   const { packId } = await params;
 
@@ -43,8 +48,6 @@ export async function GET(
   }
 
   const zip = await buildPackZip(items, readLicense());
-  const ip =
-    req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown';
   for (const it of items) await recordDownload(userId, it.id, ip);
 
   return new Response(new Uint8Array(zip), {
