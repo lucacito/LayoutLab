@@ -1,44 +1,36 @@
 import { NextResponse } from 'next/server';
-import { requireUser } from '@/lib/auth/admin';
-import {
-  getUserIdByEmail,
-  getLayoutForDownload,
-  getLayoutPackContext,
-  getEntitlementsForUser,
-  recordDownload,
-} from '@/lib/account/queries';
-import { canDownloadLayout } from '@/lib/stripe/entitlements';
+import { auth } from '@/lib/auth';
+import { readCaptureEmail } from '@/lib/capture/cookie';
+import { getLayoutForDownload, getUserIdByEmail, recordDownload } from '@/lib/account/queries';
 import { fetchAsset } from '@/lib/blob';
 import { buildLayoutZip } from '@/lib/download/zip';
 import { readLicense } from '@/lib/license';
+import { rateLimit } from '@/lib/rate-limit';
 
 export const runtime = 'nodejs';
 
-export async function GET(
-  req: Request,
-  { params }: { params: Promise<{ layoutId: string }> },
-): Promise<Response> {
-  const session = await requireUser();
-  const { layoutId } = await params;
+export async function GET(req: Request, { params }: { params: Promise<{ layoutId: string }> }): Promise<Response> {
+  const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
+  if (!rateLimit(`dl:${ip}`, { limit: 40, windowMs: 60_000 }).ok) {
+    return NextResponse.json({ error: 'rate_limited' }, { status: 429 });
+  }
 
+  const { layoutId } = await params;
   const layout = await getLayoutForDownload(layoutId);
   if (!layout) return NextResponse.json({ error: 'not_found' }, { status: 404 });
 
-  const email = session.user?.email ?? null;
-  const userId = email ? await getUserIdByEmail(email) : null;
-  const ctx = await getLayoutPackContext(layout.id);
-  const userEntitlements = userId ? await getEntitlementsForUser(userId) : [];
-
-  const allowed = canDownloadLayout({
-    layoutPackIds: ctx.packIds,
-    packKindById: ctx.packKindById,
-    userEntitlements,
-  });
-  if (!allowed) return NextResponse.json({ error: 'forbidden' }, { status: 403 });
+  // Individual layouts are free, gated by a captured email (cookie) or a session.
+  const capturedEmail = await readCaptureEmail();
+  const session = await auth();
+  const sessionEmail = session?.user?.email ?? null;
+  if (!capturedEmail && !sessionEmail) {
+    return NextResponse.json({ error: 'email_required' }, { status: 403 });
+  }
 
   const bytes = await fetchAsset(layout.diviJsonBlobKey);
   if (!bytes) return NextResponse.json({ error: 'asset_unavailable' }, { status: 404 });
 
+  const userId = sessionEmail ? await getUserIdByEmail(sessionEmail) : null;
   const zip = await buildLayoutZip(bytes.toString('utf8'), layout.slug, readLicense());
   await recordDownload(userId, layout.id, req.headers.get('x-forwarded-for'));
 
