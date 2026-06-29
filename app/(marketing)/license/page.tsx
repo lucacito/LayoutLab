@@ -14,7 +14,7 @@ export default function LicensePage() {
   return (
     <main className="py-16">
       <Container className="max-w-3xl">
-        <h1 className="text-h2 text-navy">License</h1>
+        <h1 className="text-h1 text-navy">License</h1>
         <p className="mt-3 text-body text-muted">
           Every purchase includes the commercial license below. It is also bundled inside every download.
         </p>
