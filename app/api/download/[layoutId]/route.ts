@@ -32,7 +32,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ layoutId
 
   const userId = sessionEmail ? await getUserIdByEmail(sessionEmail) : null;
   const zip = await buildLayoutZip(bytes.toString('utf8'), layout.slug, readLicense());
-  await recordDownload(userId, layout.id, req.headers.get('x-forwarded-for'));
+  await recordDownload(userId, layout.id, ip);
 
   return new Response(new Uint8Array(zip), {
     status: 200,
