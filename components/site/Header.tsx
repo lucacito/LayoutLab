@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/Button';
 import { Wordmark } from '@/components/ui/Wordmark';
 import { MegaMenu } from './MegaMenu';
 import { MobileNav } from './MobileNav';
+import { SavedLink } from '@/components/bookmarks/SavedLink';
 
 export function Header() {
   return (
@@ -14,6 +15,7 @@ export function Header() {
           <MegaMenu />
         </div>
         <div className="hidden items-center gap-4 md:flex">
+          <SavedLink />
           <Link href="/login" className="text-small font-medium text-navy transition hover:text-action">Sign in</Link>
           <Button href="/browse">Browse layouts</Button>
         </div>

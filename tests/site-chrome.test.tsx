@@ -2,10 +2,11 @@ import { describe, it, expect } from 'vitest';
 import { render } from '@testing-library/react';
 import { Header } from '@/components/site/Header';
 import { Footer } from '@/components/site/Footer';
+import { BookmarksProvider } from '@/components/bookmarks/BookmarksProvider';
 
 describe('site chrome', () => {
   it('Header shows the wordmark and primary nav links', () => {
-    const { getByText, container } = render(<Header />);
+    const { getByText, container } = render(<Header />, { wrapper: BookmarksProvider });
     expect(getByText('LayoutLab')).toBeTruthy();
     expect(container.querySelector('a[href="/browse"]')).not.toBeNull();
     expect(container.querySelector('a[href="/pricing"]')).not.toBeNull();

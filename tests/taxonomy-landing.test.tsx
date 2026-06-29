@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { render } from '@testing-library/react';
 import { TaxonomyLanding } from '@/components/TaxonomyLanding';
+import { BookmarksProvider } from '@/components/bookmarks/BookmarksProvider';
 import type { LayoutRow } from '@/lib/catalog/queries';
 
 const layout = { id: 'l1', slug: 'a', title: 'Bold Hero', type: 'hero', niche: 'saas', style: 'bold', colors: ['blue'], status: 'published', previewImageKeys: [] } as unknown as LayoutRow;
@@ -10,6 +11,7 @@ describe('TaxonomyLanding', () => {
     const { container, getByText } = render(
       <TaxonomyLanding axis="style" value="minimal" siteUrl="https://layoutlab.com"
         copy={{ intro: 'Minimal intro here', metaTitle: 'x', metaDescription: 'y' }} layouts={[layout]} />,
+      { wrapper: BookmarksProvider },
     );
     expect(getByText(/Minimal intro here/)).toBeTruthy();
     expect(getByText('Bold Hero')).toBeTruthy();

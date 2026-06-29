@@ -6,6 +6,7 @@ import { Inter } from 'next/font/google';
 import { Analytics } from '@vercel/analytics/react';
 import { Header } from '@/components/site/Header';
 import { Footer } from '@/components/site/Footer';
+import { BookmarksProvider } from '@/components/bookmarks/BookmarksProvider';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-sans', display: 'swap' });
 
@@ -18,9 +19,11 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en" className={inter.variable}>
       <body className="font-sans">
-        <Header />
-        {children}
-        <Footer />
+        <BookmarksProvider>
+          <Header />
+          {children}
+          <Footer />
+        </BookmarksProvider>
         <Analytics />
       </body>
     </html>
