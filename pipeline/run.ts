@@ -6,6 +6,7 @@ import { extractJson } from './llm';
 import { generateLayout } from './generate';
 import { generateSeo } from './seo';
 import { contentHash } from './dedupe';
+import { stackLayoutJsonMobile } from './stack-mobile';
 import type { ValidationResult } from './validate';
 import type { UploadResult } from './upload';
 import type { IngestPayload } from '@/lib/ingest/schema';
@@ -64,6 +65,11 @@ export async function runPipeline(deps: RunDeps): Promise<RunSummary> {
       // Swap placeholder images for real stock photos (after validation; URL-for-URL,
       // so structure is unchanged). Hash + render + download all see the real images.
       if (deps.resolveImages) json = await deps.resolveImages(json);
+
+      // Enforce single-column, full-width stacking on phone (deterministic; the
+      // model is inconsistent about responsive column sizing). Adds phone-only
+      // attributes — desktop layout and validation verdict are unaffected.
+      json = stackLayoutJsonMobile(json);
 
       const hash = contentHash(json);
       if (await deps.isDuplicate(hash)) {

@@ -136,7 +136,14 @@ export async function realRenderDeps(): Promise<{ deps: RenderDeps; close: () =>
           }
           if (attempt < 3) await page.waitForTimeout(1000);
         }
+        // Final fallback: a legitimately short layout (header/footer ≈ 100px) never
+        // crosses the 150px bar. Crop to the wrapper if it has any real height —
+        // only screenshot the empty full viewport when there's no content wrapper.
         await page.addStyleTag({ content: HIDE_CHROME });
+        await page.waitForTimeout(250);
+        const wrapper = page.locator('.et-l--post').first();
+        const box = (await wrapper.count()) ? await wrapper.boundingBox() : null;
+        if (box && box.height > 40) return await wrapper.screenshot();
         return await page.screenshot({ fullPage: true });
       } finally {
         await page.close();
