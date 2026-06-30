@@ -19,8 +19,10 @@ export async function uploadScreenshot(
 ): Promise<string> {
   if (deps.hasBlobToken) {
     const key = `layouts/${hash}-${label}.png`;
-    await (deps.upload ?? ((k, d, ct) => uploadAsset(k, d, ct)))(key, data, 'image/png');
-    return key;
+    // Store the real public Blob URL (not the key) — Vercel Blob URLs are
+    // `https://<id>.public.blob.vercel-storage.com/...`, not a guessable base.
+    const { url } = await (deps.upload ?? ((k, d, ct) => uploadAsset(k, d, ct)))(key, data, 'image/png');
+    return url;
   }
   const dir = deps.publicDir ?? 'public/screenshots';
   const write = deps.writeFile ?? ((p, d) => { mkdirSync(dirname(p), { recursive: true }); writeFileSync(p, d); });
@@ -53,8 +55,8 @@ export async function uploadLayout(
   if (deps.hasBlobToken) {
     const key = `layouts/${hash}.json`;
     const upload = deps.upload ?? ((k, d, ct) => uploadAsset(k, d, ct));
-    await upload(key, Buffer.from(json), 'application/json');
-    return { diviJsonBlobKey: key, previewImageKeys };
+    const { url } = await upload(key, Buffer.from(json), 'application/json');
+    return { diviJsonBlobKey: url, previewImageKeys };
   }
   const path = `${deps.outDir}/${hash}.json`;
   const write = deps.writeFile ?? ((p, d) => { mkdirSync(dirname(p), { recursive: true }); writeFileSync(p, d); });
