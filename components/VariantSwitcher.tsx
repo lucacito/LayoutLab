@@ -2,6 +2,17 @@ import Link from 'next/link';
 import type { LayoutRow } from '@/lib/catalog/queries';
 
 const ICON_LABEL: Record<string, string> = { none: 'No icons', top: 'Icon on top', left: 'Icon on left' };
+const STYLE_LABEL: Record<string, string> = { circle: 'Circle badge', plain: 'Plain icon', number: 'Numbered' };
+
+type VKey = { columns?: number; icons?: string; iconStyle?: string };
+
+/** Find the sibling matching all three variant axes exactly (used to switch one axis
+ * while holding the other two fixed). Exported for testing. */
+export function findSibling(siblings: { slug: string; variant?: VKey | null }[], want: VKey) {
+  return siblings.find(
+    (s) => s.variant?.columns === want.columns && s.variant?.icons === want.icons && s.variant?.iconStyle === want.iconStyle,
+  );
+}
 
 function Chip({ active, href, children }: { active: boolean; href?: string; children: React.ReactNode }) {
   const base = 'rounded-full px-3 py-1 text-small font-medium transition';
@@ -10,16 +21,15 @@ function Chip({ active, href, children }: { active: boolean; href?: string; chil
   return <Link href={href} className={`${base} bg-mist text-navy hover:bg-fog`}>{children}</Link>;
 }
 
-// Cross-link sibling variations: switch column count (keeping icon placement) or
-// icon placement (keeping columns) by jumping to the matching sibling element.
+// Cross-link sibling variations: switch column count, icon placement, or icon style
+// (holding the other two axes fixed) by jumping to the matching sibling element.
 export function VariantSwitcher({ current, siblings }: { current: LayoutRow; siblings: LayoutRow[] }) {
   const cur = current.variant;
   if (!cur?.group || siblings.length < 2) return null;
 
   const columns = [...new Set(siblings.map((s) => s.variant?.columns).filter((n): n is number => typeof n === 'number'))].sort((a, b) => a - b);
   const icons = ['none', 'top', 'left'].filter((ic) => siblings.some((s) => s.variant?.icons === ic));
-  const find = (cols: number | undefined, ic: string | undefined) =>
-    siblings.find((s) => s.variant?.columns === cols && s.variant?.icons === ic);
+  const styles = ['circle', 'plain', 'number'].filter((st) => siblings.some((s) => s.variant?.iconStyle === st));
 
   return (
     <div className="mt-4 rounded-card border border-border bg-paper p-4">
@@ -29,7 +39,7 @@ export function VariantSwitcher({ current, siblings }: { current: LayoutRow; sib
           <div className="flex flex-wrap items-center gap-2">
             <span className="w-16 text-small text-muted">Columns</span>
             {columns.map((c) => {
-              const sib = find(c, cur.icons);
+              const sib = findSibling(siblings, { columns: c, icons: cur.icons, iconStyle: cur.iconStyle });
               return (
                 <Chip key={c} active={c === cur.columns} href={sib && c !== cur.columns ? `/layouts/${sib.slug}` : undefined}>
                   {c} columns
@@ -42,10 +52,23 @@ export function VariantSwitcher({ current, siblings }: { current: LayoutRow; sib
           <div className="flex flex-wrap items-center gap-2">
             <span className="w-16 text-small text-muted">Icons</span>
             {icons.map((ic) => {
-              const sib = find(cur.columns, ic);
+              const sib = findSibling(siblings, { columns: cur.columns, icons: ic, iconStyle: cur.iconStyle });
               return (
                 <Chip key={ic} active={ic === cur.icons} href={sib && ic !== cur.icons ? `/layouts/${sib.slug}` : undefined}>
                   {ICON_LABEL[ic]}
+                </Chip>
+              );
+            })}
+          </div>
+        )}
+        {styles.length > 1 && (
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="w-16 text-small text-muted">Style</span>
+            {styles.map((st) => {
+              const sib = findSibling(siblings, { columns: cur.columns, icons: cur.icons, iconStyle: st });
+              return (
+                <Chip key={st} active={st === cur.iconStyle} href={sib && st !== cur.iconStyle ? `/layouts/${sib.slug}` : undefined}>
+                  {STYLE_LABEL[st]}
                 </Chip>
               );
             })}
