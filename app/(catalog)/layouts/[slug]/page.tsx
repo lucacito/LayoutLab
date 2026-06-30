@@ -7,7 +7,7 @@ import { getLayoutBySlug, getPacksForLayout, listRelatedLayouts, listVariantSibl
 import { assetUrl } from '@/lib/blob';
 import { buildLayoutMetadata, productJsonLd, breadcrumbJsonLd } from '@/lib/seo';
 import { axisLabel } from '@/lib/seo/taxonomy-copy';
-import { ScreenshotGallery } from '@/components/ScreenshotGallery';
+import { ResponsivePreview } from '@/components/ResponsivePreview';
 import { Breadcrumbs } from '@/components/Breadcrumbs';
 import { JsonLd } from '@/components/JsonLd';
 import { PackCard } from '@/components/PackCard';
@@ -109,7 +109,7 @@ export default async function LayoutPage({ params }: { params: Promise<{ slug: s
           </div>
         </Card>
 
-        <div className="mt-6"><ScreenshotGallery keys={layout.previewImageKeys} title={layout.title} type={layout.type} color={layout.colors?.[0]} layoutStyle={layout.style} /></div>
+        <div className="mt-6"><ResponsivePreview keys={layout.previewImageKeys} title={layout.title} type={layout.type} color={layout.colors?.[0]} layoutStyle={layout.style} /></div>
 
         {packs.length > 0 && (
           <section className="mt-10">

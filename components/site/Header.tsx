@@ -10,8 +10,9 @@ export function Header() {
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-paper/90 backdrop-blur">
       <Container className="relative flex h-16 items-center justify-between gap-6">
-        <div className="flex items-center gap-6">
-          <Wordmark />
+        <Wordmark />
+        {/* Centered main navigation */}
+        <div className="absolute left-1/2 hidden -translate-x-1/2 md:block">
           <MegaMenu />
         </div>
         <div className="hidden items-center gap-4 md:flex">
