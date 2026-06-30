@@ -4,7 +4,7 @@ import { IconFeature } from '@/components/ui/IconFeature';
 import { Button } from '@/components/ui/Button';
 
 export const metadata: Metadata = {
-  title: 'About — Divi5Lab',
+  title: 'About',
   description: 'Divi5Lab is a marketplace of validated, import-ready Divi 5 layouts for WordPress builders.',
 };
 

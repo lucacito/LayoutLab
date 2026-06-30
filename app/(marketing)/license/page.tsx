@@ -5,7 +5,7 @@ import { Container } from '@/components/ui/Container';
 import { Card } from '@/components/ui/Card';
 
 export const metadata: Metadata = {
-  title: 'License & Refunds — Divi5Lab',
+  title: 'License & Refunds',
   description: 'The commercial license that comes with every Divi5Lab purchase, plus our digital-goods refund policy.',
 };
 

@@ -8,7 +8,7 @@ import { LayoutCard } from '@/components/LayoutCard';
 import { Container } from '@/components/ui/Container';
 
 export const metadata: Metadata = {
-  title: 'Browse Divi 5 Layouts',
+  title: 'Browse Free Divi 5 Layouts & Sections',
   description: 'Browse and filter validated Divi 5 layouts by type, industry, style and color.',
 };
 

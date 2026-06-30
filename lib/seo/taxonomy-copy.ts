@@ -1,6 +1,9 @@
 import type { TaxonomyAxis, TaxonomyCopy } from './taxonomy';
 
+const ACRONYMS: Record<string, string> = { saas: 'SaaS', faq: 'FAQ', cta: 'CTA', ecommerce: 'E-commerce', real_estate: 'Real Estate' };
+
 export function axisLabel(value: string): string {
+  if (ACRONYMS[value]) return ACRONYMS[value];
   return value
     .split('_')
     .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
@@ -18,7 +21,6 @@ export function axisNoun(axis: TaxonomyAxis): string {
 
 export function taxonomyFallbackCopy(axis: TaxonomyAxis, value: string, count: number): TaxonomyCopy {
   const label = axisLabel(value);
-  const noun = axisNoun(axis);
   const countPhrase = count > 0 ? `${count} ` : '';
   const intro = axis === 'type'
     ? `Browse ${countPhrase}professionally designed ${label} layouts for Divi 5. Import the JSON, customize in the builder, and ship faster.`
@@ -27,7 +29,10 @@ export function taxonomyFallbackCopy(axis: TaxonomyAxis, value: string, count: n
       : axis === 'style'
         ? `Explore ${countPhrase}${label.toLowerCase()} Divi 5 layouts. A curated ${label} aesthetic, ready to import and customize.`
         : `Divi 5 layouts in ${label.toLowerCase()} — ${countPhrase}designs built around a ${label.toLowerCase()} palette, ready to import.`;
-  const metaTitle = `${label} Divi 5 Layouts${axis === 'type' ? '' : ` (${noun})`} — Divi5Lab`;
-  const metaDescription = `Download ${countPhrase}${label} Divi 5 layouts as JSON. Import, customize, and launch. Commercial license included.`;
+  const metaTitle =
+    axis === 'type'
+      ? `Divi 5 ${label} Sections — Free & Import-Ready`
+      : `${label} Divi 5 Layouts — Free & Import-Ready`;
+  const metaDescription = `Download ${countPhrase}free ${label} Divi 5 ${axis === 'type' ? 'sections' : 'layouts'} as JSON — import, customize, and launch. Commercial license included.`;
   return { intro, metaTitle, metaDescription };
 }

@@ -12,7 +12,7 @@ import { JsonLd } from '@/components/JsonLd';
 import { faqJsonLd } from '@/lib/seo/jsonld';
 
 export const dynamic = 'force-dynamic';
-export const metadata: Metadata = { title: 'Pricing — Divi5Lab', description: 'Start free with individual Divi 5 sections. Buy curated packs once, or unlock everything with an all-access membership.' };
+export const metadata: Metadata = { title: 'Pricing — Free Sections, Packs & All-Access', description: 'Start free with individual Divi 5 sections. Buy curated packs once, or unlock everything with an all-access membership.' };
 
 const FAQ = [
   { question: 'What do I actually download?', answer: 'A Divi 5 layout as a JSON file, plus the commercial license. Import the JSON straight into the Divi builder.' },
