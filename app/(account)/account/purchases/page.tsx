@@ -4,6 +4,7 @@ import { getUserIdByEmail, getOrdersForUser, getEntitlementsForUser, getOwnedPac
 import { Container } from '@/components/ui/Container';
 import { Card } from '@/components/ui/Card';
 import { Icon } from '@/components/ui/Icon';
+import { AccountNav } from '@/components/account/AccountNav';
 
 export const dynamic = 'force-dynamic';
 
@@ -23,14 +24,26 @@ export default async function PurchasesPage() {
   return (
     <main className="py-12">
       <Container>
-        <h1 className="text-h2 text-navy">Purchases</h1>
+        <AccountNav />
+        <h1 className="text-h2 text-navy">Your purchases</h1>
+        <p className="mt-2 text-body text-muted">Your packs and order history, all in one place.</p>
 
         <h2 className="mt-8 text-section text-navy">Your packs</h2>
-        {allAccess && <p className="mt-2 text-small font-medium text-action">All-access membership active — every pack is yours.</p>}
-        {ownedPacks.length === 0 ? (
-          <p className="mt-2 text-body text-muted">
-            No packs yet. <Link href="/pricing" className="font-medium text-action hover:underline">Browse packs</Link>.
+        {allAccess && (
+          <p className="mt-2 flex items-center gap-1.5 text-small font-medium text-action">
+            <Icon name="auto_awesome" size={16} /> All-access membership active — every pack is yours.
           </p>
+        )}
+        {ownedPacks.length === 0 ? (
+          <Card className="mt-3 flex flex-col items-start gap-3 p-6 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-body font-semibold text-navy">No packs yet</p>
+              <p className="text-small text-muted">Grab a curated collection, or unlock them all with all-access.</p>
+            </div>
+            <Link href="/pricing" className="inline-flex h-10 shrink-0 items-center justify-center rounded-full bg-action px-5 text-small font-semibold text-paper transition hover:brightness-110">
+              See packs &amp; plans
+            </Link>
+          </Card>
         ) : (
           <ul className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
             {ownedPacks.map((p) => (
@@ -55,7 +68,7 @@ export default async function PurchasesPage() {
 
         <h2 className="mt-10 text-section text-navy">Orders</h2>
         {orders.length === 0 ? (
-          <p className="mt-2 text-body text-muted">No orders yet.</p>
+          <p className="mt-2 text-body text-muted">No orders yet — your receipts will appear here after a purchase.</p>
         ) : (
           <ul className="mt-3 space-y-2">
             {orders.map((o) => (

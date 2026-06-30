@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/Button';
 import { Icon } from '@/components/ui/Icon';
 import { LayoutCard } from '@/components/LayoutCard';
 import { SavedCount } from '@/components/bookmarks/SavedCount';
+import { AccountNav } from '@/components/account/AccountNav';
 
 export const dynamic = 'force-dynamic';
 
@@ -34,6 +35,7 @@ export default async function AccountPage() {
   return (
     <main className="py-12">
       <Container>
+        <AccountNav />
         {/* Greeting */}
         <div className="flex items-center gap-4">
           <span className="flex h-14 w-14 items-center justify-center rounded-full bg-action/10 text-h3 font-bold text-action">
