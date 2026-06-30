@@ -76,7 +76,7 @@ export const layouts = pgTable('layouts', {
   status: layoutStatus('status').notNull().default('pending'),
   // Structured variant attributes for cross-linking sibling variations (same group,
   // different column count / icon placement).
-  variant: jsonb('variant').$type<{ group?: string; columns?: number; icons?: 'none' | 'top' | 'left' }>(),
+  variant: jsonb('variant').$type<{ group?: string; columns?: number; icons?: 'none' | 'top' | 'left'; iconStyle?: 'circle' | 'plain' | 'number' }>(),
   // Denormalized rating aggregate for fast catalog display (avg = sum / count).
   ratingCount: integer('rating_count').notNull().default(0),
   ratingSum: integer('rating_sum').notNull().default(0),

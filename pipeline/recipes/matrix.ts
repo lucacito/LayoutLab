@@ -9,7 +9,7 @@ export interface Target {
   /** Composition / placement instruction for the prompt — variation axis. */
   layout?: string;
   /** Structured variant attributes, persisted for sibling cross-linking. */
-  variant?: { group: string; columns: number; icons: 'none' | 'top' | 'left' };
+  variant?: { group: string; columns: number; icons: 'none' | 'top' | 'left'; iconStyle: 'circle' | 'plain' | 'number' };
 }
 
 const ICON_PHRASE: Record<'none' | 'top' | 'left', string> = {
@@ -18,26 +18,35 @@ const ICON_PHRASE: Record<'none' | 'top' | 'left', string> = {
   left: 'an icon to the left of each card title',
 };
 
+const ICON_STYLE_PHRASE: Record<'circle' | 'plain' | 'number', string> = {
+  circle: 'in a filled circular badge',
+  plain: 'as a bare icon',
+  number: 'shown as a numbered step badge',
+};
+
 // Build a switchable SET of card-section variants: every column count × icon
-// placement for one niche/style, all sharing a `group` so the UI can cross-link
-// them (Columns: 2·3·4, Icons: none·top·left).
+// placement × icon style for one niche/style, all sharing a `group` so the UI can
+// cross-link them (Columns 2·3·4, Icons top·left, Style circle·plain·number).
 export function buildVariantSet(
   base: { type: string; niche: string; style: string; color?: string },
   columns: number[],
   icons: ('none' | 'top' | 'left')[],
+  iconStyles: ('circle' | 'plain' | 'number')[],
 ): Target[] {
   const group = `${base.type}-${base.niche}-${base.style}`;
   const out: Target[] = [];
   for (const c of columns) {
     for (const ic of icons) {
-      out.push({
-        type: base.type,
-        niche: base.niche,
-        style: base.style,
-        color: base.color,
-        layout: `${c} equal columns of cards, with ${ICON_PHRASE[ic]}`,
-        variant: { group, columns: c, icons: ic },
-      });
+      for (const st of iconStyles) {
+        out.push({
+          type: base.type,
+          niche: base.niche,
+          style: base.style,
+          color: base.color,
+          layout: `${c} equal columns of cards, with ${ICON_PHRASE[ic]}, ${ICON_STYLE_PHRASE[st]}`,
+          variant: { group, columns: c, icons: ic, iconStyle: st },
+        });
+      }
     }
   }
   return out;
