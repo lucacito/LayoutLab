@@ -11,6 +11,15 @@ import type { ValidationResult } from './validate';
 import type { UploadResult } from './upload';
 import type { IngestPayload } from '@/lib/ingest/schema';
 
+/** Card slugs must be unique across the 18-variant matrix, but the AI-written base
+ * slug collides between near-identical variants (all "feature cards"). Append the
+ * variant for cards so every combo gets a distinct, descriptive, collision-free slug. */
+export function variantSlug(baseSlug: string, target: Target): string {
+  const v = target.variant;
+  if (!v || target.type !== 'cards') return baseSlug;
+  return `${baseSlug}-${v.columns}col-${v.icons}-${v.iconStyle}`;
+}
+
 export interface RunSummary {
   generated: number;
   repaired: number;
@@ -94,7 +103,7 @@ export async function runPipeline(deps: RunDeps): Promise<RunSummary> {
       }
 
       const payload: IngestPayload = {
-        slug: seo.slug,
+        slug: variantSlug(seo.slug, target),
         title: seo.title,
         description: seo.metaDescription,
         type: seo.axes.type,
