@@ -4,6 +4,7 @@ import { getUserIdByEmail, getDownloadableLayouts } from '@/lib/account/queries'
 import { Container } from '@/components/ui/Container';
 import { Card } from '@/components/ui/Card';
 import { DownloadButton } from '@/components/DownloadButton';
+import { AccountNav } from '@/components/account/AccountNav';
 
 export const dynamic = 'force-dynamic';
 
@@ -16,6 +17,7 @@ export default async function DownloadsPage() {
   return (
     <main className="py-12">
       <Container>
+        <AccountNav />
         <h1 className="text-h2 text-navy">Your downloads</h1>
         <p className="mt-2 text-body text-muted">Everything you’re entitled to — re-download anytime.</p>
         {layouts.length === 0 ? (
