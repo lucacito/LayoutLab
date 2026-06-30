@@ -13,7 +13,7 @@ const VALUES: Record<TaxonomyAxis, readonly string[]> = {
 };
 
 function emptyFilters() {
-  return { type: [], niche: [], style: [], color: [], sort: 'newest' as const, page: 1 };
+  return { type: [], niche: [], style: [], color: [], columns: [], sort: 'newest' as const, page: 1 };
 }
 
 async function loadCopy(axis: TaxonomyAxis, value: string) {

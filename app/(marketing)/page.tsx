@@ -72,7 +72,7 @@ export default async function HomePage() {
     industries = [];
   }
 
-  let counts: Awaited<ReturnType<typeof facetCounts>> = { type: {}, niche: {}, style: {}, color: {} };
+  let counts: Awaited<ReturnType<typeof facetCounts>> = { type: {}, niche: {}, style: {}, color: {}, columns: {} };
   try {
     counts = await facetCounts();
   } catch {

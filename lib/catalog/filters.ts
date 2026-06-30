@@ -1,8 +1,9 @@
 export const AXIS_VALUES = {
-  type: ['hero', 'pricing', 'testimonials', 'cta', 'features', 'faq', 'footer', 'contact', 'gallery', 'blog', 'full_landing'],
+  type: ['hero', 'pricing', 'testimonials', 'cta', 'features', 'cards', 'faq', 'footer', 'contact', 'gallery', 'blog', 'full_landing'],
   niche: ['saas', 'agency', 'restaurant', 'real_estate', 'fitness', 'coaching', 'ecommerce', 'nonprofit', 'portfolio', 'events'],
   style: ['minimal', 'bold', 'dark', 'corporate', 'playful', 'elegant'],
   color: ['blue', 'green', 'red', 'purple', 'orange', 'monochrome', 'pastel'],
+  columns: ['2', '3', '4'],
 } as const;
 
 export const PAGE_SIZE = 24;
@@ -15,6 +16,7 @@ export interface CatalogFilters {
   niche: string[];
   style: string[];
   color: string[];
+  columns: string[];
   q?: string;
   sort: SortKey;
   page: number;
@@ -32,6 +34,7 @@ export function parseFilters(searchParams: Record<string, string | string[] | un
   const niche = readMulti(searchParams.niche, AXIS_VALUES.niche);
   const style = readMulti(searchParams.style, AXIS_VALUES.style);
   const color = readMulti(searchParams.color, AXIS_VALUES.color);
+  const columns = readMulti(searchParams.columns, AXIS_VALUES.columns);
 
   const rawQ = Array.isArray(searchParams.q) ? searchParams.q[0] : searchParams.q;
   const q = rawQ?.trim() ? rawQ.trim() : undefined;
@@ -43,5 +46,5 @@ export function parseFilters(searchParams: Record<string, string | string[] | un
   const parsedPage = Number.parseInt(rawPage ?? '', 10);
   const page = Number.isInteger(parsedPage) && parsedPage >= 1 ? parsedPage : 1;
 
-  return { type, niche, style, color, q, sort, page };
+  return { type, niche, style, color, columns, q, sort, page };
 }

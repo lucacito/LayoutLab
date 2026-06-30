@@ -69,13 +69,13 @@ export async function getPacksForLayout(layoutId: string): Promise<PackRow[]> {
   return rows.map((r) => r.pack);
 }
 
-export async function facetCounts(): Promise<Record<'type' | 'niche' | 'style' | 'color', Record<string, number>>> {
+export async function facetCounts(): Promise<Record<'type' | 'niche' | 'style' | 'color' | 'columns', Record<string, number>>> {
   const rows = await db.select({
-    type: layouts.type, niche: layouts.niche, style: layouts.style, colors: layouts.colors,
+    type: layouts.type, niche: layouts.niche, style: layouts.style, colors: layouts.colors, variant: layouts.variant,
   }).from(layouts).where(eq(layouts.status, 'published'));
 
-  const counts = { type: {}, niche: {}, style: {}, color: {} } as Record<'type' | 'niche' | 'style' | 'color', Record<string, number>>;
-  const bump = (axis: 'type' | 'niche' | 'style' | 'color', key: string | null) => {
+  const counts = { type: {}, niche: {}, style: {}, color: {}, columns: {} } as Record<'type' | 'niche' | 'style' | 'color' | 'columns', Record<string, number>>;
+  const bump = (axis: 'type' | 'niche' | 'style' | 'color' | 'columns', key: string | null) => {
     if (!key) return;
     counts[axis][key] = (counts[axis][key] ?? 0) + 1;
   };
@@ -84,6 +84,7 @@ export async function facetCounts(): Promise<Record<'type' | 'niche' | 'style' |
     bump('niche', r.niche);
     bump('style', r.style);
     for (const c of r.colors ?? []) bump('color', c);
+    if (r.variant?.columns != null) bump('columns', String(r.variant.columns));
   }
   return counts;
 }

@@ -5,7 +5,7 @@ import { buildLayoutFilters } from '@/lib/catalog/query-builder';
 describe('parseFilters', () => {
   it('defaults to empty facets, newest sort, page 1', () => {
     const f = parseFilters({});
-    expect(f).toEqual({ type: [], niche: [], style: [], color: [], q: undefined, sort: 'newest', page: 1 });
+    expect(f).toEqual({ type: [], niche: [], style: [], color: [], columns: [], q: undefined, sort: 'newest', page: 1 });
   });
 
   it('parses comma-separated axis values and keeps only known ones', () => {

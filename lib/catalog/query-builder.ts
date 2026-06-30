@@ -1,4 +1,4 @@
-import { and, eq, inArray, ilike, or, arrayOverlaps, asc, desc, type SQL } from 'drizzle-orm';
+import { and, eq, inArray, ilike, or, arrayOverlaps, asc, desc, sql, type SQL } from 'drizzle-orm';
 import { layouts } from '@/db/schema';
 import { type CatalogFilters, PAGE_SIZE } from './filters';
 
@@ -8,6 +8,7 @@ export function buildLayoutFilters(f: CatalogFilters) {
   if (f.niche.length) conditions.push(inArray(layouts.niche, f.niche));
   if (f.style.length) conditions.push(inArray(layouts.style, f.style));
   if (f.color.length) conditions.push(arrayOverlaps(layouts.colors, f.color));
+  if (f.columns.length) conditions.push(inArray(sql`(${layouts.variant} ->> 'columns')`, f.columns) as SQL);
   if (f.q) {
     conditions.push(or(ilike(layouts.title, `%${f.q}%`), ilike(layouts.description, `%${f.q}%`)) as SQL);
   }
