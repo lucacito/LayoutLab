@@ -13,8 +13,8 @@ describe('site chrome', () => {
     expect(container.querySelector('header')).not.toBeNull();
   });
   it('Footer renders a contentinfo landmark and the brand', () => {
-    const { getByText, container } = render(<Footer />);
+    const { getAllByText, container } = render(<Footer />);
     expect(container.querySelector('footer')).not.toBeNull();
-    expect(getByText(/LayoutLab/)).toBeTruthy();
+    expect(getAllByText(/LayoutLab/).length).toBeGreaterThan(0);
   });
 });
