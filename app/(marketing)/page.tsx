@@ -12,6 +12,7 @@ import { CategorySection } from '@/components/CategorySection';
 import { ElementDirectory } from '@/components/ElementDirectory';
 import { SocialProof } from '@/components/marketing/SocialProof';
 import { ProblemSolutionProof } from '@/components/marketing/ProblemSolutionProof';
+import { HowItWorks } from '@/components/marketing/HowItWorks';
 import { TrustBadges } from '@/components/marketing/TrustBadges';
 import { Testimonials } from '@/components/marketing/Testimonials';
 import { FaqSection } from '@/components/marketing/FaqSection';
@@ -137,6 +138,9 @@ export default async function HomePage() {
       {/* Social proof + the classic problem → solution → proof flow */}
       <SocialProof />
       <ProblemSolutionProof />
+
+      {/* How it works — 3 steps */}
+      <HowItWorks />
 
       {/* Listed recently */}
       {recent.length > 0 && (
