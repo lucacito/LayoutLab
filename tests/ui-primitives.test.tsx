@@ -24,9 +24,9 @@ describe('Button', () => {
 });
 
 describe('Wordmark', () => {
-  it('links to home and shows the brand', () => {
-    const { getByText, container } = render(<Wordmark />);
-    expect(getByText('Divi5Lab')).toBeTruthy();
+  it('links to home and shows the brand logo', () => {
+    const { container } = render(<Wordmark />);
+    expect(container.querySelector('img[alt="Divi5Lab"]')).not.toBeNull();
     expect(container.querySelector('a[href="/"]')).not.toBeNull();
   });
 });

@@ -6,8 +6,8 @@ import { BookmarksProvider } from '@/components/bookmarks/BookmarksProvider';
 
 describe('site chrome', () => {
   it('Header shows the wordmark and primary nav links', () => {
-    const { getByText, container } = render(<Header />, { wrapper: BookmarksProvider });
-    expect(getByText('Divi5Lab')).toBeTruthy();
+    const { container } = render(<Header />, { wrapper: BookmarksProvider });
+    expect(container.querySelector('img[alt="Divi5Lab"]')).not.toBeNull();
     expect(container.querySelector('a[href="/browse"]')).not.toBeNull();
     expect(container.querySelector('a[href="/pricing"]')).not.toBeNull();
     expect(container.querySelector('header')).not.toBeNull();
