@@ -71,12 +71,18 @@ export function Footer() {
       </Container>
 
       <div className="border-t border-border">
-        <Container className="flex flex-col items-center justify-between gap-3 py-6 sm:flex-row">
-          <p className="text-small text-muted">© {new Date().getFullYear()} LayoutLab. All rights reserved.</p>
-          <div className="flex items-center gap-5 text-small text-muted">
-            <Link href="/license" className="transition hover:text-action">Terms</Link>
-            <Link href="/license" className="transition hover:text-action">Privacy</Link>
-            <Link href="/license" className="transition hover:text-action">License</Link>
+        <Container className="py-6">
+          <p className="max-w-4xl text-[12px] leading-relaxed text-muted">
+            Divi is a registered trademark of Elegant Themes, Inc. This website is not affiliated with, nor endorsed by,
+            Elegant Themes. LayoutLab is run by a third party and is not associated with, nor acting on behalf of, Elegant Themes.
+          </p>
+          <div className="mt-4 flex flex-col items-center justify-between gap-3 sm:flex-row">
+            <p className="text-small text-muted">© {new Date().getFullYear()} LayoutLab. All rights reserved.</p>
+            <div className="flex items-center gap-5 text-small text-muted">
+              <Link href="/license" className="transition hover:text-action">Terms</Link>
+              <Link href="/license" className="transition hover:text-action">Privacy</Link>
+              <Link href="/license" className="transition hover:text-action">License</Link>
+            </div>
           </div>
         </Container>
       </div>
