@@ -15,7 +15,8 @@ describe('uploadLayout', () => {
     const upload = vi.fn(async (key: string) => ({ url: `https://blob/${key}` }));
     const r = await uploadLayout('h1', '{"x":1}', { hasBlobToken: true, outDir: '/tmp/out', upload });
     expect(upload).toHaveBeenCalledOnce();
-    expect(r.diviJsonBlobKey).toBe('layouts/h1.json');
+    // Stores the real returned Blob URL, not the key.
+    expect(r.diviJsonBlobKey).toBe('https://blob/layouts/h1.json');
     expect(r.previewImageKeys).toHaveLength(3);
   });
 
