@@ -111,6 +111,7 @@ const LAYOUTS_BY_TYPE: Record<string, string[]> = {
   contact: ['form on the left, contact details on the right', 'a centered contact form', 'split with a map-style image'],
   gallery: ['a three-column image grid', 'a masonry-style grid', 'a horizontal image row'],
   footer: ['multi-column links with a newsletter signup', 'a centered minimal footer'],
+  cards: ['equal columns of icon cards', 'equal columns of numbered step cards'],
 };
 const DEFAULT_LAYOUTS = ['a centered composition', 'an asymmetric split two-column composition', 'a stacked full-width composition'];
 

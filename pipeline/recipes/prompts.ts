@@ -21,6 +21,7 @@ const RECIPE_BY_TYPE: Record<string, string[]> = {
   hero: ['hero-cta', 'split-image-text'],
   cta: ['newsletter-social', 'hero-cta'],
   features: ['icon-features', 'card-grid-3'],
+  cards: ['icon-values', 'blurb-grid', 'card-grid-3'],
   pricing: ['card-grid-3', 'stats-counter'],
   testimonials: ['testimonial', 'section-intro'],
   faq: ['icon-features', 'section-intro'],
@@ -59,6 +60,21 @@ function directives(target: Target): string {
   const lines = ['Write realistic, specific copy for this niche — real headlines and benefits, no lorem ipsum.'];
   if (target.color) lines.push(`Use a ${target.color} color palette.`);
   if (target.layout) lines.push(`Composition: ${target.layout}.`);
+  if (target.type === 'cards') {
+    const v = target.variant;
+    const cols = v?.columns ?? 3;
+    lines.push(
+      `Build a section of ${cols} equal-width card columns. Each card IS the divi/column, styled as the wrapper: a white (or, for dark/colored sets, a tinted) background, rounded corners (decoration.border.radius ~20px), generous padding (~36px), and a soft box shadow. On hover the card lifts — set the column's hover decoration: transform translate Y about -6px plus a deeper box shadow and a smooth transition.`,
+    );
+    const placement = v?.icons === 'left' ? 'to the left of the heading' : 'centered above the heading';
+    if (v?.iconStyle === 'number') {
+      lines.push(`Put a numbered step badge (1, 2, 3 …) ${placement}: a number inside a filled circle (decoration.border.radius 50%, colored background, contrasting text). No icon glyph.`);
+    } else {
+      const badge = v?.iconStyle === 'circle' ? 'inside a filled circular badge (colored background, border.radius 50%)' : 'as a bare icon with no background';
+      lines.push(`Give each card a Divi icon ${placement}, ${badge}. Use a divi/blurb (or divi/icon) with type:"divi" or type:"fa" and a real glyph matching the card topic — choose glyph unicodes ONLY from the grounding recipes (icon-features, blurb-grid, icon-values); never invent icon codes.`);
+    }
+    lines.push('Each card: the icon/badge + a short heading + 1–2 specific sentences; optionally a small text link or button. Real copy, no lorem ipsum.');
+  }
   lines.push(
     'For images, derive a keyword from the business and use https://loremflickr.com/{w}/{h}/{keyword} for RELEVANT photos ' +
       '(e.g. a restaurant → "restaurant,food"); for people/avatars (testimonials, team) use https://i.pravatar.cc/{size}?u={unique-id}; ' +
