@@ -32,6 +32,11 @@ describe('parseIngestPayload', () => {
     const { validatorPassed, ...missing } = valid;
     expect(parseIngestPayload(missing).ok).toBe(false);
   });
+  it('preserves the full card variant including iconStyle', () => {
+    const r = parseIngestPayload({ ...valid, type: 'cards', variant: { group: 'cards-saas-minimal', columns: 3, icons: 'left', iconStyle: 'number' } });
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.data.variant).toEqual({ group: 'cards-saas-minimal', columns: 3, icons: 'left', iconStyle: 'number' });
+  });
 });
 
 describe('parseBearer', () => {
