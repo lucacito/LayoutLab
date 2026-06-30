@@ -1,5 +1,5 @@
 export const AXIS_VALUES = {
-  type: ['hero', 'pricing', 'testimonials', 'cta', 'features', 'faq', 'footer', 'header', 'contact', 'gallery', 'blog', 'full_landing'],
+  type: ['hero', 'pricing', 'testimonials', 'cta', 'features', 'faq', 'footer', 'contact', 'gallery', 'blog', 'full_landing'],
   niche: ['saas', 'agency', 'restaurant', 'real_estate', 'fitness', 'coaching', 'ecommerce', 'nonprofit', 'portfolio', 'events'],
   style: ['minimal', 'bold', 'dark', 'corporate', 'playful', 'elegant'],
   color: ['blue', 'green', 'red', 'purple', 'orange', 'monochrome', 'pastel'],

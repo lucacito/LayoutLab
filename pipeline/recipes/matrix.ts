@@ -102,9 +102,13 @@ const LAYOUTS_BY_TYPE: Record<string, string[]> = {
   contact: ['form on the left, contact details on the right', 'a centered contact form', 'split with a map-style image'],
   gallery: ['a three-column image grid', 'a masonry-style grid', 'a horizontal image row'],
   footer: ['multi-column links with a newsletter signup', 'a centered minimal footer'],
-  header: ['logo left, nav right with a CTA button', 'centered navigation'],
 };
 const DEFAULT_LAYOUTS = ['a centered composition', 'an asymmetric split two-column composition', 'a stacked full-width composition'];
+
+// Types we deliberately do NOT generate. Headers need a real Divi menu module
+// (hamburger on mobile, references a site WP menu) and are built globally in the
+// Theme Builder — they don't work as importable, portable sections.
+const UNSUPPORTED_TYPES = new Set(['header']);
 
 // Build `count` diverse variants per type, each a distinct (niche, style, color,
 // layout) combination. Deterministic (index-seeded with coprime strides) so runs
@@ -114,6 +118,7 @@ export function buildVariants(types: string[], count: number): Target[] {
   const out: Target[] = [];
   let i = 0;
   for (const type of types) {
+    if (UNSUPPORTED_TYPES.has(type)) continue;
     const layouts = LAYOUTS_BY_TYPE[type] ?? DEFAULT_LAYOUTS;
     for (let n = 0; n < count; n++, i++) {
       out.push({

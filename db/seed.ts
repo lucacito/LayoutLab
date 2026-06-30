@@ -23,7 +23,7 @@ const COMBOS: { type: string; niche: string; style: string; colors: string[] }[]
   { type: 'features', niche: 'saas', style: 'minimal', colors: ['blue'] },
   { type: 'faq', niche: 'nonprofit', style: 'minimal', colors: ['green'] },
   { type: 'footer', niche: 'agency', style: 'dark', colors: ['monochrome'] },
-  { type: 'header', niche: 'restaurant', style: 'elegant', colors: ['orange'] },
+  { type: 'blog', niche: 'restaurant', style: 'elegant', colors: ['orange'] },
   { type: 'contact', niche: 'real_estate', style: 'corporate', colors: ['blue'] },
   { type: 'gallery', niche: 'portfolio', style: 'playful', colors: ['purple', 'pastel'] },
   { type: 'full_landing', niche: 'saas', style: 'bold', colors: ['blue', 'purple'] },
