@@ -205,18 +205,18 @@ export default async function HomePage() {
       {/* FAQ */}
       <FaqSection />
 
-      {/* Custom build lead-gen */}
-      <CustomBuildCta />
-
-      {/* CTA */}
+      {/* Custom build + final CTA, side by side */}
       <section className="py-16">
         <Container>
-          <div className="rounded-card bg-navy px-8 py-16 text-center">
-            <h2 className="text-h2 text-paper">Ready to skip the blank page?</h2>
-            <p className="mx-auto mt-4 max-w-xl text-lead text-paper/80">Browse the catalog and import a validated Divi 5 layout today.</p>
-            <div className="mt-8 flex flex-col items-center gap-3">
-              <Button href="/browse">Browse layouts</Button>
-              <CtaNote className="text-paper/70" />
+          <div className="grid items-stretch gap-6 md:grid-cols-2">
+            <CustomBuildCta />
+            <div className="flex h-full flex-col justify-center rounded-card bg-navy px-8 py-12 text-center">
+              <h2 className="text-h2 text-paper">Ready to skip the blank page?</h2>
+              <p className="mx-auto mt-4 max-w-md text-lead text-paper/80">Browse the catalog and import a validated Divi 5 layout today.</p>
+              <div className="mt-8 flex flex-col items-center gap-3">
+                <Button href="/browse">Browse layouts</Button>
+                <CtaNote className="text-paper/70" />
+              </div>
             </div>
           </div>
         </Container>
