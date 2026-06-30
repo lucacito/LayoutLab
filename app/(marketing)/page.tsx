@@ -29,6 +29,10 @@ const PILLS = [
   { label: 'Dark', href: '/style/dark' },
 ];
 
+// Stock backgrounds for the closing CTA band (Pexels).
+const CUSTOM_IMG = 'https://images.pexels.com/photos/34140/pexels-photo.jpg?auto=compress&cs=tinysrgb&dpr=2&w=1260';
+const BROWSE_IMG = 'https://images.pexels.com/photos/9052803/pexels-photo-9052803.jpeg?auto=compress&cs=tinysrgb&dpr=2&w=1260';
+
 const FEATURES = [
   { title: 'Validated, every time', body: 'Each layout passes a deterministic Divi 5 validator before it reaches the catalog.' },
   { title: 'Import-ready JSON', body: 'Download the layout and import it straight into Divi 5 — no cleanup.' },
@@ -205,21 +209,21 @@ export default async function HomePage() {
       {/* FAQ */}
       <FaqSection />
 
-      {/* Custom build + final CTA, side by side */}
-      <section className="py-16">
-        <Container>
-          <div className="grid items-stretch gap-6 md:grid-cols-2">
-            <CustomBuildCta />
-            <div className="flex h-full flex-col justify-center rounded-card bg-navy px-8 py-12 text-center">
-              <h2 className="text-h2 text-paper">Ready to skip the blank page?</h2>
-              <p className="mx-auto mt-4 max-w-md text-lead text-paper/80">Browse the catalog and import a validated Divi 5 layout today.</p>
-              <div className="mt-8 flex flex-col items-center gap-3">
-                <Button href="/browse">Browse layouts</Button>
-                <CtaNote className="text-paper/70" />
-              </div>
+      {/* Custom build + final CTA — full-bleed, with stock imagery */}
+      <section className="px-4 py-16 sm:px-6 lg:px-8">
+        <div className="grid items-stretch gap-6 lg:grid-cols-2">
+          <CustomBuildCta image={CUSTOM_IMG} />
+          <div className="relative isolate flex h-full min-h-[360px] flex-col justify-center overflow-hidden rounded-card px-8 py-12 text-center text-paper">
+            <div className="absolute inset-0 -z-20 bg-cover bg-center transition-transform duration-700 hover:scale-105" style={{ backgroundImage: `url(${BROWSE_IMG})` }} />
+            <div className="absolute inset-0 -z-10 bg-gradient-to-tl from-ink/95 via-navy/90 to-action/55" />
+            <h2 className="text-h2 text-paper">Ready to skip the blank page?</h2>
+            <p className="mx-auto mt-4 max-w-md text-lead text-paper/85">Browse the catalog and import a validated Divi 5 layout in seconds.</p>
+            <div className="mt-8 flex flex-col items-center gap-3">
+              <Button href="/browse">Browse layouts</Button>
+              <CtaNote className="text-paper/80" />
             </div>
           </div>
-        </Container>
+        </div>
       </section>
     </main>
   );
