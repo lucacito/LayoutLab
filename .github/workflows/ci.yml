@@ -16,9 +16,9 @@ jobs:
       - run: npm run test
         env:
           # Minimal env so `lib/env.ts` parses during module load in tests.
-          NEXT_PUBLIC_SITE_URL: https://layoutlab.com
+          NEXT_PUBLIC_SITE_URL: https://divi5lab.com
           DATABASE_URL: postgres://u:p@localhost/db
           AUTH_SECRET: test-secret-test-secret-32chars!!
           NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: pk_test_ci
           INGEST_API_TOKEN: test-ingest-token
-          ADMIN_EMAILS: admin@layoutlab.com
+          ADMIN_EMAILS: admin@divi5lab.com

@@ -27,7 +27,7 @@ export function taxonomyFallbackCopy(axis: TaxonomyAxis, value: string, count: n
       : axis === 'style'
         ? `Explore ${countPhrase}${label.toLowerCase()} Divi 5 layouts. A curated ${label} aesthetic, ready to import and customize.`
         : `Divi 5 layouts in ${label.toLowerCase()} — ${countPhrase}designs built around a ${label.toLowerCase()} palette, ready to import.`;
-  const metaTitle = `${label} Divi 5 Layouts${axis === 'type' ? '' : ` (${noun})`} — LayoutLab`;
+  const metaTitle = `${label} Divi 5 Layouts${axis === 'type' ? '' : ` (${noun})`} — Divi5Lab`;
   const metaDescription = `Download ${countPhrase}${label} Divi 5 layouts as JSON. Import, customize, and launch. Commercial license included.`;
   return { intro, metaTitle, metaDescription };
 }

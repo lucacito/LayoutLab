@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { purchaseReceiptEmail } from '@/lib/email/receipt';
 
-const URL = 'https://layoutlab.com/api/auth/callback/email?token=abc&email=a%40b.com';
+const URL = 'https://divi5lab.com/api/auth/callback/email?token=abc&email=a%40b.com';
 
 describe('purchaseReceiptEmail', () => {
   it('pack receipt: contains the pack title, amount, and the one-click sign-in URL', () => {

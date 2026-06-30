@@ -4,11 +4,11 @@ import { isAdminEmail } from '@/lib/auth/config';
 
 describe('isAdminEmail', () => {
   const prev = process.env.ADMIN_EMAILS;
-  beforeEach(() => { process.env.ADMIN_EMAILS = 'Admin@Layoutlab.com, boss@x.io'; });
+  beforeEach(() => { process.env.ADMIN_EMAILS = 'Admin@Divi5lab.com, boss@x.io'; });
   afterEach(() => { process.env.ADMIN_EMAILS = prev; });
 
   it('matches an allowlisted email case-insensitively', () => {
-    expect(isAdminEmail('admin@layoutlab.com')).toBe(true);
+    expect(isAdminEmail('admin@divi5lab.com')).toBe(true);
     expect(isAdminEmail('BOSS@X.IO')).toBe(true);
   });
   it('rejects non-listed, empty, and nullish emails', () => {
@@ -19,6 +19,6 @@ describe('isAdminEmail', () => {
   });
   it('returns false when the allowlist is unset/empty', () => {
     process.env.ADMIN_EMAILS = '';
-    expect(isAdminEmail('admin@layoutlab.com')).toBe(false);
+    expect(isAdminEmail('admin@divi5lab.com')).toBe(false);
   });
 });

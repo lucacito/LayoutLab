@@ -4,8 +4,8 @@ import { IconFeature } from '@/components/ui/IconFeature';
 import { Button } from '@/components/ui/Button';
 
 export const metadata: Metadata = {
-  title: 'About — LayoutLab',
-  description: 'LayoutLab is a marketplace of validated, import-ready Divi 5 layouts for WordPress builders.',
+  title: 'About — Divi5Lab',
+  description: 'Divi5Lab is a marketplace of validated, import-ready Divi 5 layouts for WordPress builders.',
 };
 
 const POINTS = [
@@ -24,9 +24,9 @@ export default function AboutPage() {
   return (
     <main className="py-16">
       <Container>
-        <h1 className="text-h1 text-navy">About LayoutLab</h1>
+        <h1 className="text-h1 text-navy">About Divi5Lab</h1>
         <p className="mt-4 max-w-2xl text-lead text-muted">
-          LayoutLab helps WordPress builders move faster with a growing library of validated, import-ready
+          Divi5Lab helps WordPress builders move faster with a growing library of validated, import-ready
           Divi 5 layouts — heroes, pricing, landing pages and more — that drop straight into the builder.
         </p>
 

@@ -14,7 +14,7 @@ const magicLink: EmailConfig = {
   id: 'email',
   type: 'email',
   name: 'Email',
-  from: process.env.RESEND_FROM || 'LayoutLab <onboarding@resend.dev>',
+  from: process.env.RESEND_FROM || 'Divi5Lab <onboarding@resend.dev>',
   maxAge: 24 * 60 * 60,
   options: {},
   sendVerificationRequest: async ({ identifier, url }: { identifier: string; url: string }) => {

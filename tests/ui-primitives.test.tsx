@@ -26,7 +26,7 @@ describe('Button', () => {
 describe('Wordmark', () => {
   it('links to home and shows the brand', () => {
     const { getByText, container } = render(<Wordmark />);
-    expect(getByText('LayoutLab')).toBeTruthy();
+    expect(getByText('Divi5Lab')).toBeTruthy();
     expect(container.querySelector('a[href="/"]')).not.toBeNull();
   });
 });

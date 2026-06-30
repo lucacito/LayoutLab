@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { buildLayoutMetadata, buildPackMetadata, productJsonLd, itemListJsonLd, breadcrumbJsonLd } from '@/lib/seo';
 
-const SITE = 'https://layoutlab.com';
+const SITE = 'https://divi5lab.com';
 
 describe('buildLayoutMetadata', () => {
   it('sets title, canonical, and OG image', () => {

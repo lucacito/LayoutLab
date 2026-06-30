@@ -5,8 +5,8 @@ import { Container } from '@/components/ui/Container';
 import { Card } from '@/components/ui/Card';
 
 export const metadata: Metadata = {
-  title: 'License & Refunds — LayoutLab',
-  description: 'The commercial license that comes with every LayoutLab purchase, plus our digital-goods refund policy.',
+  title: 'License & Refunds — Divi5Lab',
+  description: 'The commercial license that comes with every Divi5Lab purchase, plus our digital-goods refund policy.',
 };
 
 export default function LicensePage() {

@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { sitemapEntries } from '@/lib/seo/sitemap';
 import { AXIS_VALUES } from '@/lib/catalog/filters';
 
-const SITE = 'https://layoutlab.com';
+const SITE = 'https://divi5lab.com';
 
 describe('sitemapEntries', () => {
   const out = sitemapEntries({

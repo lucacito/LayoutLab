@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { buildCheckoutSessionParams } from '@/lib/stripe/checkout';
 import { POST } from '@/app/api/checkout/route';
 
-const ctx = { siteUrl: 'https://layoutlab.com', automaticTax: true };
+const ctx = { siteUrl: 'https://divi5lab.com', automaticTax: true };
 
 describe('buildCheckoutSessionParams', () => {
   it('builds a one-time payment session for a pack', () => {

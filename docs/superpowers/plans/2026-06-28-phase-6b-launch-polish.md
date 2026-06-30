@@ -65,7 +65,7 @@ Expected: FAIL — modules not found.
 
 ```ts
 // lib/legal/refund.ts
-export const REFUND_POLICY = `Because LayoutLab products are digital goods delivered instantly and downloaded as files, all sales are final and we do not offer refunds once a layout or pack has been downloaded. If a file is broken, fails to import, or you were charged in error, contact info@layoutlab.com within 14 days of purchase and we'll make it right — typically with a fix or a replacement. Membership can be cancelled anytime from your billing portal; cancellation stops future renewals and keeps access until the end of the current period.`;
+export const REFUND_POLICY = `Because Divi5Lab products are digital goods delivered instantly and downloaded as files, all sales are final and we do not offer refunds once a layout or pack has been downloaded. If a file is broken, fails to import, or you were charged in error, contact info@divi5lab.com within 14 days of purchase and we'll make it right — typically with a fix or a replacement. Membership can be cancelled anytime from your billing portal; cancellation stops future renewals and keeps access until the end of the current period.`;
 ```
 
 - [ ] **Step 4: Implement the page**
@@ -79,8 +79,8 @@ import { Container } from '@/components/ui/Container';
 import { Card } from '@/components/ui/Card';
 
 export const metadata: Metadata = {
-  title: 'License & Refunds — LayoutLab',
-  description: 'The commercial license that comes with every LayoutLab purchase, plus our digital-goods refund policy.',
+  title: 'License & Refunds — Divi5Lab',
+  description: 'The commercial license that comes with every Divi5Lab purchase, plus our digital-goods refund policy.',
 };
 
 export default function LicensePage() {
@@ -145,7 +145,7 @@ import AboutPage from '@/app/(marketing)/about/page';
 describe('AboutPage', () => {
   it('renders the brand and a value proposition', () => {
     const { getAllByText, getByRole } = render(<AboutPage />);
-    expect(getAllByText(/LayoutLab/i).length).toBeGreaterThan(0);
+    expect(getAllByText(/Divi5Lab/i).length).toBeGreaterThan(0);
     expect(getByRole('heading', { level: 1 })).toBeTruthy();
   });
 });
@@ -167,8 +167,8 @@ import { IconFeature } from '@/components/ui/IconFeature';
 import { Button } from '@/components/ui/Button';
 
 export const metadata: Metadata = {
-  title: 'About — LayoutLab',
-  description: 'LayoutLab is a marketplace of validated, import-ready Divi 5 layouts for WordPress builders.',
+  title: 'About — Divi5Lab',
+  description: 'Divi5Lab is a marketplace of validated, import-ready Divi 5 layouts for WordPress builders.',
 };
 
 const POINTS = [
@@ -181,9 +181,9 @@ export default function AboutPage() {
   return (
     <main className="py-16">
       <Container>
-        <h1 className="text-h1 text-navy">About LayoutLab</h1>
+        <h1 className="text-h1 text-navy">About Divi5Lab</h1>
         <p className="mt-4 max-w-2xl text-lead text-muted">
-          LayoutLab helps WordPress builders move faster with a growing library of validated, import-ready
+          Divi5Lab helps WordPress builders move faster with a growing library of validated, import-ready
           Divi 5 layouts — heroes, pricing, landing pages and more — that drop straight into the builder.
         </p>
 
@@ -318,12 +318,12 @@ import { JsonLd } from '@/components/JsonLd';
 import { faqJsonLd } from '@/lib/seo/jsonld';
 
 export const dynamic = 'force-dynamic';
-export const metadata: Metadata = { title: 'Pricing — LayoutLab', description: 'Free packs, one-time packs, or all-access membership for every Divi 5 layout.' };
+export const metadata: Metadata = { title: 'Pricing — Divi5Lab', description: 'Free packs, one-time packs, or all-access membership for every Divi 5 layout.' };
 
 const FAQ = [
   { question: 'What do I actually download?', answer: 'A Divi 5 layout as a JSON file, plus the commercial license. Import the JSON straight into the Divi builder.' },
   { question: 'What license do I get?', answer: 'One simple commercial license: use your purchases on unlimited sites you own or build for clients. Reselling or redistributing the files is not allowed.' },
-  { question: 'Do you offer refunds?', answer: 'Layouts are digital goods delivered instantly, so sales are final once downloaded — but if a file is broken or you were charged in error, email info@layoutlab.com within 14 days and we will make it right. See the License & Refunds page.' },
+  { question: 'Do you offer refunds?', answer: 'Layouts are digital goods delivered instantly, so sales are final once downloaded — but if a file is broken or you were charged in error, email info@divi5lab.com within 14 days and we will make it right. See the License & Refunds page.' },
   { question: 'How does the all-access membership work?', answer: 'While your membership is active you can download every layout in the library. Cancel anytime from your billing portal; access continues until the end of the period.' },
 ];
 
@@ -428,7 +428,7 @@ Expected: PASS.
 
 Run:
 ```bash
-NEXT_PUBLIC_SITE_URL=https://layoutlab.com DATABASE_URL=postgres://u:p@localhost/db AUTH_SECRET=test-secret-test-secret-32chars!! NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_ci STRIPE_SECRET_KEY=sk_test_ci STRIPE_WEBHOOK_SECRET=whsec_ci INGEST_API_TOKEN=test-ingest-token ADMIN_EMAILS=admin@layoutlab.com npm run build
+NEXT_PUBLIC_SITE_URL=https://divi5lab.com DATABASE_URL=postgres://u:p@localhost/db AUTH_SECRET=test-secret-test-secret-32chars!! NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_ci STRIPE_SECRET_KEY=sk_test_ci STRIPE_WEBHOOK_SECRET=whsec_ci INGEST_API_TOKEN=test-ingest-token ADMIN_EMAILS=admin@divi5lab.com npm run build
 ```
 Expected: PASS — `/license`, `/about`, `/pricing` all in the route table.
 

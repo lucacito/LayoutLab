@@ -1,7 +1,7 @@
 export function purchaseReceiptEmail(input: { kind: 'pack' | 'membership'; packTitle?: string; amountCents?: number; signInUrl: string }): { subject: string; html: string; text: string } {
   const item = input.kind === 'membership' ? 'All-access membership' : (input.packTitle ?? 'Your pack');
   const amount = input.amountCents != null ? `$${(input.amountCents / 100).toFixed(input.amountCents % 100 === 0 ? 0 : 2)}` : '';
-  const subject = 'Your LayoutLab purchase receipt';
+  const subject = 'Your Divi5Lab purchase receipt';
   const amountLine = amount ? `<p style="color:#476788;font-size:15px;margin:0 0 8px">Amount: <strong>${amount}</strong></p>` : '';
   const html = `<!doctype html><html><body style="font-family:Inter,Arial,sans-serif;background:#F8F9FB;padding:32px">
   <table role="presentation" width="100%" style="max-width:480px;margin:0 auto;background:#fff;border-radius:16px;padding:32px">

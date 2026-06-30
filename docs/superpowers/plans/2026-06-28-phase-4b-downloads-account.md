@@ -133,8 +133,8 @@ By downloading these files, you agree to these terms.
 
 For support:
 
-layoutlab.com
-info@layoutlab.com
+divi5lab.com
+info@divi5lab.com
 ```
 
 - [ ] **Step 3: Write the failing test**
@@ -964,7 +964,7 @@ Expected: PASS.
 
 - [ ] **Step 3: Production build**
 
-Run: `NEXT_PUBLIC_SITE_URL=https://layoutlab.com DATABASE_URL=postgres://u:p@localhost/db AUTH_SECRET=test-secret-test-secret-32chars!! NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_ci STRIPE_SECRET_KEY=sk_test_ci STRIPE_WEBHOOK_SECRET=whsec_ci INGEST_API_TOKEN=test-ingest-token ADMIN_EMAILS=admin@layoutlab.com npm run build`
+Run: `NEXT_PUBLIC_SITE_URL=https://divi5lab.com DATABASE_URL=postgres://u:p@localhost/db AUTH_SECRET=test-secret-test-secret-32chars!! NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_ci STRIPE_SECRET_KEY=sk_test_ci STRIPE_WEBHOOK_SECRET=whsec_ci INGEST_API_TOKEN=test-ingest-token ADMIN_EMAILS=admin@divi5lab.com npm run build`
 Expected: PASS — `/api/download/[layoutId]`, `/api/billing/portal`, `/account`, `/account/downloads`, `/account/purchases`, `/account/billing` all compile.
 
 - [ ] **Step 4: Manual acceptance (user-run — local DB + a real entitlement)**

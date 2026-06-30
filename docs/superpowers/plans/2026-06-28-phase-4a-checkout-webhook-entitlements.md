@@ -271,7 +271,7 @@ import { describe, it, expect } from 'vitest';
 import { buildCheckoutSessionParams } from '@/lib/stripe/checkout';
 import { POST } from '@/app/api/checkout/route';
 
-const ctx = { siteUrl: 'https://layoutlab.com', automaticTax: true };
+const ctx = { siteUrl: 'https://divi5lab.com', automaticTax: true };
 
 describe('buildCheckoutSessionParams', () => {
   it('builds a one-time payment session for a pack', () => {
@@ -1045,7 +1045,7 @@ import { SectionTitle } from '@/components/ui/SectionTitle';
 import { BuyButton } from '@/components/BuyButton';
 
 export const dynamic = 'force-dynamic';
-export const metadata: Metadata = { title: 'Pricing — LayoutLab', description: 'Buy a pack or get all-access to every Divi 5 layout.' };
+export const metadata: Metadata = { title: 'Pricing — Divi5Lab', description: 'Buy a pack or get all-access to every Divi 5 layout.' };
 
 export default async function PricingPage() {
   let packs: Awaited<ReturnType<typeof listPacks>> = [];
@@ -1175,7 +1175,7 @@ Expected: PASS.
 
 - [ ] **Step 3: Production build**
 
-Run: `NEXT_PUBLIC_SITE_URL=https://layoutlab.com DATABASE_URL=postgres://u:p@localhost/db AUTH_SECRET=test-secret-test-secret-32chars!! NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_ci STRIPE_SECRET_KEY=sk_test_ci STRIPE_WEBHOOK_SECRET=whsec_ci INGEST_API_TOKEN=test-ingest-token ADMIN_EMAILS=admin@layoutlab.com npm run build`
+Run: `NEXT_PUBLIC_SITE_URL=https://divi5lab.com DATABASE_URL=postgres://u:p@localhost/db AUTH_SECRET=test-secret-test-secret-32chars!! NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_ci STRIPE_SECRET_KEY=sk_test_ci STRIPE_WEBHOOK_SECRET=whsec_ci INGEST_API_TOKEN=test-ingest-token ADMIN_EMAILS=admin@divi5lab.com npm run build`
 Expected: PASS — `/api/checkout`, `/api/stripe/webhook`, `/pricing`, `/checkout/success`, `/checkout/cancel` all compile.
 
 - [ ] **Step 4: Manual acceptance (user-run — Stripe test mode + CLI + local DB)**

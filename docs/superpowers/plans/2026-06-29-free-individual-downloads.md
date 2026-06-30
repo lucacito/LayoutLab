@@ -449,7 +449,7 @@ Render the gate under the title block (after the description `<p>`, before the g
 - [ ] **Step 2:** `npm run typecheck && npm run lint` → clean.
 - [ ] **Step 3:** Production build (env-prefixed):
 ```bash
-NEXT_PUBLIC_SITE_URL=https://layoutlab.com DATABASE_URL=postgres://u:p@localhost/db AUTH_SECRET=test-secret-test-secret-32chars!! NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_ci STRIPE_SECRET_KEY=sk_test_ci STRIPE_WEBHOOK_SECRET=whsec_ci INGEST_API_TOKEN=test-ingest-token ADMIN_EMAILS=admin@layoutlab.com npm run build
+NEXT_PUBLIC_SITE_URL=https://divi5lab.com DATABASE_URL=postgres://u:p@localhost/db AUTH_SECRET=test-secret-test-secret-32chars!! NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_ci STRIPE_SECRET_KEY=sk_test_ci STRIPE_WEBHOOK_SECRET=whsec_ci INGEST_API_TOKEN=test-ingest-token ADMIN_EMAILS=admin@divi5lab.com npm run build
 ```
 Expect `/api/download/[layoutId]` + `/layouts/[slug]` compile.
 - [ ] **Step 4: Manual (local DB):** open a layout with a real pipeline JSON (seed layouts have placeholder keys → 404 by design; use a pipeline-generated one or accept the 404) → enter email → file downloads + an `email_captures` row appears; reload → a direct "Download free" button (cookie set); `GET /api/download/<id>` from a fresh incognito (no cookie/session) → 403 `email_required`.

@@ -1,4 +1,4 @@
-# Local development database for LayoutLab.
+# Local development database for Divi5Lab.
 # Production uses Vercel Postgres (Neon); this is a plain Postgres for `npm run dev`,
 # `db:migrate`, and `db:seed` locally. db/client.ts auto-selects the node-postgres
 # driver when POSTGRES_URL points at localhost.

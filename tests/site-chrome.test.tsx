@@ -7,7 +7,7 @@ import { BookmarksProvider } from '@/components/bookmarks/BookmarksProvider';
 describe('site chrome', () => {
   it('Header shows the wordmark and primary nav links', () => {
     const { getByText, container } = render(<Header />, { wrapper: BookmarksProvider });
-    expect(getByText('LayoutLab')).toBeTruthy();
+    expect(getByText('Divi5Lab')).toBeTruthy();
     expect(container.querySelector('a[href="/browse"]')).not.toBeNull();
     expect(container.querySelector('a[href="/pricing"]')).not.toBeNull();
     expect(container.querySelector('header')).not.toBeNull();
@@ -15,6 +15,6 @@ describe('site chrome', () => {
   it('Footer renders a contentinfo landmark and the brand', () => {
     const { getAllByText, container } = render(<Footer />);
     expect(container.querySelector('footer')).not.toBeNull();
-    expect(getAllByText(/LayoutLab/).length).toBeGreaterThan(0);
+    expect(getAllByText(/Divi5Lab/).length).toBeGreaterThan(0);
   });
 });

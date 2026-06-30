@@ -1,8 +1,8 @@
 {
-  "name": "layoutlab",
+  "name": "divi5lab",
   "version": "0.1.0",
   "private": true,
-  "description": "Marketplace for AI-generated Divi 5 layouts (placeholder name: LayoutLab)",
+  "description": "Marketplace for AI-generated Divi 5 layouts (placeholder name: Divi5Lab)",
   "scripts": {
     "dev": "next dev",
     "build": "next build",

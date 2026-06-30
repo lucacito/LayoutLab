@@ -1,7 +1,6 @@
-# LayoutLab
+# Divi5Lab
 
-> Placeholder name — find-and-replace `LayoutLab` / `layoutlab` once the real
-> brand + domain are chosen.
+> Divi 5 layout marketplace · **divi5lab.com**
 
 A marketplace that sells **AI-generated Divi 5 layouts** as downloadable JSON,
 plus the automated pipeline that generates, screenshots, SEO-optimizes, and

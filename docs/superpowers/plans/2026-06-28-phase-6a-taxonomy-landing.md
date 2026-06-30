@@ -213,7 +213,7 @@ export function taxonomyFallbackCopy(axis: TaxonomyAxis, value: string, count: n
       : axis === 'style'
         ? `Explore ${countPhrase}${label.toLowerCase()} Divi 5 layouts. A curated ${label} aesthetic, ready to import and customize.`
         : `Divi 5 layouts in ${label.toLowerCase()} — ${countPhrase}designs built around a ${label.toLowerCase()} palette, ready to import.`;
-  const metaTitle = `${label} Divi 5 Layouts${axis === 'type' ? '' : ` (${noun})`} — LayoutLab`;
+  const metaTitle = `${label} Divi 5 Layouts${axis === 'type' ? '' : ` (${noun})`} — Divi5Lab`;
   const metaDescription = `Download ${countPhrase}${label} Divi 5 layouts as JSON. Import, customize, and launch. Commercial license included.`;
   return { intro, metaTitle, metaDescription };
 }
@@ -256,20 +256,20 @@ import { sitemapEntries } from '@/lib/seo/sitemap';
 import { AXIS_VALUES } from '@/lib/catalog/filters';
 
 describe('sitemapEntries', () => {
-  const out = sitemapEntries({ siteUrl: 'https://layoutlab.com', layouts: [], packs: [] });
+  const out = sitemapEntries({ siteUrl: 'https://divi5lab.com', layouts: [], packs: [] });
   const urls = out.map((e) => e.url);
 
   it('includes a URL for every taxonomy axis value', () => {
     for (const axis of ['type', 'niche', 'style', 'color'] as const) {
       for (const value of AXIS_VALUES[axis]) {
-        expect(urls).toContain(`https://layoutlab.com/${axis}/${value}`);
+        expect(urls).toContain(`https://divi5lab.com/${axis}/${value}`);
       }
     }
   });
 
   it('still includes the static + browse pages', () => {
-    expect(urls).toContain('https://layoutlab.com');
-    expect(urls).toContain('https://layoutlab.com/browse');
+    expect(urls).toContain('https://divi5lab.com');
+    expect(urls).toContain('https://divi5lab.com/browse');
   });
 });
 ```
@@ -337,7 +337,7 @@ const layout = { id: 'l1', slug: 'a', title: 'Bold Hero', type: 'hero', niche: '
 describe('TaxonomyLanding', () => {
   it('renders the intro, the grid, and ItemList + BreadcrumbList JSON-LD', () => {
     const { container, getByText } = render(
-      <TaxonomyLanding axis="style" value="minimal" siteUrl="https://layoutlab.com"
+      <TaxonomyLanding axis="style" value="minimal" siteUrl="https://divi5lab.com"
         copy={{ intro: 'Minimal intro here', metaTitle: 'x', metaDescription: 'y' }} layouts={[layout]} />,
     );
     expect(getByText(/Minimal intro here/)).toBeTruthy();
@@ -349,7 +349,7 @@ describe('TaxonomyLanding', () => {
 
   it('shows an empty state when there are no layouts', () => {
     const { getByText } = render(
-      <TaxonomyLanding axis="type" value="faq" siteUrl="https://layoutlab.com"
+      <TaxonomyLanding axis="type" value="faq" siteUrl="https://divi5lab.com"
         copy={{ intro: 'i', metaTitle: 'x', metaDescription: 'y' }} layouts={[]} />,
     );
     expect(getByText(/no layouts/i)).toBeTruthy();
@@ -686,7 +686,7 @@ Expected: PASS.
 
 Run:
 ```bash
-NEXT_PUBLIC_SITE_URL=https://layoutlab.com DATABASE_URL=postgres://u:p@localhost/db AUTH_SECRET=test-secret-test-secret-32chars!! NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_ci STRIPE_SECRET_KEY=sk_test_ci STRIPE_WEBHOOK_SECRET=whsec_ci INGEST_API_TOKEN=test-ingest-token ADMIN_EMAILS=admin@layoutlab.com npm run build
+NEXT_PUBLIC_SITE_URL=https://divi5lab.com DATABASE_URL=postgres://u:p@localhost/db AUTH_SECRET=test-secret-test-secret-32chars!! NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_ci STRIPE_SECRET_KEY=sk_test_ci STRIPE_WEBHOOK_SECRET=whsec_ci INGEST_API_TOKEN=test-ingest-token ADMIN_EMAILS=admin@divi5lab.com npm run build
 ```
 Expected: PASS — `/type/[value]`, `/niche/[value]`, `/style/[value]`, `/color/[value]`, and the sitemap all compile (routes are force-dynamic; the sitemap enumerates the axis values).
 
