@@ -5,6 +5,7 @@ import { AXIS_VALUES } from '@/lib/catalog/filters';
 
 const AXES: { key: keyof typeof AXIS_VALUES; label: string }[] = [
   { key: 'type', label: 'Type' },
+  { key: 'columns', label: 'Columns' },
   { key: 'niche', label: 'Industry' },
   { key: 'style', label: 'Style' },
   { key: 'color', label: 'Color' },
@@ -57,7 +58,7 @@ export function FacetFilters({ counts }: { counts: Record<string, Record<string,
                 <li key={value}>
                   <label className="flex cursor-pointer items-center gap-2 text-body text-navy">
                     <input type="checkbox" checked={selected.has(value)} onChange={() => toggle(key, value)} />
-                    <span className="capitalize">{value.replace('_', ' ')}</span>
+                    <span className="capitalize">{key === 'columns' ? `${value} columns` : value.replace('_', ' ')}</span>
                     <span className="ml-auto text-small text-muted">{counts[key]?.[value] ?? 0}</span>
                   </label>
                 </li>
