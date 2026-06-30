@@ -44,12 +44,12 @@ In `vitest.config.ts`, add an `env` object inside `test` (keep the existing `inc
     environmentMatchGlobs: [['tests/**/*.test.tsx', 'jsdom']],
     globals: true,
     env: {
-      NEXT_PUBLIC_SITE_URL: 'https://layoutlab.com',
+      NEXT_PUBLIC_SITE_URL: 'https://divi5lab.com',
       DATABASE_URL: 'postgres://u:p@localhost/db',
       AUTH_SECRET: 'test-secret-test-secret-32chars!!',
       NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: 'pk_test_ci',
       INGEST_API_TOKEN: 'test-ingest-token',
-      ADMIN_EMAILS: 'admin@layoutlab.com',
+      ADMIN_EMAILS: 'admin@divi5lab.com',
     },
   },
 ```
@@ -67,7 +67,7 @@ describe('isAdminEmail', () => {
   afterEach(() => { process.env.ADMIN_EMAILS = prev; });
 
   it('matches an allowlisted email case-insensitively', () => {
-    expect(isAdminEmail('admin@layoutlab.com')).toBe(true);
+    expect(isAdminEmail('admin@divi5lab.com')).toBe(true);
     expect(isAdminEmail('BOSS@X.IO')).toBe(true);
   });
   it('rejects non-listed, empty, and nullish emails', () => {
@@ -78,7 +78,7 @@ describe('isAdminEmail', () => {
   });
   it('returns false when the allowlist is unset/empty', () => {
     process.env.ADMIN_EMAILS = '';
-    expect(isAdminEmail('admin@layoutlab.com')).toBe(false);
+    expect(isAdminEmail('admin@divi5lab.com')).toBe(false);
   });
 });
 ```
@@ -1135,7 +1135,7 @@ In `.github/workflows/ci.yml`, in the `npm run test` step's `env:` block, add:
 
 ```yaml
           INGEST_API_TOKEN: test-ingest-token
-          ADMIN_EMAILS: admin@layoutlab.com
+          ADMIN_EMAILS: admin@divi5lab.com
 ```
 
 (Vitest's `test.env` already injects these for local runs; this keeps CI explicit and consistent.)

@@ -17,12 +17,12 @@ export default defineConfig({
     // Minimal env so `lib/env.ts`'s eager singleton parses on import during tests
     // (mirrors the vars CI injects in .github/workflows/ci.yml).
     env: {
-      NEXT_PUBLIC_SITE_URL: 'https://layoutlab.com',
+      NEXT_PUBLIC_SITE_URL: 'https://divi5lab.com',
       DATABASE_URL: 'postgres://u:p@localhost/db',
       AUTH_SECRET: 'test-secret-test-secret-32chars!!',
       NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: 'pk_test_ci',
       INGEST_API_TOKEN: 'test-ingest-token',
-      ADMIN_EMAILS: 'admin@layoutlab.com',
+      ADMIN_EMAILS: 'admin@divi5lab.com',
       STRIPE_SECRET_KEY: 'sk_test_dummy',
       STRIPE_WEBHOOK_SECRET: 'whsec_test_dummy',
       STRIPE_PRICE_MEMBERSHIP_MONTHLY: 'price_test_monthly',

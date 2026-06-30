@@ -69,10 +69,10 @@ afterEach(() => { process.env = { ...ORIG }; vi.unstubAllGlobals(); });
 describe('magicLinkEmail', () => {
   it('includes the url in html and text', async () => {
     const { magicLinkEmail } = await import('@/lib/email/magic-link');
-    const m = magicLinkEmail('https://layoutlab.com/api/auth/callback/email?token=abc');
+    const m = magicLinkEmail('https://divi5lab.com/api/auth/callback/email?token=abc');
     expect(m.subject).toMatch(/sign in/i);
-    expect(m.html).toContain('https://layoutlab.com/api/auth/callback/email?token=abc');
-    expect(m.text).toContain('https://layoutlab.com/api/auth/callback/email?token=abc');
+    expect(m.html).toContain('https://divi5lab.com/api/auth/callback/email?token=abc');
+    expect(m.text).toContain('https://divi5lab.com/api/auth/callback/email?token=abc');
   });
 });
 
@@ -90,13 +90,13 @@ describe('sendEmail', () => {
 
   it('with RESEND_API_KEY: sends via Resend and returns { sent: true }', async () => {
     process.env.RESEND_API_KEY = 're_test_key';
-    process.env.RESEND_FROM = 'LayoutLab <noreply@layoutlab.com>';
+    process.env.RESEND_FROM = 'Divi5Lab <noreply@divi5lab.com>';
     vi.resetModules();
     const { sendEmail } = await import('@/lib/email/resend');
     const res = await sendEmail({ to: 'a@b.c', subject: 'S', html: '<p>hi</p>', text: 'hi' });
     expect(res).toEqual({ sent: true });
     expect(create).toHaveBeenCalledWith(
-      expect.objectContaining({ from: 'LayoutLab <noreply@layoutlab.com>', to: 'a@b.c', subject: 'S', html: '<p>hi</p>' }),
+      expect.objectContaining({ from: 'Divi5Lab <noreply@divi5lab.com>', to: 'a@b.c', subject: 'S', html: '<p>hi</p>' }),
     );
   });
 });
@@ -112,17 +112,17 @@ Expected: FAIL — modules not found.
 ```ts
 // lib/email/magic-link.ts
 export function magicLinkEmail(url: string): { subject: string; html: string; text: string } {
-  const subject = 'Sign in to LayoutLab';
+  const subject = 'Sign in to Divi5Lab';
   const html = `<!doctype html><html><body style="font-family:Inter,Arial,sans-serif;background:#F8F9FB;padding:32px">
   <table role="presentation" width="100%" style="max-width:480px;margin:0 auto;background:#fff;border-radius:16px;padding:32px">
     <tr><td>
-      <h1 style="color:#0B3558;font-size:22px;margin:0 0 12px">Sign in to LayoutLab</h1>
+      <h1 style="color:#0B3558;font-size:22px;margin:0 0 12px">Sign in to Divi5Lab</h1>
       <p style="color:#476788;font-size:15px;line-height:1.5;margin:0 0 24px">Click the button below to sign in. This link expires soon and can be used once.</p>
       <a href="${url}" style="display:inline-block;background:#006BFF;color:#fff;text-decoration:none;font-weight:600;padding:12px 20px;border-radius:4px">Sign in</a>
       <p style="color:#476788;font-size:13px;margin:24px 0 0">Or paste this link into your browser:<br><a href="${url}" style="color:#006BFF">${url}</a></p>
     </td></tr>
   </table></body></html>`;
-  const text = `Sign in to LayoutLab\n\nOpen this link to sign in (expires soon, single use):\n${url}\n`;
+  const text = `Sign in to Divi5Lab\n\nOpen this link to sign in (expires soon, single use):\n${url}\n`;
   return { subject, html, text };
 }
 ```
@@ -131,7 +131,7 @@ export function magicLinkEmail(url: string): { subject: string; html: string; te
 // lib/email/resend.ts
 import { Resend } from 'resend';
 
-const FALLBACK_FROM = 'LayoutLab <onboarding@resend.dev>';
+const FALLBACK_FROM = 'Divi5Lab <onboarding@resend.dev>';
 
 export async function sendEmail(input: { to: string; subject: string; html: string; text?: string }): Promise<{ sent: boolean }> {
   const apiKey = process.env.RESEND_API_KEY;
@@ -225,7 +225,7 @@ const magicLink: EmailConfig = {
   id: 'email',
   type: 'email',
   name: 'Email',
-  from: process.env.RESEND_FROM || 'LayoutLab <onboarding@resend.dev>',
+  from: process.env.RESEND_FROM || 'Divi5Lab <onboarding@resend.dev>',
   maxAge: 24 * 60 * 60,
   options: {},
   // @ts-expect-error Auth.js types sendVerificationRequest with the full provider ctx; we only need identifier+url.
@@ -262,7 +262,7 @@ Expected: PASS — nothing imports the removed credentials provider; `auth`/`han
 
 Run:
 ```bash
-NEXT_PUBLIC_SITE_URL=https://layoutlab.com DATABASE_URL=postgres://u:p@localhost/db AUTH_SECRET=test-secret-test-secret-32chars!! NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_ci STRIPE_SECRET_KEY=sk_test_ci STRIPE_WEBHOOK_SECRET=whsec_ci INGEST_API_TOKEN=test-ingest-token ADMIN_EMAILS=admin@layoutlab.com npm run build
+NEXT_PUBLIC_SITE_URL=https://divi5lab.com DATABASE_URL=postgres://u:p@localhost/db AUTH_SECRET=test-secret-test-secret-32chars!! NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_ci STRIPE_SECRET_KEY=sk_test_ci STRIPE_WEBHOOK_SECRET=whsec_ci INGEST_API_TOKEN=test-ingest-token ADMIN_EMAILS=admin@divi5lab.com npm run build
 ```
 Expected: PASS — the app compiles with the adapter + provider wired; `/api/auth/[...nextauth]` route present.
 
@@ -430,7 +430,7 @@ Expected: PASS.
 
 Run:
 ```bash
-NEXT_PUBLIC_SITE_URL=https://layoutlab.com DATABASE_URL=postgres://u:p@localhost/db AUTH_SECRET=test-secret-test-secret-32chars!! NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_ci STRIPE_SECRET_KEY=sk_test_ci STRIPE_WEBHOOK_SECRET=whsec_ci INGEST_API_TOKEN=test-ingest-token ADMIN_EMAILS=admin@layoutlab.com npm run build
+NEXT_PUBLIC_SITE_URL=https://divi5lab.com DATABASE_URL=postgres://u:p@localhost/db AUTH_SECRET=test-secret-test-secret-32chars!! NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_ci STRIPE_SECRET_KEY=sk_test_ci STRIPE_WEBHOOK_SECRET=whsec_ci INGEST_API_TOKEN=test-ingest-token ADMIN_EMAILS=admin@divi5lab.com npm run build
 ```
 Expected: PASS — `/login`, `/verify-request`, `/api/auth/[...nextauth]` compile.
 

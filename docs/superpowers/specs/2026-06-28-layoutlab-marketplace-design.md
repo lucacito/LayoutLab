@@ -1,7 +1,7 @@
-# LayoutLab — Divi 5 Layout Marketplace — Claude Code Instructions
+# Divi5Lab — Divi 5 Layout Marketplace — Claude Code Instructions
 
-> **LayoutLab** is a placeholder brand name. Find-and-replace `LayoutLab` /
-> `layoutlab` / `layoutlab.com` everywhere once the real name + domain are chosen.
+> **Divi5Lab** is a placeholder brand name. Find-and-replace `Divi5Lab` /
+> `layoutlab` / `divi5lab.com` everywhere once the real name + domain are chosen.
 
 ---
 
@@ -179,7 +179,7 @@ All documented in `.env.example`. Server-only unless prefixed `NEXT_PUBLIC_`.
 
 ```
 # Core
-NEXT_PUBLIC_SITE_URL=https://layoutlab.com
+NEXT_PUBLIC_SITE_URL=https://divi5lab.com
 DATABASE_URL=                      # Vercel Postgres
 # Auth
 AUTH_SECRET=
@@ -499,7 +499,7 @@ Build in order. Each phase: brainstorm → plan → TDD → review → verify.
 
 ## 21. Open questions / TODOs (resolve as you go)
 
-- [ ] Real brand name + domain (replace `LayoutLab` / `layoutlab.com`).
+- [ ] Real brand name + domain (replace `Divi5Lab` / `divi5lab.com`).
 - [ ] Final pricing: per-pack prices + membership monthly/yearly amounts.
 - [ ] Final commercial license text → `lib/license/commercial-license.txt`.
 - [ ] Coverage matrix for big-bang generation (how many of each type × niche).

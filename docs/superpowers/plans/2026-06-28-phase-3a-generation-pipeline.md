@@ -1339,7 +1339,7 @@ Expected: PASS where the validator repo + `php` exist; PASS-as-skipped otherwise
 
 ```ts
 // pipeline/index.ts
-// LayoutLab generation pipeline — CLI entry (Phase 3a, no render).
+// Divi5Lab generation pipeline — CLI entry (Phase 3a, no render).
 //   npm run pipeline -- drip --count=N [--dry-run]
 //   npm run pipeline -- batch [--dry-run]
 import { writeFile, unlink, mkdtemp } from 'node:fs/promises';

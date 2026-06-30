@@ -1,4 +1,4 @@
-// Drizzle schema for LayoutLab — full §6 data model.
+// Drizzle schema for Divi5Lab — full §6 data model.
 import {
   pgTable, text, timestamp, integer, boolean, jsonb, pgEnum, primaryKey, uniqueIndex, index,
 } from 'drizzle-orm/pg-core';

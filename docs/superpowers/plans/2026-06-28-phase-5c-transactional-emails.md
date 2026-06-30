@@ -40,7 +40,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { createHash } from 'node:crypto';
 
 const ORIG = { ...process.env };
-beforeEach(() => { process.env.AUTH_SECRET = 'test-secret-test-secret-32chars!!'; process.env.NEXT_PUBLIC_SITE_URL = 'https://layoutlab.com'; });
+beforeEach(() => { process.env.AUTH_SECRET = 'test-secret-test-secret-32chars!!'; process.env.NEXT_PUBLIC_SITE_URL = 'https://divi5lab.com'; });
 afterEach(() => { process.env = { ...ORIG }; });
 
 describe('createMagicSignInUrl', () => {
@@ -54,8 +54,8 @@ describe('createMagicSignInUrl', () => {
     const url = await createMagicSignInUrl('  Buyer@Example.COM ', '/account/downloads', deps);
 
     const u = new URL(url);
-    expect(u.origin + u.pathname).toBe('https://layoutlab.com/api/auth/callback/email');
-    expect(u.searchParams.get('callbackUrl')).toBe('https://layoutlab.com/account/downloads');
+    expect(u.origin + u.pathname).toBe('https://divi5lab.com/api/auth/callback/email');
+    expect(u.searchParams.get('callbackUrl')).toBe('https://divi5lab.com/account/downloads');
     expect(u.searchParams.get('email')).toBe('buyer@example.com');
     const rawToken = u.searchParams.get('token')!;
     expect(rawToken.length).toBeGreaterThan(20);
@@ -155,7 +155,7 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 import { describe, it, expect } from 'vitest';
 import { purchaseReceiptEmail } from '@/lib/email/receipt';
 
-const URL = 'https://layoutlab.com/api/auth/callback/email?token=abc&email=a%40b.com';
+const URL = 'https://divi5lab.com/api/auth/callback/email?token=abc&email=a%40b.com';
 
 describe('purchaseReceiptEmail', () => {
   it('pack receipt: contains the pack title, amount, and the one-click sign-in URL', () => {
@@ -188,7 +188,7 @@ Expected: FAIL — module not found.
 export function purchaseReceiptEmail(input: { kind: 'pack' | 'membership'; packTitle?: string; amountCents?: number; signInUrl: string }): { subject: string; html: string; text: string } {
   const item = input.kind === 'membership' ? 'All-access membership' : (input.packTitle ?? 'Your pack');
   const amount = input.amountCents != null ? `$${(input.amountCents / 100).toFixed(input.amountCents % 100 === 0 ? 0 : 2)}` : '';
-  const subject = 'Your LayoutLab purchase receipt';
+  const subject = 'Your Divi5Lab purchase receipt';
   const amountLine = amount ? `<p style="color:#476788;font-size:15px;margin:0 0 8px">Amount: <strong>${amount}</strong></p>` : '';
   const html = `<!doctype html><html><body style="font-family:Inter,Arial,sans-serif;background:#F8F9FB;padding:32px">
   <table role="presentation" width="100%" style="max-width:480px;margin:0 auto;background:#fff;border-radius:16px;padding:32px">
@@ -463,7 +463,7 @@ Expected: PASS.
 
 Run:
 ```bash
-NEXT_PUBLIC_SITE_URL=https://layoutlab.com DATABASE_URL=postgres://u:p@localhost/db AUTH_SECRET=test-secret-test-secret-32chars!! NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_ci STRIPE_SECRET_KEY=sk_test_ci STRIPE_WEBHOOK_SECRET=whsec_ci INGEST_API_TOKEN=test-ingest-token ADMIN_EMAILS=admin@layoutlab.com npm run build
+NEXT_PUBLIC_SITE_URL=https://divi5lab.com DATABASE_URL=postgres://u:p@localhost/db AUTH_SECRET=test-secret-test-secret-32chars!! NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_ci STRIPE_SECRET_KEY=sk_test_ci STRIPE_WEBHOOK_SECRET=whsec_ci INGEST_API_TOKEN=test-ingest-token ADMIN_EMAILS=admin@divi5lab.com npm run build
 ```
 Expected: PASS — the app compiles (webhook route unchanged in shape).
 

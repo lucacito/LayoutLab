@@ -1,6 +1,6 @@
 import { Resend } from 'resend';
 
-const FALLBACK_FROM = 'LayoutLab <onboarding@resend.dev>';
+const FALLBACK_FROM = 'Divi5Lab <onboarding@resend.dev>';
 
 export async function sendEmail(input: { to: string; subject: string; html: string; text?: string }): Promise<{ sent: boolean }> {
   const apiKey = process.env.RESEND_API_KEY;

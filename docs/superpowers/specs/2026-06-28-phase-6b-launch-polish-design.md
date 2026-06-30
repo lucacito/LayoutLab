@@ -30,7 +30,7 @@ concrete pre-launch defect, not just polish.
    section (§12: "digital-goods refund policy stated on /license"). One page covers
    both. The refund text is a conventional instant-digital-delivery default the user
    can edit.
-2. **`/about`** is a concise branded page (what LayoutLab is + the value prop),
+2. **`/about`** is a concise branded page (what Divi5Lab is + the value prop),
    reusing the home page's primitives.
 3. **`/pricing` polish:** add a **free packs** section (from `listPacks()` where
    `kind='free'`, linking to each pack's capture page) and an **FAQ** (licensing,

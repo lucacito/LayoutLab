@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Turn the hand-written LayoutLab skeleton into a running Next.js app on Vercel infra — it boots, types/lints/tests are green in CI, env is validated, the DB migrates, Blob upload+signed-URL works, and a user can sign up / log in.
+**Goal:** Turn the hand-written Divi5Lab skeleton into a running Next.js app on Vercel infra — it boots, types/lints/tests are green in CI, env is validated, the DB migrates, Blob upload+signed-URL works, and a user can sign up / log in.
 
 **Architecture:** Next.js (App Router, TS, RSC) + Tailwind. Vercel Postgres via Drizzle ORM (typed schema + drizzle-kit migrations). Auth.js (NextAuth v5) for accounts (credentials + magic link). Vercel Blob for assets behind signed URLs. Zod-validated env. Vitest for unit/integration, Playwright for e2e smoke, GitHub Actions CI.
 
@@ -10,7 +10,7 @@
 
 ## Global Constraints
 
-- **Brand placeholder:** `LayoutLab` / `layoutlab` — never hardcode a real brand elsewhere; keep it find-and-replaceable. (CLAUDE.md header)
+- **Brand placeholder:** `Divi5Lab` / `layoutlab` — never hardcode a real brand elsewhere; keep it find-and-replaceable. (CLAUDE.md header)
 - **Secrets are server-only.** Nothing sensitive in `NEXT_PUBLIC_*`. (CLAUDE.md §2.6, §16)
 - **TDD:** write the failing test first for every non-trivial unit; config-only steps are folded into the task whose deliverable needs them. (CLAUDE.md §17)
 - **Path alias:** import app code via `@/*` (tsconfig already maps it).
@@ -70,7 +70,7 @@ import { describe, it, expect } from 'vitest';
 import { parseEnv } from '@/lib/env';
 
 const valid = {
-  NEXT_PUBLIC_SITE_URL: 'https://layoutlab.com',
+  NEXT_PUBLIC_SITE_URL: 'https://divi5lab.com',
   DATABASE_URL: 'postgres://u:p@host/db',
   AUTH_SECRET: 'x'.repeat(32),
   NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: 'pk_test_x',
@@ -79,7 +79,7 @@ const valid = {
 describe('parseEnv', () => {
   it('parses a valid env and exposes the site url', () => {
     const env = parseEnv(valid);
-    expect(env.NEXT_PUBLIC_SITE_URL).toBe('https://layoutlab.com');
+    expect(env.NEXT_PUBLIC_SITE_URL).toBe('https://divi5lab.com');
   });
 
   it('throws when a required var is missing', () => {
@@ -212,7 +212,7 @@ import { test, expect } from '@playwright/test';
 
 test('home page renders the brand', async ({ page }) => {
   await page.goto('/');
-  await expect(page.getByRole('heading', { name: 'LayoutLab' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Divi5Lab' })).toBeVisible();
 });
 ```
 
@@ -612,7 +612,7 @@ jobs:
       - run: npm run test
         env:
           # Minimal env so `lib/env.ts` parses during module load in tests.
-          NEXT_PUBLIC_SITE_URL: https://layoutlab.com
+          NEXT_PUBLIC_SITE_URL: https://divi5lab.com
           DATABASE_URL: postgres://u:p@localhost/db
           AUTH_SECRET: test-secret-test-secret-32chars!!
           NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: pk_test_ci

@@ -14,7 +14,7 @@ import { ScrollOffer } from '@/components/ScrollOffer';
 const inter = Inter({ subsets: ['latin'], variable: '--font-sans', display: 'swap' });
 
 export const metadata: Metadata = {
-  title: 'LayoutLab — Divi 5 Layouts',
+  title: 'Divi5Lab — Divi 5 Layouts',
   description: 'Conversion-ready Divi 5 layouts, validated and ready to import.',
 };
 

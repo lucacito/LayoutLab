@@ -9,7 +9,7 @@ const layout = { id: 'l1', slug: 'a', title: 'Bold Hero', type: 'hero', niche: '
 describe('TaxonomyLanding', () => {
   it('renders the intro, the grid, and ItemList + BreadcrumbList JSON-LD', () => {
     const { container, getByText } = render(
-      <TaxonomyLanding axis="style" value="minimal" siteUrl="https://layoutlab.com"
+      <TaxonomyLanding axis="style" value="minimal" siteUrl="https://divi5lab.com"
         copy={{ intro: 'Minimal intro here', metaTitle: 'x', metaDescription: 'y' }} layouts={[layout]} />,
       { wrapper: BookmarksProvider },
     );
@@ -22,7 +22,7 @@ describe('TaxonomyLanding', () => {
 
   it('shows an empty state when there are no layouts', () => {
     const { getByText } = render(
-      <TaxonomyLanding axis="type" value="faq" siteUrl="https://layoutlab.com"
+      <TaxonomyLanding axis="type" value="faq" siteUrl="https://divi5lab.com"
         copy={{ intro: 'i', metaTitle: 'x', metaDescription: 'y' }} layouts={[]} />,
     );
     expect(getByText(/no layouts/i)).toBeTruthy();

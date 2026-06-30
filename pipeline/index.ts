@@ -1,4 +1,4 @@
-// LayoutLab generation pipeline — CLI entry (generate → validate → render → ingest).
+// Divi5Lab generation pipeline — CLI entry (generate → validate → render → ingest).
 //   npm run pipeline -- drip --count=N [--dry-run]
 //   npm run pipeline -- batch [--dry-run]
 // A real run needs: the Docker WP+Divi env up (render), VALIDATOR_CMD set, the web

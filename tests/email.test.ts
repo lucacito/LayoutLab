@@ -12,10 +12,10 @@ afterEach(() => { process.env = { ...ORIG }; vi.unstubAllGlobals(); });
 describe('magicLinkEmail', () => {
   it('includes the url in html and text', async () => {
     const { magicLinkEmail } = await import('@/lib/email/magic-link');
-    const m = magicLinkEmail('https://layoutlab.com/api/auth/callback/email?token=abc');
+    const m = magicLinkEmail('https://divi5lab.com/api/auth/callback/email?token=abc');
     expect(m.subject).toMatch(/sign in/i);
-    expect(m.html).toContain('https://layoutlab.com/api/auth/callback/email?token=abc');
-    expect(m.text).toContain('https://layoutlab.com/api/auth/callback/email?token=abc');
+    expect(m.html).toContain('https://divi5lab.com/api/auth/callback/email?token=abc');
+    expect(m.text).toContain('https://divi5lab.com/api/auth/callback/email?token=abc');
   });
 });
 
@@ -33,13 +33,13 @@ describe('sendEmail', () => {
 
   it('with RESEND_API_KEY: sends via Resend and returns { sent: true }', async () => {
     process.env.RESEND_API_KEY = 're_test_key';
-    process.env.RESEND_FROM = 'LayoutLab <noreply@layoutlab.com>';
+    process.env.RESEND_FROM = 'Divi5Lab <noreply@divi5lab.com>';
     vi.resetModules();
     const { sendEmail } = await import('@/lib/email/resend');
     const res = await sendEmail({ to: 'a@b.c', subject: 'S', html: '<p>hi</p>', text: 'hi' });
     expect(res).toEqual({ sent: true });
     expect(create).toHaveBeenCalledWith(
-      expect.objectContaining({ from: 'LayoutLab <noreply@layoutlab.com>', to: 'a@b.c', subject: 'S', html: '<p>hi</p>' }),
+      expect.objectContaining({ from: 'Divi5Lab <noreply@divi5lab.com>', to: 'a@b.c', subject: 'S', html: '<p>hi</p>' }),
     );
   });
 });

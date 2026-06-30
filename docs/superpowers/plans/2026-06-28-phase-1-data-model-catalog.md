@@ -10,7 +10,7 @@
 
 ## Global Constraints
 
-- **Brand placeholder:** `LayoutLab` / `layoutlab` — keep find-and-replaceable, never hardcode another brand. (CLAUDE.md header)
+- **Brand placeholder:** `Divi5Lab` / `layoutlab` — keep find-and-replaceable, never hardcode another brand. (CLAUDE.md header)
 - **Secrets server-only.** Nothing sensitive in `NEXT_PUBLIC_*`. (§2.6, §16)
 - **TDD:** write the failing test first for every non-trivial unit; config/scaffolding folds into the task whose deliverable needs it. (§17)
 - **Path alias:** import app code via `@/*`.
@@ -88,7 +88,7 @@ Expected: FAIL — `packs`, `tags`, etc. are not exported from `@/db/schema`.
 Replace `db/schema.ts` with:
 
 ```ts
-// Drizzle schema for LayoutLab — full §6 data model.
+// Drizzle schema for Divi5Lab — full §6 data model.
 import {
   pgTable, text, timestamp, integer, boolean, jsonb, pgEnum, primaryKey, uniqueIndex, index,
 } from 'drizzle-orm/pg-core';
@@ -485,7 +485,7 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 import { describe, it, expect } from 'vitest';
 import { buildLayoutMetadata, buildPackMetadata, productJsonLd, itemListJsonLd, breadcrumbJsonLd } from '@/lib/seo';
 
-const SITE = 'https://layoutlab.com';
+const SITE = 'https://divi5lab.com';
 
 describe('buildLayoutMetadata', () => {
   it('sets title, canonical, and OG image', () => {
@@ -672,7 +672,7 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 import { describe, it, expect } from 'vitest';
 import { sitemapEntries } from '@/lib/seo/sitemap';
 
-const SITE = 'https://layoutlab.com';
+const SITE = 'https://divi5lab.com';
 
 describe('sitemapEntries', () => {
   const out = sitemapEntries({
