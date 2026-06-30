@@ -25,6 +25,7 @@ export function PreviewImage({
   type,
   color,
   layoutStyle,
+  natural = false,
 }: {
   src?: string | null;
   alt: string;
@@ -32,6 +33,10 @@ export function PreviewImage({
   sizes?: string;
   className?: string;
   imageClassName?: string;
+  /** Render at the screenshot's natural aspect ratio (w-full, h-auto) instead of
+   * a fixed-aspect object-cover box. Use on detail previews where the real layout
+   * proportions matter (e.g. a short header vs a tall landing page). */
+  natural?: boolean;
   /** Layout type (or 'pack') → selects the skeleton archetype for the placeholder. */
   type?: string | null;
   /** Color axis value → tints the placeholder. */
@@ -42,6 +47,12 @@ export function PreviewImage({
   const box = `relative overflow-hidden ${className}`;
 
   if (isRealScreenshot(src)) {
+    if (natural) {
+      // Plain img at natural aspect: shows real proportions and requests the blob
+      // directly (bypasses the optimizer cache after a re-render under the same URL).
+      // eslint-disable-next-line @next/next/no-img-element
+      return <img src={assetUrl(src as string)} alt={alt} loading="lazy" className={`block h-auto w-full ${imageClassName}`} />;
+    }
     return (
       <div className={box}>
         <Image src={assetUrl(src as string)} alt={alt} fill sizes={sizes} className={`object-cover ${imageClassName}`} />

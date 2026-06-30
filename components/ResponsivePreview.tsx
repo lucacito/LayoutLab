@@ -60,8 +60,8 @@ export function ResponsivePreview({
             <span className="h-2.5 w-2.5 rounded-full bg-amber-400/70" />
             <span className="h-2.5 w-2.5 rounded-full bg-emerald-400/70" />
           </div>
-          <button type="button" onClick={() => setZoom(true)} className="block w-full">
-            <PreviewImage src={desktop} alt={`${title} — desktop preview`} type={type} color={color} layoutStyle={layoutStyle} sizes="(max-width: 768px) 100vw, 66vw" className="aspect-[16/10]" />
+          <button type="button" onClick={() => setZoom(true)} className="block max-h-[640px] w-full overflow-hidden">
+            <PreviewImage src={desktop} alt={`${title} — desktop preview`} type={type} color={color} layoutStyle={layoutStyle} natural />
           </button>
         </div>
       )}
