@@ -66,20 +66,32 @@ export function ResponsivePreview({
         </div>
       )}
 
-      <p className="mt-2 text-center text-small text-muted">Click to zoom</p>
+      <p className="mt-2 text-center text-small text-muted">Click to view the full page</p>
 
       {zoom && (
-        <div role="dialog" aria-modal className="fixed inset-0 z-[60] flex items-center justify-center bg-navy/85 p-4" onClick={() => setZoom(false)}>
-          <PreviewImage
-            src={onMobile ? mobile! : desktop}
-            alt={`${title} — full preview`}
-            type={type}
-            color={color}
-            layoutStyle={layoutStyle}
-            sizes="100vw"
-            className={onMobile ? 'h-[85vh] w-[min(420px,90vw)] rounded-card' : 'max-h-[85vh] w-full max-w-6xl rounded-card'}
-            imageClassName="!object-contain"
-          />
+        <div role="dialog" aria-modal className="fixed inset-0 z-[60] overflow-auto bg-navy/90 p-4 sm:p-8" onClick={() => setZoom(false)}>
+          <button
+            type="button"
+            onClick={() => setZoom(false)}
+            aria-label="Close"
+            className="fixed right-4 top-4 z-[61] flex h-10 w-10 items-center justify-center rounded-full bg-paper text-navy shadow-soft transition hover:bg-fog"
+          >
+            <Icon name="close" size={20} />
+          </button>
+          {/* Full page at natural aspect inside a scrollable overlay — the whole layout
+              is visible top-to-bottom by scrolling. Clicking the image doesn't close. */}
+          <div className={`mx-auto ${onMobile ? 'max-w-[420px]' : 'max-w-5xl'}`} onClick={(e) => e.stopPropagation()}>
+            <PreviewImage
+              src={onMobile ? mobile! : desktop}
+              alt={`${title} — full preview`}
+              type={type}
+              color={color}
+              layoutStyle={layoutStyle}
+              natural
+              className="rounded-card"
+            />
+          </div>
+          <p className="mt-3 text-center text-small text-paper/70">Scroll to see the full page · click outside or ✕ to close</p>
         </div>
       )}
     </div>
