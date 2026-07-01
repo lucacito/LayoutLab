@@ -21,17 +21,22 @@ async function main(): Promise<void> {
     process.exit(1);
   }
   const onlySlug = arg('slug');
+  const onlyType = arg('type');
   const limit = Number(arg('limit') ?? '0');
   const dry = process.argv.includes('--dry');
   const hasBlobToken = !!process.env.BLOB_READ_WRITE_TOKEN;
 
   const pool = new Pool({ connectionString: conn });
+  const conds: string[] = [];
+  const params: string[] = [];
+  if (onlySlug) { params.push(onlySlug); conds.push(`slug = $${params.length}`); }
+  if (onlyType) { params.push(onlyType); conds.push(`type = $${params.length}`); }
   const rows = (
     await pool.query(
       `select id, slug, title, divi_json_blob_key as key from layouts
-       where status='published' ${onlySlug ? 'and slug = $1' : ''}
+       where status='published'${conds.length ? ' and ' + conds.join(' and ') : ''}
        order by created_at desc ${limit ? `limit ${limit}` : ''}`,
-      onlySlug ? [onlySlug] : [],
+      params,
     )
   ).rows as { id: string; slug: string; title: string; key: string }[];
 
