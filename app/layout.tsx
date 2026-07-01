@@ -4,6 +4,7 @@ import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
 import { Inter } from 'next/font/google';
 import { Analytics } from '@vercel/analytics/react';
+import { GoogleAnalytics } from '@next/third-parties/google';
 import { Header } from '@/components/site/Header';
 import { Footer } from '@/components/site/Footer';
 import { AnnouncementBar } from '@/components/site/AnnouncementBar';
@@ -13,6 +14,8 @@ import { ScrollOffer } from '@/components/ScrollOffer';
 import { env } from '@/lib/env';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-sans', display: 'swap' });
+
+const GA_ID = env.NEXT_PUBLIC_GA_ID ?? 'G-YCK6MN99PR';
 
 const TITLE = 'Free Divi 5 Layouts & Sections — Validated & Import-Ready';
 const DESCRIPTION =
@@ -41,6 +44,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <ExitIntentPopup />
         <ScrollOffer />
         <Analytics />
+        {GA_ID ? <GoogleAnalytics gaId={GA_ID} /> : null}
       </body>
     </html>
   );

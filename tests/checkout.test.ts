@@ -20,6 +20,33 @@ describe('buildCheckoutSessionParams', () => {
     expect(p.line_items).toEqual([{ price: 'price_year', quantity: 1 }]);
     expect(p.metadata).toEqual({ kind: 'membership', plan: 'yearly' });
   });
+
+  it('always discloses the no-refund / instant-delivery policy at checkout with a link to /license', () => {
+    const p = buildCheckoutSessionParams({ kind: 'pack', packId: 'pk1' }, { ...ctx, packPriceId: 'price_pack' });
+    const msg = (p.custom_text as any)?.submit?.message as string;
+    expect(msg).toBeTruthy();
+    expect(msg.toLowerCase()).toContain('final');
+    expect(msg).toContain('https://divi5lab.com/license');
+    // Message must respect Stripe's 1200-char limit on custom_text fields.
+    expect(msg.length).toBeLessThanOrEqual(1200);
+  });
+
+  it('does NOT require a terms-of-service checkbox by default (dashboard ToS URL not assumed)', () => {
+    const p = buildCheckoutSessionParams({ kind: 'pack', packId: 'pk1' }, { ...ctx, packPriceId: 'price_pack' });
+    expect(p.consent_collection).toBeUndefined();
+  });
+
+  it('collects an express withdrawal-waiver consent when requireTermsConsent is set (EU/UK compliance)', () => {
+    const p = buildCheckoutSessionParams(
+      { kind: 'pack', packId: 'pk1' },
+      { ...ctx, packPriceId: 'price_pack', requireTermsConsent: true },
+    );
+    expect((p.consent_collection as any)?.terms_of_service).toBe('required');
+    const tos = (p.custom_text as any)?.terms_of_service_acceptance?.message as string;
+    expect(tos).toBeTruthy();
+    expect(tos.toLowerCase()).toContain('immediate');
+    expect(tos.length).toBeLessThanOrEqual(1200);
+  });
 });
 
 function post(body: unknown) {

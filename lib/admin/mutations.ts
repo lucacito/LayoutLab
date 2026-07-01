@@ -21,9 +21,9 @@ export async function setLayoutsStatus(
   ids: string[],
   status: LayoutStatus,
   opts: { publishedAt?: Date } = {},
-): Promise<void> {
-  if (!ids.length) return;
+): Promise<{ slug: string }[]> {
+  if (!ids.length) return [];
   const set: LayoutUpdate = { status };
   if (opts.publishedAt) set.publishedAt = opts.publishedAt;
-  await db.update(layouts).set(set).where(inArray(layouts.id, ids));
+  return db.update(layouts).set(set).where(inArray(layouts.id, ids)).returning({ slug: layouts.slug });
 }

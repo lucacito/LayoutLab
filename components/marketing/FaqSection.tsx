@@ -25,7 +25,7 @@ const FAQS = [
   },
   {
     q: 'What if a section doesn’t work for me?',
-    a: 'Paid packs are digital goods, so they’re generally non-refundable — but reach out and we’ll make it right.',
+    a: 'Paid packs are digital goods, so all sales are final and non-refundable. If a file is genuinely broken, reach out and we’ll make it right with a fix or replacement.',
   },
 ];
 

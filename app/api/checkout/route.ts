@@ -41,8 +41,9 @@ export async function POST(req: Request): Promise<Response> {
     if (!membershipPriceId) return NextResponse.json({ error: 'membership_unavailable' }, { status: 400 });
   }
 
+  const requireTermsConsent = env.STRIPE_TERMS_CONSENT === '1' || env.STRIPE_TERMS_CONSENT === 'true';
   const makeCtx = (automaticTax: boolean): CheckoutContext => ({
-    siteUrl: env.NEXT_PUBLIC_SITE_URL, packPriceId, membershipPriceId, automaticTax,
+    siteUrl: env.NEXT_PUBLIC_SITE_URL, packPriceId, membershipPriceId, automaticTax, requireTermsConsent,
   });
 
   const urlOr500 = (session: Stripe.Checkout.Session) => {
