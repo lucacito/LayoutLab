@@ -51,6 +51,48 @@ export function breadcrumbJsonLd(crumbs: { name: string; url: string }[]) {
   };
 }
 
+// Site-wide brand entity. Feeds Google's Knowledge Graph so "Divi5Lab" is
+// understood as an organization/brand (entity SEO), not just a keyword.
+// Add real profile URLs to `sameAs` (X, GitHub, LinkedIn, YouTube…) as they go
+// live — sameAs is the strongest signal tying the brand to its off-site entities.
+export function organizationJsonLd(o: {
+  name: string;
+  url: string;
+  logo?: string;
+  description?: string;
+  sameAs?: string[];
+}) {
+  const base: Record<string, unknown> = {
+    '@context': 'https://schema.org',
+    '@type': 'Organization',
+    name: o.name,
+    url: o.url,
+  };
+  if (o.logo) base.logo = o.logo;
+  if (o.description) base.description = o.description;
+  if (o.sameAs && o.sameAs.length) base.sameAs = o.sameAs;
+  return base;
+}
+
+// Site entity + sitelinks search box. When Google honors it, the brand SERP
+// result gains a search box that deep-links into /browse.
+export function websiteJsonLd(w: { name: string; url: string; searchUrlTemplate?: string }) {
+  const base: Record<string, unknown> = {
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    name: w.name,
+    url: w.url,
+  };
+  if (w.searchUrlTemplate) {
+    base.potentialAction = {
+      '@type': 'SearchAction',
+      target: { '@type': 'EntryPoint', urlTemplate: w.searchUrlTemplate },
+      'query-input': 'required name=search_term_string',
+    };
+  }
+  return base;
+}
+
 export function faqJsonLd(items: { question: string; answer: string }[]) {
   return {
     '@context': 'https://schema.org',

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildLayoutMetadata, buildPackMetadata, productJsonLd, itemListJsonLd, breadcrumbJsonLd } from '@/lib/seo';
+import { buildLayoutMetadata, buildPackMetadata, productJsonLd, itemListJsonLd, breadcrumbJsonLd, organizationJsonLd, websiteJsonLd } from '@/lib/seo';
 
 const SITE = 'https://divi5lab.com';
 
@@ -56,5 +56,37 @@ describe('json-ld', () => {
     const ld = breadcrumbJsonLd([{ name: 'Home', url: SITE }, { name: 'Browse', url: `${SITE}/browse` }]);
     expect(ld['@type']).toBe('BreadcrumbList');
     expect(ld.itemListElement[1].item).toBe(`${SITE}/browse`);
+  });
+
+  it('organizationJsonLd emits an Organization entity with logo', () => {
+    const ld = organizationJsonLd({ name: 'Divi5Lab', url: SITE, logo: `${SITE}/divi5lab-logo.png` });
+    expect(ld['@type']).toBe('Organization');
+    expect(ld.name).toBe('Divi5Lab');
+    expect(ld.url).toBe(SITE);
+    expect((ld as any).logo).toBe(`${SITE}/divi5lab-logo.png`);
+  });
+
+  it('organizationJsonLd omits sameAs when there are no profiles', () => {
+    const ld = organizationJsonLd({ name: 'Divi5Lab', url: SITE });
+    expect('sameAs' in ld).toBe(false);
+  });
+
+  it('organizationJsonLd includes sameAs when profiles are provided', () => {
+    const ld = organizationJsonLd({ name: 'Divi5Lab', url: SITE, sameAs: ['https://x.com/divi5lab'] });
+    expect((ld as any).sameAs).toEqual(['https://x.com/divi5lab']);
+  });
+
+  it('websiteJsonLd emits a WebSite with a sitelinks SearchAction', () => {
+    const ld = websiteJsonLd({ name: 'Divi5Lab', url: SITE, searchUrlTemplate: `${SITE}/browse?q={search_term_string}` });
+    expect(ld['@type']).toBe('WebSite');
+    const action = (ld as any).potentialAction;
+    expect(action['@type']).toBe('SearchAction');
+    expect(action.target.urlTemplate).toBe(`${SITE}/browse?q={search_term_string}`);
+    expect(action['query-input']).toBe('required name=search_term_string');
+  });
+
+  it('websiteJsonLd omits potentialAction when no search template is given', () => {
+    const ld = websiteJsonLd({ name: 'Divi5Lab', url: SITE });
+    expect('potentialAction' in ld).toBe(false);
   });
 });

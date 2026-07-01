@@ -5,6 +5,8 @@ import type { ReactNode } from 'react';
 import { Inter } from 'next/font/google';
 import { Analytics } from '@vercel/analytics/react';
 import { GoogleAnalytics } from '@next/third-parties/google';
+import { JsonLd } from '@/components/JsonLd';
+import { organizationJsonLd, websiteJsonLd } from '@/lib/seo';
 import { Header } from '@/components/site/Header';
 import { Footer } from '@/components/site/Footer';
 import { AnnouncementBar } from '@/components/site/AnnouncementBar';
@@ -21,6 +23,24 @@ const TITLE = 'Free Divi 5 Layouts & Sections — Validated & Import-Ready';
 const DESCRIPTION =
   'Browse a growing library of free, validated Divi 5 layouts and sections — heroes, pricing tables, CTAs and full landing pages. Download the JSON and import into Divi 5 in seconds. Commercial license included.';
 
+// Site-wide brand entity + sitelinks search box (entity SEO). Add real social
+// profile URLs to `sameAs` as they go live to strengthen the brand entity.
+const SITE_URL = env.NEXT_PUBLIC_SITE_URL.replace(/\/+$/, '');
+const SITE_JSONLD = [
+  organizationJsonLd({
+    name: 'Divi5Lab',
+    url: SITE_URL,
+    logo: `${SITE_URL}/divi5lab-logo.png`,
+    description: DESCRIPTION,
+    sameAs: [],
+  }),
+  websiteJsonLd({
+    name: 'Divi5Lab',
+    url: SITE_URL,
+    searchUrlTemplate: `${SITE_URL}/browse?q={search_term_string}`,
+  }),
+];
+
 export const metadata: Metadata = {
   metadataBase: new URL(env.NEXT_PUBLIC_SITE_URL),
   title: { default: `${TITLE} | Divi5Lab`, template: '%s | Divi5Lab' },
@@ -35,6 +55,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en" className={inter.variable}>
       <body className="font-sans">
+        <JsonLd data={SITE_JSONLD} />
         <BookmarksProvider>
           <AnnouncementBar />
           <Header />

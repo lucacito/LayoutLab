@@ -91,7 +91,10 @@ export default async function HomePage() {
               'radial-gradient(60% 90% at 30% 0%, rgba(99,91,255,0.55), transparent), radial-gradient(55% 80% at 85% 30%, rgba(0,153,255,0.45), transparent), #07070B',
           }}
         />
-        <div className="absolute inset-0 -z-10 bg-cover bg-center" style={{ backgroundImage: "url('/hero-bg.jpg')" }} />
+        {/* Mobile: lighter portrait crop (~54KB). display:none ≥md so desktops never fetch it. */}
+        <div className="absolute inset-0 -z-10 bg-cover bg-center md:hidden" style={{ backgroundImage: "url('/mobile-hero-bg.jpg')" }} />
+        {/* Desktop: full-bleed landscape (~200KB). display:none <md so phones never fetch it. */}
+        <div className="absolute inset-0 -z-10 hidden bg-cover bg-center md:block" style={{ backgroundImage: "url('/hero-bg.jpg')" }} />
         <div className="absolute inset-0 -z-10 bg-gradient-to-b from-ink/70 via-ink/40 to-ink/80" />
         <div className="mx-auto max-w-3xl px-4 py-24 text-center md:py-36">
           <span className="inline-flex items-center gap-1.5 rounded-full bg-paper/10 px-3 py-1 text-small font-semibold text-paper backdrop-blur">
