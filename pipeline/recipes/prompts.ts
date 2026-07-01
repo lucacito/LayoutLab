@@ -30,10 +30,12 @@ const RECIPE_BY_TYPE: Record<string, string[]> = {
   contact: ['contact-form'],
   gallery: ['image-gallery', 'image-carousel'],
   blog: ['blog-feed'],
-  full_landing: ['hero-cta', 'card-grid-3'],
+  full_landing: ['hero-cta', 'icon-features', 'testimonial', 'stats-counter', 'card-grid-3'],
 };
 const DEFAULT_RECIPES = ['hero-cta', 'card-grid-3'];
 const MAX_EXAMPLES = 2; // keep the prompt focused + within budget
+// A full landing composes many section types, so it gets a wider grounding set.
+const MAX_EXAMPLES_LANDING = 5;
 
 const SYSTEM =
   'You generate Divi 5 page sections as a single JSON document. ' +
@@ -46,14 +48,15 @@ const SYSTEM =
 // falling back to any raw examples the guide carries.
 function pickExamples(target: Target, guide: Guide): string[] {
   const recipes = guide.recipes ?? [];
+  const cap = target.type === 'full_landing' ? MAX_EXAMPLES_LANDING : MAX_EXAMPLES;
   if (recipes.length) {
     const wanted = RECIPE_BY_TYPE[target.type] ?? DEFAULT_RECIPES;
     const byName = new Map(recipes.map((r) => [r.name, r]));
-    const chosen = wanted.map((n) => byName.get(n)).filter((r): r is Recipe => !!r).slice(0, MAX_EXAMPLES);
-    const list = chosen.length ? chosen : recipes.slice(0, MAX_EXAMPLES);
+    const chosen = wanted.map((n) => byName.get(n)).filter((r): r is Recipe => !!r).slice(0, cap);
+    const list = chosen.length ? chosen : recipes.slice(0, cap);
     return list.map((r) => `Recipe "${r.name}" — ${r.description}\n${r.markup}`);
   }
-  return (guide.examples ?? []).slice(0, MAX_EXAMPLES);
+  return (guide.examples ?? []).slice(0, cap);
 }
 
 function directives(target: Target): string {
@@ -74,6 +77,20 @@ function directives(target: Target): string {
       lines.push(`Give each card a Divi icon ${placement}, ${badge}. Use a divi/blurb (or divi/icon) with type:"divi" or type:"fa" and a real glyph matching the card topic — choose glyph unicodes ONLY from the grounding recipes (icon-features, blurb-grid, icon-values); never invent icon codes.`);
     }
     lines.push('Each card: the icon/badge + a short heading + 1–2 specific sentences; optionally a small text link or button. Real copy, no lorem ipsum.');
+  }
+  if (target.type === 'full_landing') {
+    lines.push(
+      'Build a COMPLETE, premium, high-converting landing page — one document with MULTIPLE divi/section blocks in this order: ' +
+        '(1) a bold hero: eyebrow, strong headline, subhead, primary + secondary CTA button, and a product/hero image; ' +
+        '(2) a trust strip: a row of client logos or 3–4 headline stats; ' +
+        '(3) a features/benefits section: icon cards (3 or 4 columns) with real benefits; ' +
+        '(4) a "how it works" section: 3 numbered steps; ' +
+        '(5) social proof: 2–3 testimonials with avatars and names/roles; ' +
+        '(6) a pricing section: 2–3 plans in columns with the middle plan highlighted and feature checklists; ' +
+        '(7) an FAQ section: 4–6 question/answer pairs; ' +
+        '(8) a final full-width CTA banner. ' +
+        'Alternate section backgrounds (light → tinted → dark) for visual rhythm, keep one consistent accent color, and write specific, benefit-led copy throughout — this is a flagship, premium page, so make every section polished and cohesive.',
+    );
   }
   lines.push(
     'For images, derive a keyword from the business and use https://loremflickr.com/{w}/{h}/{keyword} for RELEVANT photos ' +
