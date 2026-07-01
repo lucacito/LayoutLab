@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildLayoutMetadata, buildPackMetadata, productJsonLd, itemListJsonLd, breadcrumbJsonLd, organizationJsonLd, websiteJsonLd } from '@/lib/seo';
+import { buildLayoutMetadata, buildPackMetadata, productJsonLd, itemListJsonLd, breadcrumbJsonLd, organizationJsonLd, websiteJsonLd, collectionPageJsonLd } from '@/lib/seo';
 
 const SITE = 'https://divi5lab.com';
 
@@ -88,5 +88,12 @@ describe('json-ld', () => {
   it('websiteJsonLd omits potentialAction when no search template is given', () => {
     const ld = websiteJsonLd({ name: 'Divi5Lab', url: SITE });
     expect('potentialAction' in ld).toBe(false);
+  });
+
+  it('collectionPageJsonLd marks a listing page as a CollectionPage', () => {
+    const ld = collectionPageJsonLd({ name: 'Free Divi 5 Layouts', url: `${SITE}/browse`, description: 'All layouts' });
+    expect(ld['@type']).toBe('CollectionPage');
+    expect(ld.url).toBe(`${SITE}/browse`);
+    expect((ld as any).description).toBe('All layouts');
   });
 });

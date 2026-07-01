@@ -93,6 +93,19 @@ export function websiteJsonLd(w: { name: string; url: string; searchUrlTemplate?
   return base;
 }
 
+// Marks a catalog/listing page (e.g. /browse) as a canonical CollectionPage —
+// reinforces it as the money page for the head term.
+export function collectionPageJsonLd(c: { name: string; description?: string; url: string }) {
+  const base: Record<string, unknown> = {
+    '@context': 'https://schema.org',
+    '@type': 'CollectionPage',
+    name: c.name,
+    url: c.url,
+  };
+  if (c.description) base.description = c.description;
+  return base;
+}
+
 export function faqJsonLd(items: { question: string; answer: string }[]) {
   return {
     '@context': 'https://schema.org',
