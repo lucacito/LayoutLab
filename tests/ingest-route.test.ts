@@ -1,6 +1,22 @@
 import { describe, it, expect } from 'vitest';
 import { POST } from '@/app/api/ingest/route';
+import { resolveIngestStatus } from '@/lib/ingest/status';
 import sample from './fixtures/sample-ingest.json';
+
+describe('resolveIngestStatus', () => {
+  it('lands as pending by default (human approval gate)', () => {
+    expect(resolveIngestStatus(undefined)).toEqual({ status: 'pending' });
+    expect(resolveIngestStatus('false')).toEqual({ status: 'pending' });
+    expect(resolveIngestStatus('0')).toEqual({ status: 'pending' });
+  });
+  it('auto-publishes with a publishedAt timestamp when auto-approve is enabled', () => {
+    for (const on of ['1', 'true', 'TRUE']) {
+      const r = resolveIngestStatus(on);
+      expect(r.status).toBe('published');
+      expect(r.publishedAt).toBeInstanceOf(Date);
+    }
+  });
+});
 
 const TOKEN = 'test-ingest-token'; // matches vitest.config.ts test.env
 

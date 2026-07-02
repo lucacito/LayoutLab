@@ -17,6 +17,12 @@ describe('coverage matrix + plan', () => {
     expect(planned.map(targetKey)).not.toContain(targetKey(MATRIX[0]));
     expect(planTargets(MATRIX, new Set(), 2)).toHaveLength(2);
   });
+  it('covers full_landing (the premium product) across the money niches', () => {
+    const landingNiches = MATRIX.filter((t) => t.type === 'full_landing').map((t) => t.niche);
+    for (const niche of ['coaching', 'fitness', 'real_estate', 'ecommerce', 'portfolio']) {
+      expect(landingNiches).toContain(niche);
+    }
+  });
 });
 
 describe('buildVariants', () => {
@@ -78,6 +84,18 @@ describe('prompt builders', () => {
     expect(prompt).toContain('green color palette');
     expect(prompt).toContain('image on the left of the headline');
     expect(prompt.toLowerCase()).toContain('loremflickr');
+  });
+  it('every generation prompt carries the premium design bar', () => {
+    for (const t of [
+      { type: 'hero', niche: 'saas', style: 'minimal' },
+      { type: 'full_landing', niche: 'coaching', style: 'elegant' },
+      { type: 'pricing', niche: 'fitness', style: 'bold' },
+    ]) {
+      const { prompt } = buildGenerationPrompt(t, guide);
+      expect(prompt).toContain('Design bar');
+      expect(prompt.toLowerCase()).toContain('typographic hierarchy');
+      expect(prompt.toLowerCase()).toContain('hover');
+    }
   });
   it('repair prompt includes the prior JSON and the violation codes', () => {
     const { prompt } = buildRepairPrompt('{"bad":1}', [{ code: 'E_X', message: 'bad thing', path: 'a.b' }]);

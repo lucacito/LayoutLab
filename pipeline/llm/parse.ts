@@ -1,9 +1,15 @@
 import { LlmError } from './types';
 
 // Pull a JSON value out of model text. The generation prompt asks for ONLY JSON,
-// so try the whole string first; then a ```json fence; then the first balanced
-// {...}/[...] span. Brace matching is string-literal-aware — Divi 5 block markup
-// is full of `{`/`}` inside string values, which naive counting mis-slices.
+// so try the whole string first; then a ```json fence; then scan for an embedded
+// balanced {...}/[...] span. Brace matching is string-literal-aware — Divi 5 block
+// markup is full of `{`/`}` inside string values, which naive counting mis-slices.
+//
+// The scan does NOT blindly take the first brace: models (notably Fable on repair
+// prompts) narrate before the JSON, e.g. "I'll fix the {module} now.\n{...}". The
+// first brace can be a non-JSON prose token (throws) or a small decoy object. So we
+// try every {/[ start and return the first span that BOTH parses AND is shaped like
+// a layout (post_title/post_content); failing that, the first span that parses at all.
 export function extractJson(text: string): unknown {
   const trimmed = text.trim();
   try {
@@ -19,14 +25,36 @@ export function extractJson(text: string): unknown {
       /* fenced content not parseable on its own — fall through */
     }
   }
-  const candidate = sliceBalanced(text);
-  if (candidate == null) throw new Error('no JSON found in text');
-  return JSON.parse(candidate.trim());
+  let firstParsed: unknown;
+  let attempts = 0;
+  for (let i = 0; i < text.length; i++) {
+    if (text[i] !== '{' && text[i] !== '[') continue;
+    const span = sliceBalanced(text, i);
+    if (span == null) continue;
+    let value: unknown;
+    try {
+      value = JSON.parse(span);
+    } catch {
+      continue; // e.g. a `{word}` prose token — keep scanning
+    }
+    if (isLayoutShaped(value)) return value; // the real document — decisive
+    if (firstParsed === undefined) firstParsed = value;
+    if (++attempts >= 200) break; // bound cost on pathological input
+  }
+  if (firstParsed !== undefined) return firstParsed;
+  throw new Error('no JSON found in text');
 }
 
-function sliceBalanced(text: string): string | null {
-  const start = text.search(/[[{]/);
-  if (start === -1) return null;
+// A generated layout is always an object with a string post_title or post_content
+// (the generation + repair prompts mandate that shape). Used to pick the real
+// document over any decoy JSON the model narrated before it.
+function isLayoutShaped(v: unknown): boolean {
+  if (typeof v !== 'object' || v === null) return false;
+  const o = v as Record<string, unknown>;
+  return typeof o.post_title === 'string' || typeof o.post_content === 'string';
+}
+
+function sliceBalanced(text: string, start: number): string | null {
   const open = text[start];
   const close = open === '{' ? '}' : ']';
   let depth = 0;

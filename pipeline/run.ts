@@ -41,6 +41,7 @@ export interface RunDeps {
   render?: (input: { title: string; postContent: string; hash: string }) => Promise<{ previewImageKeys: string[]; perceptualHash?: string }>;
   ingest: (payload: IngestPayload) => Promise<{ deduped: boolean }>;
   maxRepairs: number;
+  maxParseRetries?: number;
   maxBudgetUsd?: number;
   log?: (msg: string) => void;
 }
@@ -51,7 +52,7 @@ export async function runPipeline(deps: RunDeps): Promise<RunSummary> {
 
   for (const target of deps.targets) {
     try {
-      let { json } = await generateLayout(target, { llm: deps.llm, guide: deps.guide, maxBudgetUsd: deps.maxBudgetUsd });
+      let { json } = await generateLayout(target, { llm: deps.llm, guide: deps.guide, maxBudgetUsd: deps.maxBudgetUsd, maxParseRetries: deps.maxParseRetries });
       summary.generated++;
 
       // Validate + repair loop (hard gate).

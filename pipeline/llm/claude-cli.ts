@@ -25,7 +25,9 @@ export function claudeCliClient(opts: { run?: RunCommand; model?: string } = {})
       if (system) args.push('--append-system-prompt', system);
       if (opts.model) args.push('--model', opts.model);
       const { stdout, stderr, code } = await run('claude', args, prompt);
-      if (code !== 0) throw new LlmError(`claude CLI exited ${code}: ${stderr.slice(0, 200)}`);
+      // On failure the CLI often reports the reason on stdout (e.g. usage-limit
+      // messages with --output-format json), not stderr — surface whichever has it.
+      if (code !== 0) throw new LlmError(`claude CLI exited ${code}: ${(stderr.trim() || stdout).slice(0, 200)}`);
       return parseClaudeEnvelope(stdout);
     },
   };

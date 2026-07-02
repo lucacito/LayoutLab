@@ -93,6 +93,13 @@ function directives(target: Target): string {
     );
   }
   lines.push(
+    'Design bar (this is a premium marketplace — every section must look like it was crafted by a senior designer): ' +
+      'strong typographic hierarchy (large, tight headlines vs comfortable body sizes), generous section padding and whitespace, ' +
+      'one deliberate accent color carried through buttons, icons, and highlights, rounded corners + soft shadows where cards appear, ' +
+      'and hover polish on interactive elements (buttons and cards lift or deepen their shadow with a smooth transition). ' +
+      'Achieve all of this using ONLY the decoration/attribute shapes shown in the recipes — never invent attributes.',
+  );
+  lines.push(
     'For images, derive a keyword from the business and use https://loremflickr.com/{w}/{h}/{keyword} for RELEVANT photos ' +
       '(e.g. a restaurant → "restaurant,food"); for people/avatars (testimonials, team) use https://i.pravatar.cc/{size}?u={unique-id}; ' +
       'for plain placeholders use https://placehold.co/{w}x{h}. Pick images that actually fit the business — never a random/mismatched photo, never an empty src.',

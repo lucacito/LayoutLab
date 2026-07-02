@@ -5,6 +5,7 @@ import { env } from '@/lib/env';
 import { db } from '@/db/client';
 import { layouts, tags, layoutTags } from '@/db/schema';
 import { parseIngestPayload, parseBearer } from '@/lib/ingest/schema';
+import { resolveIngestStatus } from '@/lib/ingest/status';
 
 export async function POST(req: Request): Promise<Response> {
   const expected = env.INGEST_API_TOKEN;
@@ -46,6 +47,7 @@ export async function POST(req: Request): Promise<Response> {
   }
 
   const id = randomUUID();
+  const { status, publishedAt } = resolveIngestStatus(env.INGEST_AUTO_APPROVE);
   await db
     .insert(layouts)
     .values({
@@ -64,7 +66,8 @@ export async function POST(req: Request): Promise<Response> {
       variant: p.variant,
       validatorPassed: true,
       seo: p.seo,
-      status: 'pending',
+      status,
+      publishedAt,
     })
     .onConflictDoNothing();
 
@@ -76,5 +79,5 @@ export async function POST(req: Request): Promise<Response> {
     }
   }
 
-  return NextResponse.json({ id, status: 'pending', deduped: false }, { status: 201 });
+  return NextResponse.json({ id, status, deduped: false }, { status: 201 });
 }

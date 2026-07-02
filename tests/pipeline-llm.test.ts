@@ -23,6 +23,23 @@ describe('extractJson', () => {
     const text = `Sure!\n${JSON.stringify(obj)}\nHope that helps.`;
     expect(extractJson(text)).toEqual(obj);
   });
+  it('extracts the layout when a conversational preamble immediately precedes the JSON', () => {
+    // Fable behavioral shift: on repair/landing prompts it narrates before the JSON.
+    const obj = { post_title: 'Contact', post_content: '<!-- wp:divi/section {"m":1} -->' };
+    const text = `I'll locate the exact JSON parse error programmatically.${JSON.stringify(obj)}`;
+    expect(extractJson(text)).toEqual(obj);
+  });
+  it('skips a non-JSON brace token in the preamble and finds the real layout', () => {
+    // The exact failure mode: prose contains a `{word}` token before the document.
+    const obj = { post_title: 'Landing', post_content: '<!-- wp:divi/section {"a":{"b":2}} -->' };
+    const text = `I'll fix the {module} structure now.\n${JSON.stringify(obj)}`;
+    expect(extractJson(text)).toEqual(obj);
+  });
+  it('prefers the layout object over an earlier small decoy JSON in prose', () => {
+    const obj = { post_title: 'Hero', post_content: 'x {"k":1} y' };
+    const text = `Here is an example config {"note":"ignore"} and now the layout:\n${JSON.stringify(obj)}`;
+    expect(extractJson(text)).toEqual(obj);
+  });
 });
 
 describe('parseClaudeEnvelope', () => {
@@ -61,5 +78,15 @@ describe('claudeCliClient', () => {
     const run = vi.fn(async () => ({ stdout: '', stderr: 'boom', code: 1 }));
     const client = claudeCliClient({ run });
     await expect(client.complete({ prompt: 'x' })).rejects.toBeInstanceOf(LlmError);
+  });
+
+  it('surfaces stdout in the error when stderr is empty (e.g. usage-limit messages)', async () => {
+    const run = vi.fn(async () => ({
+      stdout: "You've hit your limit · resets 11:10pm",
+      stderr: '',
+      code: 1,
+    }));
+    const client = claudeCliClient({ run });
+    await expect(client.complete({ prompt: 'x' })).rejects.toThrow(/hit your limit/);
   });
 });

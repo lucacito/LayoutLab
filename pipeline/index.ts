@@ -84,7 +84,7 @@ async function main() {
   const deps: RunDeps = {
     targets,
     guide,
-    llm: dryRun ? stubLlm : claudeCliClient(),
+    llm: dryRun ? stubLlm : claudeCliClient({ model: process.env.PIPELINE_MODEL }),
     validate: dryRun ? async () => ({ valid: true, violations: [] }) : (json) => withTempFile(json, (f) => validateLayout(f)),
     resolveImages: !dryRun && pexelsKey ? (json) => resolveLayoutImages(json, pexelsSearcher(pexelsKey)) : undefined,
     isDuplicate: async (hash) => {
@@ -111,6 +111,7 @@ async function main() {
       : undefined,
     ingest: dryRun ? async () => ({ deduped: false }) : (payload) => postIngest(payload, { url: ingestUrl, token: ingestToken }),
     maxRepairs: 2,
+    maxParseRetries: 2,
     maxBudgetUsd: maxBudget,
     log: (m) => console.log(`[pipeline] ${m}`),
   };

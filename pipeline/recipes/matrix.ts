@@ -94,6 +94,13 @@ export const MATRIX: Target[] = [
   { type: 'contact', niche: 'saas', style: 'minimal' },
   { type: 'gallery', niche: 'restaurant', style: 'elegant' },
   { type: 'gallery', niche: 'real_estate', style: 'corporate' },
+  // Premium full landing pages — the flagship product — for the money niches
+  // that have none yet (saas/agency/events/restaurant are already covered).
+  { type: 'full_landing', niche: 'coaching', style: 'elegant' },
+  { type: 'full_landing', niche: 'fitness', style: 'bold' },
+  { type: 'full_landing', niche: 'real_estate', style: 'corporate' },
+  { type: 'full_landing', niche: 'ecommerce', style: 'bold' },
+  { type: 'full_landing', niche: 'portfolio', style: 'minimal' },
 ];
 
 export function targetKey(t: Target): string {
