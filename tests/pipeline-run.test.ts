@@ -54,4 +54,29 @@ describe('runPipeline', () => {
     expect(s.ingested).toBe(0);
     expect(upload).not.toHaveBeenCalled();
   });
+
+  it('routes a full_landing target through composeLanding (assembles many sections, not one-shot)', async () => {
+    const brief = { businessType: 'course/coaching', businessName: 'Acme Coaching', tagline: 't', audience: 'a', conversionGoal: 'book a call', primaryCta: 'Book a Call', accentColorHex: '#E4572E', voice: 'warm' };
+    const section = (n: number) => JSON.stringify({ post_title: `S${n}`, post_content: `<!-- wp:divi/placeholder --><!-- wp:divi/section {"i":${n}} -->x<!-- /wp:divi/section --><!-- /wp:divi/placeholder -->` });
+    let n = 0;
+    // brief, then a section per generateLayout call, then SEO — sniff by prompt content.
+    const llm = { complete: vi.fn(async ({ prompt }: { prompt: string }) => {
+      if (prompt.includes('landing-page brief')) return JSON.stringify(brief);
+      if (prompt.startsWith('Generate a Divi 5')) return section(n++);
+      return JSON.stringify({ title: 'T', slug: 's', metaDescription: 'd', keywords: [], axes: { type: 'full_landing', niche: 'coaching', style: 'elegant', colors: [] } });
+    }) };
+    // Capture the JSON handed to upload — that's the assembled document.
+    const upload = vi.fn(async () => ({ diviJsonBlobKey: 'k', previewImageKeys: ['p'] }));
+    const s = await runPipeline(baseDeps({
+      targets: [{ type: 'full_landing', niche: 'coaching', style: 'elegant' }],
+      llm, upload,
+    }) as any);
+    expect(s.ingested).toBe(1);
+    const uploadedJson = (upload.mock.calls[0] as any)[1] as string;
+    const post = JSON.parse(uploadedJson).post_content as string;
+    // Composed → the full course/coaching flow (>=6 steps) assembled under ONE wrapper.
+    // A one-shot path would upload a single-section document (this assertion would fail).
+    expect((post.match(/wp:divi\/placeholder -->/g) || []).length).toBe(2);
+    expect((post.match(/wp:divi\/section {/g) || []).length).toBeGreaterThanOrEqual(6);
+  });
 });

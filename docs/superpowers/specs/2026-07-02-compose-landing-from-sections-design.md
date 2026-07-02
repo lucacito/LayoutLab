@@ -99,10 +99,21 @@ blocks carry no colliding IDs, so no ID regeneration is needed.
 
 ### Step 4 — Validate (hard gate)
 
-Validate the assembled document via the existing validator path. Each section
-validates individually and concatenation is validity-preserving (verified above),
-so the composite passes. On failure, log violation codes and drop the landing (v1
-does not attempt whole-document repair — keep the gate strict and simple).
+**Per-section validation (added after Task 7 e2e).** Each section is validated —
+and repaired at the section level (small, reliable) — *inside* `composeLanding`,
+before assembly. `composeLanding` takes a `validate` dep and a `maxRepairs`; for
+each section it generates → validates → repairs up to `maxRepairs` → and if still
+invalid, drops the landing (required role) or skips the section (optional). Because
+concatenation is validity-preserving, the assembled document is then valid by
+construction.
+
+`run.ts` still validates the assembled document as the hard gate, but **skips the
+whole-document repair loop for `full_landing`** (`repairsAllowed = 0`). This is the
+critical fix: a single bad section made the assembled ~50KB landing fail
+validation, and the whole-document repair then tried to regenerate the entire
+document in one call — hitting the model's output ceiling
+(`error_max_budget_usd` / `stop_reason: max_tokens`), the exact wall the compose
+approach exists to avoid. Repairing per-section keeps every repair small.
 
 ## Error handling
 

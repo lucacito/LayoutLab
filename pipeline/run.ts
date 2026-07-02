@@ -4,6 +4,7 @@ import type { Target, Guide } from './recipes';
 import { buildRepairPrompt } from './recipes';
 import { extractJson } from './llm';
 import { generateLayout } from './generate';
+import { composeLanding } from '@/pipeline/compose';
 import { generateSeo } from './seo';
 import { contentHash } from './dedupe';
 import { stackLayoutJsonMobile } from './stack-mobile';
@@ -52,13 +53,33 @@ export async function runPipeline(deps: RunDeps): Promise<RunSummary> {
 
   for (const target of deps.targets) {
     try {
-      let { json } = await generateLayout(target, { llm: deps.llm, guide: deps.guide, maxBudgetUsd: deps.maxBudgetUsd, maxParseRetries: deps.maxParseRetries });
+      let { json } =
+        target.type === 'full_landing'
+          ? await composeLanding(target, {
+              llm: deps.llm,
+              guide: deps.guide,
+              maxBudgetUsd: deps.maxBudgetUsd,
+              maxParseRetries: deps.maxParseRetries,
+              validate: deps.validate,
+              maxRepairs: deps.maxRepairs,
+              log,
+            })
+          : await generateLayout(target, {
+              llm: deps.llm,
+              guide: deps.guide,
+              maxBudgetUsd: deps.maxBudgetUsd,
+              maxParseRetries: deps.maxParseRetries,
+            });
       summary.generated++;
 
-      // Validate + repair loop (hard gate).
+      // Validate + repair loop (hard gate). Full landings are composed from
+      // per-section-validated sections, so the assembled document is valid by
+      // construction — skip the whole-document repair (a ~50KB single-call repair
+      // blows the model's output ceiling); just gate on the final validation.
       let result = await deps.validate(json);
       let attempts = 0;
-      while (!result.valid && attempts < deps.maxRepairs) {
+      const repairsAllowed = target.type === 'full_landing' ? 0 : deps.maxRepairs;
+      while (!result.valid && attempts < repairsAllowed) {
         attempts++;
         summary.repaired++;
         const { system, prompt } = buildRepairPrompt(json, result.violations);
