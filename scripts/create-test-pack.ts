@@ -19,7 +19,8 @@ import { stripe } from '@/lib/stripe/client';
 const LAYOUT_SLUG = process.env.TEST_PACK_LAYOUT_SLUG ?? 'elegant-coaching-landing-page-template-for-divi-5-dark-glassmorphism';
 const PACK_SLUG = process.env.TEST_PACK_SLUG ?? 'test-coaching-landing';
 const PACK_TITLE = process.env.TEST_PACK_TITLE ?? 'Test — Elegant Coaching Landing';
-const PRICE_CENTS = Number(process.env.TEST_PACK_PRICE_CENTS ?? '25');
+// Stripe's minimum charge is 50¢ USD — a lower amount is rejected at checkout.
+const PRICE_CENTS = Number(process.env.TEST_PACK_PRICE_CENTS ?? '50');
 
 async function main() {
   const [layout] = await db.select({ id: layouts.id, title: layouts.title }).from(layouts).where(eq(layouts.slug, LAYOUT_SLUG)).limit(1);
@@ -35,8 +36,10 @@ async function main() {
   let stripePriceId: string | null;
   if (existing) {
     packId = existing.id;
-    stripePriceId = existing.stripePriceId;
-    await db.update(packs).set({ kind: 'paid', priceCents: PRICE_CENTS, status: 'published' }).where(eq(packs.id, packId));
+    // If the price changed, force a fresh Stripe price (Stripe prices are immutable).
+    const priceChanged = existing.priceCents !== PRICE_CENTS;
+    stripePriceId = priceChanged ? null : existing.stripePriceId;
+    await db.update(packs).set({ kind: 'paid', priceCents: PRICE_CENTS, status: 'published', ...(priceChanged ? { stripePriceId: null } : {}) }).where(eq(packs.id, packId));
   } else {
     packId = randomUUID();
     stripePriceId = null;
