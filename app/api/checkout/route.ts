@@ -54,15 +54,24 @@ export async function POST(req: Request): Promise<Response> {
     return NextResponse.json({ url: session.url });
   };
 
+  const fail = (err: unknown) => {
+    const detail = err instanceof Error ? err.message : String(err);
+    console.error('[checkout] session create failed', err);
+    return NextResponse.json({ error: 'checkout_failed', detail }, { status: 502 });
+  };
+
   try {
     return urlOr500(await stripe.checkout.sessions.create(buildCheckoutSessionParams(input, makeCtx(true))));
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
-    if (!/tax/i.test(msg)) {
-      console.error('[checkout] session create failed', err);
-      return NextResponse.json({ error: 'checkout_failed' }, { status: 502 });
-    }
+    if (!/tax/i.test(msg)) return fail(err);
+    // automatic_tax failed (e.g. Stripe Tax not enabled) — retry without tax, and
+    // return a clean error if THAT also fails (previously this threw → 500 crash).
     console.warn('[checkout] automatic_tax failed; retrying without tax:', msg);
-    return urlOr500(await stripe.checkout.sessions.create(buildCheckoutSessionParams(input, makeCtx(false))));
+    try {
+      return urlOr500(await stripe.checkout.sessions.create(buildCheckoutSessionParams(input, makeCtx(false))));
+    } catch (err2) {
+      return fail(err2);
+    }
   }
 }

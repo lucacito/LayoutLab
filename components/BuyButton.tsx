@@ -17,11 +17,11 @@ export function BuyButton(props: Props) {
     try {
       const body = props.kind === 'pack' ? { kind: 'pack', packId: props.packId } : { kind: 'membership', plan: props.plan };
       const res = await fetch('/api/checkout', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
-      const data = (await res.json()) as { url?: string; error?: string };
+      const data = (await res.json()) as { url?: string; error?: string; detail?: string };
       if (data.url) {
         window.location.assign(data.url);
       } else {
-        setError(data.error ? `Checkout failed: ${data.error}` : 'Checkout is unavailable right now.');
+        setError(data.detail ?? (data.error ? `Checkout failed: ${data.error}` : 'Checkout is unavailable right now.'));
         setLoading(false);
       }
     } catch {
