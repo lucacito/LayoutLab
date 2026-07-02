@@ -29,6 +29,14 @@ const confirm = process.argv.includes('--confirm');
 const includeSeed = process.argv.includes('--include-seed');
 const log = (m: string) => console.log(`[sync] ${m}`);
 
+// Optional filters: --slugs=a,b,c (only these slugs) and/or --type=full_landing.
+function argVal(name: string): string | undefined {
+  const hit = process.argv.find((a) => a.startsWith(`--${name}=`));
+  return hit ? hit.split('=').slice(1).join('=') : undefined;
+}
+const onlySlugs = new Set((argVal('slugs') ?? '').split(',').map((s) => s.trim()).filter(Boolean));
+const onlyType = argVal('type');
+
 async function readLocalAsset(key: string): Promise<Buffer> {
   if (key.startsWith('/screenshots/')) return readFile(join('public', key));
   return readFile(key); // e.g. pipeline/out/layouts-json/<hash>.json
@@ -53,7 +61,10 @@ async function main() {
   }
   log(`${confirm ? 'CONFIRM (writing to prod)' : 'DRY-RUN (no writes)'} — target: ${target.url || '(unset)'}`);
 
-  const rows = await db.select().from(layouts).where(eq(layouts.status, 'published'));
+  let rows = await db.select().from(layouts).where(eq(layouts.status, 'published'));
+  if (onlySlugs.size) rows = rows.filter((r) => onlySlugs.has(r.slug));
+  if (onlyType) rows = rows.filter((r) => r.type === onlyType);
+  if (onlySlugs.size || onlyType) log(`filtered to ${rows.length} layout(s)${onlyType ? ` type=${onlyType}` : ''}${onlySlugs.size ? ` slugs=${onlySlugs.size}` : ''}`);
   const summary = { total: rows.length, skippedSeed: 0, synced: 0, deduped: 0, failed: 0 };
 
   for (const row of rows) {
