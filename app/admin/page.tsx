@@ -24,6 +24,10 @@ export default async function AdminDashboard() {
           return c.href ? <Link key={c.key} href={c.href}>{body}</Link> : <div key={c.key}>{body}</div>;
         })}
       </div>
+      <div className="mt-6 flex gap-5">
+        <Link href="/admin/queue" className="text-small font-semibold text-action hover:underline">Approval queue →</Link>
+        <Link href="/admin/emails" className="text-small font-semibold text-action hover:underline">Emails &amp; downloads →</Link>
+      </div>
     </main>
   );
 }

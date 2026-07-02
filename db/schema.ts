@@ -182,6 +182,8 @@ export const downloads = pgTable('downloads', {
   userId: text('user_id').references(() => users.id, { onDelete: 'set null' }),
   layoutId: text('layout_id').notNull().references(() => layouts.id, { onDelete: 'cascade' }),
   ip: text('ip'),
+  // Downloader email (session or captured); nullable for older rows / no-email flows.
+  email: text('email'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
 });
 

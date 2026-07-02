@@ -26,8 +26,8 @@ export async function getEntitlementsForUser(userId: string): Promise<UserEntitl
     .from(entitlements).where(eq(entitlements.userId, userId));
 }
 
-export async function getLayoutForDownload(layoutId: string): Promise<{ id: string; slug: string; diviJsonBlobKey: string } | null> {
-  const rows = await db.select({ id: layouts.id, slug: layouts.slug, diviJsonBlobKey: layouts.diviJsonBlobKey })
+export async function getLayoutForDownload(layoutId: string): Promise<{ id: string; slug: string; title: string; diviJsonBlobKey: string } | null> {
+  const rows = await db.select({ id: layouts.id, slug: layouts.slug, title: layouts.title, diviJsonBlobKey: layouts.diviJsonBlobKey })
     .from(layouts).where(and(eq(layouts.id, layoutId), eq(layouts.status, 'published'))).limit(1);
   return rows[0] ?? null;
 }
@@ -78,8 +78,8 @@ export async function getDownloadableLayouts(userId: string): Promise<LayoutRow[
   return rows.map((r) => r.layout);
 }
 
-export async function recordDownload(userId: string | null, layoutId: string, ip: string | null): Promise<void> {
-  await db.insert(downloads).values({ id: randomUUID(), userId: userId ?? undefined, layoutId, ip: ip ?? undefined });
+export async function recordDownload(userId: string | null, layoutId: string, ip: string | null, email?: string | null): Promise<void> {
+  await db.insert(downloads).values({ id: randomUUID(), userId: userId ?? undefined, layoutId, ip: ip ?? undefined, email: email ?? undefined });
 }
 
 export async function getStripeCustomerIdByEmail(email: string): Promise<string | null> {

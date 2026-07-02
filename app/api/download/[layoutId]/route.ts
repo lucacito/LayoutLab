@@ -6,6 +6,7 @@ import { fetchAsset } from '@/lib/blob';
 import { buildLayoutZip } from '@/lib/download/zip';
 import { readLicense } from '@/lib/license';
 import { rateLimit } from '@/lib/rate-limit';
+import { notifyDownload } from '@/lib/notify/download';
 
 export const runtime = 'nodejs';
 
@@ -32,7 +33,13 @@ export async function GET(req: Request, { params }: { params: Promise<{ layoutId
 
   const userId = sessionEmail ? await getUserIdByEmail(sessionEmail) : null;
   const zip = await buildLayoutZip(bytes.toString('utf8'), layout.slug, readLicense());
-  await recordDownload(userId, layout.id, ip);
+  const downloaderEmail = sessionEmail ?? capturedEmail ?? null;
+  await recordDownload(userId, layout.id, ip, downloaderEmail);
+  try {
+    await notifyDownload({ layoutTitle: layout.title, slug: layout.slug, downloader: downloaderEmail ?? 'guest', ip });
+  } catch {
+    /* best-effort — never break a download on a notification failure */
+  }
 
   return new Response(new Uint8Array(zip), {
     status: 200,
