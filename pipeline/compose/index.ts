@@ -54,6 +54,7 @@ export async function composeLanding(target: Target, deps: ComposeDeps): Promise
       const pc = (JSON.parse(json) as { post_content?: string }).post_content;
       if (typeof pc === 'string' && pc.trim()) sections.push(pc);
       else if (REQUIRED_ROLES.has(step.role)) throw new LlmError(`required section ${step.role} produced no post_content`);
+      else log(`skip optional section ${step.role}: produced no post_content`);
     } catch (e) {
       if (REQUIRED_ROLES.has(step.role)) throw e;
       log(`skip optional section ${step.role}: ${(e as Error).message}`);

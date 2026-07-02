@@ -42,4 +42,22 @@ describe('composeLanding', () => {
     };
     await expect(composeLanding(target as any, { llm, guide, flow: twoStep, maxParseRetries: 0 })).rejects.toThrow();
   });
+
+  it('skips an optional section that produced no content, still assembles the rest, and logs the skip', async () => {
+    const threeStep = [
+      { role: 'hero', sectionType: 'hero', job: 'hero job', cta: true },
+      { role: 'benefits', sectionType: 'cards', job: 'benefits job', cta: false },
+      { role: 'final_cta', sectionType: 'cta', job: 'cta job', cta: true },
+    ];
+    const empty = JSON.stringify({ post_title: 'X', post_content: '   ' });
+    let n = 0;
+    // brief, then hero (ok), then benefits (empty -> optional skip), then final_cta (ok)
+    const outs = [JSON.stringify(brief), section(1), empty, section(2)];
+    const llm = { complete: vi.fn(async () => outs[n++]) };
+    const log = vi.fn();
+    const { json } = await composeLanding(target as any, { llm, guide, flow: threeStep, maxParseRetries: 0, log });
+    const doc = JSON.parse(json);
+    expect((doc.post_content.match(/wp:divi\/section {/g) || []).length).toBe(2); // hero + final_cta only
+    expect(log).toHaveBeenCalledWith(expect.stringContaining('skip optional section benefits'));
+  });
 });
