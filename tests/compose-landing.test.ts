@@ -61,3 +61,50 @@ describe('composeLanding', () => {
     expect(log).toHaveBeenCalledWith(expect.stringContaining('skip optional section benefits'));
   });
 });
+
+describe('composeLanding per-section validation', () => {
+  const invalid = { valid: false, violations: [{ code: 'BLOCK_PARSE_ERROR', message: 'bad', path: '' }] };
+  const ok = { valid: true, violations: [] };
+
+  it('validates each section and repairs an invalid one at the section level (small repair, not the whole doc)', async () => {
+    // llm: brief, hero, hero-repair, final_cta. validate: hero invalid then valid, final_cta valid.
+    let n = 0;
+    const outs = [JSON.stringify(brief), section(1), section(11), section(2)];
+    const llm = { complete: vi.fn(async () => outs[n++]) };
+    let vc = 0;
+    const validate = vi.fn(async () => (++vc === 1 ? invalid : ok));
+    const { json } = await composeLanding(target as any, { llm, guide, flow: twoStep, maxParseRetries: 0, validate, maxRepairs: 2 });
+    const doc = JSON.parse(json);
+    expect((doc.post_content.match(/wp:divi\/section {/g) || []).length).toBe(2);
+    expect(llm.complete).toHaveBeenCalledTimes(4); // brief + hero + hero-repair + final_cta
+    expect(validate).toHaveBeenCalledTimes(3); // hero(invalid), hero(valid), final_cta(valid)
+  });
+
+  it('drops the landing when a required section never validates', async () => {
+    let n = 0;
+    const outs = [JSON.stringify(brief), section(1), section(1), section(1)];
+    const llm = { complete: vi.fn(async () => outs[Math.min(n++, outs.length - 1)]) };
+    const validate = vi.fn(async () => invalid);
+    await expect(
+      composeLanding(target as any, { llm, guide, flow: twoStep, maxParseRetries: 0, validate, maxRepairs: 1 }),
+    ).rejects.toThrow();
+  });
+
+  it('skips an optional section that never validates and assembles the rest', async () => {
+    const threeStep = [
+      { role: 'hero', sectionType: 'hero', job: 'j', cta: true },
+      { role: 'benefits', sectionType: 'cards', job: 'j', cta: false },
+      { role: 'final_cta', sectionType: 'cta', job: 'j', cta: true },
+    ];
+    let n = 0;
+    const outs = [JSON.stringify(brief), section(1), section(2), section(3)];
+    const llm = { complete: vi.fn(async () => outs[Math.min(n++, outs.length - 1)]) };
+    let vc = 0; // per-section validate: hero valid, benefits invalid, final_cta valid
+    const validate = vi.fn(async () => (++vc === 2 ? invalid : ok));
+    const log = vi.fn();
+    const { json } = await composeLanding(target as any, { llm, guide, flow: threeStep, maxParseRetries: 0, validate, maxRepairs: 0, log });
+    const doc = JSON.parse(json);
+    expect((doc.post_content.match(/wp:divi\/section {/g) || []).length).toBe(2); // hero + final_cta
+    expect(log).toHaveBeenCalledWith(expect.stringContaining('skip optional section benefits'));
+  });
+});
