@@ -42,8 +42,8 @@ async function coveredKeys(): Promise<Set<string>> {
 
 async function main() {
   const mode = process.argv[2];
-  if (mode !== 'batch' && mode !== 'drip' && mode !== 'vary' && mode !== 'set') {
-    console.log('Usage: npm run pipeline -- <batch|drip [--count=N]|vary [--type=] [--count=N]|set [--type=cards --niche= --style= --columns=2,3,4 --icons=top,left --icon-styles=circle,plain,number]> [--dry-run]');
+  if (mode !== 'batch' && mode !== 'drip' && mode !== 'vary' && mode !== 'set' && mode !== 'one') {
+    console.log('Usage: npm run pipeline -- <batch|drip [--count=N]|vary [--type=] [--count=N]|set [...]|one --target=type:niche:style> [--dry-run]');
     process.exitCode = 1;
     return;
   }
@@ -56,7 +56,13 @@ async function main() {
   // it intentionally bypasses the type|niche|style coverage skip — content-hash dedup
   // still prevents exact repeats. `batch`/`drip` walk the curated matrix, skipping covered combos.
   let targets: Target[];
-  if (mode === 'set') {
+  if (mode === 'one') {
+    // Regenerate/produce exactly one explicit target, bypassing the coverage skip
+    // (content-hash dedup still prevents an identical repeat).
+    const [type, niche, style] = (arg('target') ?? '').split(':');
+    if (!type || !niche || !style) { console.error('one mode needs --target=type:niche:style'); process.exitCode = 1; return; }
+    targets = [{ type, niche, style }];
+  } else if (mode === 'set') {
     const base = { type: arg('type') ?? 'cards', niche: arg('niche') ?? 'saas', style: arg('style') ?? 'minimal', color: arg('color') };
     const columns = (arg('columns') ?? '2,3,4').split(',').map(Number).filter((n) => n > 0);
     const icons = (arg('icons') ?? 'top,left').split(',').map((s) => s.trim()).filter(Boolean) as ('none' | 'top' | 'left')[];
