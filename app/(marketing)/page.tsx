@@ -1,5 +1,4 @@
-import { listPacks, listLayouts, listPublishedLayouts, facetCounts, type LayoutRow } from '@/lib/catalog/queries';
-import { parseFilters } from '@/lib/catalog/filters';
+import { listPacks, listPublishedLayouts, facetCounts, type LayoutRow } from '@/lib/catalog/queries';
 import { AXIS_META, NICHE_LABELS } from '@/lib/nav/menu-data';
 import { Container } from '@/components/ui/Container';
 import { Button } from '@/components/ui/Button';
@@ -48,29 +47,29 @@ export default async function HomePage() {
     packs = [];
   }
 
-  let recent: Awaited<ReturnType<typeof listLayouts>> = [];
+  // Fetch published layouts once (newest-published first) and reuse for both the
+  // "Listed recently" carousel and the per-industry sections.
+  let published: LayoutRow[] = [];
   try {
-    recent = (await listLayouts(parseFilters({}))).slice(0, 10);
+    published = await listPublishedLayouts();
   } catch {
-    recent = [];
+    published = [];
   }
 
-  // Group all published layouts by industry → one homepage section per niche, busiest first.
-  let industries: { niche: string; items: LayoutRow[] }[] = [];
-  try {
-    const map = new Map<string, LayoutRow[]>();
-    for (const l of await listPublishedLayouts()) {
-      if (!l.niche) continue;
-      const arr = map.get(l.niche);
-      if (arr) arr.push(l);
-      else map.set(l.niche, [l]);
-    }
-    industries = [...map.entries()]
-      .map(([niche, items]) => ({ niche, items }))
-      .sort((a, b) => b.items.length - a.items.length);
-  } catch {
-    industries = [];
+  // "Listed recently" = most-recently-published (listing time), not creation time.
+  const recent = published.slice(0, 10);
+
+  // Group by industry → one homepage section per niche, busiest first.
+  const industryMap = new Map<string, LayoutRow[]>();
+  for (const l of published) {
+    if (!l.niche) continue;
+    const arr = industryMap.get(l.niche);
+    if (arr) arr.push(l);
+    else industryMap.set(l.niche, [l]);
   }
+  const industries = [...industryMap.entries()]
+    .map(([niche, items]) => ({ niche, items }))
+    .sort((a, b) => b.items.length - a.items.length);
 
   let counts: Awaited<ReturnType<typeof facetCounts>> = { type: {}, niche: {}, style: {}, color: {}, columns: {} };
   try {
