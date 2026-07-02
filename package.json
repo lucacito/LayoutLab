@@ -20,7 +20,8 @@
     "seo:copy": "tsx pipeline/seo-copy.ts",
     "render": "tsx pipeline/render-cli.ts",
     "render:demo": "tsx scripts/render-demo.ts",
-    "rerender": "tsx scripts/rerender.ts"
+    "rerender": "tsx scripts/rerender.ts",
+    "sync-to-prod": "tsx pipeline/sync-to-prod.ts"
   },
   "dependencies": {
     "@auth/drizzle-adapter": "^1.11.2",
