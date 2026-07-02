@@ -48,6 +48,7 @@ export const metadata: Metadata = {
   description: DESCRIPTION,
   keywords: ['divi 5 layouts', 'free divi layouts', 'divi sections', 'divi templates', 'divi layout pack', 'divi 5'],
   alternates: { canonical: '/' },
+  icons: { icon: '/favicon.png', shortcut: '/favicon.png', apple: '/favicon.png' },
   openGraph: { type: 'website', siteName: 'Divi5Lab', url: '/', title: TITLE, description: DESCRIPTION },
   twitter: { card: 'summary_large_image', title: TITLE, description: 'Free, validated Divi 5 layouts & sections — import-ready JSON.' },
 };
