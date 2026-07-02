@@ -22,7 +22,8 @@
     "render:demo": "tsx scripts/render-demo.ts",
     "rerender": "tsx scripts/rerender.ts",
     "sync-to-prod": "tsx pipeline/sync-to-prod.ts",
-    "stripe:membership": "tsx scripts/stripe-membership.ts"
+    "stripe:membership": "tsx scripts/stripe-membership.ts",
+    "test-pack": "tsx scripts/create-test-pack.ts"
   },
   "dependencies": {
     "@auth/drizzle-adapter": "^1.11.2",
