@@ -1,5 +1,9 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { render } from '@testing-library/react';
+
+// Header/MobileNav use useSession; stub it (logged out) — no SessionProvider in this render.
+vi.mock('next-auth/react', () => ({ useSession: () => ({ data: null, status: 'unauthenticated' }) }));
+
 import { Header } from '@/components/site/Header';
 import { Footer } from '@/components/site/Footer';
 import { BookmarksProvider } from '@/components/bookmarks/BookmarksProvider';

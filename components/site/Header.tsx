@@ -1,9 +1,9 @@
-import Link from 'next/link';
 import { Container } from '@/components/ui/Container';
 import { Button } from '@/components/ui/Button';
 import { Wordmark } from '@/components/ui/Wordmark';
 import { MegaMenu } from './MegaMenu';
 import { MobileNav } from './MobileNav';
+import { AccountNav } from './AccountNav';
 import { SavedLink } from '@/components/bookmarks/SavedLink';
 
 export function Header() {
@@ -17,7 +17,7 @@ export function Header() {
         </div>
         <div className="hidden items-center gap-4 md:flex">
           <SavedLink />
-          <Link href="/login" className="text-small font-medium text-navy transition hover:text-action">Sign in</Link>
+          <AccountNav />
           <Button href="/browse">Browse layouts</Button>
         </div>
         <MobileNav />

@@ -1,5 +1,6 @@
 'use client';
 import { useState } from 'react';
+import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import { AXIS_VALUES } from '@/lib/catalog/filters';
 import { axisLabel } from '@/lib/seo/taxonomy-copy';
@@ -10,6 +11,8 @@ import { AXIS_META, NAV_MENUS } from '@/lib/nav/menu-data';
 export function MobileNav() {
   const [open, setOpen] = useState(false);
   const [section, setSection] = useState<string | null>(null);
+  const { data: session } = useSession();
+  const user = session?.user as { role?: string } | undefined;
   const close = () => {
     setOpen(false);
     setSection(null);
@@ -63,8 +66,13 @@ export function MobileNav() {
           <Link href="/pricing" onClick={close} className="flex items-center gap-2 border-t border-fog px-2 py-3 text-body font-medium text-navy">
             <Icon name="sell" size={20} className="text-muted" /> Pricing
           </Link>
-          <Link href="/login" onClick={close} className="flex items-center gap-2 border-t border-fog px-2 py-3 text-body font-medium text-navy">
-            <Icon name="login" size={20} className="text-muted" /> Sign in
+          {user?.role === 'admin' && (
+            <Link href="/admin/queue" onClick={close} className="flex items-center gap-2 border-t border-fog px-2 py-3 text-body font-medium text-action">
+              <Icon name="shield_person" size={20} className="text-action" /> Admin
+            </Link>
+          )}
+          <Link href={user ? '/account' : '/login'} onClick={close} className="flex items-center gap-2 border-t border-fog px-2 py-3 text-body font-medium text-navy">
+            <Icon name={user ? 'account_circle' : 'login'} size={20} className="text-muted" /> {user ? 'Account' : 'Sign in'}
           </Link>
           <div className="mt-3">
             <Button href="/browse" className="w-full" onClick={close}>Browse layouts</Button>

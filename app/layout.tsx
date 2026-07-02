@@ -5,6 +5,7 @@ import type { ReactNode } from 'react';
 import { Inter } from 'next/font/google';
 import { Analytics } from '@vercel/analytics/react';
 import { GoogleAnalytics } from '@next/third-parties/google';
+import { SessionProvider } from 'next-auth/react';
 import { JsonLd } from '@/components/JsonLd';
 import { organizationJsonLd, websiteJsonLd } from '@/lib/seo';
 import { Header } from '@/components/site/Header';
@@ -58,13 +59,15 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     <html lang="en" className={inter.variable}>
       <body className="font-sans">
         <JsonLd data={SITE_JSONLD} />
-        <BookmarksProvider>
-          <AnnouncementBar />
-          <Header />
-          {children}
-          <InternalLinksBand />
-          <Footer />
-        </BookmarksProvider>
+        <SessionProvider>
+          <BookmarksProvider>
+            <AnnouncementBar />
+            <Header />
+            {children}
+            <InternalLinksBand />
+            <Footer />
+          </BookmarksProvider>
+        </SessionProvider>
         <ExitIntentPopup />
         <ScrollOffer />
         <Analytics />
