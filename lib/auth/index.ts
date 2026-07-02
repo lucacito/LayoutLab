@@ -18,6 +18,11 @@ const magicLink: EmailConfig = {
   maxAge: 24 * 60 * 60,
   options: {},
   sendVerificationRequest: async ({ identifier, url }: { identifier: string; url: string }) => {
+    // Dev convenience: with no RESEND_API_KEY, no email is sent — print the
+    // sign-in link so local login works without email configured.
+    if (!process.env.RESEND_API_KEY) {
+      console.log(`\n[auth:dev] magic sign-in link for ${identifier}:\n${url}\n`);
+    }
     await sendMagicLink(identifier, url);
   },
 } as EmailConfig;
