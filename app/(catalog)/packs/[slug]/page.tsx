@@ -1,3 +1,4 @@
+import { formatPriceCents } from '@/lib/format/price';
 // app/(catalog)/packs/[slug]/page.tsx
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
@@ -44,7 +45,7 @@ export default async function PackPage({ params }: { params: Promise<{ slug: str
 
   const site = env.NEXT_PUBLIC_SITE_URL;
   const url = `${site}/packs/${pack.slug}`;
-  const price = pack.kind === 'free' ? 'Free' : pack.priceCents != null ? `$${(pack.priceCents / 100).toFixed(0)}` : '';
+  const price = pack.kind === 'free' ? 'Free' : pack.priceCents != null ? formatPriceCents(pack.priceCents) : '';
 
   return (
     <main className="py-12">

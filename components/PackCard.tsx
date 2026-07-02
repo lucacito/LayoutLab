@@ -1,10 +1,11 @@
+import { formatPriceCents } from '@/lib/format/price';
 // components/PackCard.tsx
 import Link from 'next/link';
 import type { PackRow } from '@/lib/catalog/queries';
 import { PreviewImage } from '@/components/PreviewImage';
 
 export function PackCard({ pack }: { pack: PackRow }) {
-  const price = pack.kind === 'free' ? 'Free' : pack.priceCents != null ? `$${(pack.priceCents / 100).toFixed(0)}` : '';
+  const price = pack.kind === 'free' ? 'Free' : pack.priceCents != null ? formatPriceCents(pack.priceCents) : '';
   return (
     <Link href={`/packs/${pack.slug}`} className="group block overflow-hidden rounded-card border border-border bg-paper shadow-soft transition hover:-translate-y-0.5">
       <PreviewImage
