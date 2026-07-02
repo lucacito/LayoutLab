@@ -17,7 +17,7 @@ export const metadata: Metadata = { title: 'Pricing — Free Sections, Packs & A
 const FAQ = [
   { question: 'What do I actually download?', answer: 'A Divi 5 layout as a JSON file, plus the commercial license. Import the JSON straight into the Divi builder.' },
   { question: 'What license do I get?', answer: 'One simple commercial license: use your purchases on unlimited sites you own or build for clients. Reselling or redistributing the files is not allowed.' },
-  { question: 'Do you offer refunds?', answer: 'No. Layouts are digital goods delivered instantly, so all sales are final and we do not offer refunds. If a file is genuinely broken or you were charged in error, email info@divi5lab.com within 14 days and we will make it right with a fix or a replacement — not a cash refund. See the License & Refunds page.' },
+  { question: 'Do you offer refunds?', answer: 'No. Layouts are digital goods delivered instantly, so all sales are final and we do not offer refunds. If a file is genuinely broken or you were charged in error, email support@divi5lab.com within 14 days and we will make it right with a fix or a replacement — not a cash refund. See the License & Refunds page.' },
   { question: 'How does the all-access membership work?', answer: 'While your membership is active you can download every layout in the library. Cancel anytime from your billing portal; access continues until the end of the period.' },
 ];
 

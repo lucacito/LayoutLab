@@ -27,6 +27,7 @@ const COLUMNS: { title: string; links: { href: string; label: string }[] }[] = [
       { href: '/pricing', label: 'Pricing' },
       { href: '/saved', label: 'Saved' },
       { href: '/about', label: 'About' },
+      { href: '/contact', label: 'Contact' },
       { href: '/license', label: 'License' },
     ],
   },
@@ -51,6 +52,9 @@ export function Footer() {
               </li>
             ))}
           </ul>
+          <a href="mailto:support@divi5lab.com" className="mt-5 inline-flex items-center gap-2 text-small text-muted transition hover:text-action">
+            <Icon name="mail" size={16} className="text-action" /> support@divi5lab.com
+          </a>
         </div>
 
         {/* Category columns */}
