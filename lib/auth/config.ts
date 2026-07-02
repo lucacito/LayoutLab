@@ -15,6 +15,9 @@ export function isAdminEmail(email?: string | null): boolean {
 
 export const authConfig: NextAuthConfig = {
   session: { strategy: 'jwt' },
+  // Trust the deployment's request host (Vercel/proxied) when AUTH_URL is unset,
+  // so redirects/callbacks use the real domain instead of a stale localhost value.
+  trustHost: true,
   pages: { signIn: '/login', verifyRequest: '/verify-request' },
   providers: [], // Email/credentials providers added below in index.ts
   callbacks: {
