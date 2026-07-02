@@ -4,6 +4,7 @@ import type { Target, Guide } from './recipes';
 import { buildRepairPrompt } from './recipes';
 import { extractJson } from './llm';
 import { generateLayout } from './generate';
+import { composeLanding } from '@/pipeline/compose';
 import { generateSeo } from './seo';
 import { contentHash } from './dedupe';
 import { stackLayoutJsonMobile } from './stack-mobile';
@@ -52,7 +53,21 @@ export async function runPipeline(deps: RunDeps): Promise<RunSummary> {
 
   for (const target of deps.targets) {
     try {
-      let { json } = await generateLayout(target, { llm: deps.llm, guide: deps.guide, maxBudgetUsd: deps.maxBudgetUsd, maxParseRetries: deps.maxParseRetries });
+      let { json } =
+        target.type === 'full_landing'
+          ? await composeLanding(target, {
+              llm: deps.llm,
+              guide: deps.guide,
+              maxBudgetUsd: deps.maxBudgetUsd,
+              maxParseRetries: deps.maxParseRetries,
+              log,
+            })
+          : await generateLayout(target, {
+              llm: deps.llm,
+              guide: deps.guide,
+              maxBudgetUsd: deps.maxBudgetUsd,
+              maxParseRetries: deps.maxParseRetries,
+            });
       summary.generated++;
 
       // Validate + repair loop (hard gate).
