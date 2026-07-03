@@ -18,3 +18,4 @@ db/migrations/meta/_journal.json.bak
 
 # Phase 3b local render demo artifacts
 public/screenshots/
+.env*

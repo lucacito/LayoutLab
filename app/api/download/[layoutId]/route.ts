@@ -34,7 +34,13 @@ export async function GET(req: Request, { params }: { params: Promise<{ layoutId
   const userId = sessionEmail ? await getUserIdByEmail(sessionEmail) : null;
   const zip = await buildLayoutZip(bytes.toString('utf8'), layout.slug, readLicense());
   const downloaderEmail = sessionEmail ?? capturedEmail ?? null;
-  await recordDownload(userId, layout.id, ip, downloaderEmail);
+  // Audit + notification are BEST-EFFORT — a logging failure (e.g. a prod DB that
+  // hasn't run the downloads.email migration) must never turn a valid download into a 500.
+  try {
+    await recordDownload(userId, layout.id, ip, downloaderEmail);
+  } catch (err) {
+    console.error('[download] recordDownload failed (non-fatal):', (err as Error).message);
+  }
   try {
     await notifyDownload({ layoutTitle: layout.title, slug: layout.slug, downloader: downloaderEmail ?? 'guest', ip });
   } catch {

@@ -85,6 +85,29 @@ function run(cmd: string, args: string[], stdin?: string): Promise<{ stdout: str
   });
 }
 
+// Scroll the page top→bottom→top so every off-screen section paints before we
+// screenshot. Without this, an element screenshot of content taller than the
+// viewport can capture unpainted regions as a black dead zone (the root cause of
+// the truncated previews). Runs in the browser via page.evaluate.
+async function paintFullPage(page: { evaluate: (fn: () => Promise<void>) => Promise<void> }): Promise<void> {
+  await page.evaluate(
+    () =>
+      new Promise<void>((resolve) => {
+        const step = Math.max(200, Math.floor(window.innerHeight * 0.8));
+        let y = 0;
+        const timer = setInterval(() => {
+          window.scrollTo(0, y);
+          y += step;
+          if (y >= document.body.scrollHeight) {
+            clearInterval(timer);
+            window.scrollTo(0, 0);
+            resolve();
+          }
+        }, 60);
+      }),
+  );
+}
+
 /**
  * Live render deps backed by the local Docker WP+Divi env. Configurable via env:
  * RENDER_WPCLI_CONTAINER (default `divi5val_wpcli`) and WP_RENDER_BASE_URL
@@ -131,7 +154,12 @@ export async function realRenderDeps(): Promise<{ deps: RenderDeps; close: () =>
           const box = (await wrapper.count()) ? await wrapper.boundingBox() : null;
           if (box && box.height > 150) {
             await page.addStyleTag({ content: HIDE_CHROME });
-            await page.waitForTimeout(250);
+            // Force the full page to PAINT before the element screenshot. Playwright's
+            // element screenshot captures the whole element, but content below the
+            // viewport can still be unpainted (→ black dead zone) when the shot fires.
+            // Scrolling through it top-to-bottom forces every section to render first.
+            await paintFullPage(page);
+            await page.waitForTimeout(300);
             return await wrapper.screenshot();
           }
           if (attempt < 3) await page.waitForTimeout(1000);
@@ -140,6 +168,7 @@ export async function realRenderDeps(): Promise<{ deps: RenderDeps; close: () =>
         // crosses the 150px bar. Crop to the wrapper if it has any real height —
         // only screenshot the empty full viewport when there's no content wrapper.
         await page.addStyleTag({ content: HIDE_CHROME });
+        await paintFullPage(page);
         await page.waitForTimeout(250);
         const wrapper = page.locator('.et-l--post').first();
         const box = (await wrapper.count()) ? await wrapper.boundingBox() : null;

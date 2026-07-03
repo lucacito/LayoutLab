@@ -48,7 +48,12 @@ export async function GET(
   }
 
   const zip = await buildPackZip(items, readLicense());
-  for (const it of items) await recordDownload(userId, it.id, ip);
+  // Best-effort audit — a logging failure must never break a paid pack download.
+  try {
+    for (const it of items) await recordDownload(userId, it.id, ip);
+  } catch (err) {
+    console.error('[download/pack] recordDownload failed (non-fatal):', (err as Error).message);
+  }
 
   return new Response(new Uint8Array(zip), {
     status: 200,

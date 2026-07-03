@@ -55,6 +55,42 @@ describe('runPipeline', () => {
     expect(upload).not.toHaveBeenCalled();
   });
 
+  it('content gate: repairs placeholder copy then ingests the cleaned layout', async () => {
+    const dirty = JSON.stringify({ post_title: 'T', post_content: '<!-- wp:divi/text {"content":"Lorem ipsum dolor sit amet"} -->' });
+    const clean = JSON.stringify({ post_title: 'T', post_content: '<!-- wp:divi/text {"content":"Ship faster with real copy"} -->' });
+    const seo = JSON.stringify({ title: 'T', slug: 's', metaDescription: 'd', keywords: [], axes: { type: 'hero', niche: 'saas', style: 'minimal', colors: [] } });
+    const llm = { complete: vi.fn()
+      .mockResolvedValueOnce(dirty)   // generate
+      .mockResolvedValueOnce(clean)   // content repair
+      .mockResolvedValueOnce(seo) };  // seo
+    const ingest = vi.fn(async () => ({ deduped: false }));
+    const s = await runPipeline(baseDeps({ llm, ingest }) as any);
+    expect(s.ingested).toBe(1);
+    expect(s.repaired).toBe(1);
+    expect(ingest).toHaveBeenCalledOnce();
+  });
+
+  it('content gate: drops a layout whose placeholder copy never gets cleaned', async () => {
+    const dirty = JSON.stringify({ post_title: 'T', post_content: '<!-- wp:divi/text {"content":"Your content goes here"} -->' });
+    const llm = { complete: vi.fn(async () => dirty) }; // generate + every repair stay dirty
+    const ingest = vi.fn(async () => ({ deduped: false }));
+    const s = await runPipeline(baseDeps({ llm, ingest }) as any);
+    expect(s.dropped).toBe(1);
+    expect(s.ingested).toBe(0);
+    expect(ingest).not.toHaveBeenCalled();
+  });
+
+  it('content gate: does NOT drop clean copy that only has an unresolved placeholder image (best-effort)', async () => {
+    const clean = JSON.stringify({ post_title: 'T', post_content: '<!-- wp:divi/image {"src":"https://loremflickr.com/800/600/saas"} -->Real specific headline here' });
+    const seo = JSON.stringify({ title: 'T', slug: 's', metaDescription: 'd', keywords: [], axes: { type: 'hero', niche: 'saas', style: 'minimal', colors: [] } });
+    const llm = { complete: vi.fn().mockResolvedValueOnce(clean).mockResolvedValueOnce(seo) };
+    const ingest = vi.fn(async () => ({ deduped: false }));
+    const s = await runPipeline(baseDeps({ llm, ingest }) as any);
+    expect(s.ingested).toBe(1);
+    expect(s.repaired).toBe(0); // image miss must not trigger a copy repair
+    expect(ingest).toHaveBeenCalledOnce();
+  });
+
   it('routes a full_landing target through composeLanding (assembles many sections, not one-shot)', async () => {
     const brief = { businessType: 'course/coaching', businessName: 'Acme Coaching', tagline: 't', audience: 'a', conversionGoal: 'book a call', primaryCta: 'Book a Call', accentColorHex: '#E4572E', voice: 'warm' };
     const section = (n: number) => JSON.stringify({ post_title: `S${n}`, post_content: `<!-- wp:divi/placeholder --><!-- wp:divi/section {"i":${n}} -->x<!-- /wp:divi/section --><!-- /wp:divi/placeholder -->` });

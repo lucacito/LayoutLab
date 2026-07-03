@@ -1,13 +1,14 @@
 // pipeline/run.ts
 import type { LlmClient } from './llm';
 import type { Target, Guide } from './recipes';
-import { buildRepairPrompt } from './recipes';
+import { buildRepairPrompt, buildContentRepairPrompt } from './recipes';
 import { extractJson } from './llm';
 import { generateLayout } from './generate';
 import { composeLanding } from '@/pipeline/compose';
 import { generateSeo } from './seo';
 import { contentHash } from './dedupe';
 import { stackLayoutJsonMobile } from './stack-mobile';
+import { lintLayoutJson } from './content-lint';
 import type { ValidationResult } from './validate';
 import type { UploadResult } from './upload';
 import type { IngestPayload } from '@/lib/ingest/schema';
@@ -96,6 +97,38 @@ export async function runPipeline(deps: RunDeps): Promise<RunSummary> {
       // Swap placeholder images for real stock photos (after validation; URL-for-URL,
       // so structure is unchanged). Hash + render + download all see the real images.
       if (deps.resolveImages) json = await deps.resolveImages(json);
+
+      // Content-quality gate: structural validity says nothing about whether the COPY
+      // is finished. Reject placeholder tokens, lorem ipsum, demo filler, fake
+      // contacts/prices. Full landings are composed from per-section-linted sections,
+      // so they're clean by construction — a ~50KB whole-doc content repair would blow
+      // the model's output ceiling, so skip the doc-level loop for them.
+      // A leftover placeholder-image URL means the Pexels swap missed (infra, best-
+      // effort) — never drop a layout with clean copy over that; only warn.
+      if (target.type !== 'full_landing') {
+        let lint = lintLayoutJson(json);
+        let lintAttempts = 0;
+        const dropWorthy = (vs: typeof lint) => vs.filter((v) => v.code !== 'PLACEHOLDER_IMAGE');
+        while (dropWorthy(lint).length && lintAttempts < deps.maxRepairs) {
+          lintAttempts++;
+          summary.repaired++;
+          const { system, prompt } = buildContentRepairPrompt(json, lint);
+          const text = await deps.llm.complete({ prompt, system, maxBudgetUsd: deps.maxBudgetUsd });
+          json = JSON.stringify(extractJson(text));
+          // A copy rewrite must not break structure — re-validate, then re-resolve any
+          // new placeholder image URLs the rewrite introduced, then re-lint.
+          const revalidate = await deps.validate(json);
+          if (!revalidate.valid) break;
+          if (deps.resolveImages) json = await deps.resolveImages(json);
+          lint = lintLayoutJson(json);
+        }
+        if (dropWorthy(lint).length) {
+          summary.dropped++;
+          log(`drop(content) ${target.type}/${target.niche}/${target.style}: ${dropWorthy(lint).map((v) => v.code).join(',')}`);
+          continue;
+        }
+        if (lint.length) log(`warn(content) ${target.type}/${target.niche}/${target.style}: ${lint.map((v) => v.code).join(',')} (best-effort image miss)`);
+      }
 
       // Enforce single-column, full-width stacking on phone (deterministic; the
       // model is inconsistent about responsive column sizing). Adds phone-only

@@ -4,6 +4,8 @@ import type { LlmClient } from '@/pipeline/llm';
 import { LlmError, extractJson } from '@/pipeline/llm';
 import type { ValidationResult } from '@/pipeline/validate';
 import { generateLayout } from '@/pipeline/generate';
+import { buildContentRepairPrompt } from '@/pipeline/recipes';
+import { lintLayoutJson, IMAGE_RULE_CODES } from '@/pipeline/content-lint';
 import { buildBriefPrompt, parseBrief, type Brief } from './brief';
 import { flowForBusinessType, type Step } from './flow';
 import { buildSectionRolePrompt } from './section-prompt';
@@ -45,18 +47,36 @@ async function generateValidSection(sectionTarget: Target, deps: ComposeDeps): P
     maxBudgetUsd: deps.maxBudgetUsd,
     maxParseRetries: deps.maxParseRetries,
   });
-  if (!deps.validate) return json;
-  let result = await deps.validate(json);
-  let attempts = 0;
   const maxRepairs = deps.maxRepairs ?? 0;
-  while (!result.valid && attempts < maxRepairs) {
-    attempts++;
-    const { system, prompt } = buildRepairPrompt(json, result.violations);
-    const text = await deps.llm.complete({ prompt, system, maxBudgetUsd: deps.maxBudgetUsd });
-    json = JSON.stringify(extractJson(text));
-    result = await deps.validate(json);
+  if (deps.validate) {
+    let result = await deps.validate(json);
+    let attempts = 0;
+    while (!result.valid && attempts < maxRepairs) {
+      attempts++;
+      const { system, prompt } = buildRepairPrompt(json, result.violations);
+      const text = await deps.llm.complete({ prompt, system, maxBudgetUsd: deps.maxBudgetUsd });
+      json = JSON.stringify(extractJson(text));
+      result = await deps.validate(json);
+    }
+    if (!result.valid) throw new LlmError(`section failed validation: ${result.violations.map((v) => v.code).join(',')}`);
   }
-  if (!result.valid) throw new LlmError(`section failed validation: ${result.violations.map((v) => v.code).join(',')}`);
+
+  // Per-section content gate: keep placeholder tokens / lorem ipsum / demo filler out
+  // of the assembled landing. Images are resolved later at the document level, so skip
+  // the image rules here. If a copy repair can't clear it, ship the last version anyway
+  // (structure is valid) rather than fail the whole landing over a copy nit.
+  let lint = lintLayoutJson(json, { skip: IMAGE_RULE_CODES });
+  let lintAttempts = 0;
+  while (lint.length && lintAttempts < maxRepairs) {
+    lintAttempts++;
+    const { system, prompt } = buildContentRepairPrompt(json, lint);
+    const text = await deps.llm.complete({ prompt, system, maxBudgetUsd: deps.maxBudgetUsd });
+    const repaired = JSON.stringify(extractJson(text));
+    // A copy rewrite must not break structure; if it does, keep the prior valid JSON.
+    if (deps.validate && !(await deps.validate(repaired)).valid) break;
+    json = repaired;
+    lint = lintLayoutJson(json, { skip: IMAGE_RULE_CODES });
+  }
   return json;
 }
 

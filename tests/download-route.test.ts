@@ -64,4 +64,15 @@ describe('GET /api/download/[layoutId]', () => {
     const res = await GET(req(), ctx('l1'));
     expect(res.status).toBe(404);
   });
+
+  it('still delivers the zip (200) when the download-audit write fails — logging is best-effort', async () => {
+    // Regression: a prod DB missing the downloads.email column made recordDownload
+    // throw, turning a valid free download into a 500. Audit logging must never
+    // break the actual download.
+    h.readCaptureEmail.mockResolvedValue('a@b.com');
+    h.recordDownload.mockRejectedValueOnce(new Error('column "email" does not exist'));
+    const res = await GET(req(), ctx('l1'));
+    expect(res.status).toBe(200);
+    expect(res.headers.get('content-type')).toBe('application/zip');
+  });
 });

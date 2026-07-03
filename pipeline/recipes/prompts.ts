@@ -61,6 +61,23 @@ function pickExamples(target: Target, guide: Guide): string[] {
 
 function directives(target: Target): string {
   const lines = ['Write realistic, specific copy for this niche — real headlines and benefits, no lorem ipsum.'];
+  // Hard content bans (a deterministic lint enforces these post-generation and will
+  // reject the layout — so get them right the first time).
+  lines.push(
+    'NEVER ship placeholder or demo content. Specifically forbidden: lorem ipsum; ' +
+      'Divi filler like "Your content goes here" or "Edit or remove this text"; the literal word "EYEBROW" ' +
+      '(if a section has a small eyebrow/label above the headline, write a REAL short label, e.g. "Established 2014" or "For SaaS teams"); ' +
+      'bracketed tokens like "[Replace: …]", "[insert …]", "[$XX/month]"; and "$XX"/"XX per month" price stubs — always use a real number. ' +
+      'For any contact details use plausible BRANDED values: an email on the business\'s own domain (never name@example.com) and a realistic phone number (never a 555-01xx "fictional" number).',
+  );
+  // Layout robustness: the #1 render defect is titles/text overlapping or content
+  // spilling past its section, and multi-column rows squeezing text into 1-char-wide
+  // columns. Guard against both.
+  lines.push(
+    'Layout robustness: give every section generous top/bottom padding so headings and text NEVER overlap the next section or an adjacent element; ' +
+      'let text wrap naturally (no fixed heights that clip it, no negative margins that pull a title over an image or another block). ' +
+      'For any multi-column row (features, pricing, testimonials, galleries) use equal, full-width flex columns — never fixed narrow pixel widths that squeeze text into tall one-word-per-line columns.',
+  );
   if (target.color) lines.push(`Use a ${target.color} color palette.`);
   if (target.layout) lines.push(`Composition: ${target.layout}.`);
   if (target.type === 'cards') {
@@ -100,9 +117,11 @@ function directives(target: Target): string {
       'Achieve all of this using ONLY the decoration/attribute shapes shown in the recipes — never invent attributes.',
   );
   lines.push(
-    'For images, derive a keyword from the business and use https://loremflickr.com/{w}/{h}/{keyword} for RELEVANT photos ' +
-      '(e.g. a restaurant → "restaurant,food"); for people/avatars (testimonials, team) use https://i.pravatar.cc/{size}?u={unique-id}; ' +
-      'for plain placeholders use https://placehold.co/{w}x{h}. Pick images that actually fit the business — never a random/mismatched photo, never an empty src.',
+    'For images, derive a SPECIFIC keyword from the business and use https://loremflickr.com/{w}/{h}/{keyword} for RELEVANT photos ' +
+      '(e.g. a steakhouse → "steak,grill", a SaaS dashboard → "dashboard,analytics"); use 2–3 comma-separated keywords so the photo actually matches the subject. ' +
+      'For people/avatars (testimonials, team) use https://i.pravatar.cc/{size}?u={unique-id} — and make the testimonial NAME gender-neutral or matched to a generic persona, since the avatar is random (do not pair an obviously gendered name like "Marisol" with an unrelated face). ' +
+      'The eyebrow "product/app shot" in a hero must depict the ACTUAL product (a dashboard, an app screen, the product photo) — never a random lifestyle stock image that has nothing to do with what is being sold. ' +
+      'Never use placehold.co, never leave an empty "src", and never emit an image whose subject is unrelated to the section.',
   );
   return lines.join('\n');
 }
@@ -125,6 +144,30 @@ export function buildGenerationPrompt(target: Target, guide: Guide): { system: s
     examples,
     '',
     'Output ONLY the JSON for the new section (a single object with post_title and post_content).',
+  ].join('\n');
+  return { system: SYSTEM, prompt };
+}
+
+export interface ContentIssue { code: string; message: string; sample: string }
+
+// Repair copy-quality problems (placeholder tokens, lorem ipsum, demo filler, fake
+// contacts/prices, unresolved placeholder images) WITHOUT changing the structure.
+export function buildContentRepairPrompt(prevJson: string, issues: ContentIssue[]): { system: string; prompt: string } {
+  const list = issues.map((v) => `- [${v.code}] ${v.message} — found near: "${v.sample}"`).join('\n');
+  const prompt = [
+    'The Divi 5 layout you produced is structurally valid but its COPY is unfinished — it contains placeholder / filler content that must never ship in a paid marketplace:',
+    list,
+    '',
+    'Here is the layout you produced:',
+    prevJson,
+    '',
+    'Rewrite ONLY the offending text values into finished, specific, on-brand copy for this business. Rules:',
+    '- No lorem ipsum, no "Your content goes here", no "[Replace: …]" / "[insert …]" tokens, no "EYEBROW" placeholder.',
+    '- Real prices (e.g. "$29/mo"), never "$XX".',
+    '- Plausible branded contacts — a real-looking email on the business domain, never @example.com; never a 555-01xx phone.',
+    '- Every image src must be a real photo URL (keep any https://loremflickr.com/{w}/{h}/{keyword} or https://i.pravatar.cc URLs as-is — those are resolved later — but never leave an empty "src":"" or a placehold.co URL).',
+    '- Keep the exact same block structure, attributes, and JSON shape — change text content only.',
+    'Output ONLY the corrected JSON.',
   ].join('\n');
   return { system: SYSTEM, prompt };
 }
