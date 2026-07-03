@@ -31,6 +31,12 @@ export interface ComposeDeps {
   validate?: (json: string) => Promise<ValidationResult>;
   maxRepairs?: number;
   flow?: Step[];
+  /** Pin the brand instead of generating one — the cohesion source for a
+   * multi-page theme (every page shares name, accent, CTA, voice). */
+  brief?: Brief;
+  /** Canonical brand facts (email, phone, address, hours, …) appended to every
+   * section prompt so contact details stay identical across sections/pages. */
+  brandFacts?: string;
   log?: (msg: string) => void;
 }
 
@@ -83,13 +89,20 @@ async function generateValidSection(sectionTarget: Target, deps: ComposeDeps): P
 export async function composeLanding(target: Target, deps: ComposeDeps): Promise<{ json: string }> {
   const log = deps.log ?? (() => {});
 
-  // 1. Brief (one call) — the cohesion source.
-  const briefPrompt = buildBriefPrompt(target);
-  const briefText = await deps.llm.complete({ prompt: briefPrompt.prompt, system: briefPrompt.system, maxBudgetUsd: deps.maxBudgetUsd });
-  const brief: Brief = parseBrief(briefText);
+  // 1. Brief (one call) — the cohesion source. A pinned brief (deps.brief) skips
+  // generation so a multi-page theme shares one identity.
+  let brief: Brief;
+  if (deps.brief) {
+    brief = deps.brief;
+  } else {
+    const briefPrompt = buildBriefPrompt(target);
+    const briefText = await deps.llm.complete({ prompt: briefPrompt.prompt, system: briefPrompt.system, maxBudgetUsd: deps.maxBudgetUsd });
+    brief = parseBrief(briefText);
+  }
 
   // 2. Sections (one small call each) via the existing generation path.
   const flow = deps.flow ?? flowForBusinessType(brief.businessType);
+  const brandFacts = deps.brandFacts ? ` ${deps.brandFacts}` : '';
   const sections: string[] = [];
   for (const step of flow) {
     const sectionTarget: Target = {
@@ -97,7 +110,7 @@ export async function composeLanding(target: Target, deps: ComposeDeps): Promise
       niche: target.niche,
       style: target.style,
       color: target.color,
-      layout: buildSectionRolePrompt(step, brief),
+      layout: buildSectionRolePrompt(step, brief) + brandFacts,
     };
     try {
       const json = await generateValidSection(sectionTarget, deps);
