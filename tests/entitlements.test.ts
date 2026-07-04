@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { canDownloadLayout, isActiveAllAccess } from '@/lib/stripe/entitlements';
+import { canDownloadLayout, isActiveAllAccess, isPaidOnlyLayout } from '@/lib/stripe/entitlements';
 
 const NOW = new Date('2026-06-28T00:00:00Z');
 const base = { layoutPackIds: ['p1'], packKindById: { p1: 'paid' as const }, userEntitlements: [], now: NOW };
@@ -33,5 +33,17 @@ describe('canDownloadLayout', () => {
   });
   it('denies with no entitlements', () => {
     expect(canDownloadLayout(base)).toBe(false);
+  });
+});
+
+describe('isPaidOnlyLayout', () => {
+  it('true when every pack the layout belongs to is paid', () => {
+    expect(isPaidOnlyLayout({ packIds: ['p1', 'p2'], packKindById: { p1: 'paid', p2: 'paid' } })).toBe(true);
+  });
+  it('false when the layout belongs to any free pack (still a lead magnet)', () => {
+    expect(isPaidOnlyLayout({ packIds: ['p1', 'f1'], packKindById: { p1: 'paid', f1: 'free' } })).toBe(false);
+  });
+  it('false for a standalone layout in no pack (free lead magnet)', () => {
+    expect(isPaidOnlyLayout({ packIds: [], packKindById: {} })).toBe(false);
   });
 });

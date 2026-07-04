@@ -1,7 +1,14 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { readCaptureEmail } from '@/lib/capture/cookie';
-import { getLayoutForDownload, getUserIdByEmail, recordDownload } from '@/lib/account/queries';
+import {
+  getLayoutForDownload,
+  getLayoutPackContext,
+  getEntitlementsForUser,
+  getUserIdByEmail,
+  recordDownload,
+} from '@/lib/account/queries';
+import { canDownloadLayout, isPaidOnlyLayout } from '@/lib/stripe/entitlements';
 import { fetchAsset } from '@/lib/blob';
 import { buildLayoutZip } from '@/lib/download/zip';
 import { readLicense } from '@/lib/license';
@@ -20,18 +27,27 @@ export async function GET(req: Request, { params }: { params: Promise<{ layoutId
   const layout = await getLayoutForDownload(layoutId);
   if (!layout) return NextResponse.json({ error: 'not_found' }, { status: 404 });
 
-  // Individual layouts are free, gated by a captured email (cookie) or a session.
   const capturedEmail = await readCaptureEmail();
   const session = await auth();
   const sessionEmail = session?.user?.email ?? null;
-  if (!capturedEmail && !sessionEmail) {
+  const userId = sessionEmail ? await getUserIdByEmail(sessionEmail) : null;
+
+  // A layout that lives only inside paid pack(s) is NOT a free lead magnet: a
+  // captured email is not enough. It requires a real entitlement — ownership of a
+  // pack it belongs to, or active all-access. Free layouts (standalone lead magnets
+  // or those in a free pack) stay gated only by a captured email or a session.
+  const { packIds, packKindById } = await getLayoutPackContext(layout.id);
+  if (isPaidOnlyLayout({ packIds, packKindById })) {
+    const userEntitlements = userId ? await getEntitlementsForUser(userId) : [];
+    if (!canDownloadLayout({ layoutPackIds: packIds, packKindById, userEntitlements })) {
+      return NextResponse.json({ error: 'forbidden' }, { status: 403 });
+    }
+  } else if (!capturedEmail && !sessionEmail) {
     return NextResponse.json({ error: 'email_required' }, { status: 403 });
   }
 
   const bytes = await fetchAsset(layout.diviJsonBlobKey);
   if (!bytes) return NextResponse.json({ error: 'asset_unavailable' }, { status: 404 });
-
-  const userId = sessionEmail ? await getUserIdByEmail(sessionEmail) : null;
   const zip = await buildLayoutZip(bytes.toString('utf8'), layout.slug, readLicense());
   const downloaderEmail = sessionEmail ?? capturedEmail ?? null;
   // Audit + notification are BEST-EFFORT — a logging failure (e.g. a prod DB that

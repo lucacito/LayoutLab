@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/Button';
 import { SectionTitle } from '@/components/ui/SectionTitle';
 import { IconFeature } from '@/components/ui/IconFeature';
 import { Icon } from '@/components/ui/Icon';
-import { PackCard } from '@/components/PackCard';
+import { FeaturedPacks } from '@/components/marketing/FeaturedPacks';
 import { RecentCarousel } from '@/components/RecentCarousel';
 import { CategorySection } from '@/components/CategorySection';
 import { ElementDirectory } from '@/components/ElementDirectory';
@@ -40,11 +40,15 @@ const FEATURES = [
 ];
 
 export default async function HomePage() {
-  let packs: Awaited<ReturnType<typeof listPacks>> = [];
+  // Premium multi-page "theme" packs get a dedicated promo band (newest first, so a
+  // freshly-launched pack leads). Free packs stay in the free-first funnel elsewhere.
+  let paidPacks: Awaited<ReturnType<typeof listPacks>> = [];
   try {
-    packs = (await listPacks()).slice(0, 3);
+    paidPacks = (await listPacks())
+      .filter((p) => p.kind === 'paid')
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
   } catch {
-    packs = [];
+    paidPacks = [];
   }
 
   // Fetch published layouts once (newest-published first) and reuse for both the
@@ -144,6 +148,9 @@ export default async function HomePage() {
       {/* How it works — 3 steps */}
       <HowItWorks />
 
+      {/* Premium multi-page theme packs — the paid upsell, front and center */}
+      {paidPacks.length > 0 && <FeaturedPacks packs={paidPacks} />}
+
       {/* Listed recently */}
       {recent.length > 0 && (
         <section className="py-16">
@@ -185,18 +192,6 @@ export default async function HomePage() {
 
       {/* Testimonials */}
       <Testimonials />
-
-      {/* Featured packs */}
-      {packs.length > 0 && (
-        <section className="pb-16">
-          <Container>
-            <SectionTitle eyebrow="Packs" title="Curated layout packs">Hand-picked collections for common site types.</SectionTitle>
-            <div className="mt-12 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {packs.map((p) => <PackCard key={p.id} pack={p} />)}
-            </div>
-          </Container>
-        </section>
-      )}
 
       {/* Features */}
       <section className="py-16">

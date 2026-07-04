@@ -35,6 +35,21 @@ export function canDownloadLayout(input: CanDownloadInput): boolean {
   return false;
 }
 
+/**
+ * A layout is "paid-only" when it belongs to at least one pack AND every pack it
+ * belongs to is paid. Such layouts are NOT free lead magnets: their JSON download
+ * must be gated behind an entitlement (pack ownership or all-access), never handed
+ * out for just a captured email. Standalone layouts (no pack) and layouts that
+ * belong to any free pack remain free, email-gated lead magnets.
+ */
+export function isPaidOnlyLayout(input: {
+  packIds: string[];
+  packKindById: Record<string, 'free' | 'paid'>;
+}): boolean {
+  if (input.packIds.length === 0) return false;
+  return input.packIds.every((id) => input.packKindById[id] === 'paid');
+}
+
 /** A pack bundle is downloadable with active all-access OR ownership of pack:<id>. */
 export function canDownloadPack(input: { packId: string; userEntitlements: UserEntitlement[]; now?: Date }): boolean {
   const now = input.now ?? new Date();
