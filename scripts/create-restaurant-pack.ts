@@ -22,7 +22,7 @@ import { uploadLayout, uploadScreenshot } from '@/pipeline/upload';
 import { realRenderDeps, renderLayout } from '@/pipeline/render';
 import { resolveLayoutImages, pexelsSearcher } from '@/pipeline/images';
 import { postIngest } from '@/pipeline/ingest';
-import { runThemePack, type ThemeSpec, type ThemeDeps, type ThemePage } from '@/pipeline/theme';
+import { runThemePack, themePageSlug, type ThemeSpec, type ThemeDeps, type ThemePage } from '@/pipeline/theme';
 import type { Brief, Step } from '@/pipeline/compose';
 
 // ── The brand (pinned — shared verbatim across all 6 pages) ────────────────────
@@ -203,6 +203,11 @@ async function main() {
   const deps: ThemeDeps = {
     llm: claudeCliClient({ model: process.env.PIPELINE_MODEL }),
     guide,
+    // Resume across usage windows: skip any page already in the catalog.
+    pageExists: async (slug) => {
+      const hit = await db.select({ id: layouts.id }).from(layouts).where(eq(layouts.slug, slug)).limit(1);
+      return hit.length > 0;
+    },
     validate: (json) => withTempFile(json, (f) => validateLayout(f)),
     resolveImages: pexelsKey ? (json) => resolveLayoutImages(json, pexelsSearcher(pexelsKey)) : undefined,
     isDuplicate: async (hash) => {
@@ -225,7 +230,10 @@ async function main() {
       }
     },
     ingest: (payload) => postIngest(payload, { url: ingestUrl, token: ingestToken }),
-    maxRepairs: 2,
+    // A bit more repair headroom than the matrix pipeline: multi-page themes are
+    // long, and the occasional section BLOCK_PARSE_ERROR is worth another repair
+    // attempt rather than dropping a whole page.
+    maxRepairs: 3,
     maxParseRetries: 2,
     maxBudgetUsd: maxBudget,
     log: (m) => console.log(`[theme] ${m}`),
@@ -241,9 +249,11 @@ async function main() {
   await renderer.close();
   console.log('[theme] summary:', { generated: result.generated, ingested: result.ingested, dropped: result.dropped, deduped: result.deduped });
 
-  if (onlyRoles.length) { console.log('[theme] smoke test (THEME_ONLY_ROLES set) — skipping pack assembly'); return; }
-  if (result.pageSlugs.length === 0) { console.error('no pages ingested — aborting pack assembly'); process.exitCode = 1; return; }
-  await upsertPack(result.pageSlugs);
+  if (onlyRoles.length) { console.log('[theme] partial run (THEME_ONLY_ROLES set) — skipping pack assembly'); return; }
+  // Assemble the pack from ALL expected pages that now exist in the DB (accumulates
+  // across partial/resumed runs), not just the ones this run happened to produce.
+  const expectedSlugs = SPEC.pages.map((p) => themePageSlug(BRIEF, SPEC, p));
+  await upsertPack(expectedSlugs);
 }
 
 main().then(() => process.exit(0)).catch((e) => { console.error(e); process.exit(1); });

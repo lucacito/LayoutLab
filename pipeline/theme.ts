@@ -43,6 +43,10 @@ export interface ThemeSpec {
 export interface ThemeDeps {
   llm: LlmClient;
   guide: Guide;
+  /** True if a page with this slug is already in the catalog — lets a run resume
+   * across usage windows by skipping pages already generated (only the missing
+   * pages cost generation). */
+  pageExists?: (slug: string) => Promise<boolean>;
   validate: (json: string) => Promise<ValidationResult>;
   resolveImages?: (json: string) => Promise<string>;
   isDuplicate: (hash: string) => Promise<boolean>;
@@ -80,7 +84,16 @@ export async function runThemePack(spec: ThemeSpec, deps: ThemeDeps): Promise<Th
 
   for (const page of spec.pages) {
     const label = `${spec.niche}/${page.role}`;
+    const pageSlug = themePageSlug(spec.brief, spec, page);
     try {
+      // 0. Resume: if this page already exists, don't regenerate it — just keep it
+      //    in the pack. This is what makes a run survive a usage-limit interruption.
+      if (deps.pageExists && (await deps.pageExists(pageSlug))) {
+        result.pageSlugs.push(pageSlug);
+        log(`skip existing ${pageSlug}`);
+        continue;
+      }
+
       // 1. Compose the page from the PINNED brief (cohesion). composeLanding validates
       //    + repairs each section, so the assembled document is valid by construction.
       let json = (
@@ -120,14 +133,14 @@ export async function runThemePack(spec: ThemeSpec, deps: ThemeDeps): Promise<Th
         result.deduped++;
         log(`dedupe ${label} ${hash.slice(0, 12)}`);
         // Still record the slug: an already-ingested identical page is part of the pack.
-        result.pageSlugs.push(themePageSlug(spec.brief, spec, page));
+        result.pageSlugs.push(pageSlug);
         continue;
       }
 
       // 5. SEO metadata/keywords/axes; slug + title pinned to brand+role for coherence.
       const seoTarget = { type: 'full_landing', niche: spec.niche, style: spec.style, color: spec.color };
       const seo = await generateSeo(json, seoTarget, { llm: deps.llm, maxBudgetUsd: deps.maxBudgetUsd });
-      const slug = themePageSlug(spec.brief, spec, page);
+      const slug = pageSlug;
       const title = themePageTitle(spec.brief, spec, page);
 
       // 6. Upload JSON (+ placeholder previews), then real screenshots (best-effort).
