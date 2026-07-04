@@ -7,10 +7,13 @@ const SHOWN_KEY = 'll_offer_shown'; // shared with the scroll offer — only one
 // Exit-intent lead capture: when the cursor leaves the top of the viewport (intent
 // to leave), offer a free-pack lead magnet. Shows once per session; arms after a
 // short delay so it never fires on load. (Desktop pointer behavior.)
+type TasterLayout = { id: string; slug: string; title: string };
+
 export function ExitIntentPopup() {
   const [open, setOpen] = useState(false);
   const [email, setEmail] = useState('');
   const [status, setStatus] = useState<'idle' | 'done' | 'error'>('idle');
+  const [layout, setLayout] = useState<TasterLayout | null>(null);
 
   useEffect(() => {
     try {
@@ -39,12 +42,18 @@ export function ExitIntentPopup() {
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     try {
-      const res = await fetch('/api/lead', {
+      const res = await fetch('/api/taster', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ email, source: 'exit_intent' }),
       });
-      setStatus(res.ok ? 'done' : 'error');
+      if (!res.ok) {
+        setStatus('error');
+        return;
+      }
+      const data = (await res.json()) as { layout?: TasterLayout | null };
+      setLayout(data.layout ?? null);
+      setStatus('done');
     } catch {
       setStatus('error');
     }
@@ -57,7 +66,7 @@ export function ExitIntentPopup() {
       className="fixed inset-0 z-[60] flex items-center justify-center bg-navy/60 p-4 backdrop-blur-sm"
       role="dialog"
       aria-modal="true"
-      aria-label="Free Divi 5 sections offer"
+      aria-label="Free premium Divi 5 page offer"
       onClick={() => setOpen(false)}
     >
       <div className="relative w-full max-w-md rounded-card bg-paper p-8 shadow-lg" onClick={(e) => e.stopPropagation()}>
@@ -71,21 +80,37 @@ export function ExitIntentPopup() {
         </button>
 
         {status === 'done' ? (
-          <div className="py-6 text-center">
+          <div className="py-4 text-center">
             <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-action/10 text-action">
-              <Icon name="mark_email_read" size={26} />
+              <Icon name="workspace_premium" size={26} />
             </span>
-            <h2 className="mt-4 text-h3 text-navy">You&apos;re in 🎉</h2>
-            <p className="mt-2 text-body text-muted">Check your inbox — your free Divi 5 starter pack is on the way.</p>
+            <h2 className="mt-4 text-h3 text-navy">Your page is ready 🎉</h2>
+            {layout ? (
+              <>
+                <p className="mt-2 text-body text-muted">
+                  Here&apos;s <span className="font-semibold text-navy">{layout.title}</span> — a full page from a premium pack, yours to keep.
+                </p>
+                <a
+                  href={`/api/download/${layout.id}`}
+                  download={`${layout.slug}.zip`}
+                  className="mt-5 inline-flex items-center gap-2 rounded-full bg-action px-6 py-2.5 text-small font-semibold text-paper transition hover:brightness-110"
+                >
+                  <Icon name="download" size={20} /> Download your free page
+                </a>
+                <p className="mt-3 text-small text-muted">Import the JSON into Divi 5 — commercial license included.</p>
+              </>
+            ) : (
+              <p className="mt-2 text-body text-muted">Check your inbox — your free premium page is on the way.</p>
+            )}
           </div>
         ) : (
           <>
             <span className="flex h-12 w-12 items-center justify-center rounded-full bg-action/10 text-action">
-              <Icon name="bolt" size={26} />
+              <Icon name="workspace_premium" size={26} />
             </span>
-            <h2 className="mt-4 text-h3 text-navy">Wait — grab 10 free sections</h2>
+            <h2 className="mt-4 text-h3 text-navy">Wait — take a full premium page, free</h2>
             <p className="mt-2 text-body text-muted">
-              Get a free Divi 5 starter pack (hero, pricing, CTA &amp; more) emailed to you. Import in seconds, no account needed.
+              One complete page from our paid theme packs — yours to keep. See the quality before you buy the set. No account needed.
             </p>
             <form onSubmit={submit} className="mt-5 flex flex-col gap-2 sm:flex-row">
               <input
@@ -98,7 +123,7 @@ export function ExitIntentPopup() {
                 className="min-w-0 flex-1 rounded-full border border-border px-4 py-2.5 text-body text-navy outline-none focus:border-action"
               />
               <button type="submit" className="rounded-full bg-action px-5 py-2.5 text-small font-semibold text-paper transition hover:brightness-110">
-                Send it
+                Send my page
               </button>
             </form>
             {status === 'error' && <p className="mt-2 text-small text-red-600">Something went wrong — try again.</p>}

@@ -3,6 +3,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 const h = vi.hoisted(() => ({
   readCaptureEmail: vi.fn(async () => null as string | null),
+  readTaster: vi.fn(async () => null as string | null),
   auth: vi.fn(async () => null as { user?: { email?: string } } | null),
   getLayoutForDownload: vi.fn(async () => ({ id: 'l1', slug: 'bold-saas-hero', diviJsonBlobKey: 'pipeline/out/x.json' })),
   getLayoutPackContext: vi.fn(async () => ({ packIds: [] as string[], packKindById: {} as Record<string, 'free' | 'paid'> })),
@@ -14,6 +15,7 @@ const h = vi.hoisted(() => ({
 }));
 
 vi.mock('@/lib/capture/cookie', () => ({ readCaptureEmail: h.readCaptureEmail }));
+vi.mock('@/lib/capture/taster', () => ({ readTaster: h.readTaster }));
 vi.mock('@/lib/auth', () => ({ auth: h.auth }));
 vi.mock('@/lib/account/queries', () => ({
   getLayoutForDownload: h.getLayoutForDownload,
@@ -31,6 +33,7 @@ const req = () => new Request('http://test/api/download/l1');
 
 beforeEach(() => {
   h.readCaptureEmail.mockResolvedValue(null);
+  h.readTaster.mockResolvedValue(null);
   h.auth.mockResolvedValue(null);
   h.getLayoutPackContext.mockResolvedValue({ packIds: [], packKindById: {} });
   h.getEntitlementsForUser.mockResolvedValue([]);
@@ -102,6 +105,22 @@ describe('GET /api/download/[layoutId]', () => {
     const res = await GET(req(), ctx('l1'));
     expect(res.status).toBe(200);
     expect(res.headers.get('content-type')).toBe('application/zip');
+  });
+
+  it('200 zip for a paid-only layout when the taster cookie authorizes THIS page', async () => {
+    paidOnly();
+    // layout slug from the getLayoutForDownload mock is 'bold-saas-hero'
+    h.readTaster.mockResolvedValue('bold-saas-hero');
+    const res = await GET(req(), ctx('l1'));
+    expect(res.status).toBe(200);
+    expect(res.headers.get('content-type')).toBe('application/zip');
+  });
+
+  it('403 for a paid-only layout when the taster cookie is for a DIFFERENT page', async () => {
+    paidOnly();
+    h.readTaster.mockResolvedValue('some-other-page');
+    const res = await GET(req(), ctx('l1'));
+    expect(res.status).toBe(403);
   });
 
   it('200 zip for a paid-only layout with active all-access', async () => {

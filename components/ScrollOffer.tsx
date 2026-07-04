@@ -7,11 +7,14 @@ const SHOWN_KEY = 'll_offer_shown'; // shared with the exit-intent — only one 
 // Non-modal lead nudge: after the visitor scrolls ~half the page (engaged), slide
 // a compact offer in from the bottom-left. Once per session; same lead magnet as
 // the exit-intent, lower friction.
+type TasterLayout = { id: string; slug: string; title: string };
+
 export function ScrollOffer() {
   const [open, setOpen] = useState(false);
   const [visible, setVisible] = useState(false);
   const [email, setEmail] = useState('');
   const [status, setStatus] = useState<'idle' | 'done' | 'error'>('idle');
+  const [layout, setLayout] = useState<TasterLayout | null>(null);
 
   useEffect(() => {
     try {
@@ -46,12 +49,18 @@ export function ScrollOffer() {
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     try {
-      const res = await fetch('/api/lead', {
+      const res = await fetch('/api/taster', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ email, source: 'scroll_offer' }),
       });
-      setStatus(res.ok ? 'done' : 'error');
+      if (!res.ok) {
+        setStatus('error');
+        return;
+      }
+      const data = (await res.json()) as { layout?: TasterLayout | null };
+      setLayout(data.layout ?? null);
+      setStatus('done');
     } catch {
       setStatus('error');
     }
@@ -67,7 +76,7 @@ export function ScrollOffer() {
   return (
     <div
       role="dialog"
-      aria-label="Free Divi 5 sections offer"
+      aria-label="Free premium Divi 5 page offer"
       className={`fixed bottom-4 left-4 z-50 w-[330px] max-w-[calc(100vw-2rem)] rounded-card border border-border bg-paper p-5 shadow-lg transition-all duration-300 ${
         visible ? 'translate-x-0 opacity-100' : '-translate-x-[120%] opacity-0'
       }`}
@@ -82,18 +91,31 @@ export function ScrollOffer() {
       </button>
 
       {status === 'done' ? (
-        <div className="py-2">
+        <div className="py-1">
           <p className="flex items-center gap-2 text-body font-semibold text-navy">
-            <Icon name="mark_email_read" size={20} className="text-action" /> You&apos;re in 🎉
+            <Icon name="workspace_premium" size={20} className="text-action" /> Your page is ready 🎉
           </p>
-          <p className="mt-1 text-small text-muted">Your free starter pack is on the way.</p>
+          {layout ? (
+            <>
+              <p className="mt-1 text-small text-muted">{layout.title} — a full page from a premium pack.</p>
+              <a
+                href={`/api/download/${layout.id}`}
+                download={`${layout.slug}.zip`}
+                className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-action px-4 py-2 text-small font-semibold text-paper transition hover:brightness-110"
+              >
+                <Icon name="download" size={18} /> Download free
+              </a>
+            </>
+          ) : (
+            <p className="mt-1 text-small text-muted">Your free premium page is on the way.</p>
+          )}
         </div>
       ) : (
         <>
           <p className="flex items-center gap-2 text-body font-semibold text-navy">
-            <Icon name="redeem" size={20} className="text-action" /> Enjoying these?
+            <Icon name="workspace_premium" size={20} className="text-action" /> Want a premium page, free?
           </p>
-          <p className="mt-1 text-small text-muted">Get 10 free Divi 5 sections emailed to you — no account needed.</p>
+          <p className="mt-1 text-small text-muted">Take one full page from our paid theme packs — yours to keep.</p>
           <form onSubmit={submit} className="mt-3 flex gap-2">
             <input
               type="email"

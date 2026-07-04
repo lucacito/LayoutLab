@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { readCaptureEmail } from '@/lib/capture/cookie';
+import { readTaster } from '@/lib/capture/taster';
 import {
   getLayoutForDownload,
   getLayoutPackContext,
@@ -39,7 +40,11 @@ export async function GET(req: Request, { params }: { params: Promise<{ layoutId
   const { packIds, packKindById } = await getLayoutPackContext(layout.id);
   if (isPaidOnlyLayout({ packIds, packKindById })) {
     const userEntitlements = userId ? await getEntitlementsForUser(userId) : [];
-    if (!canDownloadLayout({ layoutPackIds: packIds, packKindById, userEntitlements })) {
+    // The "taster" cookie authorizes a free download of one specific paid page
+    // (granted after an exit/scroll lead capture). It unlocks only that page.
+    const taster = await readTaster();
+    const tasterOk = taster != null && taster === layout.slug;
+    if (!tasterOk && !canDownloadLayout({ layoutPackIds: packIds, packKindById, userEntitlements })) {
       return NextResponse.json({ error: 'forbidden' }, { status: 403 });
     }
   } else if (!capturedEmail && !sessionEmail) {
