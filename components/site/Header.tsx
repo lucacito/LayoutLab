@@ -4,7 +4,6 @@ import { Wordmark } from '@/components/ui/Wordmark';
 import { MegaMenu } from './MegaMenu';
 import { MobileNav } from './MobileNav';
 import { AccountNav } from './AccountNav';
-import { SavedLink } from '@/components/bookmarks/SavedLink';
 
 export function Header() {
   return (
@@ -16,7 +15,6 @@ export function Header() {
           <MegaMenu />
         </div>
         <div className="hidden items-center gap-4 md:flex">
-          <SavedLink />
           <AccountNav />
           <Button href="/browse">Browse layouts</Button>
         </div>

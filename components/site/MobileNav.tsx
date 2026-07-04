@@ -6,7 +6,7 @@ import { AXIS_VALUES } from '@/lib/catalog/filters';
 import { axisLabel } from '@/lib/seo/taxonomy-copy';
 import { Icon } from '@/components/ui/Icon';
 import { Button } from '@/components/ui/Button';
-import { AXIS_META, NAV_MENUS } from '@/lib/nav/menu-data';
+import { AXIS_META, NAV_MENUS, isAxisMenu } from '@/lib/nav/menu-data';
 
 export function MobileNav() {
   const [open, setOpen] = useState(false);
@@ -31,6 +31,13 @@ export function MobileNav() {
           </Link>
 
           {NAV_MENUS.map((m) => {
+            if (!isAxisMenu(m)) {
+              return (
+                <Link key={m.key} href={m.href} onClick={close} className="flex items-center gap-2 border-t border-fog px-2 py-3 text-body font-medium text-navy">
+                  <Icon name="widgets" size={20} className="text-muted" /> {m.label}
+                </Link>
+              );
+            }
             const isOpen = section === m.key;
             const meta = AXIS_META[m.axis];
             return (

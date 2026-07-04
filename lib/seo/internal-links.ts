@@ -7,7 +7,6 @@ import { axisLabel } from './taxonomy-copy';
 // test asserts this so a renamed/removed value fails loudly instead of 404-ing.
 const TYPE_VALUES = ['hero', 'pricing', 'cta', 'testimonials', 'features', 'faq', 'footer', 'contact', 'gallery', 'full_landing'];
 const NICHE_VALUES = ['saas', 'agency', 'ecommerce', 'restaurant', 'real_estate', 'fitness', 'coaching'];
-const STYLE_VALUES = ['minimal', 'bold', 'dark', 'corporate', 'elegant', 'playful'];
 
 export interface HubLink {
   label: string;
@@ -15,18 +14,17 @@ export interface HubLink {
 }
 export interface HubLinkGroup {
   heading: string;
-  axis: 'type' | 'niche' | 'style';
+  axis: 'type' | 'niche';
   links: HubLink[];
 }
 
-function toLinks(axis: 'type' | 'niche' | 'style', values: string[]): HubLink[] {
+function toLinks(axis: 'type' | 'niche', values: string[]): HubLink[] {
   return values.map((v) => ({ label: axisLabel(v), href: `/${axis}/${v}` }));
 }
 
 export function hubLinkGroups(): HubLinkGroup[] {
   return [
-    { heading: 'Layout types', axis: 'type', links: toLinks('type', TYPE_VALUES) },
+    { heading: 'Layouts/Sections', axis: 'type', links: toLinks('type', TYPE_VALUES) },
     { heading: 'Industries', axis: 'niche', links: toLinks('niche', NICHE_VALUES) },
-    { heading: 'Styles', axis: 'style', links: toLinks('style', STYLE_VALUES) },
   ];
 }

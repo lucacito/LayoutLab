@@ -5,8 +5,8 @@ import { AXIS_VALUES } from '@/lib/catalog/filters';
 describe('hubLinkGroups', () => {
   const groups = hubLinkGroups();
 
-  it('returns the type, niche and style hub groups', () => {
-    expect(groups.map((g) => g.heading)).toEqual(['Layout types', 'Industries', 'Styles']);
+  it('returns the type and niche hub groups (styles dropped from nav)', () => {
+    expect(groups.map((g) => g.heading)).toEqual(['Layouts/Sections', 'Industries']);
   });
 
   it('builds hrefs on the correct axis path, only for real AXIS_VALUES', () => {

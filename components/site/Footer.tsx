@@ -9,23 +9,26 @@ const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
 const COLUMNS: { title: string; links: { href: string; label: string }[] }[] = [
   {
-    title: 'Layouts',
+    title: 'Layouts/Sections',
     links: AXIS_VALUES.type.slice(0, 7).map((v) => ({ href: `/type/${v}`, label: TYPE_LABELS[v] ?? cap(v) })),
+  },
+  {
+    title: 'Themes/Packs',
+    links: [
+      { href: '/packs', label: 'All themes & packs' },
+      { href: '/pricing', label: 'Pricing & all-access' },
+    ],
   },
   {
     title: 'Industries',
     links: AXIS_VALUES.niche.slice(0, 7).map((v) => ({ href: `/niche/${v}`, label: NICHE_LABELS[v] ?? cap(v) })),
   },
   {
-    title: 'Styles',
-    links: AXIS_VALUES.style.map((v) => ({ href: `/style/${v}`, label: cap(v) })),
-  },
-  {
     title: 'Company',
     links: [
       { href: '/browse', label: 'Browse all' },
+      { href: '/packs', label: 'Themes & Packs' },
       { href: '/pricing', label: 'Pricing' },
-      { href: '/saved', label: 'Saved' },
       { href: '/about', label: 'About' },
       { href: '/contact', label: 'Contact' },
       { href: '/license', label: 'License' },

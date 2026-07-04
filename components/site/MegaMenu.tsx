@@ -4,9 +4,9 @@ import Link from 'next/link';
 import { AXIS_VALUES } from '@/lib/catalog/filters';
 import { axisLabel } from '@/lib/seo/taxonomy-copy';
 import { Icon } from '@/components/ui/Icon';
-import { AXIS_META, NAV_MENUS, type NavMenu } from '@/lib/nav/menu-data';
+import { AXIS_META, NAV_MENUS, isAxisMenu, type NavAxisMenu } from '@/lib/nav/menu-data';
 
-function Panel({ menu }: { menu: NavMenu }) {
+function Panel({ menu }: { menu: NavAxisMenu }) {
   const values = AXIS_VALUES[menu.axis];
   const meta = AXIS_META[menu.axis];
   return (
@@ -41,27 +41,38 @@ function Panel({ menu }: { menu: NavMenu }) {
 
 export function MegaMenu() {
   const [open, setOpen] = useState<string | null>(null);
-  const active = NAV_MENUS.find((m) => m.key === open);
+  const active = NAV_MENUS.find((m) => m.key === open && isAxisMenu(m));
   return (
     <nav className="relative hidden items-center gap-0.5 md:flex" onMouseLeave={() => setOpen(null)}>
-      {NAV_MENUS.map((m) => (
-        <button
-          key={m.key}
-          type="button"
-          onMouseEnter={() => setOpen(m.key)}
-          onFocus={() => setOpen(m.key)}
-          onClick={() => setOpen(open === m.key ? null : m.key)}
-          aria-expanded={open === m.key}
-          className="flex items-center gap-0.5 rounded-full px-3 py-1.5 text-small font-medium text-navy transition hover:text-action"
-        >
-          {m.label}
-          <Icon name="expand_more" size={16} className={`transition-transform ${open === m.key ? 'rotate-180 text-action' : 'text-muted'}`} />
-        </button>
-      ))}
+      {NAV_MENUS.map((m) =>
+        isAxisMenu(m) ? (
+          <button
+            key={m.key}
+            type="button"
+            onMouseEnter={() => setOpen(m.key)}
+            onFocus={() => setOpen(m.key)}
+            onClick={() => setOpen(open === m.key ? null : m.key)}
+            aria-expanded={open === m.key}
+            className="flex items-center gap-0.5 rounded-full px-3 py-1.5 text-small font-medium text-navy transition hover:text-action"
+          >
+            {m.label}
+            <Icon name="expand_more" size={16} className={`transition-transform ${open === m.key ? 'rotate-180 text-action' : 'text-muted'}`} />
+          </button>
+        ) : (
+          <Link
+            key={m.key}
+            href={m.href}
+            onMouseEnter={() => setOpen(null)}
+            className="rounded-full px-3 py-1.5 text-small font-medium text-navy transition hover:text-action"
+          >
+            {m.label}
+          </Link>
+        ),
+      )}
       <Link href="/pricing" className="rounded-full px-3 py-1.5 text-small font-medium text-navy transition hover:text-action">
         Pricing
       </Link>
-      {active && <Panel menu={active} />}
+      {active && isAxisMenu(active) && <Panel menu={active} />}
     </nav>
   );
 }

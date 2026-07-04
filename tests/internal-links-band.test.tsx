@@ -14,6 +14,5 @@ describe('InternalLinksBand', () => {
     const hrefs = Array.from(container.querySelectorAll('a')).map((a) => a.getAttribute('href'));
     expect(hrefs).toContain('/type/hero');
     expect(hrefs).toContain('/niche/saas');
-    expect(hrefs).toContain('/style/minimal');
   });
 });

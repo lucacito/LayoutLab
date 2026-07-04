@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { Container } from '@/components/ui/Container';
 import { SectionTitle } from '@/components/ui/SectionTitle';
 import { Icon } from '@/components/ui/Icon';
-import { AXIS_META, NAV_MENUS, TYPE_LABELS, NICHE_LABELS } from '@/lib/nav/menu-data';
+import { AXIS_META, NAV_MENUS, isAxisMenu, TYPE_LABELS, NICHE_LABELS } from '@/lib/nav/menu-data';
 import { AXIS_VALUES } from '@/lib/catalog/filters';
 
 type Counts = Record<'type' | 'niche' | 'style' | 'color', Record<string, number>>;
@@ -24,7 +24,7 @@ export function ElementDirectory({ counts }: { counts: Counts }) {
         </SectionTitle>
 
         <div className="mt-10 grid gap-x-10 gap-y-8 md:grid-cols-3">
-          {NAV_MENUS.map((menu) => {
+          {NAV_MENUS.filter(isAxisMenu).map((menu) => {
             const axis = menu.axis;
             const values = AXIS_VALUES[axis];
             return (

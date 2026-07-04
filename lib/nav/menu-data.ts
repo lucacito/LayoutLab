@@ -70,10 +70,18 @@ export const NICHE_LABELS: Record<string, string> = {
   events: 'Events',
 };
 
-export type NavMenu = { key: string; label: string; axis: NavAxis; prefix: string; blurb: string };
+// A megamenu entry is either an axis dropdown (opens a panel of taxonomy values)
+// or a plain link (e.g. Themes/Packs → the packs catalog).
+export type NavAxisMenu = { key: string; label: string; axis: NavAxis; prefix: string; blurb: string };
+export type NavLinkMenu = { key: string; label: string; href: string };
+export type NavMenu = NavAxisMenu | NavLinkMenu;
+
+export function isAxisMenu(m: NavMenu): m is NavAxisMenu {
+  return 'axis' in m;
+}
 
 export const NAV_MENUS: NavMenu[] = [
-  { key: 'type', label: 'Layouts', axis: 'type', prefix: '/type', blurb: 'Browse by section type' },
+  { key: 'type', label: 'Layouts/Sections', axis: 'type', prefix: '/type', blurb: 'Browse by section type' },
+  { key: 'packs', label: 'Themes/Packs', href: '/packs' },
   { key: 'niche', label: 'Industries', axis: 'niche', prefix: '/niche', blurb: 'Browse by industry' },
-  { key: 'style', label: 'Styles', axis: 'style', prefix: '/style', blurb: 'Browse by aesthetic' },
 ];
