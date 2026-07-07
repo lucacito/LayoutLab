@@ -21,7 +21,7 @@ export interface RenderShot {
 
 export interface RenderResult {
   shots: RenderShot[];
-  /** 64-hex-char average-hash of the desktop shot, for near-duplicate detection. */
+  /** 64-hex-char difference-hash (dHash) of the desktop shot, for near-duplicate detection. */
   perceptualHash: string;
 }
 
@@ -36,17 +36,42 @@ const VIEWPORTS: { label: 'desktop' | 'mobile'; width: number; height: number }[
   { label: 'mobile', width: 390, height: 844 },
 ];
 
-/** Average-hash (aHash) of a PNG: 16×16 grayscale → bit per pixel vs the mean → 64 hex chars. */
+/**
+ * Difference-hash (dHash) of a PNG (T1.2 — upgraded from average-hash/aHash for
+ * better near-duplicate discrimination: comparing each pixel to its right
+ * neighbor captures local edges/gradients, whereas aHash's "pixel vs global
+ * mean" test misses layouts that differ locally but share the same average
+ * brightness/structure).
+ *
+ * Resizes to 17×16 grayscale, compares each pixel to its right neighbor
+ * (16 comparisons × 16 rows = 256 bits), and packs 4 bits per hex char — the
+ * SAME 64-hex-char output shape the prior aHash produced. This is a deliberate
+ * format-compatibility choice (see pipeline/dedupe.ts near-dupe gate + T1.2
+ * report): existing DB rows holding aHash values are plain 64-char hex strings
+ * indistinguishable at rest from a dHash value, so no schema migration/algo
+ * discriminator column was added (backfill is explicitly out of scope for this
+ * task). `isNearDuplicate` compares by hamming distance over same-length hex
+ * strings regardless of which algorithm produced them; a mixed aHash/dHash
+ * comparison can only ever miss a true near-dupe (large distance from
+ * algorithm mismatch), never falsely flag one — consistent with "never block
+ * ingest for this reason" (T1.2 item 4).
+ */
 export async function perceptualHash(png: Buffer): Promise<string> {
-  const size = 16;
-  const data = await sharp(png).grayscale().resize(size, size, { fit: 'fill' }).raw().toBuffer();
-  let total = 0;
-  for (const v of data) total += v;
-  const avg = total / data.length;
+  const width = 17;
+  const height = 16;
+  const data = await sharp(png).grayscale().resize(width, height, { fit: 'fill' }).raw().toBuffer();
+  const bits: number[] = [];
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width - 1; x++) {
+      const left = data[y * width + x];
+      const right = data[y * width + x + 1];
+      bits.push(left < right ? 1 : 0);
+    }
+  }
   let hex = '';
-  for (let i = 0; i < data.length; i += 4) {
+  for (let i = 0; i < bits.length; i += 4) {
     let nibble = 0;
-    for (let b = 0; b < 4; b++) nibble = (nibble << 1) | (data[i + b] >= avg ? 1 : 0);
+    for (let b = 0; b < 4; b++) nibble = (nibble << 1) | bits[i + b];
     hex += nibble.toString(16);
   }
   return hex;

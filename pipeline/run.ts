@@ -6,7 +6,7 @@ import { extractJson } from './llm';
 import { generateLayout } from './generate';
 import { composeLanding } from '@/pipeline/compose';
 import { generateSeo } from './seo';
-import { contentHash } from './dedupe';
+import { contentHash, nearestDistance, perceptualDupeMaxDistance } from './dedupe';
 import { stackLayoutJsonMobile } from './stack-mobile';
 import { lintLayoutJson } from './content-lint';
 import type { ValidationResult } from './validate';
@@ -28,12 +28,16 @@ export interface RunSummary {
   dropped: number;
   deduped: number;
   ingested: number;
+  /** Dropped for being within `PERCEPTUAL_DUPE_MAX_DISTANCE` of another hash —
+   * either one already in the DB or one accepted earlier in this same run
+   * (T1.2). Distinct from `deduped` (exact content-hash match). */
+  nearDuped: number;
 }
 
 /** Terminal fate of one target — reported on the paired `llm_usage` event so a
  * consumer can attribute cost/tokens to "accepted" without depending on event
  * ordering. */
-export type RunOutcome = 'ingested' | 'dropped' | 'deduped';
+export type RunOutcome = 'ingested' | 'dropped' | 'deduped' | 'near_duplicate';
 
 /**
  * Additive instrumentation feed (T4.1 eval harness) alongside `RunSummary`.
@@ -50,6 +54,8 @@ export type RunEvent =
   | { type: 'content_lint'; target: Target; hit: boolean; codes: string[] }
   | { type: 'dropped'; target: Target; reason: 'validation' | 'content' | 'error'; detail: string }
   | { type: 'deduped'; target: Target }
+  /** Perceptual-hash near-duplicate drop (T1.2) — see `RunSummary.nearDuped`. */
+  | { type: 'near_duplicate'; target: Target; distance: number }
   | { type: 'ingested'; target: Target; slug: string }
   | { type: 'llm_usage'; target: Target; usage: Required<LlmUsage>; outcome: RunOutcome };
 
@@ -64,6 +70,14 @@ export interface RunDeps {
   upload: (hash: string, json: string) => Promise<UploadResult>;
   /** Render the section to real screenshots; returns preview keys + a perceptual hash. */
   render?: (input: { title: string; postContent: string; hash: string }) => Promise<{ previewImageKeys: string[]; perceptualHash?: string }>;
+  /** Existing perceptual hashes to compare against for near-duplicate detection
+   * (T1.2) — e.g. every non-null `perceptual_hash` row in the DB. Fetched ONCE
+   * per `runPipeline` call (not per target) and then grown in-memory with every
+   * hash this run itself accepts, so a `vary` batch minting several
+   * near-identical layouts drops the later ones even before any of them is
+   * ingested. Omitting this dep means the gate only sees hashes accepted
+   * earlier in the same run — it never throws or blocks ingest for its absence. */
+  nearDuplicateHashes?: () => Promise<string[]>;
   ingest: (payload: IngestPayload) => Promise<{ deduped: boolean }>;
   maxRepairs: number;
   maxParseRetries?: number;
@@ -76,7 +90,12 @@ export interface RunDeps {
 export async function runPipeline(deps: RunDeps): Promise<RunSummary> {
   const log = deps.log ?? (() => {});
   const onEvent = deps.onEvent ?? (() => {});
-  const summary: RunSummary = { generated: 0, repaired: 0, dropped: 0, deduped: 0, ingested: 0 };
+  const summary: RunSummary = { generated: 0, repaired: 0, dropped: 0, deduped: 0, ingested: 0, nearDuped: 0 };
+  const maxDistance = perceptualDupeMaxDistance();
+  // Near-duplicate pool (T1.2): seeded once from the DB (or empty if the dep is
+  // omitted), then grown with every perceptual hash THIS run accepts, so later
+  // targets in the same batch are checked against earlier ones too.
+  const nearDupPool: string[] = deps.nearDuplicateHashes ? await deps.nearDuplicateHashes() : [];
 
   for (const target of deps.targets) {
     // Per-target usage meter (T4.1). Wraps deps.llm so every call this target makes
@@ -215,6 +234,21 @@ export async function runPipeline(deps: RunDeps): Promise<RunSummary> {
           if (r.previewImageKeys.length) previewImageKeys = r.previewImageKeys;
           perceptualHash = r.perceptualHash;
         }
+      }
+
+      // Near-duplicate gate (T1.2), after render/before ingest. Render is
+      // best-effort (T2.1) — no perceptualHash means render was skipped or
+      // failed, so skip this gate gracefully rather than block ingest for it.
+      if (perceptualHash) {
+        const nearest = nearestDistance(perceptualHash, nearDupPool);
+        if (nearest !== undefined && nearest <= maxDistance) {
+          summary.nearDuped++;
+          outcome = 'near_duplicate';
+          log(`near-dupe drop ${target.type}/${target.niche}/${target.style}: distance ${nearest}`);
+          onEvent({ type: 'near_duplicate', target, distance: nearest });
+          continue;
+        }
+        nearDupPool.push(perceptualHash);
       }
 
       const payload: IngestPayload = {

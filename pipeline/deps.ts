@@ -8,7 +8,7 @@
 import { writeFile, mkdtemp, rm } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import { eq } from 'drizzle-orm';
+import { desc, eq, isNotNull } from 'drizzle-orm';
 import { db } from '@/db/client';
 import { layouts } from '@/db/schema';
 import { claudeCliClient } from './llm';
@@ -77,6 +77,20 @@ export async function buildRunDeps(opts: BuildRunDepsOptions): Promise<{ deps: R
       if (dryRun) return false;
       const hit = await db.select({ id: layouts.id }).from(layouts).where(eq(layouts.contentHash, hash)).limit(1);
       return hit.length > 0;
+    },
+    // T1.2 near-dupe gate: pool of existing perceptual hashes to check the newly
+    // rendered hash against, in addition to whatever this run itself accepts.
+    // Capped + most-recent-first — a full-table scan of every layout ever
+    // ingested isn't worth it for a best-effort visual-similarity check.
+    nearDuplicateHashes: async () => {
+      if (dryRun) return [];
+      const rows = await db
+        .select({ perceptualHash: layouts.perceptualHash })
+        .from(layouts)
+        .where(isNotNull(layouts.perceptualHash))
+        .orderBy(desc(layouts.createdAt))
+        .limit(2000);
+      return rows.map((r) => r.perceptualHash).filter((h): h is string => !!h);
     },
     upload: (hash, json) => uploadLayout(hash, json, { hasBlobToken, outDir: 'pipeline/out' }),
     render: renderer

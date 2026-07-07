@@ -5,10 +5,11 @@
 // side-by-side for an A/B config comparison (T4.1).
 //
 // Kept as a pure reducer (`MetricsAccumulator.add`) over `RunEvent` so later
-// quality gates that don't exist yet — T1.2 near-dupe, T1.3 vision critic,
-// T2.2 error classification — can be wired in by adding a new `RunEvent`
-// variant + a case here + a field on `EvalMetrics`, without reshaping this
-// module or the harness that calls it.
+// quality gates that don't exist yet — T1.3 vision critic, T2.2 error
+// classification — can be wired in by adding a new `RunEvent` variant + a case
+// here + a field on `EvalMetrics`, without reshaping this module or the
+// harness that calls it. (T1.2 near-dupe wired this way: `near_duplicate`
+// RunEvent + `RunSummary.nearDuped` + `nearDupeRate` below.)
 import type { RunEvent, RunSummary } from '@/pipeline/run';
 
 export interface EvalMetrics {
@@ -34,10 +35,11 @@ export interface EvalMetrics {
   costPerAcceptedUsd: number | null;
   /** Mean input+output tokens across only the layouts that were actually ingested. */
   tokensPerAccepted: number | null;
-  // Not implemented yet — present so the shape is stable across tasks. A later
-  // task fills these in by emitting the corresponding RunEvent; this module's
-  // aggregation contract doesn't need to change.
+  /** Fraction of generated layouts dropped by the perceptual near-duplicate gate (T1.2). */
   nearDupeRate: number | null;
+  // Not implemented yet — present so the shape is stable across tasks. A later
+  // task fills this in by emitting the corresponding RunEvent; this module's
+  // aggregation contract doesn't need to change.
   visionScoreDistribution: Record<string, number> | null;
 }
 
@@ -77,6 +79,8 @@ export class MetricsAccumulator {
         break;
       case 'deduped':
         break; // tracked via RunSummary.deduped at finalize()
+      case 'near_duplicate':
+        break; // tracked via RunSummary.nearDuped at finalize()
       case 'ingested':
         break; // tracked via RunSummary.ingested at finalize()
       case 'llm_usage':
@@ -113,7 +117,7 @@ export class MetricsAccumulator {
       totalOutputTokens: this.totalOutputTokens,
       costPerAcceptedUsd: summary.ingested ? this.acceptedCostUsd / summary.ingested : null,
       tokensPerAccepted: summary.ingested ? (this.acceptedInputTokens + this.acceptedOutputTokens) / summary.ingested : null,
-      nearDupeRate: null,
+      nearDupeRate: summary.generated ? summary.nearDuped / summary.generated : null,
       visionScoreDistribution: null,
     };
   }

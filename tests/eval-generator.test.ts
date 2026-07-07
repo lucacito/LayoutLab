@@ -11,7 +11,7 @@ import type { RunEvent, RunSummary } from '@/pipeline/run';
 const target = { type: 'hero', niche: 'saas', style: 'minimal' };
 
 function summary(over: Partial<RunSummary> = {}): RunSummary {
-  return { generated: 0, repaired: 0, dropped: 0, deduped: 0, ingested: 0, ...over };
+  return { generated: 0, repaired: 0, dropped: 0, deduped: 0, ingested: 0, nearDuped: 0, ...over };
 }
 
 describe('MetricsAccumulator', () => {
@@ -96,6 +96,22 @@ describe('MetricsAccumulator', () => {
     // count against it (2 generated, 0 validation drops → 100%, even though 1 of 2 was dropped).
     expect(m.validatorPassRate).toBe(1);
     expect(m.costPerAcceptedUsd).toBeCloseTo(0.01, 5);
+  });
+
+  it('computes nearDupeRate from RunSummary.nearDuped (T1.2), and null when nothing was generated', () => {
+    const acc = new MetricsAccumulator('baseline', 4);
+    const events: RunEvent[] = [
+      { type: 'generated', target },
+      { type: 'ingested', target, slug: 's1' },
+      { type: 'generated', target },
+      { type: 'near_duplicate', target, distance: 2 },
+    ];
+    for (const e of events) acc.add(e);
+    const m = acc.finalize(summary({ generated: 2, ingested: 1, nearDuped: 1 }));
+    expect(m.nearDupeRate).toBeCloseTo(0.5, 5);
+
+    const empty = new MetricsAccumulator('empty', 0).finalize(summary());
+    expect(empty.nearDupeRate).toBeNull();
   });
 
   it('carries the config label through to the finalized metrics', () => {

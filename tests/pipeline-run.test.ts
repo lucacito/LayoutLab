@@ -21,6 +21,14 @@ function baseDeps(over: Partial<any> = {}) {
   };
 }
 
+// A minimal seo() response shared by the near-dupe tests below (generateSeo is
+// invoked with the metered llm — its mock must return this JSON).
+const seoJson = JSON.stringify({ title: 'T', slug: 's', metaDescription: 'd', keywords: [], axes: { type: 'hero', niche: 'saas', style: 'minimal', colors: [] } });
+
+function renderReturning(perceptualHash: string | undefined) {
+  return vi.fn(async () => ({ previewImageKeys: ['p'], perceptualHash }));
+}
+
 describe('runPipeline', () => {
   it('happy path: generate → validate → upload → ingest, summary counts 1 ingested', async () => {
     const deps = baseDeps();
@@ -114,6 +122,80 @@ describe('runPipeline', () => {
     // A one-shot path would upload a single-section document (this assertion would fail).
     expect((post.match(/wp:divi\/placeholder -->/g) || []).length).toBe(2);
     expect((post.match(/wp:divi\/section {/g) || []).length).toBeGreaterThanOrEqual(6);
+  });
+});
+
+// T1.2: near-duplicate detection via the rendered perceptual hash.
+describe('runPipeline near-duplicate gate (T1.2)', () => {
+  const target2 = { type: 'hero', niche: 'saas', style: 'bold' };
+  const HASH_A = 'a'.repeat(64);
+  const HASH_FAR = '0'.repeat(64);
+
+  function llmSeq(...responses: string[]) {
+    const fn = vi.fn();
+    for (const r of responses) fn.mockResolvedValueOnce(r);
+    return { complete: fn };
+  }
+  function genJson(n: number) {
+    return JSON.stringify({ post_title: `T${n}`, post_content: `<!-- wp:divi/text {"content":"Ship faster with real copy number ${n}"} -->` });
+  }
+
+  it('drops the second of two visually-identical-but-reworded layouts within the same run (in-memory pool)', async () => {
+    const llm = llmSeq(genJson(1), seoJson, genJson(2), seoJson);
+    const render = renderReturning(HASH_A); // same perceptual hash both times
+    const ingest = vi.fn(async () => ({ deduped: false }));
+    const s = await runPipeline(baseDeps({ targets: [target, target2], llm, render, ingest }) as any);
+    expect(s.ingested).toBe(1);
+    expect(s.nearDuped).toBe(1);
+    expect(ingest).toHaveBeenCalledOnce();
+  });
+
+  it('does NOT drop genuinely different layouts even when both render successfully', async () => {
+    const renders = [HASH_A, HASH_FAR];
+    let i = 0;
+    const render = vi.fn(async () => ({ previewImageKeys: ['p'], perceptualHash: renders[i++] }));
+    const llm = llmSeq(genJson(1), seoJson, genJson(2), seoJson);
+    const ingest = vi.fn(async () => ({ deduped: false }));
+    const s = await runPipeline(baseDeps({ targets: [target, target2], llm, render, ingest }) as any);
+    expect(s.ingested).toBe(2);
+    expect(s.nearDuped).toBe(0);
+    expect(ingest).toHaveBeenCalledTimes(2);
+  });
+
+  it('gracefully skips the gate (never blocks ingest) when render is best-effort and produces no perceptualHash', async () => {
+    const llm = llmSeq(genJson(1), seoJson);
+    const render = renderReturning(undefined); // render "succeeded" (preview keys) but no hash
+    const ingest = vi.fn(async () => ({ deduped: false }));
+    const s = await runPipeline(baseDeps({ llm, render, ingest }) as any);
+    expect(s.ingested).toBe(1);
+    expect(s.nearDuped).toBe(0);
+    expect(ingest).toHaveBeenCalledOnce();
+  });
+
+  it('drops a layout that near-duplicates an EXISTING DB hash on the very first target of the run', async () => {
+    const llm = llmSeq(genJson(1), seoJson);
+    const render = renderReturning(HASH_A);
+    const ingest = vi.fn(async () => ({ deduped: false }));
+    const nearDuplicateHashes = vi.fn(async () => [HASH_A]);
+    const s = await runPipeline(baseDeps({ llm, render, ingest, nearDuplicateHashes }) as any);
+    expect(nearDuplicateHashes).toHaveBeenCalledOnce();
+    expect(s.ingested).toBe(0);
+    expect(s.nearDuped).toBe(1);
+    expect(ingest).not.toHaveBeenCalled();
+  });
+
+  it('emits a near_duplicate RunEvent and tags llm_usage outcome=near_duplicate', async () => {
+    const events: RunEvent[] = [];
+    const llm = llmWithUsage(genJson(1));
+    // Force a near-dupe against a pre-seeded DB pool so this single target drops.
+    const render = renderReturning(HASH_A);
+    const nearDuplicateHashes = vi.fn(async () => [HASH_A]);
+    const deps = baseDeps({ llm, render, nearDuplicateHashes, onEvent: (e: RunEvent) => events.push(e) });
+    const s = await runPipeline(deps as any);
+    expect(s.nearDuped).toBe(1);
+    expect(events.map((e) => e.type)).toEqual(['generated', 'content_lint', 'near_duplicate', 'llm_usage']);
+    const usageEvent = usageEventOf(events);
+    expect(usageEvent.outcome).toBe('near_duplicate');
   });
 });
 
