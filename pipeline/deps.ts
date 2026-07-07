@@ -359,9 +359,12 @@ export async function buildThemeDeps(opts: BuildThemeDepsOptions): Promise<{ dep
   // prefix. `themePageSlug` (pipeline/theme.ts) always builds the slug as
   // `slugify(\`${brief.businessName} ${style} ${niche} ${role} page for divi 5\`)`
   // — the brand name is the FIRST token(s) fed to `slugify`, so every page of
-  // this pack shares the identical `slugify(businessName)` prefix, and no
-  // other pack's brand name collides with it in practice (two packs would
-  // need the exact same business name to share a prefix). Cheap: `slug` and
+  // this pack shares the identical `slugify(businessName)` prefix. Caveat:
+  // this is a PREFIX match, so a pack whose slugified name is a prefix of
+  // another's (e.g. "Bella" vs "Bella Nota") would also exclude that other
+  // pack's rows from its near-dupe pool — a silently weakened cross-pack
+  // check, not a correctness break. Keep pack business names prefix-distinct
+  // (today's catalog is). Cheap: `slug` and
   // `perceptual_hash` are both plain, already-queried columns on `layouts` —
   // no extra table, join, or migration needed.
   const packSlugPrefix = `${slugify(opts.businessName)}-`;

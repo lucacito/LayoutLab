@@ -39,7 +39,13 @@ file) mirroring `buildRunDeps`, so theme scripts get the same real gates
 `npm run pipeline` gets, by construction, instead of by remembering to wire
 each one by hand.
 
-**Warning (T4.2's own carry-forward, restated so it isn't lost):** the
+**Warning — RESOLVED by the buildThemeDeps fix above.** `nearDuplicateHashes`
+for themes now excludes the pack's own rows via a slug-prefix filter, so the
+resume trap described below can no longer fire (kept for historical context).
+Remaining caveat: the filter is a PREFIX match, so pack business names must
+stay prefix-distinct (e.g. "Bella" would also exclude a separate "Bella Nota"
+pack's rows) — see the comment in `pipeline/deps.ts` `buildThemeDeps`. The
+original warning: the
 near-dupe pool exclusion for "don't drop a layout as a near-dupe of another
 page in the *same* pack" is currently incoherent across a **resumed** theme
 run — if `nearDuplicateHashes` gets wired into a theme run without also
