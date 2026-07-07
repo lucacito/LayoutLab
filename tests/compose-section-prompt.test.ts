@@ -73,6 +73,19 @@ describe('buildSectionRolePrompt', () => {
     expect(cards).toMatch(/image-card/i);
   });
 
+  it('tells the model to swap to the tint color for heading/body text on the dark panel', () => {
+    const p = buildSectionRolePrompt(
+      { role: 'final_cta', sectionType: 'cta', job: 'j', cta: true },
+      brief,
+      { style: 'dark', niche: 'saas' },
+    );
+    const palette = selectPalette({ style: 'dark', niche: 'saas' }, brief.accentColorHex);
+    expect(p).toContain(palette.dark);
+    expect(p).toMatch(/on the dark background/i);
+    // The substitute text color on dark must be the tint, not the (illegible) heading/body colors.
+    expect(p).toContain(palette.tint);
+  });
+
   it('alternates the background rhythm by section index', () => {
     const even = buildSectionRolePrompt({ role: 'why', sectionType: 'features', job: 'j', cta: false }, brief, { index: 2, total: 6 });
     const odd = buildSectionRolePrompt({ role: 'why', sectionType: 'features', job: 'j', cta: false }, brief, { index: 3, total: 6 });

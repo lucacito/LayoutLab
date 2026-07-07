@@ -77,6 +77,9 @@ export function buildSectionRolePrompt(step: Step, brief: Brief, ctx: SectionCon
       `primary/accent ${palette.primary} (buttons, icons, links, highlights), secondary ${palette.secondary}, ` +
       `soft tint ${palette.tint} (alternating section panels), dark ${palette.dark} (dark panels/footer), ` +
       `heading text ${palette.heading}, body text ${palette.body}. ` +
+      `On the dark background (${palette.dark}) used for final_cta/footer panels, do NOT use the ` +
+      `heading/body colors above (they are for the light/tinted panels and are illegible on dark) — ` +
+      `instead use the tint color ${palette.tint} for all heading and body text on that dark panel. ` +
       `Reuse ONE corner-radius and ONE soft box-shadow for every card so the page feels systematic.`,
   ];
   if (brief.designNotes) lines.push(`Art direction: ${brief.designNotes}.`);

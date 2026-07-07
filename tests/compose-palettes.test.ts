@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { selectPalette, contrastRatio } from '@/pipeline/compose/palettes';
+import { selectPalette, selectPaletteVariantId, pickByRendezvous, contrastRatio } from '@/pipeline/compose/palettes';
 import { AXIS_VALUES } from '@/lib/catalog/filters';
 
 describe('selectPalette', () => {
@@ -64,5 +64,62 @@ describe('selectPalette', () => {
         expect(contrastRatio(p.body, p.tint)).toBeGreaterThanOrEqual(4.5);
       }
     }
+  });
+
+  it('every curated palette keeps tint legible on its own dark panel (WCAG AA, 4.5:1+) — the on-dark text substitute', () => {
+    for (const style of AXIS_VALUES.style) {
+      for (const niche of AXIS_VALUES.niche) {
+        const p = selectPalette({ style, niche }, '#E4572E');
+        expect(contrastRatio(p.tint, p.dark)).toBeGreaterThanOrEqual(4.5);
+      }
+    }
+  });
+});
+
+describe('pickByRendezvous — append-stability', () => {
+  it('is a pure, deterministic function of (key, items)', () => {
+    const items = [{ id: 'a' }, { id: 'b' }, { id: 'c' }];
+    expect(pickByRendezvous('some-key', items)).toEqual(pickByRendezvous('some-key', items));
+  });
+
+  it('appending a new item never remaps a key from one EXISTING item to another EXISTING item', () => {
+    const before = [{ id: 'alpha' }, { id: 'beta' }, { id: 'gamma' }];
+    const after = [...before, { id: 'delta' }];
+    const keys = Array.from({ length: 500 }, (_, i) => `synthetic-key-${i}`);
+    let remappedAmongExisting = 0;
+    for (const key of keys) {
+      const winnerBefore = pickByRendezvous(key, before).id;
+      const winnerAfter = pickByRendezvous(key, after).id;
+      if (winnerBefore !== winnerAfter && winnerAfter !== 'delta') {
+        remappedAmongExisting++;
+      }
+    }
+    expect(remappedAmongExisting).toBe(0);
+    // Sanity: the new item actually wins SOME keys, proving the test isn't vacuous.
+    const wonByNewItem = keys.filter((key) => pickByRendezvous(key, after).id === 'delta');
+    expect(wonByNewItem.length).toBeGreaterThan(0);
+  });
+});
+
+describe('contrastRatio — malformed input guard', () => {
+  it('throws on a malformed hex string instead of silently computing garbage', () => {
+    expect(() => contrastRatio('not-a-color', '#FFFFFF')).toThrow();
+    expect(() => contrastRatio('#FFFFFF', '#12')).toThrow();
+    expect(() => contrastRatio('', '#FFFFFF')).toThrow();
+  });
+
+  it('still accepts well-formed hex with or without the leading #', () => {
+    expect(contrastRatio('#000000', '#FFFFFF')).toBeCloseTo(21, 0);
+    expect(contrastRatio('000000', 'FFFFFF')).toBeCloseTo(21, 0);
+  });
+});
+
+describe('selectPalette — pinned regression (breaks loudly if the selection scheme reshuffles)', () => {
+  it('pins concrete (style, niche) -> palette-id selections', () => {
+    expect(selectPaletteVariantId({ style: 'minimal', niche: 'saas' })).toBe('minimal-cool-slate');
+    expect(selectPaletteVariantId({ style: 'dark', niche: 'saas' })).toBe('dark-warm-charcoal');
+    expect(selectPaletteVariantId({ style: 'bold', niche: 'agency' })).toBe('bold-vivid-warm');
+    expect(selectPaletteVariantId({ style: 'corporate', niche: 'restaurant' })).toBe('corporate-muted-slate');
+    expect(selectPaletteVariantId({ style: 'elegant', niche: 'fitness' })).toBe('elegant-warm-ivory-burgundy');
   });
 });
