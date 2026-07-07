@@ -63,6 +63,41 @@ async function farVariant(): Promise<Buffer> {
     .toBuffer();
 }
 
+// A synthetic "rendered page" standing in for a real screenshot: a fixed hero
+// block up top plus a paragraph of text-line bars whose vertical position can
+// be shifted — simulating a paragraph that reflows by a line or two (and pushes
+// everything below it down) when copy gets reworded, WITHOUT changing the
+// overall page structure. `shiftPx` of ~30-45 against a 300px-tall canvas is a
+// realistic ~10-15% vertical reflow, unlike the earlier 2x2px corner tweak
+// (unrealistically small relative to a real screenshot).
+async function pageWithTextBlock(shiftPx = 0): Promise<Buffer> {
+  const width = 200;
+  const height = 300;
+  const hero = await sharp({ create: { width: 180, height: 40, channels: 3, background: '#223344' } }).png().toBuffer();
+  const bar = await sharp({ create: { width: 160, height: 10, channels: 3, background: '#555555' } }).png().toBuffer();
+  const composites = [{ input: hero, top: 10, left: 10 }];
+  for (let i = 0; i < 6; i++) {
+    composites.push({ input: bar, top: 70 + shiftPx + i * 20, left: 20 });
+  }
+  return sharp({ create: { width, height, channels: 3, background: '#ffffff' } })
+    .composite(composites)
+    .png()
+    .toBuffer();
+}
+
+// A genuinely different page: a single large solid block on a differently-
+// colored background, rather than a hero + stacked text lines. Stands in for a
+// visually distinct layout (different composition, not just reflowed copy).
+async function differentPageLayout(): Promise<Buffer> {
+  const width = 200;
+  const height = 300;
+  const block = await sharp({ create: { width: 160, height: 220, channels: 3, background: '#112233' } }).png().toBuffer();
+  return sharp({ create: { width, height, channels: 3, background: '#eeeeee' } })
+    .composite([{ input: block, top: 40, left: 20 }])
+    .png()
+    .toBuffer();
+}
+
 describe('perceptualHash (dHash) stability + distance', () => {
   it('same image -> identical hash (distance 0)', async () => {
     const img = await baseImage();
@@ -80,6 +115,21 @@ describe('perceptualHash (dHash) stability + distance', () => {
   it('a genuinely different layout -> hamming distance well over the default near-dupe threshold', async () => {
     const h1 = await perceptualHash(await baseImage());
     const h2 = await perceptualHash(await farVariant());
+    expect(hammingDistance(h1, h2)).toBeGreaterThan(DEFAULT_PERCEPTUAL_DUPE_MAX_DISTANCE);
+  });
+
+  // Review fix (T1.2): the 2x2px-corner tweak above is unrealistically small to
+  // stand in for "reworded copy" on a real page. This exercises a visibly
+  // reflowed text block (~13% of the image height) instead.
+  it('a realistically reflowed text block (~13% vertical shift, reworded-copy stand-in) -> hamming distance within the default near-dupe threshold', async () => {
+    const h1 = await perceptualHash(await pageWithTextBlock(0));
+    const h2 = await perceptualHash(await pageWithTextBlock(40));
+    expect(hammingDistance(h1, h2)).toBeLessThanOrEqual(DEFAULT_PERCEPTUAL_DUPE_MAX_DISTANCE);
+  });
+
+  it('a genuinely different page composition (not just reflowed copy) -> hamming distance well over the default near-dupe threshold', async () => {
+    const h1 = await perceptualHash(await pageWithTextBlock(0));
+    const h2 = await perceptualHash(await differentPageLayout());
     expect(hammingDistance(h1, h2)).toBeGreaterThan(DEFAULT_PERCEPTUAL_DUPE_MAX_DISTANCE);
   });
 });

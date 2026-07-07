@@ -248,7 +248,12 @@ export async function runPipeline(deps: RunDeps): Promise<RunSummary> {
           onEvent({ type: 'near_duplicate', target, distance: nearest });
           continue;
         }
-        nearDupPool.push(perceptualHash);
+        // NOTE: do NOT push into nearDupPool here. Pushing before ingest succeeds
+        // would poison the pool with a hash for a layout that never actually got
+        // accepted (e.g. ingest throws below) — a later, genuinely distinct target
+        // in the same run would then be wrongly near-dupe-dropped against a layout
+        // that isn't actually published. Only push after `deps.ingest` resolves
+        // (review fix — T1.2).
       }
 
       const payload: IngestPayload = {
@@ -274,6 +279,9 @@ export async function runPipeline(deps: RunDeps): Promise<RunSummary> {
         ],
       };
       await deps.ingest(payload);
+      // Only a layout that actually cleared ingest joins the near-dupe pool — see
+      // the NOTE above where the gate runs.
+      if (perceptualHash) nearDupPool.push(perceptualHash);
       summary.ingested++;
       outcome = 'ingested';
       log(`ingested ${seo.slug}`);

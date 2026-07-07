@@ -67,11 +67,21 @@ export function isNearDuplicate(newHash: string, existingHashes: string[], thres
   return nearest !== undefined && nearest <= threshold;
 }
 
-export const DEFAULT_PERCEPTUAL_DUPE_MAX_DISTANCE = 5;
+// Review fix (T1.2): the brief's "start ~5/64 bits" framing intended ~8%
+// selectivity (5/64 ≈ 7.8%), but the actual hash space produced by
+// `render.ts#perceptualHash` is 256 bits (17x16 grid → 16 horizontal
+// comparisons/row × 16 rows), not 64 — a literal "5" is only ~2% selectivity,
+// far tighter than intended. Scaling to preserve the brief's intended ratio:
+// round(0.078125 * 256) = 20. This is a ratio-preserving default, NOT a value
+// tuned against a real corpus of near-dupe pairs — that tuning pass is still
+// pending (see the T1.2 report's "Concerns" section); revisit once real
+// render data is available.
+export const DEFAULT_PERCEPTUAL_DUPE_MAX_DISTANCE = 20;
 
-/** Tunable via env `PERCEPTUAL_DUPE_MAX_DISTANCE` (default 5). Falls back to
- * the default on missing/non-numeric/negative values rather than throwing —
- * a misconfigured env var must not crash the pipeline. */
+/** Tunable via env `PERCEPTUAL_DUPE_MAX_DISTANCE` (default 20 — see the
+ * scaling rationale above `DEFAULT_PERCEPTUAL_DUPE_MAX_DISTANCE`). Falls back
+ * to the default on missing/non-numeric/negative values rather than
+ * throwing — a misconfigured env var must not crash the pipeline. */
 export function perceptualDupeMaxDistance(): number {
   const raw = process.env.PERCEPTUAL_DUPE_MAX_DISTANCE;
   if (raw === undefined) return DEFAULT_PERCEPTUAL_DUPE_MAX_DISTANCE;

@@ -184,6 +184,27 @@ describe('runPipeline near-duplicate gate (T1.2)', () => {
     expect(ingest).not.toHaveBeenCalled();
   });
 
+  it('does not poison the near-dupe pool when ingest throws for the first accepted layout (review fix)', async () => {
+    // Target 1 renders successfully and clears the near-dupe gate, but its ingest
+    // call throws (e.g. transient network error). Target 2 renders a near-identical
+    // hash. If the pool were populated BEFORE ingest succeeds (the bug), target 2
+    // would be wrongly dropped as a near-dupe of a layout that was never actually
+    // accepted. It must be ingested instead.
+    const llm = llmSeq(genJson(1), seoJson, genJson(2), seoJson);
+    const render = renderReturning(HASH_A); // identical hash for both targets
+    const ingest = vi
+      .fn()
+      .mockImplementationOnce(async () => {
+        throw new Error('ingest boom');
+      })
+      .mockImplementationOnce(async () => ({ deduped: false }));
+    const s = await runPipeline(baseDeps({ targets: [target, target2], llm, render, ingest }) as any);
+    expect(ingest).toHaveBeenCalledTimes(2);
+    expect(s.dropped).toBe(1); // target 1: ingest error
+    expect(s.nearDuped).toBe(0); // target 2 must NOT be wrongly near-dupe-dropped
+    expect(s.ingested).toBe(1); // target 2: ingested normally
+  });
+
   it('emits a near_duplicate RunEvent and tags llm_usage outcome=near_duplicate', async () => {
     const events: RunEvent[] = [];
     const llm = llmWithUsage(genJson(1));

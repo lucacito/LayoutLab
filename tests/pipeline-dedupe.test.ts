@@ -70,9 +70,9 @@ describe('perceptualDupeMaxDistance', () => {
     if (ORIGINAL === undefined) delete process.env.PERCEPTUAL_DUPE_MAX_DISTANCE;
     else process.env.PERCEPTUAL_DUPE_MAX_DISTANCE = ORIGINAL;
   });
-  it('defaults to 5 when unset', () => {
+  it('defaults to 20 when unset', () => {
     delete process.env.PERCEPTUAL_DUPE_MAX_DISTANCE;
-    expect(perceptualDupeMaxDistance()).toBe(5);
+    expect(perceptualDupeMaxDistance()).toBe(20);
   });
   it('reads a tuned value from env', () => {
     process.env.PERCEPTUAL_DUPE_MAX_DISTANCE = '10';
@@ -80,6 +80,6 @@ describe('perceptualDupeMaxDistance', () => {
   });
   it('falls back to the default on garbage input', () => {
     process.env.PERCEPTUAL_DUPE_MAX_DISTANCE = 'not-a-number';
-    expect(perceptualDupeMaxDistance()).toBe(5);
+    expect(perceptualDupeMaxDistance()).toBe(20);
   });
 });

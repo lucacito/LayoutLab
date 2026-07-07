@@ -51,10 +51,15 @@ const VIEWPORTS: { label: 'desktop' | 'mobile'; width: number; height: number }[
  * indistinguishable at rest from a dHash value, so no schema migration/algo
  * discriminator column was added (backfill is explicitly out of scope for this
  * task). `isNearDuplicate` compares by hamming distance over same-length hex
- * strings regardless of which algorithm produced them; a mixed aHash/dHash
- * comparison can only ever miss a true near-dupe (large distance from
- * algorithm mismatch), never falsely flag one — consistent with "never block
- * ingest for this reason" (T1.2 item 4).
+ * strings regardless of which algorithm produced them; the comparison code
+ * itself has no awareness of which algorithm produced either hash, so this is
+ * a probabilistic argument, not a structural guarantee: aHash and dHash encode
+ * different bit semantics for the same image, so a mixed aHash/dHash pair is
+ * EXPECTED, in the general case, to land far apart in hamming distance (biasing
+ * toward a missed near-dupe rather than a false positive) — but nothing in the
+ * code prevents two cross-algorithm hashes from coincidentally landing within
+ * the threshold. Consistent with the "never block ingest for this reason"
+ * bias (T1.2 item 4), not a categorical impossibility.
  */
 export async function perceptualHash(png: Buffer): Promise<string> {
   const width = 17;
