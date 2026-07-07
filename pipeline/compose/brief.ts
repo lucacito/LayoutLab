@@ -23,25 +23,13 @@ export interface Brief {
   accentColorHex: string;
   voice: string;
   /** Optional shared design system carried across every section. Pinned briefs
-   *  (themes / single-landing scripts) set it; generated briefs derive one from
-   *  the accent via defaultPalette(). */
+   *  (themes / single-landing scripts) set it; generated briefs derive one via
+   *  `selectPalette` (pipeline/compose/palettes.ts), keyed by style/niche, with
+   *  accentColorHex always overriding `primary`. */
   palette?: Palette;
   /** Optional art-direction notes (aesthetic + layout motifs) echoed to every
    *  section, e.g. "clean clinical, generous whitespace, soft rounded cards". */
   designNotes?: string;
-}
-
-/** Derive a sensible light-UI palette from the accent when a brief doesn't pin
- *  one, so generated (non-theme) landings still get the shared-system treatment. */
-export function defaultPalette(accentHex: string): Palette {
-  return {
-    primary: accentHex,
-    secondary: accentHex,
-    tint: '#F8FAFC',
-    dark: '#0F172A',
-    heading: '#0F172A',
-    body: '#334155',
-  };
 }
 
 const FIELDS: (keyof Brief)[] = [

@@ -13,7 +13,8 @@ import { assembleSections } from './assemble';
 
 export type { Brief, Palette } from './brief';
 export type { Step } from './flow';
-export { buildBriefPrompt, parseBrief, defaultPalette } from './brief';
+export { buildBriefPrompt, parseBrief } from './brief';
+export { selectPalette } from './palettes';
 export { flowForBusinessType } from './flow';
 export { buildSectionRolePrompt } from './section-prompt';
 export { assembleSections } from './assemble';
@@ -110,7 +111,7 @@ export async function composeLanding(target: Target, deps: ComposeDeps): Promise
       niche: target.niche,
       style: target.style,
       color: target.color,
-      layout: buildSectionRolePrompt(step, brief, { index, total: flow.length }) + brandFacts,
+      layout: buildSectionRolePrompt(step, brief, { index, total: flow.length, style: target.style, niche: target.niche }) + brandFacts,
     };
     try {
       const json = await generateValidSection(sectionTarget, deps);

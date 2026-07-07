@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { buildSectionRolePrompt } from '@/pipeline/compose/section-prompt';
+import { selectPalette } from '@/pipeline/compose/palettes';
 
 const brief = {
   businessType: 'course/coaching', businessName: 'Meridian Coaching', tagline: 'Lead with clarity',
@@ -32,10 +33,33 @@ describe('buildSectionRolePrompt', () => {
     expect(withPalette).toMatch(/design system/i);
   });
 
-  it('falls back to a derived palette when the brief pins none', () => {
-    const p = buildSectionRolePrompt({ role: 'services', sectionType: 'cards', job: 'j', cta: false }, brief);
+  it('falls back to a style-selected palette when the brief pins none', () => {
+    const expected = selectPalette({ style: 'minimal', niche: 'saas' }, brief.accentColorHex);
+    const p = buildSectionRolePrompt(
+      { role: 'services', sectionType: 'cards', job: 'j', cta: false },
+      brief,
+      { style: 'minimal', niche: 'saas' },
+    );
     expect(p).toContain(brief.accentColorHex); // primary derived from accent
-    expect(p).toContain('#F8FAFC'); // default tint
+    expect(p).toContain(expected.tint);
+  });
+
+  it('derives a visibly different palette for a different style when the brief pins none', () => {
+    const minimal = buildSectionRolePrompt(
+      { role: 'services', sectionType: 'cards', job: 'j', cta: false },
+      brief,
+      { style: 'minimal', niche: 'saas' },
+    );
+    const dark = buildSectionRolePrompt(
+      { role: 'services', sectionType: 'cards', job: 'j', cta: false },
+      brief,
+      { style: 'dark', niche: 'saas' },
+    );
+    const minimalPalette = selectPalette({ style: 'minimal', niche: 'saas' }, brief.accentColorHex);
+    const darkPalette = selectPalette({ style: 'dark', niche: 'saas' }, brief.accentColorHex);
+    expect(minimal).toContain(minimalPalette.tint);
+    expect(dark).toContain(darkPalette.tint);
+    expect(minimalPalette.tint).not.toBe(darkPalette.tint);
   });
 
   it('gives each role a concrete design treatment', () => {

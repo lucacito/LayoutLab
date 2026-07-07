@@ -1,4 +1,5 @@
-import { defaultPalette, type Brief } from './brief';
+import type { Brief } from './brief';
+import { selectPalette } from './palettes';
 import type { Step } from './flow';
 
 /** Where a section sits in the page, so we can coordinate the background rhythm
@@ -6,6 +7,10 @@ import type { Step } from './flow';
 export interface SectionContext {
   index?: number;
   total?: number;
+  /** Style/niche of the parent Target — used to select a page-wide palette
+   *  deterministically (via selectPalette) when the brief doesn't pin one. */
+  style?: string;
+  niche?: string;
 }
 
 // Per-ROLE design direction — the missing ingredient that made composed pages
@@ -64,7 +69,7 @@ function backgroundTone(role: string, index?: number): string {
 // shares the same brand (name, accent, CTA, voice) AND the same design system
 // (palette, per-role treatment, background rhythm) — the cohesion mechanism.
 export function buildSectionRolePrompt(step: Step, brief: Brief, ctx: SectionContext = {}): string {
-  const palette = brief.palette ?? defaultPalette(brief.accentColorHex);
+  const palette = brief.palette ?? selectPalette({ style: ctx.style, niche: ctx.niche }, brief.accentColorHex);
   const lines = [
     `This section is part of ONE cohesive landing page for "${brief.businessName}" (${brief.businessType}).`,
     `Audience: ${brief.audience}. Voice: ${brief.voice}.`,
