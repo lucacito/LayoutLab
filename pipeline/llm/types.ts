@@ -15,6 +15,12 @@ export interface LlmClient {
     /** Additive instrumentation hook (T4.1 eval harness) — report cost/token
      * usage for this call, if the client can. Never required, never blocking. */
     onUsage?: (usage: LlmUsage) => void;
+    /** Additive (T1.3 vision critic) — pre-approve specific tool names for this
+     * headless `-p` call (e.g. `["Read"]`) so the CLI agent can open local
+     * screenshot files without stalling on an interactive permission prompt that
+     * has no TTY to answer it (a piped, non-interactive pipeline run). Every
+     * other existing caller omits this and gets today's behavior unchanged. */
+    allowedTools?: string[];
   }): Promise<string>;
 }
 

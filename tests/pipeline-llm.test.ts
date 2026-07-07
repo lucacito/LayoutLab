@@ -158,4 +158,29 @@ describe('claudeCliClient', () => {
     await expect(client.complete({ prompt: 'x', onUsage })).rejects.toBeInstanceOf(LlmError);
     expect(onUsage).not.toHaveBeenCalled();
   });
+
+  it('passes allowedTools through as --allowedTools (T1.3 vision critic file-read access)', async () => {
+    const run = vi.fn(async (_cmd: string, _args: string[], _input?: string) => ({
+      stdout: JSON.stringify({ type: 'result', subtype: 'success', is_error: false, result: 'ok' }),
+      stderr: '',
+      code: 0,
+    }));
+    const client = claudeCliClient({ run });
+    await client.complete({ prompt: 'x', allowedTools: ['Read'] });
+    const [, args] = run.mock.calls[0];
+    expect(args).toContain('--allowedTools');
+    expect(args).toContain('Read');
+  });
+
+  it('omits --allowedTools when not provided (existing callers unaffected)', async () => {
+    const run = vi.fn(async (_cmd: string, _args: string[], _input?: string) => ({
+      stdout: JSON.stringify({ type: 'result', subtype: 'success', is_error: false, result: 'ok' }),
+      stderr: '',
+      code: 0,
+    }));
+    const client = claudeCliClient({ run });
+    await client.complete({ prompt: 'x' });
+    const [, args] = run.mock.calls[0];
+    expect(args).not.toContain('--allowedTools');
+  });
 });

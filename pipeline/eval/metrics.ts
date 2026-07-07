@@ -37,10 +37,18 @@ export interface EvalMetrics {
   tokensPerAccepted: number | null;
   /** Fraction of generated layouts dropped by the perceptual near-duplicate gate (T1.2). */
   nearDupeRate: number | null;
-  // Not implemented yet — present so the shape is stable across tasks. A later
-  // task fills this in by emitting the corresponding RunEvent; this module's
-  // aggregation contract doesn't need to change.
+  /** Fraction of generated layouts dropped by the render-miss gate (T1.3) — a
+   * renderer was wired but produced no real previews. Distinct from `dropped`. */
+  renderFailedRate: number | null;
+  /** Histogram of vision-critic scores (T1.3), rounded to the nearest integer
+   * and keyed by that integer as a string (e.g. `{"2": 1, "4": 3}`). Counts
+   * EVERY scored target (pass and drop), not just accepted ones — this is a
+   * generator-quality signal, not an acceptance-rate one. `null` when the
+   * critic never ran (not wired, or no target reached the gate). */
   visionScoreDistribution: Record<string, number> | null;
+  /** Mean vision-critic score across every scored target. `null` under the same
+   * conditions as `visionScoreDistribution`. */
+  visionScoreMean: number | null;
 }
 
 export class MetricsAccumulator {
@@ -54,6 +62,8 @@ export class MetricsAccumulator {
   private totalCostUsd = 0;
   private totalInputTokens = 0;
   private totalOutputTokens = 0;
+  /** Raw vision-critic scores (T1.3) — one entry per scored target, pass or drop. */
+  private visionScores: number[] = [];
 
   constructor(
     private readonly label: string,
@@ -81,6 +91,11 @@ export class MetricsAccumulator {
         break; // tracked via RunSummary.deduped at finalize()
       case 'near_duplicate':
         break; // tracked via RunSummary.nearDuped at finalize()
+      case 'render_failed':
+        break; // tracked via RunSummary.renderFailed at finalize()
+      case 'vision_critic':
+        this.visionScores.push(event.score);
+        break;
       case 'ingested':
         break; // tracked via RunSummary.ingested at finalize()
       case 'llm_usage':
@@ -118,8 +133,23 @@ export class MetricsAccumulator {
       costPerAcceptedUsd: summary.ingested ? this.acceptedCostUsd / summary.ingested : null,
       tokensPerAccepted: summary.ingested ? (this.acceptedInputTokens + this.acceptedOutputTokens) / summary.ingested : null,
       nearDupeRate: summary.generated ? summary.nearDuped / summary.generated : null,
-      visionScoreDistribution: null,
+      renderFailedRate: summary.generated ? summary.renderFailed / summary.generated : null,
+      visionScoreDistribution: this.visionScores.length ? this.visionScoreDistribution() : null,
+      visionScoreMean: this.visionScores.length
+        ? this.visionScores.reduce((a, b) => a + b, 0) / this.visionScores.length
+        : null,
     };
+  }
+
+  /** Buckets raw scores by nearest integer (the rubric asks for 1-5 integers,
+   * but nothing downstream enforces that, so round rather than assume). */
+  private visionScoreDistribution(): Record<string, number> {
+    const dist: Record<string, number> = {};
+    for (const s of this.visionScores) {
+      const key = String(Math.round(s));
+      dist[key] = (dist[key] ?? 0) + 1;
+    }
+    return dist;
   }
 }
 
@@ -131,6 +161,13 @@ function fmtNum(v: number | null, digits = 2): string {
 }
 function fmtUsd(v: number | null): string {
   return v == null ? 'n/a' : `$${v.toFixed(4)}`;
+}
+function fmtVisionDist(dist: Record<string, number> | null): string {
+  if (!dist || !Object.keys(dist).length) return 'n/a';
+  return Object.entries(dist)
+    .sort(([a], [b]) => Number(a) - Number(b))
+    .map(([score, n]) => `${score}:${n}`)
+    .join(' ');
 }
 
 /** Render a side-by-side comparison table for N config runs (2 for a classic A/B,
@@ -147,6 +184,9 @@ export function formatComparisonTable(rows: EvalMetrics[]): string {
     ['mean repair attempts', rows.map((r) => fmtNum(r.meanRepairAttempts))],
     ['content-lint hit-rate', rows.map((r) => fmtPct(r.contentLintHitRate))],
     ['near-dupe rate', rows.map((r) => fmtPct(r.nearDupeRate))],
+    ['render-failed rate', rows.map((r) => fmtPct(r.renderFailedRate))],
+    ['vision score mean', rows.map((r) => fmtNum(r.visionScoreMean))],
+    ['vision score dist', rows.map((r) => fmtVisionDist(r.visionScoreDistribution))],
     ['cost / accepted layout', rows.map((r) => fmtUsd(r.costPerAcceptedUsd))],
     ['tokens / accepted layout', rows.map((r) => fmtNum(r.tokensPerAccepted, 0))],
     ['total cost', rows.map((r) => fmtUsd(r.totalCostUsd))],

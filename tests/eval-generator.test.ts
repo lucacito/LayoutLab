@@ -11,7 +11,7 @@ import type { RunEvent, RunSummary } from '@/pipeline/run';
 const target = { type: 'hero', niche: 'saas', style: 'minimal' };
 
 function summary(over: Partial<RunSummary> = {}): RunSummary {
-  return { generated: 0, repaired: 0, dropped: 0, deduped: 0, ingested: 0, nearDuped: 0, ...over };
+  return { generated: 0, repaired: 0, dropped: 0, deduped: 0, ingested: 0, nearDuped: 0, renderFailed: 0, ...over };
 }
 
 describe('MetricsAccumulator', () => {
@@ -120,6 +120,44 @@ describe('MetricsAccumulator', () => {
     expect(m.label).toBe('my-config');
     expect(m.targetsPlanned).toBe(3);
   });
+
+  it('computes renderFailedRate from RunSummary.renderFailed (T1.3), and null when nothing was generated', () => {
+    const acc = new MetricsAccumulator('baseline', 4);
+    const events: RunEvent[] = [
+      { type: 'generated', target },
+      { type: 'ingested', target, slug: 's1' },
+      { type: 'generated', target },
+      { type: 'render_failed', target },
+    ];
+    for (const e of events) acc.add(e);
+    const m = acc.finalize(summary({ generated: 2, ingested: 1, renderFailed: 1 }));
+    expect(m.renderFailedRate).toBeCloseTo(0.5, 5);
+
+    const empty = new MetricsAccumulator('empty', 0).finalize(summary());
+    expect(empty.renderFailedRate).toBeNull();
+  });
+
+  it('builds a vision-critic score distribution + mean from vision_critic events (T1.3), null when the critic never ran', () => {
+    const acc = new MetricsAccumulator('baseline', 3);
+    const events: RunEvent[] = [
+      { type: 'generated', target },
+      { type: 'vision_critic', target, score: 4, issues: [], passed: true },
+      { type: 'ingested', target, slug: 's1' },
+      { type: 'generated', target },
+      { type: 'vision_critic', target, score: 2, issues: ['overlap'], passed: false },
+      { type: 'generated', target },
+      { type: 'vision_critic', target, score: 4, issues: [], passed: true },
+      { type: 'ingested', target, slug: 's2' },
+    ];
+    for (const e of events) acc.add(e);
+    const m = acc.finalize(summary({ generated: 3, ingested: 2, dropped: 1 }));
+    expect(m.visionScoreDistribution).toEqual({ '2': 1, '4': 2 });
+    expect(m.visionScoreMean).toBeCloseTo((4 + 2 + 4) / 3, 5);
+
+    const empty = new MetricsAccumulator('empty', 0).finalize(summary());
+    expect(empty.visionScoreDistribution).toBeNull();
+    expect(empty.visionScoreMean).toBeNull();
+  });
 });
 
 describe('formatComparisonTable', () => {
@@ -133,5 +171,7 @@ describe('formatComparisonTable', () => {
     expect(table).toContain('repair');
     expect(table).toContain('content-lint');
     expect(table).toContain('cost');
+    expect(table).toContain('vision score');
+    expect(table).toContain('render-failed');
   });
 });

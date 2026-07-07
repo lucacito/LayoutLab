@@ -18,6 +18,7 @@ import { uploadLayout, uploadScreenshot } from './upload';
 import { realRenderDeps, renderLayout } from './render';
 import { resolveLayoutImages, pexelsSearcher } from './images';
 import { postIngest } from './ingest';
+import { claudeVisionCritic } from './vision-critic';
 import type { RunDeps, RunEvent } from './run';
 
 export async function withTempFile<T>(json: string, fn: (file: string) => Promise<T>): Promise<T> {
@@ -98,17 +99,34 @@ export async function buildRunDeps(opts: BuildRunDepsOptions): Promise<{ deps: R
           try {
             const { shots, perceptualHash } = await renderLayout({ title, postContent }, renderer.deps);
             const keys: string[] = [];
+            // T1.3: also persist each shot to a local temp file — the vision
+            // critic runs through the `claude` CLI (constraint #1) and needs
+            // real FILE PATHS it can Read, not the blob keys uploadScreenshot
+            // returns. Cleaned up by run.ts once it's done with them.
+            const shotDir = await mkdtemp(join(tmpdir(), 'll-shot-'));
+            const screenshotPaths: string[] = [];
             for (const label of ['desktop', 'mobile'] as const) {
               const shot = shots.find((s) => s.label === label);
-              if (shot) keys.push(await uploadScreenshot(hash, label, shot.buffer, { hasBlobToken }));
+              if (shot) {
+                keys.push(await uploadScreenshot(hash, label, shot.buffer, { hasBlobToken }));
+                const path = join(shotDir, `${label}.png`);
+                await writeFile(path, shot.buffer);
+                screenshotPaths.push(path);
+              }
             }
-            return { previewImageKeys: keys, perceptualHash };
+            return { previewImageKeys: keys, perceptualHash, screenshotPaths };
           } catch (e) {
             console.warn(`${logPrefix} render failed for ${hash.slice(0, 12)}: ${(e as Error).message}`);
             return { previewImageKeys: [] };
           }
         }
       : undefined,
+    // T1.3 vision critic — optional/injected like render/resolveImages; skipped
+    // entirely in dry-run (there's no renderer to produce real screenshots for
+    // it to score anyway). VISION_CRITIC_MODEL lets a cheaper model do scoring
+    // than the generator uses; the same PIPELINE_MAX_BUDGET_USD cap applies.
+    visionCritic: dryRun ? undefined : claudeVisionCritic({ model: process.env.VISION_CRITIC_MODEL, maxBudgetUsd: maxBudget }),
+    visionCriticMinScore: process.env.VISION_CRITIC_MIN_SCORE ? Number(process.env.VISION_CRITIC_MIN_SCORE) : 3,
     ingest: dryRun ? async () => ({ deduped: false }) : (payload) => postIngest(payload, { url: ingestUrl, token: ingestToken }),
     maxRepairs: 2,
     maxParseRetries: 2,

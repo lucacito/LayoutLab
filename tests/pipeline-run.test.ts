@@ -33,7 +33,7 @@ describe('runPipeline', () => {
   it('happy path: generate → validate → upload → ingest, summary counts 1 ingested', async () => {
     const deps = baseDeps();
     const s = await runPipeline(deps as any);
-    expect(s).toMatchObject({ generated: 1, dropped: 0, deduped: 0, ingested: 1 });
+    expect(s).toMatchObject({ generated: 1, dropped: 0, deduped: 0, ingested: 1, renderFailed: 0 });
     expect(deps.ingest).toHaveBeenCalledOnce();
   });
 
@@ -286,5 +286,135 @@ describe('runPipeline RunEvent emission', () => {
     const deps = baseDeps({ onEvent: (e: RunEvent) => events.push(e) }); // baseDeps' default llm never calls onUsage
     await runPipeline(deps as any);
     expect(events.some((e) => e.type === 'llm_usage')).toBe(false);
+  });
+});
+
+// T1.3: closing the swallowed-render hole (pipeline/deps.ts's real renderer
+// catches failures and returns `{ previewImageKeys: [] }`) — a renderer that IS
+// wired but produced no real previews must be dropped, counted separately from
+// `dropped`, and never ingested. Distinct from dry-run/unit-test semantics
+// where `deps.render` is entirely absent (no renderer wired at all) — that must
+// keep behaving exactly as before this task (placeholder previews from
+// `upload()` sail straight through, matching `npm run pipeline -- <mode> --dry-run`).
+describe('runPipeline render-miss gate (T1.3)', () => {
+  function llmSeq(...responses: string[]) {
+    const fn = vi.fn();
+    for (const r of responses) fn.mockResolvedValueOnce(r);
+    return { complete: fn };
+  }
+  function genJsonWithContent(n = 1) {
+    return JSON.stringify({ post_title: `T${n}`, post_content: `<!-- wp:divi/text {"content":"Ship faster with real, specific copy ${n}"} -->` });
+  }
+
+  it('drops when a wired renderer returns no real previews and does not ingest (renderFailed++)', async () => {
+    const llm = llmSeq(genJsonWithContent(), seoJson);
+    const render = vi.fn(async () => ({ previewImageKeys: [] })); // renderer wired but produced nothing real
+    const ingest = vi.fn(async () => ({ deduped: false }));
+    const s = await runPipeline(baseDeps({ llm, render, ingest }) as any);
+    expect(s.renderFailed).toBe(1);
+    expect(s.ingested).toBe(0);
+    expect(ingest).not.toHaveBeenCalled();
+  });
+
+  it('does NOT drop when no renderer is wired at all (dry-run/unit-test semantics preserved)', async () => {
+    // baseDeps() supplies no `render` key at all — must behave exactly as before T1.3.
+    const ingest = vi.fn(async () => ({ deduped: false }));
+    const s = await runPipeline(baseDeps({ ingest }) as any);
+    expect(s.renderFailed).toBe(0);
+    expect(s.ingested).toBe(1);
+    expect(ingest).toHaveBeenCalledOnce();
+  });
+
+  it('emits a render_failed RunEvent (not a generic dropped event) on a render-miss', async () => {
+    const events: RunEvent[] = [];
+    const llm = llmSeq(genJsonWithContent(), seoJson);
+    const render = vi.fn(async () => ({ previewImageKeys: [] }));
+    const deps = baseDeps({ llm, render, onEvent: (e: RunEvent) => events.push(e) });
+    await runPipeline(deps as any);
+    expect(events.some((e) => e.type === 'render_failed')).toBe(true);
+    expect(events.some((e) => e.type === 'dropped')).toBe(false);
+  });
+});
+
+// T1.3: after render (and after the T1.2 near-dupe gate — cheapest-first), score
+// the real screenshots through the injected vision critic and drop anything
+// below VISION_CRITIC_MIN_SCORE. Critic is optional/injected exactly like
+// deps.render/deps.resolveImages — its absence must never change behavior.
+describe('runPipeline vision critic gate (T1.3)', () => {
+  function llmSeq(...responses: string[]) {
+    const fn = vi.fn();
+    for (const r of responses) fn.mockResolvedValueOnce(r);
+    return { complete: fn };
+  }
+  function genJsonWithContent(n = 1) {
+    return JSON.stringify({ post_title: `T${n}`, post_content: `<!-- wp:divi/text {"content":"Ship faster with real, specific copy ${n}"} -->` });
+  }
+  function renderWithShots(paths: string[], perceptualHash = 'a'.repeat(64)) {
+    return vi.fn(async () => ({ previewImageKeys: ['p'], perceptualHash, screenshotPaths: paths }));
+  }
+
+  it('drops a layout scoring below the default threshold (3) and never ingests it', async () => {
+    const llm = llmSeq(genJsonWithContent(), seoJson);
+    const render = renderWithShots(['/tmp/d.png', '/tmp/m.png']);
+    const visionCritic = vi.fn(async () => ({ score: 2, issues: ['overlapping text'] }));
+    const ingest = vi.fn(async () => ({ deduped: false }));
+    const s = await runPipeline(baseDeps({ llm, render, visionCritic, ingest }) as any);
+    expect(visionCritic).toHaveBeenCalledWith(
+      ['/tmp/d.png', '/tmp/m.png'],
+      expect.objectContaining({ type: 'hero', niche: 'saas', style: 'minimal' }),
+    );
+    expect(s.dropped).toBe(1);
+    expect(s.ingested).toBe(0);
+    expect(ingest).not.toHaveBeenCalled();
+  });
+
+  it('ingests a layout scoring at/above the default threshold', async () => {
+    const llm = llmSeq(genJsonWithContent(), seoJson);
+    const render = renderWithShots(['/tmp/d.png', '/tmp/m.png']);
+    const visionCritic = vi.fn(async () => ({ score: 4, issues: [] }));
+    const ingest = vi.fn(async () => ({ deduped: false }));
+    const s = await runPipeline(baseDeps({ llm, render, visionCritic, ingest }) as any);
+    expect(s.ingested).toBe(1);
+    expect(s.dropped).toBe(0);
+    expect(ingest).toHaveBeenCalledOnce();
+  });
+
+  it('respects a configurable threshold via deps.visionCriticMinScore', async () => {
+    const llm = llmSeq(genJsonWithContent(), seoJson);
+    const render = renderWithShots(['/tmp/d.png']);
+    const visionCritic = vi.fn(async () => ({ score: 3, issues: [] }));
+    const ingest = vi.fn(async () => ({ deduped: false }));
+    const s = await runPipeline(baseDeps({ llm, render, visionCritic, ingest, visionCriticMinScore: 4 }) as any);
+    expect(s.dropped).toBe(1);
+    expect(s.ingested).toBe(0);
+  });
+
+  it('is skipped (no-op) when deps.visionCritic is absent, even with a wired renderer', async () => {
+    const llm = llmSeq(genJsonWithContent(), seoJson);
+    const render = renderWithShots(['/tmp/d.png']);
+    const ingest = vi.fn(async () => ({ deduped: false }));
+    const s = await runPipeline(baseDeps({ llm, render, ingest }) as any);
+    expect(s.ingested).toBe(1);
+    expect(s.dropped).toBe(0);
+  });
+
+  it('emits a vision_critic RunEvent for both pass and drop outcomes', async () => {
+    const events: RunEvent[] = [];
+    const llm = llmSeq(genJsonWithContent(), seoJson);
+    const render = renderWithShots(['/tmp/d.png']);
+    const visionCritic = vi.fn(async () => ({ score: 2, issues: ['clipping'] }));
+    const deps = baseDeps({ llm, render, visionCritic, onEvent: (e: RunEvent) => events.push(e) });
+    await runPipeline(deps as any);
+    const vc = events.find((e) => e.type === 'vision_critic');
+    expect(vc).toMatchObject({ score: 2, issues: ['clipping'], passed: false });
+  });
+
+  it('never runs the critic on a render-miss (render-miss drop happens first, cheapest-first ordering)', async () => {
+    const llm = llmSeq(genJsonWithContent(), seoJson);
+    const render = vi.fn(async () => ({ previewImageKeys: [] }));
+    const visionCritic = vi.fn(async () => ({ score: 5, issues: [] }));
+    const s = await runPipeline(baseDeps({ llm, render, visionCritic }) as any);
+    expect(visionCritic).not.toHaveBeenCalled();
+    expect(s.renderFailed).toBe(1);
   });
 });

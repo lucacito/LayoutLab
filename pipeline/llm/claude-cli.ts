@@ -19,11 +19,16 @@ const defaultRun: RunCommand = (cmd, args, input) =>
 export function claudeCliClient(opts: { run?: RunCommand; model?: string } = {}): LlmClient {
   const run = opts.run ?? defaultRun;
   return {
-    async complete({ prompt, system, maxBudgetUsd, onUsage }) {
+    async complete({ prompt, system, maxBudgetUsd, onUsage, allowedTools }) {
       const args = ['-p', '--output-format', 'json'];
       if (maxBudgetUsd != null) args.push('--max-budget-usd', String(maxBudgetUsd));
       if (system) args.push('--append-system-prompt', system);
       if (opts.model) args.push('--model', opts.model);
+      // T1.3 vision critic: pre-approve specific tools (e.g. Read) for this call so
+      // the headless agent can open screenshot files without an interactive
+      // permission prompt it has no TTY to answer. Additive — omitted by every
+      // other existing caller, so their invocation is byte-for-byte unchanged.
+      if (allowedTools?.length) args.push('--allowedTools', allowedTools.join(','));
       const { stdout, stderr, code } = await run('claude', args, prompt);
       // On failure the CLI often reports the reason on stdout (e.g. usage-limit
       // messages with --output-format json), not stderr — surface whichever has it.
