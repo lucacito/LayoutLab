@@ -4,17 +4,10 @@ import { resolveIngestStatus } from '@/lib/ingest/status';
 import sample from './fixtures/sample-ingest.json';
 
 describe('resolveIngestStatus', () => {
-  it('lands as pending by default (human approval gate)', () => {
-    expect(resolveIngestStatus(undefined)).toEqual({ status: 'pending' });
-    expect(resolveIngestStatus('false')).toEqual({ status: 'pending' });
-    expect(resolveIngestStatus('0')).toEqual({ status: 'pending' });
-  });
-  it('auto-publishes with a publishedAt timestamp when auto-approve is enabled', () => {
-    for (const on of ['1', 'true', 'TRUE']) {
-      const r = resolveIngestStatus(on);
-      expect(r.status).toBe('published');
-      expect(r.publishedAt).toBeInstanceOf(Date);
-    }
+  it('always publishes immediately (no admin review queue)', () => {
+    const r = resolveIngestStatus();
+    expect(r.status).toBe('published');
+    expect(r.publishedAt).toBeInstanceOf(Date);
   });
 });
 
@@ -53,12 +46,12 @@ describe('POST /api/ingest — auth + validation (no DB)', () => {
 
 const hasDb = !!process.env.POSTGRES_URL;
 describe.skipIf(!hasDb)('POST /api/ingest — persistence (needs POSTGRES_URL)', () => {
-  it('201 creates a pending layout, 200 dedupes on repeat', async () => {
+  it('201 creates a published layout, 200 dedupes on repeat', async () => {
     const unique = { ...(sample as any), slug: `e2e-${Date.now()}`, contentHash: `e2e-${Date.now()}` };
     const first = await POST(post(unique));
     expect(first.status).toBe(201);
     const firstBody = await first.json();
-    expect(firstBody.status).toBe('pending');
+    expect(firstBody.status).toBe('published');
     expect(firstBody.deduped).toBe(false);
 
     const second = await POST(post(unique));

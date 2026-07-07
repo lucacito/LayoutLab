@@ -47,7 +47,7 @@ export async function POST(req: Request): Promise<Response> {
   }
 
   const id = randomUUID();
-  const { status, publishedAt } = resolveIngestStatus(env.INGEST_AUTO_APPROVE);
+  const { status, publishedAt } = resolveIngestStatus();
   await db
     .insert(layouts)
     .values({

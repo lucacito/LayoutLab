@@ -16,7 +16,7 @@ export function AccountNav() {
   return (
     <>
       {user.role === 'admin' && (
-        <Link href="/admin/queue" className={`${linkCls} text-action`}>Admin</Link>
+        <Link href="/admin" className={`${linkCls} text-action`}>Admin</Link>
       )}
       <Link href="/account" className={linkCls}>Account</Link>
     </>

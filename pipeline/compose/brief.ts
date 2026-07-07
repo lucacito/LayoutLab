@@ -1,6 +1,18 @@
 import type { Target } from '@/pipeline/recipes';
 import { extractJson, LlmError } from '@/pipeline/llm';
 
+/** A shared, page-wide design system threaded into EVERY section so a composed
+ *  landing reads as one crafted page (consistent colors, tints, dark panel) —
+ *  the visual counterpart to the brand cohesion the Brief already provides. */
+export interface Palette {
+  primary: string;   // main accent — primary buttons, icons, links, highlights
+  secondary: string; // supporting accent (secondary buttons, badges)
+  tint: string;      // soft panel background used for the alternating rhythm
+  dark: string;      // dark section / footer background
+  heading: string;   // heading text color
+  body: string;      // body text color
+}
+
 export interface Brief {
   businessType: string;
   businessName: string;
@@ -10,6 +22,26 @@ export interface Brief {
   primaryCta: string;
   accentColorHex: string;
   voice: string;
+  /** Optional shared design system carried across every section. Pinned briefs
+   *  (themes / single-landing scripts) set it; generated briefs derive one from
+   *  the accent via defaultPalette(). */
+  palette?: Palette;
+  /** Optional art-direction notes (aesthetic + layout motifs) echoed to every
+   *  section, e.g. "clean clinical, generous whitespace, soft rounded cards". */
+  designNotes?: string;
+}
+
+/** Derive a sensible light-UI palette from the accent when a brief doesn't pin
+ *  one, so generated (non-theme) landings still get the shared-system treatment. */
+export function defaultPalette(accentHex: string): Palette {
+  return {
+    primary: accentHex,
+    secondary: accentHex,
+    tint: '#F8FAFC',
+    dark: '#0F172A',
+    heading: '#0F172A',
+    body: '#334155',
+  };
 }
 
 const FIELDS: (keyof Brief)[] = [

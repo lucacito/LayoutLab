@@ -74,7 +74,7 @@ export function MobileNav() {
             <Icon name="sell" size={20} className="text-muted" /> Pricing
           </Link>
           {user?.role === 'admin' && (
-            <Link href="/admin/queue" onClick={close} className="flex items-center gap-2 border-t border-fog px-2 py-3 text-body font-medium text-action">
+            <Link href="/admin" onClick={close} className="flex items-center gap-2 border-t border-fog px-2 py-3 text-body font-medium text-action">
               <Icon name="shield_person" size={20} className="text-action" /> Admin
             </Link>
           )}

@@ -10,7 +10,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     <Container>
       <nav className="mb-6 flex gap-4 text-sm">
         <Link href="/admin" className="font-semibold text-navy hover:text-action">Admin</Link>
-        <Link href="/admin/queue" className="text-muted hover:text-action">Queue</Link>
+        <Link href="/admin/emails" className="text-muted hover:text-action">Emails</Link>
       </nav>
       <div className="bg-mist rounded-card p-6 mb-6">
         {children}

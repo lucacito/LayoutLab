@@ -5,7 +5,6 @@ import { statusCounts } from '@/lib/admin/queries';
 export default async function AdminDashboard() {
   const counts = await statusCounts();
   const cards: { label: string; key: keyof typeof counts; href?: string }[] = [
-    { label: 'Pending', key: 'pending', href: '/admin/queue' },
     { label: 'Published', key: 'published' },
     { label: 'Approved (de-listed)', key: 'approved' },
     { label: 'Rejected', key: 'rejected' },
@@ -25,7 +24,6 @@ export default async function AdminDashboard() {
         })}
       </div>
       <div className="mt-6 flex gap-5">
-        <Link href="/admin/queue" className="text-small font-semibold text-action hover:underline">Approval queue →</Link>
         <Link href="/admin/emails" className="text-small font-semibold text-action hover:underline">Emails &amp; downloads →</Link>
       </div>
     </main>

@@ -1,5 +1,6 @@
 import type { Target } from './matrix';
 import type { Violation } from '@/pipeline/validate';
+import { getLibraryExemplars, libraryExemplarsEnabled } from '@/pipeline/library/exemplars';
 
 export interface Recipe {
   name: string;
@@ -127,9 +128,16 @@ function directives(target: Target): string {
 }
 
 export function buildGenerationPrompt(target: Target, guide: Guide): { system: string; prompt: string } {
-  const examples = pickExamples(target, guide)
-    .map((e, i) => `Example ${i + 1}:\n${e}`)
-    .join('\n\n');
+  const recipeExamples = pickExamples(target, guide).map((e, i) => `Example ${i + 1}:\n${e}`);
+  // Optionally augment the curated recipes with REAL, validated sections from the
+  // converted DiviFlash library (USE_LIBRARY_EXEMPLARS=1) — richer real structure.
+  const libExamples = libraryExemplarsEnabled()
+    ? getLibraryExemplars(target, {
+        k: Number(process.env.LIBRARY_EXEMPLAR_K ?? '1'),
+        maxChars: Number(process.env.LIBRARY_EXEMPLAR_MAXCHARS ?? '6000'),
+      }).map((e, i) => `Real-world example ${i + 1}:\n${e}`)
+    : [];
+  const examples = [...recipeExamples, ...libExamples].join('\n\n');
   const prompt = [
     `Generate a Divi 5 "${target.type}" section for a ${target.style} ${target.niche} website.`,
     directives(target),

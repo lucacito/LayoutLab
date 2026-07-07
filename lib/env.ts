@@ -21,9 +21,6 @@ const schema = z.object({
   RESEND_FROM: z.string().optional(),
   LOOPS_API_KEY: z.string().optional(),
   INGEST_API_TOKEN: z.string().optional(),
-  // Set to '1'/'true' to auto-publish layouts on ingest (skip the admin queue).
-  // Default (unset) keeps the human approval gate: ingests land as `pending`.
-  INGEST_AUTO_APPROVE: z.string().optional(),
   ADMIN_EMAILS: z.string().optional(),
 });
 

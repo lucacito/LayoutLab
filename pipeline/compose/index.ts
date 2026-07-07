@@ -11,9 +11,9 @@ import { flowForBusinessType, type Step } from './flow';
 import { buildSectionRolePrompt } from './section-prompt';
 import { assembleSections } from './assemble';
 
-export type { Brief } from './brief';
+export type { Brief, Palette } from './brief';
 export type { Step } from './flow';
-export { buildBriefPrompt, parseBrief } from './brief';
+export { buildBriefPrompt, parseBrief, defaultPalette } from './brief';
 export { flowForBusinessType } from './flow';
 export { buildSectionRolePrompt } from './section-prompt';
 export { assembleSections } from './assemble';
@@ -104,13 +104,13 @@ export async function composeLanding(target: Target, deps: ComposeDeps): Promise
   const flow = deps.flow ?? flowForBusinessType(brief.businessType);
   const brandFacts = deps.brandFacts ? ` ${deps.brandFacts}` : '';
   const sections: string[] = [];
-  for (const step of flow) {
+  for (const [index, step] of flow.entries()) {
     const sectionTarget: Target = {
       type: step.sectionType,
       niche: target.niche,
       style: target.style,
       color: target.color,
-      layout: buildSectionRolePrompt(step, brief) + brandFacts,
+      layout: buildSectionRolePrompt(step, brief, { index, total: flow.length }) + brandFacts,
     };
     try {
       const json = await generateValidSection(sectionTarget, deps);
