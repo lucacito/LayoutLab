@@ -1,12 +1,18 @@
 // Index the converted D5 corpus (pipeline/library/d5/*.json) into SECTION-level
 // exemplars: parse source filename → {pageType, industry}, slice into sections,
-// classify each section's kind by its module palette. Writes pipeline/library/
-// index.json (metadata + markup) for the retrieval step. No LLM.
+// classify each section's kind by its module palette, build a lexical `descriptor`
+// per section, and BM25-index those descriptors. Writes pipeline/library/index.json
+// (metadata + markup, for the few-shot text) and pipeline/library/index-bm25.json
+// (T3.4 — precomputed BM25 corpus statistics for semantic-ish retrieval; see
+// pipeline/library/exemplars.ts and pipeline/library/bm25.ts). No LLM, no network —
+// both outputs regenerate deterministically from pipeline/library/d5/*.json.
 import { readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { buildBm25Index } from '@/pipeline/library/bm25';
 
 const DIR = 'pipeline/library/d5';
 const OUT = 'pipeline/library/index.json';
+const BM25_OUT = 'pipeline/library/index-bm25.json';
 
 function parseSource(src: string): { pageType: string; industry: string } {
   const parts = src.split(/\s*-\s*/).map((s) => s.trim());
@@ -72,11 +78,59 @@ function classify(pal: Record<string, number>, section: string, index: number, t
   return 'other';
 }
 
+// Pull human-readable text out of a section's block markup. Divi/Gutenberg block
+// attributes JSON-encode inner HTML as a `"value":"<h1>...</h1>"`-shaped string
+// (often itself embedded inside an already-parsed JSON string, so escapes like
+// < show up as literal characters in `markup`) — re-wrap each candidate value
+// in quotes and JSON.parse it to decode escapes, then strip tags. This is a cheap
+// heuristic (no HTML parser) but is enough to surface real headings/body copy
+// (e.g. "Dental Checkup Today") into the BM25 descriptor, well beyond the bare
+// industry slug / module-name vocabulary.
+function extractText(markup: string): string {
+  const out: string[] = [];
+  const re = /"value":"((?:\\.|[^"\\])*)"/g;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(markup))) {
+    const raw = m[1];
+    if (!raw.includes('\\u003c') && !raw.includes('<')) continue; // only HTML-bearing values
+    let decoded: string;
+    try {
+      decoded = JSON.parse(`"${raw}"`);
+    } catch {
+      continue;
+    }
+    const text = decoded
+      .replace(/<[^>]*>/g, ' ')
+      .replace(/&[a-z]+;/gi, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+    if (text) out.push(text);
+  }
+  // Sections often repeat the same card/column text 2-4x (one per column) —
+  // de-dupe so the descriptor isn't dominated by a single repeated phrase.
+  return [...new Set(out)].join(' ').slice(0, 500);
+}
+
+// Descriptor text indexed by BM25 (T3.4). Field set, in order of decreasing
+// specificity: pageType, industry (hyphens split to words), kind, the module
+// palette (each module name repeated by its count, so a section with 4 `blurb`
+// modules weighs "blurb" 4x — TF signal for "how much of this kind of content"),
+// and up to 500 chars of real extracted heading/body text. All lexical, no
+// network — see pipeline/library/bm25.ts for why (T3.4 controller decision: BM25
+// over embeddings, to stay dependency/network-free).
+function buildDescriptor(pageType: string, industry: string, kind: string, pal: Record<string, number>, text: string): string {
+  const paletteWords = Object.entries(pal)
+    .flatMap(([mod, count]) => Array(count).fill(mod.replace(/-/g, ' ')))
+    .join(' ');
+  return [pageType, industry.replace(/-/g, ' '), kind, paletteWords, text].filter(Boolean).join(' ');
+}
+
 function main() {
   const files = readdirSync(DIR).filter((f) => f.endsWith('.json'));
   const exemplars: Array<{
     slug: string; source: string; pageType: string; industry: string;
-    sectionIndex: number; kind: string; palette: Record<string, number>; chars: number; markup: string;
+    sectionIndex: number; kind: string; palette: Record<string, number>; chars: number;
+    key: string; descriptor: string; markup: string;
   }> = [];
   for (const file of files) {
     const slug = file.replace(/\.json$/, '');
@@ -85,10 +139,24 @@ function main() {
     const secs = sliceSections(post_content);
     secs.forEach((markup, i) => {
       const pal = palette(markup);
-      exemplars.push({ slug, source, pageType, industry, sectionIndex: i, kind: classify(pal, markup, i, secs.length), palette: pal, chars: markup.length, markup });
+      const kind = classify(pal, markup, i, secs.length);
+      const text = extractText(markup);
+      const descriptor = buildDescriptor(pageType, industry, kind, pal, text);
+      exemplars.push({
+        slug, source, pageType, industry, sectionIndex: i, kind, palette: pal, chars: markup.length,
+        key: `${slug}#${i}`, descriptor, markup,
+      });
     });
   }
   writeFileSync(OUT, JSON.stringify({ generatedFrom: DIR, pages: files.length, exemplars }, null, 2));
+
+  // T3.4 — BM25 index over the descriptors, precomputed offline and stored
+  // alongside index.json. Same-shape docs regenerate byte-for-byte from the same
+  // corpus, so this stays deterministic/repeatable (`bash scripts/index-library.sh`
+  // regenerates both files together — they can never drift out of sync).
+  const bm25 = buildBm25Index(exemplars.map((e) => ({ key: e.key, text: e.descriptor })));
+  writeFileSync(BM25_OUT, JSON.stringify({ generatedFrom: OUT, ...bm25 }, null, 2));
+  console.log(`BM25-indexed ${exemplars.length} descriptors → ${BM25_OUT} (vocab ${Object.keys(bm25.df).length} terms, avgDocLen ${bm25.avgDocLen.toFixed(1)})`);
 
   // Report distributions.
   const byKind: Record<string, number> = {};

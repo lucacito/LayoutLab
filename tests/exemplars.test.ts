@@ -116,6 +116,48 @@ describe('KIND_BY_TYPE — unmapped-kind regression guard', () => {
   });
 });
 
+describe('getLibraryExemplars — T3.4 BM25 retrieval keeps the kind gate', () => {
+  it('a hero target never returns a non-hero-kind markup, even though BM25 ranks across the whole corpus', () => {
+    const chosen = getLibraryExemplars({ type: 'hero', niche: 'fitness', style: 'minimal' }, { k: 5 });
+    expect(chosen.length).toBeGreaterThan(0);
+    for (const markup of chosen) expect(markup).toMatch(/Divi 5 hero section/);
+  });
+
+  it('a cta target never returns a non-cta-kind markup', () => {
+    const chosen = getLibraryExemplars({ type: 'cta', niche: 'agency', style: 'bold' }, { k: 5 });
+    expect(chosen.length).toBeGreaterThan(0);
+    for (const markup of chosen) expect(markup).toMatch(/Divi 5 cta section/);
+  });
+
+  it('real-corpus sanity check: a fitness/hero query prefers a fitness-industry exemplar at k=1', () => {
+    const [chosen] = getLibraryExemplars({ type: 'hero', niche: 'fitness', style: 'minimal' }, { k: 1 });
+    expect(chosen).toMatch(/premium fitness/);
+  });
+
+  it('falls back to cross-kind BM25 (rather than returning nothing) only when the kind-filtered pool is empty', () => {
+    // Temporarily map a synthetic type to a kind that does not exist anywhere in the
+    // corpus, to exercise the "kind pool empty" branch without touching a real type.
+    (KIND_BY_TYPE as Record<string, string[]>).__t34_test_kind__ = ['zzz-nonexistent-kind'];
+    try {
+      const spy = vi.spyOn(console, 'log').mockImplementation(() => {});
+      const chosen = getLibraryExemplars({ type: '__t34_test_kind__', niche: 'fitness', style: 'minimal' }, { k: 2 });
+      expect(chosen.length).toBeGreaterThan(0); // widened to the full corpus instead of returning []
+      const logged = spy.mock.calls.map((args) => String(args[0]));
+      expect(logged.some((l) => l.includes('cross-kind'))).toBe(true);
+      spy.mockRestore();
+    } finally {
+      delete (KIND_BY_TYPE as Record<string, string[]>).__t34_test_kind__;
+    }
+  });
+
+  it('is deterministic: the same target+k resolves to the same exemplar order every call', () => {
+    const target = { type: 'features', niche: 'agency', style: 'minimal' };
+    const a = getLibraryExemplars(target, { k: 4 });
+    const b = getLibraryExemplars(target, { k: 4 });
+    expect(a).toEqual(b);
+  });
+});
+
 describe('buildGenerationPrompt — T1.1 acceptance criterion', () => {
   it('a hero/saas/minimal prompt contains a "Real-world example" block with NO env vars set', () => {
     const guide = { style: 'STYLE', schema: 'SCHEMA', examples: [] };

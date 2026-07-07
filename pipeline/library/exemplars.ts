@@ -2,26 +2,84 @@
 // for a generation target, return the top-K real, validated section markups of a
 // matching kind — few-shot into buildGenerationPrompt to teach the generator real
 // structure. Gated by USE_LIBRARY_EXEMPLARS so it can be A/B'd.
+//
+// T3.4 — ranking within the kind gate is BM25 (lexical), not substring matching.
+// Controller decision: BM25 over embeddings. Rationale: an embeddings call would
+// need network/an API key at *some* point in the toolchain (even if only in the
+// offline indexer), which conflicts with the CLI-only/zero-network spirit of this
+// hardening pass and adds an external dependency; the brief explicitly sanctions
+// "a strong lexical scheme like BM25 over the section's industry+kind+module-palette"
+// as the no-network alternative. The BM25 corpus statistics (df/tf/docLen/avgDocLen)
+// are precomputed OFFLINE by scripts/index-library.ts into pipeline/library/
+// index-bm25.json; only the query-dependent scoring runs at generation time (see
+// pipeline/library/bm25.ts for the pure scoring functions).
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import type { Target } from '@/pipeline/recipes/matrix';
+import { scoreQuery, tokenize, type Bm25Index } from '@/pipeline/library/bm25';
 
 interface Exemplar {
   slug: string; source: string; pageType: string; industry: string;
-  kind: string; palette: Record<string, number>; chars: number; markup: string;
+  sectionIndex: number; kind: string; palette: Record<string, number>; chars: number;
+  key: string; descriptor: string; markup: string;
 }
 
-let cache: Exemplar[] | null = null;
-function load(): Exemplar[] {
+interface LibraryData {
+  exemplars: Exemplar[];
+  bm25: Bm25Index | null;
+}
+
+let cache: LibraryData | null = null;
+function load(): LibraryData {
   if (cache) return cache;
+  let exemplars: Exemplar[] = [];
+  let bm25: Bm25Index | null = null;
   try {
     const idx = JSON.parse(readFileSync(join(process.cwd(), 'pipeline/library/index.json'), 'utf8')) as { exemplars?: Exemplar[] };
     // Drop empty/structural sections (no content modules) — useless as exemplars.
-    cache = (idx.exemplars ?? []).filter((e) => Object.keys(e.palette).length > 0);
+    exemplars = (idx.exemplars ?? []).filter((e) => Object.keys(e.palette).length > 0);
   } catch {
-    cache = [];
+    exemplars = [];
   }
+  try {
+    bm25 = JSON.parse(readFileSync(join(process.cwd(), 'pipeline/library/index-bm25.json'), 'utf8')) as Bm25Index;
+  } catch {
+    // Missing/stale index-bm25.json degrades gracefully to a deterministic,
+    // chars-ascending order (rankByBm25 below) rather than throwing — retrieval
+    // still works, it just loses the relevance ranking until the index is rebuilt
+    // (`bash scripts/index-library.sh`).
+    bm25 = null;
+  }
+  cache = { exemplars, bm25 };
   return cache;
+}
+
+/** Stable per-exemplar key, matching what scripts/index-library.ts wrote into index-bm25.json. */
+function keyOf(e: Exemplar): string {
+  return e.key ?? `${e.slug}#${e.sectionIndex}`;
+}
+
+/** Query terms from the generation target: type/niche/style words + any directive keywords. */
+function buildQueryTerms(target: Target): string[] {
+  const parts = [target.type, target.niche, target.style, target.color, target.layout, target.variant?.group].filter(
+    (v): v is string => Boolean(v),
+  );
+  return tokenize(parts.join(' '));
+}
+
+/** Rank a candidate pool by BM25 relevance to the query; deterministic tie-break on size. */
+function rankByBm25(pool: Exemplar[], bm25: Bm25Index | null, queryTerms: string[]): Exemplar[] {
+  if (!bm25 || !queryTerms.length) {
+    // No BM25 signal available (index missing, or an empty query) — fall back to
+    // the same deterministic "prefer compact" order the old byFit used as its
+    // secondary sort key, so behavior degrades gracefully rather than randomly.
+    return [...pool].sort((a, b) => a.chars - b.chars);
+  }
+  const scores = scoreQuery(bm25, queryTerms, pool.map(keyOf));
+  return [...pool].sort((a, b) => {
+    const diff = (scores[keyOf(b)] ?? 0) - (scores[keyOf(a)] ?? 0);
+    return diff !== 0 ? diff : a.chars - b.chars;
+  });
 }
 
 // Map a generation target type → library section kinds that teach it. Exported so
@@ -51,7 +109,17 @@ export const KIND_BY_TYPE: Record<string, string[]> = {
   full_landing: ['hero', 'features', 'stats', 'pricing', 'cta', 'contact'],
 };
 
-/** Top-K real section markups matching the target's type; prefer niche≈industry, then compact. */
+/**
+ * Top-K real section markups for the target's type. Blend (T3.4): the kind gate
+ * runs FIRST — a hero target only ever ranks among hero-kind exemplars, never cta
+ * or pricing — and BM25 ranks *within* that kind-filtered pool by relevance to the
+ * target's type/niche/style words. Only when the kind-filtered pool is completely
+ * empty (a mapped kind with zero surviving corpus members — not the same as a type
+ * with NO mapped kind at all, e.g. testimonials/faq, which still short-circuit to
+ * zero exemplars below) do we widen to BM25 over the FULL corpus, so a type that DOES
+ * have a real mapped kind never silently returns nothing just because that exact
+ * kind bucket is momentarily empty.
+ */
 export function getLibraryExemplars(target: Target, opts: { k?: number; maxChars?: number } = {}): string[] {
   const k = opts.k ?? 2;
   const maxChars = opts.maxChars ?? 6000;
@@ -60,24 +128,26 @@ export function getLibraryExemplars(target: Target, opts: { k?: number; maxChars
     console.log(`[library] ${target.type} fell back to zero exemplars (no corpus kind mapped for this type)`);
     return [];
   }
-  const niche = (target.niche ?? '').toLowerCase();
-  const byKind = load().filter((e) => kinds.includes(e.kind));
-  const byFit = (a: Exemplar, b: Exemplar) => {
-    const am = a.industry.includes(niche) || niche.includes(a.industry) ? 0 : 1;
-    const bm = b.industry.includes(niche) || niche.includes(b.industry) ? 0 : 1;
-    return am - bm || a.chars - b.chars;
-  };
-  let pool = byKind.filter((e) => e.chars <= maxChars).sort(byFit);
+  const { exemplars, bm25 } = load();
+  const queryTerms = buildQueryTerms(target);
+  let byKind = exemplars.filter((e) => kinds.includes(e.kind));
+  const crossKindFallback = byKind.length === 0;
+  if (crossKindFallback) byKind = exemplars;
+
+  let pool = byKind.filter((e) => e.chars <= maxChars);
   // Some real kinds (e.g. pricing-table sections, which run ~11-12k chars) have NO
   // member under the compact default cap at all — don't zero out an otherwise-real,
   // available kind just because every instance is long; fall back to the smallest
   // real one(s) instead of injecting nothing.
-  if (!pool.length && byKind.length) pool = [...byKind].sort(byFit);
-  const chosen = pool.slice(0, k);
+  if (!pool.length && byKind.length) pool = byKind;
+
+  const ranked = rankByBm25(pool, bm25, queryTerms);
+  const chosen = ranked.slice(0, k);
   if (!chosen.length) {
     console.log(`[library] ${target.type} fell back to zero exemplars (no matching corpus sections ≤ ${maxChars} chars)`);
   } else {
-    console.log(`[library] ${target.type} (${target.niche}/${target.style}): injected ${chosen.length} exemplar(s) [kinds: ${kinds.join(', ')}]`);
+    const kindNote = crossKindFallback ? `${kinds.join(', ')} (kind pool empty → cross-kind BM25 fallback)` : kinds.join(', ');
+    console.log(`[library] ${target.type} (${target.niche}/${target.style}): injected ${chosen.length} exemplar(s) [kinds: ${kindNote}]`);
   }
   return chosen.map(
     (e) => `A REAL, validated Divi 5 ${e.kind} section (from a premium ${e.industry} ${e.pageType} layout) — imitate this real structure/attribute depth, but write your own copy:\n${e.markup}`,
