@@ -45,12 +45,19 @@ interface EvalConfigDef {
   env: Record<string, string | undefined>;
 }
 
+// The "off" config explicitly sets the flag to '0' rather than deleting it —
+// deleting it would just mean "whatever the current default is", which silently
+// stopped being a baseline the moment library exemplars (T1.1) flipped their
+// default to ON. An explicit '0'/'1' pair keeps this A/B meaningful regardless
+// of any flag's default. (Not unit-tested directly: importing this module runs
+// `main()` at module load — see the bottom of this file — so it's exercised via
+// `npx tsx scripts/eval-generator.ts --dry-run` instead; see its own header comment.)
 function configsToRun(): EvalConfigDef[] {
   const envVar = arg('env-var') ?? 'USE_LIBRARY_EXEMPLARS';
   const offLabel = arg('off-label') ?? 'baseline';
   const onLabel = arg('on-label') ?? `${envVar.toLowerCase()}-on`;
   return [
-    { label: offLabel, env: { [envVar]: undefined } },
+    { label: offLabel, env: { [envVar]: '0' } },
     { label: onLabel, env: { [envVar]: '1' } },
   ];
 }

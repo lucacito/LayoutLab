@@ -133,7 +133,7 @@ export function buildGenerationPrompt(target: Target, guide: Guide): { system: s
   // converted DiviFlash library (USE_LIBRARY_EXEMPLARS=1) — richer real structure.
   const libExamples = libraryExemplarsEnabled()
     ? getLibraryExemplars(target, {
-        k: Number(process.env.LIBRARY_EXEMPLAR_K ?? '1'),
+        k: Number(process.env.LIBRARY_EXEMPLAR_K ?? '2'),
         maxChars: Number(process.env.LIBRARY_EXEMPLAR_MAXCHARS ?? '6000'),
       }).map((e, i) => `Real-world example ${i + 1}:\n${e}`)
     : [];

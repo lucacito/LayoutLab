@@ -34,7 +34,7 @@ set -a; . ./.env.local; set +a
 export VALIDATOR_CMD="php \"$VALIDATOR\""
 export INGEST_URL="$APP_URL"
 
-echo "[nightly] generating (USE_LIBRARY_EXEMPLARS=${USE_LIBRARY_EXEMPLARS:-0}, budget=${PIPELINE_MAX_BUDGET_USD:-?})…"
+echo "[nightly] generating (USE_LIBRARY_EXEMPLARS=${USE_LIBRARY_EXEMPLARS:-1 (default-on)}, budget=${PIPELINE_MAX_BUDGET_USD:-?})…"
 # caffeinate keeps the Mac awake for the whole run (prevents idle sleep mid-batch).
 # Effective when on power; a lid-closed laptop on battery may still clamshell-sleep.
 caffeinate -i -s -- npm run pipeline -- vary --type="hero,cta,features,pricing,testimonials,faq,contact,gallery,footer,cards" --count=8 || echo "[nightly] generation ended (likely usage 429) — continuing to sync."
