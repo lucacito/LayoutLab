@@ -1,22 +1,19 @@
 import { listPacks, listPublishedLayouts, facetCounts, type LayoutRow } from '@/lib/catalog/queries';
 import { AXIS_META, NICHE_LABELS } from '@/lib/nav/menu-data';
 import { Container } from '@/components/ui/Container';
-import { Button } from '@/components/ui/Button';
 import { SectionTitle } from '@/components/ui/SectionTitle';
-import { IconFeature } from '@/components/ui/IconFeature';
 import { Icon } from '@/components/ui/Icon';
 import { FeaturedPacks } from '@/components/marketing/FeaturedPacks';
 import { RecentCarousel } from '@/components/RecentCarousel';
 import { CategorySection } from '@/components/CategorySection';
 import { ElementDirectory } from '@/components/ElementDirectory';
-import { SocialProof } from '@/components/marketing/SocialProof';
+import { WhyChoose } from '@/components/marketing/WhyChoose';
 import { ProblemSolutionProof } from '@/components/marketing/ProblemSolutionProof';
-import { HowItWorks } from '@/components/marketing/HowItWorks';
+import { PopularStartingPoints } from '@/components/marketing/PopularStartingPoints';
 import { TrustBadges } from '@/components/marketing/TrustBadges';
 import { Testimonials } from '@/components/marketing/Testimonials';
 import { FaqSection } from '@/components/marketing/FaqSection';
-import { CustomBuildCta } from '@/components/marketing/CustomBuildCta';
-import { CtaNote } from '@/components/ui/CtaNote';
+import { ClosingCta } from '@/components/marketing/ClosingCta';
 
 export const dynamic = 'force-dynamic';
 
@@ -29,15 +26,13 @@ const PILLS = [
   { label: 'Dark', href: '/style/dark' },
 ];
 
-// Stock backgrounds for the closing CTA band (Pexels).
-const CUSTOM_IMG = 'https://images.pexels.com/photos/34140/pexels-photo.jpg?auto=compress&cs=tinysrgb&dpr=2&w=1260';
+// Stock background for the single closing CTA band (Pexels).
 const BROWSE_IMG = 'https://images.pexels.com/photos/9052803/pexels-photo-9052803.jpeg?auto=compress&cs=tinysrgb&dpr=2&w=1260';
 
-const FEATURES = [
-  { title: 'Validated, every time', body: 'Each layout passes a deterministic Divi 5 validator before it reaches the catalog.' },
-  { title: 'Import-ready JSON', body: 'Download the layout and import it straight into Divi 5 — no cleanup.' },
-  { title: 'Browse by everything', body: 'Filter by type, industry, style and color to find the right starting point fast.' },
-];
+// Priority order for the curated "popular starting points" — the most broadly useful
+// section types first. NOT download-driven (we don't fabricate counts); it's a hand-ordered
+// spread so a first-time visitor lands on something usable fast.
+const POPULAR_TYPE_ORDER = ['hero', 'pricing', 'testimonials', 'cta', 'faq', 'contact', 'features', 'gallery'];
 
 export default async function HomePage() {
   // Premium multi-page "theme" packs get a dedicated promo band (newest first, so a
@@ -51,8 +46,7 @@ export default async function HomePage() {
     paidPacks = [];
   }
 
-  // Fetch published layouts once (newest-published first) and reuse for both the
-  // "Listed recently" carousel and the per-industry sections.
+  // Fetch published layouts once (newest-published first) and reuse across sections.
   let published: LayoutRow[] = [];
   try {
     published = await listPublishedLayouts();
@@ -62,6 +56,29 @@ export default async function HomePage() {
 
   // "Listed recently" = most-recently-published (listing time), not creation time.
   const recent = published.slice(0, 10);
+  const recentIds = new Set(recent.map((l) => l.id));
+
+  // Curated "popular starting points": one layout per priority type, avoiding the recent
+  // set so the two rows don't show the same cards. Fall back to fill to 4 if the catalog
+  // is thin on those types.
+  const popular: LayoutRow[] = [];
+  const usedIds = new Set<string>();
+  for (const t of POPULAR_TYPE_ORDER) {
+    const match = published.find((l) => l.type === t && !usedIds.has(l.id) && !recentIds.has(l.id));
+    if (match) {
+      popular.push(match);
+      usedIds.add(match.id);
+    }
+    if (popular.length >= 4) break;
+  }
+  if (popular.length < 4) {
+    for (const l of published) {
+      if (usedIds.has(l.id)) continue;
+      popular.push(l);
+      usedIds.add(l.id);
+      if (popular.length >= 4) break;
+    }
+  }
 
   // Group by industry → one homepage section per niche, busiest first.
   const industryMap = new Map<string, LayoutRow[]>();
@@ -84,7 +101,7 @@ export default async function HomePage() {
 
   return (
     <main>
-      {/* Hero — full-bleed */}
+      {/* Hero — full-bleed search */}
       <section className="relative isolate overflow-hidden bg-ink text-paper">
         {/* colored mesh base (shows until /hero-bg.jpg is added; the image covers it) */}
         <div
@@ -141,40 +158,39 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* Social proof + the classic problem → solution → proof flow */}
-      <SocialProof />
-      <ProblemSolutionProof />
+      {/* 1 — Why choose us: benefit-led opener with honest, live stats + primary CTA */}
+      <WhyChoose layoutCount={published.length} industryCount={industries.length} />
 
-      {/* How it works — 3 steps */}
-      <HowItWorks />
-
-      {/* Premium multi-page theme packs — the paid upsell, front and center */}
-      {paidPacks.length > 0 && <FeaturedPacks packs={paidPacks} />}
-
-      {/* Listed recently */}
+      {/* 2 — Recently listed, high up (people want something new) */}
       {recent.length > 0 && (
-        <section className="py-16">
+        <section className="py-12">
           <Container>
             <RecentCarousel layouts={recent} />
           </Container>
         </section>
       )}
 
-      {/* Trust signals */}
-      <TrustBadges />
+      {/* The three problem → solution → proof cards, after the recent list */}
+      <ProblemSolutionProof />
 
-      {/* Every kind of element — compact, exhaustive directory (megamenu-style) */}
+      {/* Find layouts by type (distinct tile treatment) — before the theme-pack band */}
       <ElementDirectory counts={counts} />
 
-      {/* Browse by industry — one section per niche */}
+      {/* 3 — Hero #2: the premium theme-pack band, taller & flagship-led */}
+      {paidPacks.length > 0 && <FeaturedPacks packs={paidPacks} />}
+
+      {/* Curated "popular starting points" — no fabricated download counts */}
+      <PopularStartingPoints layouts={popular} />
+
+      {/* 5 — Find layouts by industry (2 cards each + view all, tightened) */}
       {industries.length > 0 && (
-        <section className="border-y border-border bg-mist py-16">
+        <section className="border-y border-border bg-mist py-12">
           <Container>
-            <SectionTitle eyebrow="Industries" title="Browse by industry">
-              Find Divi 5 layouts built for your kind of business.
+            <SectionTitle eyebrow="By industry" title="Find layouts by industry">
+              Divi 5 layouts built for your kind of business.
             </SectionTitle>
           </Container>
-          <div className="mt-12 space-y-16">
+          <div className="mt-10 space-y-10">
             {industries.map(({ niche, items }) => (
               <CategorySection
                 key={niche}
@@ -183,49 +199,24 @@ export default async function HomePage() {
                 icon={AXIS_META.niche[niche]?.icon ?? 'category'}
                 href={`/niche/${niche}`}
                 count={items.length}
-                layouts={items.slice(0, 4)}
+                layouts={items.slice(0, 2)}
               />
             ))}
           </div>
         </section>
       )}
 
-      {/* Testimonials */}
+      {/* Testimonials — kept lower (still placeholder until real quotes land) */}
       <Testimonials />
 
-      {/* Features */}
-      <section className="py-16">
-        <Container className="grid grid-cols-1 gap-12 md:grid-cols-3">
-          {FEATURES.map((f) => (
-            <IconFeature
-              key={f.title}
-              icon={<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 13l4 4L19 7" /></svg>}
-              title={f.title}
-              body={f.body}
-            />
-          ))}
-        </Container>
-      </section>
+      {/* Honest trust signals before the closing ask */}
+      <TrustBadges />
 
       {/* FAQ */}
       <FaqSection />
 
-      {/* Custom build + final CTA — full-bleed, with stock imagery */}
-      <section className="px-4 py-16 sm:px-6 lg:px-8">
-        <div className="grid items-stretch gap-6 lg:grid-cols-2">
-          <CustomBuildCta image={CUSTOM_IMG} />
-          <div className="relative isolate flex h-full min-h-[360px] flex-col justify-center overflow-hidden rounded-card px-8 py-12 text-center text-paper">
-            <div className="absolute inset-0 -z-20 bg-cover bg-center transition-transform duration-700 hover:scale-105" style={{ backgroundImage: `url(${BROWSE_IMG})` }} />
-            <div className="absolute inset-0 -z-10 bg-gradient-to-tl from-ink/95 via-navy/90 to-action/55" />
-            <h2 className="text-h2 text-paper">Ready to skip the blank page?</h2>
-            <p className="mx-auto mt-4 max-w-md text-lead text-paper/85">Browse the catalog and import a validated Divi 5 layout in seconds.</p>
-            <div className="mt-8 flex flex-col items-center gap-3">
-              <Button href="/browse">Browse layouts</Button>
-              <CtaNote className="text-paper/80" />
-            </div>
-          </div>
-        </div>
-      </section>
+      {/* 10 — One strong closing CTA */}
+      <ClosingCta image={BROWSE_IMG} />
     </main>
   );
 }

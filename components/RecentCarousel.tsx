@@ -32,7 +32,10 @@ export function RecentCarousel({ layouts }: { layouts: LayoutRow[] }) {
         className="mt-6 flex snap-x gap-5 overflow-x-auto pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
         {layouts.map((l) => (
-          <div key={l.id} className="w-[280px] shrink-0 snap-start sm:w-[300px]">
+          <div
+            key={l.id}
+            className="w-[72%] shrink-0 snap-start sm:w-[calc((100%-1.25rem)/2)] md:w-[calc((100%-2*1.25rem)/3)] lg:w-[calc((100%-5*1.25rem)/6)]"
+          >
             <LayoutCard layout={l} flat />
           </div>
         ))}

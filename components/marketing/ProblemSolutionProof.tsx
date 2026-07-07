@@ -29,21 +29,21 @@ const STEPS = [
 
 export function ProblemSolutionProof() {
   return (
-    <section className="py-20">
+    <section className="py-14">
       <Container>
         <div className="grid gap-6 md:grid-cols-3">
           {STEPS.map((s) => (
-            <div key={s.key} className="rounded-card border border-border bg-paper p-7 shadow-soft">
-              <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-action/10 text-action">
-                <Icon name={s.icon} size={24} />
+            <div key={s.key} className="rounded-card border border-border bg-paper p-6 shadow-soft">
+              <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-action/10 text-action">
+                <Icon name={s.icon} size={22} />
               </span>
               <p className="mt-4 text-small font-semibold uppercase tracking-wide text-action">{s.label}</p>
-              <h3 className="mt-2 text-h3 text-navy">{s.title}</h3>
-              <p className="mt-3 text-body text-muted">{s.body}</p>
+              <h3 className="mt-1.5 text-lead font-semibold text-navy">{s.title}</h3>
+              <p className="mt-2 text-small text-muted">{s.body}</p>
             </div>
           ))}
         </div>
-        <div className="mt-10 flex flex-col items-center gap-3">
+        <div className="mt-8 flex flex-col items-center gap-3">
           <Button href="/browse">Browse free sections</Button>
           <CtaNote text="Free to start · No account needed" />
         </div>

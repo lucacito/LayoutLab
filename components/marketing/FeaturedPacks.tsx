@@ -8,7 +8,6 @@ import { Icon } from '@/components/ui/Icon';
 const BENEFITS = [
   'Every page shares one brand — voice, color and details all match',
   'Senior-level copy already written — no lorem ipsum, no "your content here"',
-  'Deterministically validated & screenshot-perfect',
   'One commercial license — unlimited sites you own or build for clients',
 ];
 
@@ -27,7 +26,7 @@ export function FeaturedPacks({ packs }: { packs: PackRow[] }) {
   const heroPrice = priceLabel(hero);
 
   return (
-    <section className="relative isolate overflow-hidden bg-ink py-20 text-paper">
+    <section className="relative isolate overflow-hidden bg-ink py-24 text-paper md:py-28">
       <div
         className="absolute inset-0 -z-10"
         style={{
@@ -40,7 +39,7 @@ export function FeaturedPacks({ packs }: { packs: PackRow[] }) {
           <span className="inline-flex items-center gap-1.5 rounded-full bg-paper/10 px-3 py-1 text-small font-semibold text-paper backdrop-blur">
             <Icon name="auto_awesome" size={16} className="text-action" /> Complete website themes
           </span>
-          <h2 className="mt-4 text-h2 text-paper">Launch a whole site this afternoon — not next month.</h2>
+          <h2 className="mt-4 text-h1 text-paper">Launch a whole site this afternoon — not next month.</h2>
           <p className="mt-3 text-lead text-paper/80">
             Premium multi-page Divi 5 packs where every page already speaks the same language. Swap in your brand and go live.
           </p>
@@ -56,7 +55,7 @@ export function FeaturedPacks({ packs }: { packs: PackRow[] }) {
               color="blue"
               label="Premium pack"
               sizes="(max-width: 1024px) 100vw, 50vw"
-              className="h-full min-h-[280px] w-full object-cover transition group-hover:scale-[1.02]"
+              className="h-full min-h-[380px] w-full object-cover transition group-hover:scale-[1.02] lg:min-h-[460px]"
             />
           </Link>
           <div className="flex flex-col justify-center p-8 lg:p-10">
