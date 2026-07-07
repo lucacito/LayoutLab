@@ -46,7 +46,6 @@
     "zod": "^3.23.0"
   },
   "devDependencies": {
-    "@anthropic-ai/sdk": "^0.65.0",
     "@playwright/test": "^1.48.0",
     "@testing-library/react": "^16.3.2",
     "@types/node": "^22.0.0",
@@ -64,6 +63,6 @@
     "vitest": "^2.1.0"
   },
   "comments": {
-    "_": "Versions are sensible starting points. Run `npm install` then pin to the latest stable in Phase 0. @anthropic-ai/sdk and playwright are used by the pipeline only."
+    "_": "Versions are sensible starting points. Run `npm install` then pin to the latest stable in Phase 0. playwright is used by the pipeline only. The pipeline calls the Anthropic API exclusively via the `claude` CLI (pipeline/llm/claude-cli.ts) — do NOT add @anthropic-ai/sdk or any direct HTTP calls (see .superpowers/sdd/constraints.md #1)."
   }
 }

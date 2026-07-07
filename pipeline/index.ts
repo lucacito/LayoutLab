@@ -2,7 +2,10 @@
 //   npm run pipeline -- drip --count=N [--dry-run]
 //   npm run pipeline -- batch [--dry-run]
 // A real run needs: the Docker WP+Divi env up (render), VALIDATOR_CMD set, the web
-// app running (ingest, INGEST_API_TOKEN), and env sourced. Layouts land as `pending`.
+// app running (ingest, INGEST_API_TOKEN), and env sourced. Ingest auto-publishes —
+// there is no `pending`/admin-review queue (see lib/ingest/status.ts); the pipeline's
+// own gates (validator, vision critic, near-dupe/boilerplate checks) are the only
+// quality gate before a layout goes live.
 import { db } from '@/db/client';
 import { layouts } from '@/db/schema';
 import { MATRIX, planTargets, buildVariants, buildVariantSet, type Target } from './recipes';

@@ -100,7 +100,15 @@ export interface RenderAndCaptureDeps {
    * injectable logger `run.ts` uses (`RunDeps.log`) instead of a bare
    * `console.warn`, so pipeline output goes through one consistent channel.
    * Defaults to `console.warn` (unchanged behavior) when not supplied — kept
-   * optional so existing callers/tests don't need updating. */
+   * optional so existing callers/tests don't need updating.
+   *
+   * NOTE (final-review fix): `RunDeps.log` (what `buildRunDeps` actually wires
+   * in here) already prepends `logPrefix` itself — see its definition in
+   * `buildRunDeps` below. So when `log` IS supplied, `logPrefix` is deliberately
+   * left OUT of the message passed to it (the caller's logger owns prefixing);
+   * `logPrefix` is only prepended on the `console.warn` fallback path, which has
+   * no built-in prefix of its own. Prepending it in both places produced
+   * `[pipeline] [pipeline] ...` lines. */
   log?: (message: string) => void;
 }
 
@@ -138,18 +146,21 @@ export async function renderAndCapture(
   deps: RenderAndCaptureDeps,
 ): Promise<RenderAndCaptureResult> {
   const doCapture = deps.captureScreenshots ?? captureScreenshots;
-  const doLog = deps.log ?? console.warn;
+  // See the `log` field's doc above: a supplied `log` (e.g. `RunDeps.log`) already
+  // prepends `logPrefix` itself, so don't prefix again here — only the bare
+  // `console.warn` fallback (which has no prefix of its own) gets `logPrefix` added.
+  const doLog = (message: string) => (deps.log ? deps.log(message) : console.warn(`${deps.logPrefix} ${message}`));
   try {
     const result = await deps.renderLayout({ title: input.title, postContent: input.postContent }, deps.renderDeps);
     if (result.outcome === 'blank') {
-      doLog(`${deps.logPrefix} render blank for ${input.hash.slice(0, 12)}: page never confirmably painted content`);
+      doLog(`render blank for ${input.hash.slice(0, 12)}: page never confirmably painted content`);
       return { previewImageKeys: [], outcome: 'blank' };
     }
     const { previewImageKeys, screenshotPaths } = await doCapture(result.shots, input.hash, { hasBlobToken: deps.hasBlobToken });
     return { previewImageKeys, perceptualHash: result.perceptualHash, screenshotPaths, outcome: 'ok' };
   } catch (e) {
     const message = (e as Error).message;
-    doLog(`${deps.logPrefix} render failed for ${input.hash.slice(0, 12)}: ${message}`);
+    doLog(`render failed for ${input.hash.slice(0, 12)}: ${message}`);
     return { previewImageKeys: [], error: message };
   }
 }
