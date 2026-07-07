@@ -7,6 +7,7 @@ import { buildRepairPrompt, buildContentRepairPrompt } from './recipes';
 import { extractJson } from './llm';
 import { generateLayout } from './generate';
 import { composeLanding } from '@/pipeline/compose';
+import type { Brief, Step } from '@/pipeline/compose';
 import { generateSeo } from './seo';
 import type { LayoutSeo } from './seo';
 import { contentHash, nearestDistance, perceptualDupeMaxDistance } from './dedupe';
@@ -231,6 +232,141 @@ export interface RunDeps {
 }
 
 /**
+ * T4.2: one work item for the shared per-layout orchestrator (`processItem`).
+ * Both entry paths build these and hand them to the SAME gate pipeline:
+ *  - the matrix/vary path (`runPipeline`) builds a bare `{ target }` — no pins,
+ *    so slug/title/axes all come from the SEO step and `composeExtras` is absent
+ *    (a `full_landing` matrix target composes its own brief);
+ *  - the theme path (`runThemePack` in pipeline/theme.ts) builds an item whose
+ *    `composeExtras` PINS the shared brief/brandFacts/flow (cohesion across the
+ *    pack's pages) and whose `pins` fix the deterministic brand+role slug/title
+ *    and the axes (`full_landing`, the pack's niche/style) so SEO can't drift
+ *    them per page.
+ * This is the seam that replaces theme.ts's former copy of the gate sequence —
+ * every gate added to `processItem` (render/near-dupe/vision-critic/SEO-floor/
+ * error classes) now applies to both paths automatically.
+ */
+export interface PipelineItem {
+  target: Target;
+  /** Theme-only: pinned compose options merged into `ComposeDeps` for a
+   * `full_landing` target. Absent for the matrix path (its `full_landing`
+   * targets generate their own brief). */
+  composeExtras?: { brief?: Brief; brandFacts?: string; flow?: Step[] };
+  /** Theme-only: fixed ingest slug/title/axes (deterministic brand+role, pinned
+   * niche/style) so the SEO step doesn't rename pages of a coherent pack. Absent
+   * for the matrix path, where these come from the SEO result + `variantSlug`. */
+  pins?: {
+    slug: string;
+    title: string;
+    type: string;
+    niche: string;
+    style: string;
+    /** Preferred color to lead the ingest `colors` array. */
+    color?: string;
+  };
+}
+
+/** Assemble the ingest payload from Phase A's SEO result + Phase B's blob/render
+ * outputs, applying an item's pins when present (theme) or falling back to the
+ * matrix defaults (`variantSlug` + the SEO-inferred axes). Extracted so both
+ * paths build byte-identical payloads through ONE code path. */
+function buildIngestPayload(
+  item: PipelineItem,
+  seo: LayoutSeo,
+  parts: { diviJsonBlobKey: string; previewImageKeys: string[]; hash: string; perceptualHash?: string },
+): IngestPayload {
+  const { target, pins } = item;
+  const type = pins?.type ?? seo.axes.type;
+  const niche = pins?.niche ?? seo.axes.niche;
+  const style = pins?.style ?? seo.axes.style;
+  const leadColor = pins?.color ?? target.color;
+  const colors = leadColor ? [leadColor, ...seo.axes.colors.filter((c) => c !== leadColor)] : seo.axes.colors;
+  return {
+    slug: pins?.slug ?? variantSlug(seo.slug, target),
+    title: pins?.title ?? seo.title,
+    description: seo.metaDescription,
+    type,
+    niche,
+    style,
+    colors,
+    diviJsonBlobKey: parts.diviJsonBlobKey,
+    previewImageKeys: parts.previewImageKeys,
+    contentHash: parts.hash,
+    perceptualHash: parts.perceptualHash,
+    variant: target.variant,
+    validatorPassed: true,
+    seo: { metaTitle: seo.title, metaDescription: seo.metaDescription, keywords: seo.keywords },
+    tags: [
+      { axis: 'type', slug: type },
+      { axis: 'niche', slug: niche },
+      { axis: 'style', slug: style },
+    ],
+  };
+}
+
+/** Shared, run-scoped state threaded through every `processItem` call: the deps,
+ * the growing `RunSummary`, the near-dupe pool (seeded once from the DB), and the
+ * resolved retry/near-dupe knobs. Built by `createRunContext`. */
+export interface RunContext {
+  deps: RunDeps;
+  summary: RunSummary;
+  /** Near-duplicate pool (T1.2). Seeded once from `deps.nearDuplicateHashes`,
+   * then grown with each accepted hash — but ONLY when `growNearDupPool` is
+   * true. Theme runs set it false so sibling pages of ONE pack (intentionally
+   * same-palette, shared header/footer bands) are never near-dupe-dropped
+   * against each other (T4.2 adjudication) — they're still checked against the
+   * seeded cross-pack pool, just never poison it for each other. */
+  nearDupPool: string[];
+  maxDistance: number;
+  maxRetries: number;
+  retryBaseDelayMs: number;
+  growNearDupPool: boolean;
+  log: (msg: string) => void;
+  onEvent: (event: RunEvent) => void;
+}
+
+export function newRunSummary(): RunSummary {
+  return {
+    generated: 0,
+    repaired: 0,
+    qualityDropped: 0,
+    errored: 0,
+    deduped: 0,
+    ingested: 0,
+    nearDuped: 0,
+    renderFailed: 0,
+    renderBlank: 0,
+  };
+}
+
+/** Build the shared run context: seed the near-dupe pool once (not per item) and
+ * resolve the retry/near-dupe knobs. `growNearDupPool` defaults true (matrix); the
+ * theme path passes false (see `RunContext.nearDupPool`). */
+export async function createRunContext(deps: RunDeps, opts?: { growNearDupPool?: boolean }): Promise<RunContext> {
+  return {
+    deps,
+    summary: newRunSummary(),
+    nearDupPool: deps.nearDuplicateHashes ? await deps.nearDuplicateHashes() : [],
+    maxDistance: perceptualDupeMaxDistance(),
+    maxRetries: deps.maxRetries ?? 2,
+    retryBaseDelayMs: deps.retryBaseDelayMs ?? 250,
+    growNearDupPool: opts?.growNearDupPool ?? true,
+    log: deps.log ?? (() => {}),
+    onEvent: deps.onEvent ?? (() => {}),
+  };
+}
+
+/** Terminal result of processing one item through the shared gate pipeline.
+ * `abort` propagates a usage-limit/auth run-abort up to the caller's loop;
+ * `slug` is the item's ingest slug (always the pinned one for themes, so the
+ * theme wrapper can record it in the pack even on a dedupe/skip outcome). */
+export interface ItemResult {
+  outcome: RunOutcome;
+  slug?: string;
+  abort: boolean;
+}
+
+/**
  * T2.2 review fix — retry-boundary redesign.
  *
  * The original T2.2 cut wrapped the ENTIRE per-target body in `withRetry`,
@@ -270,44 +406,40 @@ export interface RunDeps {
  *   closing hole #1 above: nothing that happens after a successful ingest can
  *   ever trigger another one.
  */
-export async function runPipeline(deps: RunDeps): Promise<RunSummary> {
-  const log = deps.log ?? (() => {});
-  const onEvent = deps.onEvent ?? (() => {});
-  const summary: RunSummary = {
-    generated: 0,
-    repaired: 0,
-    qualityDropped: 0,
-    errored: 0,
-    deduped: 0,
-    ingested: 0,
-    nearDuped: 0,
-    renderFailed: 0,
-    renderBlank: 0,
-  };
-  const maxDistance = perceptualDupeMaxDistance();
-  // Near-duplicate pool (T1.2): seeded once from the DB (or empty if the dep is
-  // omitted), then grown with every perceptual hash THIS run accepts, so later
-  // targets in the same batch are checked against earlier ones too.
-  const nearDupPool: string[] = deps.nearDuplicateHashes ? await deps.nearDuplicateHashes() : [];
-  const maxRetries = deps.maxRetries ?? 2;
-  const retryBaseDelayMs = deps.retryBaseDelayMs ?? 250;
-
+/**
+ * T4.2: the shared per-layout gate pipeline — ONE function both entry paths run
+ * (`runPipeline` for the matrix/vary batch, `runThemePack` for multi-page themes).
+ * Processes a SINGLE `PipelineItem` through Phase A (generate/compose → validate
+ * +repair → content-lint → mobile-stack → dedupe-hash → SEO) and Phase B (upload
+ * → render gate → near-dupe → vision critic → ingest), mutating `ctx.summary`/
+ * `ctx.nearDupPool` and emitting `RunEvent`s. Returns the item's terminal
+ * `outcome`, its ingest `slug`, and whether the run should `abort` (usage-limit/
+ * auth). All the retry-boundary and memoization design below is unchanged from the
+ * pre-T4.2 per-target loop body; it was extracted verbatim, parameterized only by
+ * the item's pins/composeExtras and the context's `growNearDupPool` flag.
+ */
+export async function processItem(item: PipelineItem, ctx: RunContext): Promise<ItemResult> {
+  const { deps, summary, nearDupPool, maxDistance, maxRetries, retryBaseDelayMs, log, onEvent } = ctx;
+  const target = item.target;
   // T2.2: a 'usage_limit' classification means every OTHER remaining target
   // would hit the exact same account-level wall — there's nothing to gain (and
-  // real budget/time to lose) by iterating the rest of `deps.targets` after
-  // that. T2.2 review fix (Minor): 'auth' gets the same treatment — an invalid
-  // API key can't recover mid-run either, so every remaining target would fail
-  // identically. 'budget' is deliberately NOT included: a per-call budget cap
-  // can legitimately be blown by one unusually expensive target while cheaper
-  // ones downstream would still succeed, so aborting on it would be too
-  // aggressive; it's left as one wasted attempt per remaining target instead
-  // (documented tradeoff, not a bug). Checked after each target's `finally`
-  // runs (so its own cleanup still happens) rather than via an early `return`
-  // from inside the loop.
-  let abortRun = false;
+  // real budget/time to lose) by iterating the rest of the batch after that.
+  // T2.2 review fix (Minor): 'auth' gets the same treatment — an invalid API key
+  // can't recover mid-run either. 'budget' is deliberately NOT included: a
+  // per-call budget cap can legitimately be blown by one unusually expensive
+  // target while cheaper ones downstream would still succeed. Signaled back to
+  // the caller's loop via the returned `abort` flag rather than an early return.
   const ABORT_CODES = new Set(['usage_limit', 'auth']);
+  let abort = false;
+  // Always the pinned slug for a theme item (known up front, so the theme wrapper
+  // can record the page in its pack even on a dedupe/skip); filled in on ingest
+  // for a matrix item (its slug isn't known until the SEO step runs).
+  let resultSlug: string | undefined = item.pins?.slug;
 
-  for (const target of deps.targets) {
+  // The block below is the pre-T4.2 per-target loop body, extracted verbatim
+  // (kept as a block to preserve its scope/indentation and keep the extraction
+  // diff reviewable against the old `runPipeline` loop).
+  {
     // Per-target usage meter (T4.1). Wraps deps.llm so every call this target makes
     // (generate, repairs, SEO — wherever this wrapped client is threaded through)
     // reports cost/tokens without any of those call sites needing to change. Emitted
@@ -391,6 +523,10 @@ export async function runPipeline(deps: RunDeps): Promise<RunSummary> {
               validate: deps.validate,
               maxRepairs: deps.maxRepairs,
               log,
+              // T4.2: theme items pin the shared brief/brandFacts/flow here (the
+              // cohesion source for a multi-page pack); absent for a matrix
+              // full_landing target, which composes its own brief.
+              ...(item.composeExtras ?? {}),
             })
           : await generateLayout(target, {
               llm: meteredLlm,
@@ -554,7 +690,10 @@ export async function runPipeline(deps: RunDeps): Promise<RunSummary> {
               // resolves with no previews: renderSucceeded stays false, and the
               // render-miss gate right below handles it.
               try {
-                const r = await deps.render({ title: parsed.post_title ?? seo.title, postContent: parsed.post_content, hash });
+                // T4.2: theme items render under their pinned brand+role title;
+                // matrix items use the generated post_title (falling back to SEO).
+                const renderTitle = item.pins?.title ?? parsed.post_title ?? seo.title;
+                const r = await deps.render({ title: renderTitle, postContent: parsed.post_content, hash });
                 if (r.previewImageKeys.length) {
                   renderMemo.succeeded = true;
                   renderMemo.previewImageKeys = r.previewImageKeys;
@@ -649,28 +788,15 @@ export async function runPipeline(deps: RunDeps): Promise<RunSummary> {
           }
         }
 
-        const payload: IngestPayload = {
-          slug: variantSlug(seo.slug, target),
-          title: seo.title,
-          description: seo.metaDescription,
-          type: seo.axes.type,
-          niche: seo.axes.niche,
-          style: seo.axes.style,
-          // Record the driven variation color first, then any colors the SEO step inferred.
-          colors: target.color ? [target.color, ...seo.axes.colors.filter((c) => c !== target.color)] : seo.axes.colors,
+        // T4.2: one payload builder for both paths — matrix defaults
+        // (`variantSlug` + SEO-inferred axes) or a theme item's pinned
+        // slug/title/axes. See `buildIngestPayload`.
+        const payload = buildIngestPayload(item, seo, {
           diviJsonBlobKey,
           previewImageKeys,
-          contentHash: hash,
+          hash,
           perceptualHash: renderMemo.perceptualHash,
-          variant: target.variant,
-          validatorPassed: true,
-          seo: { metaTitle: seo.title, metaDescription: seo.metaDescription, keywords: seo.keywords },
-          tags: [
-            { axis: 'type', slug: seo.axes.type },
-            { axis: 'niche', slug: seo.axes.niche },
-            { axis: 'style', slug: seo.axes.style },
-          ],
-        };
+        });
         await deps.ingest(payload);
         return { kind: 'ingested', seoSlug: seo.slug, perceptualHash: renderMemo.perceptualHash };
       };
@@ -726,10 +852,16 @@ export async function runPipeline(deps: RunDeps): Promise<RunSummary> {
           break;
         case 'ingested':
           // Only a layout that actually cleared ingest joins the near-dupe pool —
-          // see the NOTE above where the gate runs.
-          if (o.perceptualHash) nearDupPool.push(o.perceptualHash);
+          // see the NOTE above where the gate runs. T4.2: skipped entirely for
+          // theme runs (`growNearDupPool` false) so sibling pages of ONE pack —
+          // intentionally same-palette, shared header/footer bands — never
+          // near-dupe-drop each other.
+          if (o.perceptualHash && ctx.growNearDupPool) nearDupPool.push(o.perceptualHash);
           summary.ingested++;
           outcome = 'ingested';
+          // Matrix items learn their slug only here (post-SEO); theme items were
+          // already pinned. Either way `resultSlug` ends up correct for the caller.
+          if (!resultSlug) resultSlug = o.seoSlug;
           log(`ingested ${o.seoSlug}`);
           emit({ type: 'ingested', target, slug: o.seoSlug as string });
           break;
@@ -792,8 +924,8 @@ export async function runPipeline(deps: RunDeps): Promise<RunSummary> {
       // abort the rest of the run rather than burn time reproving that for
       // each one. See `ABORT_CODES` above for what's included and why.
       if (ABORT_CODES.has(classified.code)) {
-        log(`${classified.code} hit — aborting the remaining ${deps.targets.length} target(s) in this run`);
-        abortRun = true;
+        log(`${classified.code} hit — aborting the remaining target(s) in this run`);
+        abort = true;
       }
     } finally {
       if (sawUsage) emit({ type: 'llm_usage', target, usage, outcome });
@@ -818,7 +950,22 @@ export async function runPipeline(deps: RunDeps): Promise<RunSummary> {
       }
     }
 
-    if (abortRun) break;
+    return { outcome, slug: resultSlug, abort };
   }
-  return summary;
+}
+
+/**
+ * T4.2: the matrix/vary entry path — a thin loop over `deps.targets`, each run
+ * through the shared `processItem` gate pipeline. `growNearDupPool: true` keeps
+ * the pre-T4.2 behavior where a `vary` batch minting several near-identical
+ * layouts drops the later ones against the earlier ones. Aborts the remaining
+ * targets on a usage-limit/auth signal (see `processItem`'s `abort`).
+ */
+export async function runPipeline(deps: RunDeps): Promise<RunSummary> {
+  const ctx = await createRunContext(deps, { growNearDupPool: true });
+  for (const target of deps.targets) {
+    const { abort } = await processItem({ target }, ctx);
+    if (abort) break;
+  }
+  return ctx.summary;
 }
