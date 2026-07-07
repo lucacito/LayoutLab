@@ -62,6 +62,19 @@ describe('composeLanding', () => {
   });
 });
 
+describe('composeLanding flow selection (T3.2)', () => {
+  it('logs an unmatched business type via the log callback while still composing a valid landing', async () => {
+    const oddBrief = { ...brief, businessType: 'quantum widget concept' };
+    let n = 0;
+    const llm = { complete: vi.fn(async () => (n === 0 ? (n++, JSON.stringify(oddBrief)) : section(n++))) };
+    const log = vi.fn();
+    const { json } = await composeLanding(target as any, { llm, guide, log });
+    const doc = JSON.parse(json);
+    expect(doc.post_content).toContain('wp:divi/section');
+    expect(log).toHaveBeenCalledWith(expect.stringContaining('unmatched business type "quantum widget concept"'));
+  });
+});
+
 describe('composeLanding per-section validation', () => {
   const invalid = { valid: false, violations: [{ code: 'BLOCK_PARSE_ERROR', message: 'bad', path: '' }] };
   const ok = { valid: true, violations: [] };

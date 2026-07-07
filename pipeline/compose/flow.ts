@@ -1,3 +1,5 @@
+import { pickByRendezvous } from './palettes';
+
 export interface Step {
   role: string;
   sectionType: string;
@@ -24,25 +26,114 @@ const FAQ = S('faq', 'faq', 'Answer the real objections: is it hard, how long, w
 const PRICING = S('pricing', 'pricing', '2-3 plans in columns with the middle plan highlighted and feature checklists.');
 const FINAL = S('final_cta', 'cta', 'Restate the promise and the ONE action. Minimal distractions.', true);
 
-const FLOWS: Record<string, Step[]> = {
-  saas: [HERO, PROBLEM, SOLUTION, BENEFITS, PROOF, HOWITWORKS, PRICING, FAQ, FINAL],
-  'service/agency': [HERO, PROBLEM, BENEFITS, HOWITWORKS, PROOF, FAQ, FINAL],
-  'local business': [HERO, BENEFITS, FEATURES, PROOF, FAQ, FINAL],
-  'product/e-commerce': [HERO, PROBLEM, BENEFITS, FEATURES, PROOF, PRICING, FAQ, FINAL],
-  'course/coaching': [HERO, PROBLEM, SOLUTION, BENEFITS, PROOF, HOWITWORKS, PRICING, FAQ, FINAL],
-};
-const DEFAULT_FLOW = FLOWS['service/agency'];
-
-function normalize(bt: string): string {
-  const s = bt.toLowerCase();
-  if (s.includes('saas')) return 'saas';
-  if (s.includes('agency') || s.includes('service')) return 'service/agency';
-  if (s.includes('local') || s.includes('restaurant') || s.includes('gym') || s.includes('clinic')) return 'local business';
-  if (s.includes('commerce') || s.includes('product') || s.includes('shop')) return 'product/e-commerce';
-  if (s.includes('course') || s.includes('coaching')) return 'course/coaching';
-  return '';
+/** A named, stable-id flow spine — the same append-stability shape as
+ *  `StylePaletteVariant` (palettes.ts) and `RoleTreatment` (section-prompt.ts).
+ *  Never derive `id` from array position. */
+interface FlowVariant {
+  id: string;
+  steps: Step[];
 }
 
-export function flowForBusinessType(businessType: string): Step[] {
-  return FLOWS[normalize(businessType)] ?? DEFAULT_FLOW;
+// 2 spines per main business type — enough structural variety that two pages
+// of the same business type don't always walk the exact same persuasion
+// order. hero/final_cta are REQUIRED in every variant (compose/index.ts
+// enforces this at generation time too).
+export const FLOWS: Record<string, FlowVariant[]> = {
+  saas: [
+    // Classic SaaS: name the pain, frame the mechanism, then prove/price it.
+    { id: 'saas-problem-solution', steps: [HERO, PROBLEM, SOLUTION, BENEFITS, PROOF, HOWITWORKS, PRICING, FAQ, FINAL] },
+    // Benefits-first: skip the pain framing, lead with outcomes + capability detail.
+    { id: 'saas-benefits-first', steps: [HERO, BENEFITS, FEATURES, HOWITWORKS, PROOF, PRICING, FAQ, FINAL] },
+  ],
+  'service/agency': [
+    // Classic agency: pain -> outcome-led benefits -> process -> proof.
+    { id: 'service-agency-classic', steps: [HERO, PROBLEM, BENEFITS, HOWITWORKS, PROOF, FAQ, FINAL] },
+    // Proof-led: open with credibility before pitching, then process + feature detail.
+    { id: 'service-agency-proof-led', steps: [HERO, PROOF, BENEFITS, HOWITWORKS, FEATURES, FAQ, FINAL] },
+  ],
+  'local business': [
+    // Classic local: benefits, then detail, then proof.
+    { id: 'local-business-classic', steps: [HERO, BENEFITS, FEATURES, PROOF, FAQ, FINAL] },
+    // How-to-emphasis: leads with the process — fits appointment/booking-style
+    // businesses (salons, clinics) where "what happens when you book" sells.
+    { id: 'local-business-howto', steps: [HERO, HOWITWORKS, BENEFITS, PROOF, FAQ, FINAL] },
+  ],
+  'product/e-commerce': [
+    // Classic product: pain -> benefits -> feature detail -> proof -> price.
+    { id: 'product-ecommerce-classic', steps: [HERO, PROBLEM, BENEFITS, FEATURES, PROOF, PRICING, FAQ, FINAL] },
+    // Benefits-first: skip the pain framing, straight to outcomes then detail/price.
+    { id: 'product-ecommerce-benefits-first', steps: [HERO, BENEFITS, FEATURES, PROOF, PRICING, FAQ, FINAL] },
+  ],
+  'course/coaching': [
+    // Classic transformation spine: pain -> mechanism -> outcomes -> process -> price.
+    { id: 'course-coaching-classic', steps: [HERO, PROBLEM, SOLUTION, BENEFITS, PROOF, HOWITWORKS, PRICING, FAQ, FINAL] },
+    // Outcomes-first: skip the separate mechanism step, lead with benefits then process.
+    { id: 'course-coaching-outcomes-first', steps: [HERO, PROBLEM, BENEFITS, HOWITWORKS, PROOF, PRICING, FAQ, FINAL] },
+  ],
+};
+
+const DEFAULT_CATEGORY = 'service/agency';
+
+export type UnmatchedLogger = (businessType: string) => void;
+
+interface SignalRule {
+  pattern: RegExp;
+  category: string;
+}
+
+// Priority-ordered keyword signals. The first 5 rules are the primary
+// business-type buckets (same priority order as the original normalize()).
+// The rules after that catch business-type strings from the Brief's own
+// vocabulary (see brief.ts's businessType prompt list: SaaS, service/agency,
+// local business, product/e-commerce, course/coaching, event, portfolio,
+// non-profit) or free-form LLM output that doesn't literally say one of the
+// 5 bucket names, routing each to whichever EXISTING flow fits best instead
+// of silently collapsing everything into service/agency:
+//   - booking-ish   -> local business (its "howto" variant fits an appointment flow)
+//   - event-ish     -> product/e-commerce (events are usually ticketed/priced)
+//   - portfolio-ish -> service/agency (showcase work, sell services)
+//   - non-profit-ish -> service/agency (cause + impact + ask, no pricing table)
+// Anything matching NONE of these is a genuinely new shape — log it (via
+// onUnmatched) so the mapping can grow, and fall through to the same
+// service/agency default as before.
+const SIGNAL_RULES: SignalRule[] = [
+  { pattern: /\bsaas\b|\bsoftware\b|\bplatform\b|\bapp\b/i, category: 'saas' },
+  { pattern: /\bagency\b|\bconsult|\bstudio\b|\bservice/i, category: 'service/agency' },
+  { pattern: /\blocal\b|\brestaurant\b|\bgym\b|\bclinic\b|\bsalon\b|\bcaf[eé]\b/i, category: 'local business' },
+  { pattern: /e-?commerce|\bshop\b|\bstore\b|\bretail\b|\bproduct\b/i, category: 'product/e-commerce' },
+  { pattern: /\bcourse\b|\bcoaching\b|\bacademy\b|\btraining\b|\bbootcamp\b/i, category: 'course/coaching' },
+  { pattern: /\bbook(ing)?\b|\bappointment\b|\bschedul|\breservation\b/i, category: 'local business' },
+  { pattern: /\bevent\b|\bconference\b|\bfestival\b|\bsummit\b|\bwedding\b/i, category: 'product/e-commerce' },
+  { pattern: /\bportfolio\b|\bfreelance\b|\bphotographer\b|\bcreative\b/i, category: 'service/agency' },
+  { pattern: /non-?profit|\bcharity\b|\bngo\b|\bdonat/i, category: 'service/agency' },
+];
+
+/** Detect the flow category for a free-form business-type string. Falls
+ *  through the signal rules above; if none match, calls `onUnmatched` (so the
+ *  mapping can grow — see flow.test.ts) and returns the documented default
+ *  category rather than throwing. */
+export function normalizeBusinessType(businessType: string, onUnmatched?: UnmatchedLogger): string {
+  const s = businessType.toLowerCase();
+  for (const rule of SIGNAL_RULES) {
+    if (rule.pattern.test(s)) return rule.category;
+  }
+  onUnmatched?.(businessType);
+  return DEFAULT_CATEGORY;
+}
+
+export interface FlowSelectionOptions {
+  /** Key used to select a variant WITHIN the resolved category (rendezvous
+   *  hashing, so it's append-stable — see palettes.ts). Defaults to the raw
+   *  `businessType` string; callers with a more specific stable identity
+   *  (e.g. the Brief's `businessName`) should pass it here for per-landing
+   *  variety even across pages sharing the same businessType. */
+  key?: string;
+  onUnmatched?: UnmatchedLogger;
+}
+
+export function flowForBusinessType(businessType: string, opts: FlowSelectionOptions = {}): Step[] {
+  const category = normalizeBusinessType(businessType, opts.onUnmatched);
+  const variants = FLOWS[category] ?? FLOWS[DEFAULT_CATEGORY];
+  const key = opts.key ?? businessType;
+  return pickByRendezvous(key, variants).steps;
 }

@@ -15,8 +15,8 @@ export type { Brief, Palette } from './brief';
 export type { Step } from './flow';
 export { buildBriefPrompt, parseBrief } from './brief';
 export { selectPalette } from './palettes';
-export { flowForBusinessType } from './flow';
-export { buildSectionRolePrompt } from './section-prompt';
+export { flowForBusinessType, normalizeBusinessType } from './flow';
+export { buildSectionRolePrompt, ROLE_DESIGN, selectRoleTreatmentId } from './section-prompt';
 export { assembleSections } from './assemble';
 
 export interface ComposeDeps {
@@ -102,7 +102,15 @@ export async function composeLanding(target: Target, deps: ComposeDeps): Promise
   }
 
   // 2. Sections (one small call each) via the existing generation path.
-  const flow = deps.flow ?? flowForBusinessType(brief.businessType);
+  // `key: brief.businessName` gives flow-variant variety across pages that
+  // share a businessType (see FlowSelectionOptions in flow.ts); `onUnmatched`
+  // surfaces business-type strings the signal rules don't recognize so the
+  // mapping in flow.ts can grow instead of them silently collapsing to the
+  // service/agency default.
+  const flow = deps.flow ?? flowForBusinessType(brief.businessType, {
+    key: brief.businessName,
+    onUnmatched: (bt) => log(`unmatched business type "${bt}" — defaulting to service/agency flow`),
+  });
   const brandFacts = deps.brandFacts ? ` ${deps.brandFacts}` : '';
   const sections: string[] = [];
   for (const [index, step] of flow.entries()) {

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildSectionRolePrompt } from '@/pipeline/compose/section-prompt';
+import { buildSectionRolePrompt, ROLE_DESIGN, selectRoleTreatmentId } from '@/pipeline/compose/section-prompt';
 import { selectPalette } from '@/pipeline/compose/palettes';
 
 const brief = {
@@ -62,15 +62,60 @@ describe('buildSectionRolePrompt', () => {
     expect(minimalPalette.tint).not.toBe(darkPalette.tint);
   });
 
-  it('gives each role a concrete design treatment', () => {
-    const hero = buildSectionRolePrompt({ role: 'hero', sectionType: 'hero', job: 'j', cta: true }, brief);
-    const process = buildSectionRolePrompt({ role: 'how_it_works', sectionType: 'cards', job: 'j', cta: false }, brief);
-    const faq = buildSectionRolePrompt({ role: 'faq', sectionType: 'faq', job: 'j', cta: false }, brief);
-    const cards = buildSectionRolePrompt({ role: 'services', sectionType: 'cards', job: 'j', cta: false }, brief);
-    expect(hero).toMatch(/two-column hero/i);
-    expect(process).toMatch(/numbered.*badge|circular badge/i);
-    expect(faq).toMatch(/accordion|toggle/i);
-    expect(cards).toMatch(/image-card/i);
+  it('gives each role a concrete design treatment matching whichever variant was selected', () => {
+    const ctx = { style: 'minimal', niche: 'saas' };
+    for (const role of ['hero', 'how_it_works', 'faq', 'services']) {
+      const id = selectRoleTreatmentId(role, ctx);
+      const variant = ROLE_DESIGN[role].find((v) => v.id === id)!;
+      const p = buildSectionRolePrompt({ role, sectionType: 'x', job: 'j', cta: false }, brief, ctx);
+      expect(p).toContain(variant.text);
+    }
+  });
+
+  describe('per-role treatment variants (T3.2)', () => {
+    it('every role offers 2-3 stable-id treatment variants', () => {
+      for (const [role, variants] of Object.entries(ROLE_DESIGN)) {
+        expect(variants.length).toBeGreaterThanOrEqual(2);
+        expect(variants.length).toBeLessThanOrEqual(3);
+        const ids = variants.map((v) => v.id);
+        expect(new Set(ids).size).toBe(ids.length); // ids unique within the role
+        for (const v of variants) expect(v.id.startsWith(`${role}-`)).toBe(true);
+      }
+      // The brief's own examples exist as real variants.
+      expect(ROLE_DESIGN.hero.map((v) => v.id)).toEqual(
+        expect.arrayContaining(['hero-split', 'hero-centered-fullbleed', 'hero-offset-image']),
+      );
+      expect(ROLE_DESIGN.faq.map((v) => v.id)).toEqual(
+        expect.arrayContaining(['faq-accordion', 'faq-two-column-list']),
+      );
+    });
+
+    it('selectRoleTreatmentId is a pure, deterministic function of (role, style, niche)', () => {
+      const ctx = { style: 'bold', niche: 'agency' };
+      expect(selectRoleTreatmentId('hero', ctx)).toBe(selectRoleTreatmentId('hero', ctx));
+      expect(selectRoleTreatmentId('faq', ctx)).toBe(selectRoleTreatmentId('faq', ctx));
+    });
+
+    it('two different styles select a different treatment for at least one role (acceptance criterion)', () => {
+      const roles = Object.keys(ROLE_DESIGN);
+      const idsFor = (style: string) => roles.map((r) => selectRoleTreatmentId(r, { style, niche: 'saas' }));
+      const styles = ['minimal', 'bold', 'dark', 'corporate', 'playful', 'elegant'];
+      const base = idsFor(styles[0]);
+      for (const style of styles.slice(1)) {
+        expect(idsFor(style)).not.toEqual(base);
+      }
+    });
+
+    it('buildSectionRolePrompt for the same role differs in treatment text between two styles somewhere in a full flow', () => {
+      const roles = Object.keys(ROLE_DESIGN);
+      const minimalTexts = roles.map((role) =>
+        buildSectionRolePrompt({ role, sectionType: 'x', job: 'j', cta: false }, brief, { style: 'minimal', niche: 'saas' }),
+      );
+      const darkTexts = roles.map((role) =>
+        buildSectionRolePrompt({ role, sectionType: 'x', job: 'j', cta: false }, brief, { style: 'dark', niche: 'saas' }),
+      );
+      expect(minimalTexts).not.toEqual(darkTexts);
+    });
   });
 
   it('tells the model to swap to the tint color for heading/body text on the dark panel', () => {
