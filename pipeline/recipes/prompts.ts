@@ -1,6 +1,7 @@
 import type { Target } from './matrix';
 import type { Violation } from '@/pipeline/validate';
 import { getLibraryExemplars, libraryExemplarsEnabled } from '@/pipeline/library/exemplars';
+import { bannedContentProse } from '@/pipeline/content-lint';
 
 export interface Recipe {
   name: string;
@@ -45,8 +46,27 @@ const SYSTEM =
   'block types or attributes. Keep the JSON inside every Divi block comment strictly valid. ' +
   'Respond with ONLY the JSON document, no prose.';
 
+// T1.4 — CLI-compatible prompt hygiene.
+//
+// The `claude` CLI (pipeline/llm/claude-cli.ts) applies automatic prompt caching to
+// a STABLE `--append-system-prompt` string, but nothing to the (necessarily varying)
+// user prompt. Grounding — the Divi 5 schema, style guide, and the curated recipe
+// examples for a target's TYPE — is ~20KB and identical for every call that shares a
+// type, so moving it into the system prompt makes it cache-eligible; leaving only the
+// genuinely target-specific ask (type/niche/style, directives, retrieved library
+// exemplars) in the user prompt.
+//
+// `PROMPT_GROUNDING_IN_SYSTEM=0` reverts to the pre-T1.4 layout (grounding inlined in
+// the user prompt, every call) — an escape hatch so the eval harness (T4.1) can A/B
+// the two layouts empirically before this is trusted by default in production runs.
+export function groundingInSystemEnabled(): boolean {
+  return process.env.PROMPT_GROUNDING_IN_SYSTEM !== '0';
+}
+
 // Resolve the example markup strings to ground a target on: matching recipes first,
-// falling back to any raw examples the guide carries.
+// falling back to any raw examples the guide carries. Depends ONLY on target.type
+// (never niche/style/color/variant) so the block below is byte-identical for every
+// call sharing a type — the property that makes it cache-eligible.
 function pickExamples(target: Target, guide: Guide): string[] {
   const recipes = guide.recipes ?? [];
   const cap = target.type === 'full_landing' ? MAX_EXAMPLES_LANDING : MAX_EXAMPLES;
@@ -60,17 +80,41 @@ function pickExamples(target: Target, guide: Guide): string[] {
   return (guide.examples ?? []).slice(0, cap);
 }
 
+// The STABLE grounding block: schema + style guide + the type-matched curated
+// recipe examples. A pure function of (target.type, guide) — never niche, style,
+// color, or variant — so it is byte-identical across every call in a run that
+// shares a target type, which is what lets the CLI's automatic prompt cache hit.
+function stableGroundingBlock(target: Target, guide: Guide): string {
+  const recipeExamples = pickExamples(target, guide).map((e, i) => `Example ${i + 1}:\n${e}`);
+  return [
+    '=== DIVI 5 SCHEMA ===',
+    guide.schema,
+    '',
+    '=== STYLE GUIDE ===',
+    guide.style,
+    '',
+    '=== VALID SECTION RECIPES (copy the structure + attribute shapes; write your own copy) ===',
+    recipeExamples.join('\n\n'),
+  ].join('\n');
+}
+
+// The appended system prompt for a call: the fixed instruction plus (unless the
+// escape hatch disables it) the stable grounding block. Generation AND repair
+// calls for the same (target.type, guide) build this IDENTICALLY — see
+// buildRepairPrompt / buildContentRepairPrompt below — so repair calls are cache
+// hits against the generation call's grounding, not a second cold system prompt.
+function buildSystemPrompt(target: Target, guide: Guide): string {
+  if (!groundingInSystemEnabled()) return SYSTEM;
+  return [SYSTEM, '', stableGroundingBlock(target, guide)].join('\n');
+}
+
 function directives(target: Target): string {
   const lines = ['Write realistic, specific copy for this niche — real headlines and benefits, no lorem ipsum.'];
   // Hard content bans (a deterministic lint enforces these post-generation and will
-  // reject the layout — so get them right the first time).
-  lines.push(
-    'NEVER ship placeholder or demo content. Specifically forbidden: lorem ipsum; ' +
-      'Divi filler like "Your content goes here" or "Edit or remove this text"; the literal word "EYEBROW" ' +
-      '(if a section has a small eyebrow/label above the headline, write a REAL short label, e.g. "Established 2014" or "For SaaS teams"); ' +
-      'bracketed tokens like "[Replace: …]", "[insert …]", "[$XX/month]"; and "$XX"/"XX per month" price stubs — always use a real number. ' +
-      'For any contact details use plausible BRANDED values: an email on the business\'s own domain (never name@example.com) and a realistic phone number (never a 555-01xx "fictional" number).',
-  );
+  // reject the layout — so get them right the first time). Single-sourced from
+  // pipeline/content-lint.ts's bannedContentProse() so this text can never drift
+  // from what the lint regexes actually enforce (T1.4).
+  lines.push('NEVER ship placeholder or demo content. Specifically forbidden: ' + bannedContentProse().join(' '));
   // Layout robustness: the #1 render defect is titles/text overlapping or content
   // spilling past its section, and multi-column rows squeezing text into 1-char-wide
   // columns. Guard against both.
@@ -128,40 +172,55 @@ function directives(target: Target): string {
 }
 
 export function buildGenerationPrompt(target: Target, guide: Guide): { system: string; prompt: string } {
-  const recipeExamples = pickExamples(target, guide).map((e, i) => `Example ${i + 1}:\n${e}`);
-  // Optionally augment the curated recipes with REAL, validated sections from the
-  // converted DiviFlash library (USE_LIBRARY_EXEMPLARS=1) — richer real structure.
+  // Retrieved library exemplars are genuinely target-specific (retrieval matches
+  // target.niche) — unlike the curated recipes, they DON'T collapse to the same
+  // text across targets of the same type, so they stay in the user prompt in
+  // BOTH layouts (system-grounding on or off via the escape hatch below).
   const libExamples = libraryExemplarsEnabled()
     ? getLibraryExemplars(target, {
         k: Number(process.env.LIBRARY_EXEMPLAR_K ?? '2'),
         maxChars: Number(process.env.LIBRARY_EXEMPLAR_MAXCHARS ?? '6000'),
       }).map((e, i) => `Real-world example ${i + 1}:\n${e}`)
     : [];
-  const examples = [...recipeExamples, ...libExamples].join('\n\n');
-  const prompt = [
+  const inSystem = groundingInSystemEnabled();
+  const promptParts = [
     `Generate a Divi 5 "${target.type}" section for a ${target.style} ${target.niche} website.`,
     directives(target),
-    '',
-    '=== DIVI 5 SCHEMA ===',
-    guide.schema,
-    '',
-    '=== STYLE GUIDE ===',
-    guide.style,
-    '',
-    '=== VALID SECTION RECIPES (copy the structure + attribute shapes; write your own copy) ===',
-    examples,
-    '',
-    'Output ONLY the JSON for the new section (a single object with post_title and post_content).',
-  ].join('\n');
-  return { system: SYSTEM, prompt };
+  ];
+  // T1.4 escape hatch (PROMPT_GROUNDING_IN_SYSTEM=0): fall back to inlining the
+  // stable grounding into the user prompt (the pre-T1.4 layout) so the eval
+  // harness can A/B system-prompt-grounding vs. user-prompt-grounding.
+  if (!inSystem) promptParts.push('', stableGroundingBlock(target, guide));
+  if (libExamples.length) {
+    promptParts.push(
+      '',
+      '=== RETRIEVED REAL-WORLD EXAMPLES (target-specific; imitate structure, write your own copy) ===',
+      libExamples.join('\n\n'),
+    );
+  }
+  promptParts.push('', 'Output ONLY the JSON for the new section (a single object with post_title and post_content).');
+  return { system: buildSystemPrompt(target, guide), prompt: promptParts.join('\n') };
 }
 
 export interface ContentIssue { code: string; message: string; sample: string }
 
 // Repair copy-quality problems (placeholder tokens, lorem ipsum, demo filler, fake
 // contacts/prices, unresolved placeholder images) WITHOUT changing the structure.
-export function buildContentRepairPrompt(prevJson: string, issues: ContentIssue[]): { system: string; prompt: string } {
+//
+// Takes the same (target, guide) the generation call used so buildSystemPrompt()
+// produces the IDENTICAL system prompt — a cache hit against the generation call's
+// grounding, not a second cold one (T1.4 repair-prompt decision: repairs reuse the
+// stable system prompt).
+export function buildContentRepairPrompt(
+  prevJson: string,
+  issues: ContentIssue[],
+  target: Target,
+  guide: Guide,
+): { system: string; prompt: string } {
   const list = issues.map((v) => `- [${v.code}] ${v.message} — found near: "${v.sample}"`).join('\n');
+  // Ban-list reminder single-sourced from pipeline/content-lint.ts (T1.4) — cannot
+  // drift from the generation directive or the enforced regexes.
+  const rules = bannedContentProse().map((p) => `- ${p}`);
   const prompt = [
     'The Divi 5 layout you produced is structurally valid but its COPY is unfinished — it contains placeholder / filler content that must never ship in a paid marketplace:',
     list,
@@ -170,17 +229,21 @@ export function buildContentRepairPrompt(prevJson: string, issues: ContentIssue[
     prevJson,
     '',
     'Rewrite ONLY the offending text values into finished, specific, on-brand copy for this business. Rules:',
-    '- No lorem ipsum, no "Your content goes here", no "[Replace: …]" / "[insert …]" tokens, no "EYEBROW" placeholder.',
-    '- Real prices (e.g. "$29/mo"), never "$XX".',
-    '- Plausible branded contacts — a real-looking email on the business domain, never @example.com; never a 555-01xx phone.',
-    '- Every image src must be a real photo URL (keep any https://loremflickr.com/{w}/{h}/{keyword} or https://i.pravatar.cc URLs as-is — those are resolved later — but never leave an empty "src":"" or a placehold.co URL).',
+    ...rules,
     '- Keep the exact same block structure, attributes, and JSON shape — change text content only.',
     'Output ONLY the corrected JSON.',
   ].join('\n');
-  return { system: SYSTEM, prompt };
+  return { system: buildSystemPrompt(target, guide), prompt };
 }
 
-export function buildRepairPrompt(prevJson: string, violations: Violation[]): { system: string; prompt: string } {
+// Takes the same (target, guide) the generation call used — see the
+// buildContentRepairPrompt comment above; the reasoning is identical here.
+export function buildRepairPrompt(
+  prevJson: string,
+  violations: Violation[],
+  target: Target,
+  guide: Guide,
+): { system: string; prompt: string } {
   const list = violations.map((v) => `- [${v.code}] ${v.message}${v.path ? ` (at ${v.path})` : ''}`).join('\n');
   const prompt = [
     'The Divi 5 layout you produced failed deterministic validation with these violations:',
@@ -191,5 +254,5 @@ export function buildRepairPrompt(prevJson: string, violations: Violation[]): { 
     '',
     'Fix ONLY what the violations require, keeping the design intent. Output ONLY the corrected JSON.',
   ].join('\n');
-  return { system: SYSTEM, prompt };
+  return { system: buildSystemPrompt(target, guide), prompt };
 }

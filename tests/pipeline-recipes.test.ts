@@ -67,16 +67,16 @@ describe('prompt builders', () => {
     expect(prompt).toContain('hero');
     expect(prompt).toContain('saas');
   });
-  it('grounds on the section recipe matching the target type', () => {
+  it('grounds on the section recipe matching the target type (T1.4: recipes live in the stable system prompt)', () => {
     const recipes = [
       { name: 'hero-cta', title: 'Hero', description: 'top of page', when: 'hero', markup: 'HERO_MARKUP' },
       { name: 'contact-form', title: 'Contact', description: 'lead capture', when: 'contact', markup: 'CONTACT_MARKUP' },
     ];
-    const heroPrompt = buildGenerationPrompt({ type: 'hero', niche: 'saas', style: 'minimal' }, { style: 's', schema: 'x', recipes }).prompt;
-    expect(heroPrompt).toContain('HERO_MARKUP');
-    expect(heroPrompt).not.toContain('CONTACT_MARKUP');
-    const contactPrompt = buildGenerationPrompt({ type: 'contact', niche: 'real_estate', style: 'corporate' }, { style: 's', schema: 'x', recipes }).prompt;
-    expect(contactPrompt).toContain('CONTACT_MARKUP');
+    const heroSystem = buildGenerationPrompt({ type: 'hero', niche: 'saas', style: 'minimal' }, { style: 's', schema: 'x', recipes }).system;
+    expect(heroSystem).toContain('HERO_MARKUP');
+    expect(heroSystem).not.toContain('CONTACT_MARKUP');
+    const contactSystem = buildGenerationPrompt({ type: 'contact', niche: 'real_estate', style: 'corporate' }, { style: 's', schema: 'x', recipes }).system;
+    expect(contactSystem).toContain('CONTACT_MARKUP');
   });
   it('drives the variation color + placement and instructs relevant images', () => {
     const t = { type: 'hero', niche: 'saas', style: 'bold', color: 'green', layout: 'image on the left of the headline' };
@@ -98,7 +98,8 @@ describe('prompt builders', () => {
     }
   });
   it('repair prompt includes the prior JSON and the violation codes', () => {
-    const { prompt } = buildRepairPrompt('{"bad":1}', [{ code: 'E_X', message: 'bad thing', path: 'a.b' }]);
+    const target = { type: 'hero', niche: 'saas', style: 'minimal' };
+    const { prompt } = buildRepairPrompt('{"bad":1}', [{ code: 'E_X', message: 'bad thing', path: 'a.b' }], target, guide);
     expect(prompt).toContain('E_X');
     expect(prompt).toContain('bad thing');
     expect(prompt).toContain('{"bad":1}');

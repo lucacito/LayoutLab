@@ -59,7 +59,7 @@ async function generateValidSection(sectionTarget: Target, deps: ComposeDeps): P
     let attempts = 0;
     while (!result.valid && attempts < maxRepairs) {
       attempts++;
-      const { system, prompt } = buildRepairPrompt(json, result.violations);
+      const { system, prompt } = buildRepairPrompt(json, result.violations, sectionTarget, deps.guide);
       const text = await deps.llm.complete({ prompt, system, maxBudgetUsd: deps.maxBudgetUsd });
       json = JSON.stringify(extractJson(text));
       result = await deps.validate(json);
@@ -75,7 +75,7 @@ async function generateValidSection(sectionTarget: Target, deps: ComposeDeps): P
   let lintAttempts = 0;
   while (lint.length && lintAttempts < maxRepairs) {
     lintAttempts++;
-    const { system, prompt } = buildContentRepairPrompt(json, lint);
+    const { system, prompt } = buildContentRepairPrompt(json, lint, sectionTarget, deps.guide);
     const text = await deps.llm.complete({ prompt, system, maxBudgetUsd: deps.maxBudgetUsd });
     const repaired = JSON.stringify(extractJson(text));
     // A copy rewrite must not break structure; if it does, keep the prior valid JSON.

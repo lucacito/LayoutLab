@@ -25,9 +25,9 @@ describe('full_landing prompt', () => {
     expect(p).toContain('multiple'); // multiple sections in one document
   });
 
-  it('grounds the landing on more than two recipes', () => {
-    const p = buildGenerationPrompt(target, guide).prompt;
-    const exampleCount = (p.match(/Example \d+:/g) ?? []).length;
+  it('grounds the landing on more than two recipes (T1.4: recipes live in the stable system prompt)', () => {
+    const s = buildGenerationPrompt(target, guide).system;
+    const exampleCount = (s.match(/Example \d+:/g) ?? []).length;
     expect(exampleCount).toBeGreaterThan(2);
   });
 });

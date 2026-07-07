@@ -412,7 +412,7 @@ export async function runPipeline(deps: RunDeps): Promise<RunSummary> {
         attempts++;
         summary.repaired++;
         emit({ type: 'repair_attempt', target, kind: 'structural' });
-        const { system, prompt } = buildRepairPrompt(json, result.violations);
+        const { system, prompt } = buildRepairPrompt(json, result.violations, target, deps.guide);
         const text = await meteredLlm.complete({ prompt, system, maxBudgetUsd: deps.maxBudgetUsd });
         json = JSON.stringify(extractJson(text));
         result = await deps.validate(json);
@@ -446,7 +446,7 @@ export async function runPipeline(deps: RunDeps): Promise<RunSummary> {
           lintAttempts++;
           summary.repaired++;
           emit({ type: 'repair_attempt', target, kind: 'content' });
-          const { system, prompt } = buildContentRepairPrompt(json, lint);
+          const { system, prompt } = buildContentRepairPrompt(json, lint, target, deps.guide);
           const text = await meteredLlm.complete({ prompt, system, maxBudgetUsd: deps.maxBudgetUsd });
           json = JSON.stringify(extractJson(text));
           // A copy rewrite must not break structure — re-validate, then re-resolve any
