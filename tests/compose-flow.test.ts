@@ -1,6 +1,24 @@
 import { describe, it, expect, vi } from 'vitest';
-import { flowForBusinessType, normalizeBusinessType, FLOWS } from '@/pipeline/compose/flow';
+import { flowForBusinessType, normalizeBusinessType, landingBlueprintForCategory, FLOWS } from '@/pipeline/compose/flow';
 import { RECIPE_BY_TYPE_KEYS } from '@/pipeline/compose/flow';
+
+const FAKE_LANDING_GUIDE = [
+  '# Divi 5 Landing Page Conversion Blueprint',
+  '',
+  '- **SaaS**: hero → problem → solution/product → benefits → how it works →',
+  '  social proof (logos + stats) → feature detail → FAQ → final CTA (start trial).',
+  '- **Service / agency**: hero → problem → outcomes/benefits → process (how it',
+  '  works) → testimonials/case studies → about/credibility → FAQ → final CTA',
+  '  (book a call).',
+  '- **Local business**: hero (offer + location) → why us → services → gallery →',
+  '  reviews → hours/location/map → final CTA (reserve / call now).',
+  '- **Product / e-commerce**: hero (product shot + value) → problem → benefits →',
+  '  features → reviews → guarantee → FAQ → final CTA (buy now).',
+  '- **Course / coaching**: hero (transformation promise) → pain → method → what you',
+  '  get/curriculum → results/testimonials → instructor → FAQ → final CTA (enroll).',
+  'Reorder and drop sections to fit — but keep the spine: **attention → problem →',
+  'solution → proof → action.**',
+].join('\n');
 
 describe('flowForBusinessType', () => {
   it('course/coaching returns the transformation spine ending in a final CTA', () => {
@@ -87,5 +105,32 @@ describe('business-type normalization signal fallthrough (T3.2)', () => {
     const onUnmatched = vi.fn();
     flowForBusinessType('quantum widget concept', { onUnmatched });
     expect(onUnmatched).toHaveBeenCalledWith('quantum widget concept');
+  });
+});
+
+describe('landingBlueprintForCategory (T3.3)', () => {
+  it('extracts the LandingGuide bullet matching each of the 5 FLOWS categories', () => {
+    for (const category of Object.keys(FLOWS)) {
+      const blueprint = landingBlueprintForCategory(FAKE_LANDING_GUIDE, category);
+      expect(blueprint).toBeDefined();
+      expect(blueprint).toMatch(/hero.*final CTA/);
+    }
+    expect(landingBlueprintForCategory(FAKE_LANDING_GUIDE, 'saas')).toContain('start trial');
+    expect(landingBlueprintForCategory(FAKE_LANDING_GUIDE, 'course/coaching')).toContain('enroll');
+    // Must not bleed into the NEXT bullet or the trailing "Reorder..." paragraph.
+    expect(landingBlueprintForCategory(FAKE_LANDING_GUIDE, 'saas')).not.toContain('Service / agency');
+    expect(landingBlueprintForCategory(FAKE_LANDING_GUIDE, 'course/coaching')).not.toContain('Reorder');
+  });
+
+  it('falls back gracefully to undefined when the guide is absent', () => {
+    expect(landingBlueprintForCategory(undefined, 'saas')).toBeUndefined();
+  });
+
+  it('falls back gracefully to undefined for an unknown category', () => {
+    expect(landingBlueprintForCategory(FAKE_LANDING_GUIDE, 'something-weird')).toBeUndefined();
+  });
+
+  it('falls back gracefully to undefined when the guide text does not contain the expected shape', () => {
+    expect(landingBlueprintForCategory('# some unrelated markdown with no bullets', 'saas')).toBeUndefined();
   });
 });

@@ -131,6 +131,25 @@ describe('buildSectionRolePrompt', () => {
     expect(p).toContain(palette.tint);
   });
 
+  it('threads the landing-guide blueprint into the prompt when provided (T3.3)', () => {
+    const withBlueprint = buildSectionRolePrompt(
+      { role: 'hero', sectionType: 'hero', job: 'j', cta: true },
+      brief,
+      { style: 'minimal', niche: 'saas', landingBlueprint: 'hero → problem → benefits → final CTA (start trial).' },
+    );
+    expect(withBlueprint).toContain('Strategic blueprint for this business type');
+    expect(withBlueprint).toContain('hero → problem → benefits → final CTA (start trial).');
+  });
+
+  it('omits the blueprint line when none is provided — fail-soft (T3.3)', () => {
+    const withoutBlueprint = buildSectionRolePrompt(
+      { role: 'hero', sectionType: 'hero', job: 'j', cta: true },
+      brief,
+      { style: 'minimal', niche: 'saas' },
+    );
+    expect(withoutBlueprint).not.toContain('Strategic blueprint');
+  });
+
   it('alternates the background rhythm by section index', () => {
     const even = buildSectionRolePrompt({ role: 'why', sectionType: 'features', job: 'j', cta: false }, brief, { index: 2, total: 6 });
     const odd = buildSectionRolePrompt({ role: 'why', sectionType: 'features', job: 'j', cta: false }, brief, { index: 3, total: 6 });

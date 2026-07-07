@@ -16,6 +16,20 @@ export interface Guide {
   schema: string;
   recipes?: Recipe[];
   examples?: string[]; // fallback when no recipes are loaded
+  /** T3.3 — the validator repo's LandingGuide (per-business-type conversion
+   *  blueprints), extracted from LandingGuide.php's heredoc by loadGrounding.
+   *  Guide-level (not target-specific): used by compose/flow.ts to look up
+   *  strategic context for the resolved business-type category and thread it
+   *  into the brief/section prompts. Optional — absent when the file couldn't
+   *  be found/parsed; every consumer must degrade gracefully. */
+  landingGuide?: string;
+  /** T3.3 — the validator repo's ImageGuide (image-selection strategy: keyword
+   *  derivation, source-per-role, pinning, aspect ratios), extracted from
+   *  ImageGuide.php's heredoc by loadGrounding. Guide-level, like schema/style —
+   *  folded into the stable system grounding block when present, and referenced
+   *  by the per-call image directive. Optional; absent falls back to the
+   *  pre-existing hardcoded image directive text only. */
+  imageGuide?: string;
 }
 
 // Which valid section recipes to ground each layout type on (structure to imitate).
@@ -86,7 +100,7 @@ function pickExamples(target: Target, guide: Guide): string[] {
 // shares a target type, which is what lets the CLI's automatic prompt cache hit.
 function stableGroundingBlock(target: Target, guide: Guide): string {
   const recipeExamples = pickExamples(target, guide).map((e, i) => `Example ${i + 1}:\n${e}`);
-  return [
+  const parts = [
     '=== DIVI 5 SCHEMA ===',
     guide.schema,
     '',
@@ -95,7 +109,16 @@ function stableGroundingBlock(target: Target, guide: Guide): string {
     '',
     '=== VALID SECTION RECIPES (copy the structure + attribute shapes; write your own copy) ===',
     recipeExamples.join('\n\n'),
-  ].join('\n');
+  ];
+  // T3.3 — the validator's image-strategy guide is guide-level (never varies by
+  // target.type/niche/style/color/variant), so it belongs in the stable,
+  // cache-eligible system grounding alongside schema/style/recipes rather than
+  // the per-call user-prompt directives. Absent when loadGrounding couldn't
+  // extract it — the block below simply omits this section.
+  if (guide.imageGuide) {
+    parts.push('', '=== IMAGE GUIDE ===', guide.imageGuide);
+  }
+  return parts.join('\n');
 }
 
 // The appended system prompt for a call: the fixed instruction plus (unless the
@@ -108,7 +131,7 @@ function buildSystemPrompt(target: Target, guide: Guide): string {
   return [SYSTEM, '', stableGroundingBlock(target, guide)].join('\n');
 }
 
-function directives(target: Target): string {
+function directives(target: Target, guide: Guide): string {
   const lines = ['Write realistic, specific copy for this niche — real headlines and benefits, no lorem ipsum.'];
   // Hard content bans (a deterministic lint enforces these post-generation and will
   // reject the layout — so get them right the first time). Single-sourced from
@@ -168,6 +191,20 @@ function directives(target: Target): string {
       'The eyebrow "product/app shot" in a hero must depict the ACTUAL product (a dashboard, an app screen, the product photo) — never a random lifestyle stock image that has nothing to do with what is being sold. ' +
       'Never use placehold.co, never leave an empty "src", and never emit an image whose subject is unrelated to the section.',
   );
+  // T3.3 — when the validator's ImageGuide was loaded (full text lives in the
+  // stable system grounding block above — see stableGroundingBlock), point the
+  // model at it explicitly and pull its most load-bearing, easy-to-miss rules
+  // (aspect-ratio consistency within a grid, one avatar source per section,
+  // pinning every URL so nothing reshuffles) into the per-call directive too.
+  // Absent guide.imageGuide, this directive is a no-op — the hardcoded rules
+  // above are unchanged (fail-soft).
+  if (guide.imageGuide) {
+    lines.push(
+      "Also follow the validator's IMAGE GUIDE included in the system grounding above: derive keywords from the section's specific role (not just the niche), " +
+        'keep every image within one grid/row at the SAME aspect ratio, use ONE consistent avatar source/style for every person shown in a section, ' +
+        'and pin every image URL (LoremFlickr `?lock={n}`, Picsum `/seed/{keyword}/`, a fixed avatar index) so the same image renders on every load.',
+    );
+  }
   return lines.join('\n');
 }
 
@@ -185,7 +222,7 @@ export function buildGenerationPrompt(target: Target, guide: Guide): { system: s
   const inSystem = groundingInSystemEnabled();
   const promptParts = [
     `Generate a Divi 5 "${target.type}" section for a ${target.style} ${target.niche} website.`,
-    directives(target),
+    directives(target, guide),
   ];
   // T1.4 escape hatch (PROMPT_GROUNDING_IN_SYSTEM=0): fall back to inlining the
   // stable grounding into the user prompt (the pre-T1.4 layout) so the eval

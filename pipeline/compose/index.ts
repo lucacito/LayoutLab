@@ -7,7 +7,7 @@ import { generateLayout } from '@/pipeline/generate';
 import { buildContentRepairPrompt } from '@/pipeline/recipes';
 import { lintLayoutJson, IMAGE_RULE_CODES } from '@/pipeline/content-lint';
 import { buildBriefPrompt, parseBrief, type Brief } from './brief';
-import { flowForBusinessType, normalizeBusinessType, type Step } from './flow';
+import { flowForBusinessType, normalizeBusinessType, landingBlueprintForCategory, type Step } from './flow';
 import { buildSectionRolePrompt } from './section-prompt';
 import { assembleSections } from './assemble';
 
@@ -15,7 +15,7 @@ export type { Brief, Palette } from './brief';
 export type { Step } from './flow';
 export { buildBriefPrompt, parseBrief } from './brief';
 export { selectPalette } from './palettes';
-export { flowForBusinessType, normalizeBusinessType } from './flow';
+export { flowForBusinessType, normalizeBusinessType, landingBlueprintForCategory } from './flow';
 export { buildSectionRolePrompt, ROLE_DESIGN, selectRoleTreatmentId } from './section-prompt';
 export { assembleSections } from './assemble';
 
@@ -112,10 +112,17 @@ export async function composeLanding(target: Target, deps: ComposeDeps): Promise
   // `onUnmatched` surfaces business-type strings the signal rules don't
   // recognize so the mapping in flow.ts can grow instead of them silently
   // collapsing to the service/agency default.
+  const category = normalizeBusinessType(brief.businessType);
   const flow = deps.flow ?? flowForBusinessType(brief.businessType, {
-    key: `${normalizeBusinessType(brief.businessType)}|${target.niche}|${target.style}`,
+    key: `${category}|${target.niche}|${target.style}`,
     onUnmatched: (bt) => log(`unmatched business type "${bt}" — defaulting to service/agency flow`),
   });
+  // T3.3 — the validator's LandingGuide blueprint sentence for this resolved
+  // category (undefined when guide.landingGuide wasn't loaded or has no entry —
+  // fail-soft), echoed to every section as strategic "why this spine" context.
+  // Purely additive: it never changes flow SELECTION (still the deterministic
+  // rendezvous pick above) or the hero/final_cta invariants enforced by FLOWS.
+  const landingBlueprint = landingBlueprintForCategory(deps.guide.landingGuide, category);
   const brandFacts = deps.brandFacts ? ` ${deps.brandFacts}` : '';
   const sections: string[] = [];
   for (const [index, step] of flow.entries()) {
@@ -124,7 +131,7 @@ export async function composeLanding(target: Target, deps: ComposeDeps): Promise
       niche: target.niche,
       style: target.style,
       color: target.color,
-      layout: buildSectionRolePrompt(step, brief, { index, total: flow.length, style: target.style, niche: target.niche }) + brandFacts,
+      layout: buildSectionRolePrompt(step, brief, { index, total: flow.length, style: target.style, niche: target.niche, landingBlueprint }) + brandFacts,
     };
     try {
       const json = await generateValidSection(sectionTarget, deps);

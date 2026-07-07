@@ -98,6 +98,36 @@ describe('repair prompts reuse the same stable system prompt (cache hit on repai
   });
 });
 
+describe('image guide grounding (T3.3)', () => {
+  const guideWithImageGuide: Guide = { ...guide, imageGuide: 'IMAGE_GUIDE_MARKER_TEXT loremflickr.com/{w}/{h}/{kw}?lock={n}' };
+
+  it('folds the image guide into the stable system grounding when present', () => {
+    const { system } = buildGenerationPrompt({ type: 'hero', niche: 'saas', style: 'minimal' }, guideWithImageGuide);
+    expect(system).toContain('IMAGE_GUIDE_MARKER_TEXT');
+    expect(system).toContain('=== IMAGE GUIDE ===');
+  });
+
+  it('the per-call directive references the image guide when it is present', () => {
+    const { prompt } = buildGenerationPrompt({ type: 'hero', niche: 'saas', style: 'minimal' }, guideWithImageGuide);
+    expect(prompt.toLowerCase()).toContain('image guide');
+    expect(prompt).toContain('aspect ratio');
+  });
+
+  it('is a no-op (system + directive unchanged) when guide.imageGuide is absent — fail-soft', () => {
+    const withoutImageGuide = buildGenerationPrompt({ type: 'hero', niche: 'saas', style: 'minimal' }, guide);
+    expect(withoutImageGuide.system).not.toContain('=== IMAGE GUIDE ===');
+    expect(withoutImageGuide.prompt.toLowerCase()).not.toContain('image guide');
+  });
+
+  it('repair prompts reuse the same system prompt including the folded image guide (cache hit)', () => {
+    const target: Target = { type: 'hero', niche: 'saas', style: 'minimal' };
+    const gen = buildGenerationPrompt(target, guideWithImageGuide).system;
+    const repair = buildRepairPrompt('{"bad":1}', [{ code: 'E_X', message: 'bad', path: 'a.b' }], target, guideWithImageGuide).system;
+    expect(repair).toBe(gen);
+    expect(repair).toContain('IMAGE_GUIDE_MARKER_TEXT');
+  });
+});
+
 describe('content-ban single source of truth', () => {
   it('bannedContentProse() is non-empty and every entry appears in the generation directive', () => {
     const prose = bannedContentProse();

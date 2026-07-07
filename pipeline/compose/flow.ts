@@ -142,3 +142,43 @@ export function flowForBusinessType(businessType: string, opts: FlowSelectionOpt
   const key = opts.key ?? businessType;
   return pickByRendezvous(key, variants).steps;
 }
+
+// T3.3 — LandingGuide's "Step 0 — Decide before you build" section spells out a
+// per-business-type persuasion spine as a bulleted list, e.g.:
+//   - **SaaS**: hero → problem → solution/product → benefits → how it works → ...
+// Its 5 bold labels map 1:1 onto the 5 FLOWS categories above (same business-type
+// vocabulary the Brief and normalizeBusinessType already use), which is exactly
+// the "clean, guide-derived flow hint" the workorder allows without inventing a
+// new schema: pull the guide's OWN sentence for the resolved category and thread
+// it into the compose prompts as strategic context alongside (not instead of)
+// the deterministic FLOWS spine — flow SELECTION stays the existing rendezvous
+// pick; this only enriches what the model is told about why that spine works.
+const LANDING_GUIDE_CATEGORY_LABELS: Record<string, string> = {
+  saas: 'SaaS',
+  'service/agency': 'Service / agency',
+  'local business': 'Local business',
+  'product/e-commerce': 'Product / e-commerce',
+  'course/coaching': 'Course / coaching',
+};
+
+/** Look up the LandingGuide's own blueprint sentence for a resolved FLOWS
+ *  category (the output of normalizeBusinessType). Fails soft to `undefined`
+ *  when `landingGuide` is absent (loadGrounding couldn't extract it), the
+ *  category has no known guide label, or the guide's text/heading shape ever
+ *  changes underneath this regex — callers must treat this as optional
+ *  strategic context, never a hard dependency. */
+export function landingBlueprintForCategory(landingGuide: string | undefined, category: string): string | undefined {
+  if (!landingGuide) return undefined;
+  const label = LANDING_GUIDE_CATEGORY_LABELS[category];
+  if (!label) return undefined;
+  try {
+    const escaped = label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const re = new RegExp(`-\\s*\\*\\*${escaped}\\*\\*:\\s*([\\s\\S]*?)(?=\\n-\\s*\\*\\*|\\nReorder|$)`);
+    const match = landingGuide.match(re);
+    if (!match) return undefined;
+    const text = match[1].replace(/\s+/g, ' ').trim();
+    return text || undefined;
+  } catch {
+    return undefined;
+  }
+}

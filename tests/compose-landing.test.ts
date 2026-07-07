@@ -62,6 +62,38 @@ describe('composeLanding', () => {
   });
 });
 
+describe('composeLanding landing-guide grounding (T3.3)', () => {
+  const landingGuide = [
+    '# Divi 5 Landing Page Conversion Blueprint',
+    '- **SaaS**: hero → problem → solution/product → benefits → how it works → FAQ → final CTA (start trial).',
+    '- **Service / agency**: hero → problem → outcomes/benefits → process → FAQ → final CTA (book a call).',
+    '- **Local business**: hero (offer + location) → why us → services → final CTA (reserve / call now).',
+    '- **Product / e-commerce**: hero (product shot + value) → problem → benefits → final CTA (buy now).',
+    '- **Course / coaching**: hero (transformation promise) → pain → method → final CTA (enroll).',
+    'Reorder and drop sections to fit — but keep the spine: attention → problem → solution → proof → action.',
+  ].join('\n');
+
+  it('threads the resolved category\'s LandingGuide blueprint into every section prompt', async () => {
+    const llm = stubLlm(); // brief.businessType === 'course/coaching'
+    await composeLanding(target as any, { llm, guide: { ...guide, landingGuide }, flow: twoStep });
+    const sectionCalls = llm.complete.mock.calls.slice(1); // skip the brief call
+    expect(sectionCalls.length).toBeGreaterThan(0);
+    for (const [arg] of sectionCalls as any[]) {
+      expect(arg.prompt).toContain('Strategic blueprint for this business type');
+      expect(arg.prompt).toContain('final CTA (enroll)');
+    }
+  });
+
+  it('never injects a blueprint line when guide.landingGuide is absent — fail-soft', async () => {
+    const llm = stubLlm();
+    await composeLanding(target as any, { llm, guide, flow: twoStep }); // guide has no landingGuide
+    const sectionCalls = llm.complete.mock.calls.slice(1);
+    for (const [arg] of sectionCalls as any[]) {
+      expect(arg.prompt).not.toContain('Strategic blueprint');
+    }
+  });
+});
+
 describe('composeLanding flow selection (T3.2)', () => {
   it('logs an unmatched business type via the log callback while still composing a valid landing', async () => {
     const oddBrief = { ...brief, businessType: 'quantum widget concept' };

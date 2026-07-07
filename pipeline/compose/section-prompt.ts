@@ -11,6 +11,13 @@ export interface SectionContext {
    *  deterministically (via selectPalette) when the brief doesn't pin one. */
   style?: string;
   niche?: string;
+  /** T3.3 — the validator's LandingGuide blueprint sentence for this landing's
+   *  resolved business-type category (see `landingBlueprintForCategory` in
+   *  flow.ts), echoed to every section as strategic context for WHY this spine
+   *  works for this kind of business. Optional: undefined when the guide
+   *  wasn't loaded or has no entry for the category — omitted from the prompt
+   *  in that case (fail-soft; doesn't change the deterministic flow itself). */
+  landingBlueprint?: string;
 }
 
 /** One named, prompt-ready treatment for a role. `id` is the append-stability
@@ -243,6 +250,9 @@ export function buildSectionRolePrompt(step: Step, brief: Brief, ctx: SectionCon
       `Reuse ONE corner-radius and ONE soft box-shadow for every card so the page feels systematic.`,
   ];
   if (brief.designNotes) lines.push(`Art direction: ${brief.designNotes}.`);
+  if (ctx.landingBlueprint) {
+    lines.push(`Strategic blueprint for this business type (validator's conversion guide): ${ctx.landingBlueprint}`);
+  }
   const roleDesign = pickRoleTreatment(step.role, { style: ctx.style, niche: ctx.niche });
   if (roleDesign) lines.push(roleDesign.text);
   const tone = backgroundTone(step.role, ctx.index);
