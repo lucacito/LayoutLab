@@ -28,7 +28,14 @@ async function main(): Promise<void> {
   const { deps, close } = await realRenderDeps();
   try {
     console.log(`rendering "${title}" in the WP env…`);
-    const { shots, perceptualHash } = await renderLayout({ title, postContent }, deps);
+    const result = await renderLayout({ title, postContent }, deps);
+    if (result.outcome === 'blank') {
+      // Review fix (T2.1 minor): warn explicitly instead of silently writing zero
+      // files — consistent with the warn-and-skip pattern in render-demo.ts/rerender.ts.
+      console.warn(`  ! blank render: page never confirmably painted content — no screenshots saved`);
+      return;
+    }
+    const { shots, perceptualHash } = result;
     const outDir = join(process.cwd(), 'pipeline', 'out', 'render');
     await mkdir(outDir, { recursive: true });
     for (const s of shots) {

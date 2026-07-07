@@ -144,6 +144,10 @@ export async function runThemePack(spec: ThemeSpec, deps: ThemeDeps): Promise<Th
       const title = themePageTitle(spec.brief, spec, page);
 
       // 6. Upload JSON (+ placeholder previews), then real screenshots (best-effort).
+      // TODO(T4.2): unlike run.ts's ok/blank/failed render gate (T2.1), this path has
+      // NO gate at all — on a render miss (blank, failed, or no `deps.render`) it just
+      // keeps `placeholderPreviews` and ingests unconditionally; it never drops. Must
+      // be unified with run.ts's render gates in T4.2.
       const { diviJsonBlobKey, previewImageKeys: placeholderPreviews } = await deps.upload(hash, json);
       let previewImageKeys = placeholderPreviews;
       let perceptualHash: string | undefined;

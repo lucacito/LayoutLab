@@ -60,7 +60,18 @@ async function main(): Promise<void> {
           continue;
         }
         const hash = createHash('sha256').update(patched).digest('hex');
-        const { shots, perceptualHash } = await renderLayout({ title: obj.post_title ?? r.title, postContent: obj.post_content }, deps);
+        const result = await renderLayout({ title: obj.post_title ?? r.title, postContent: obj.post_content }, deps);
+        if (result.outcome === 'blank') {
+          // Review fix (T2.1): a blank render means the page never confirmably
+          // painted content — do NOT touch this published layout's row (no JSON
+          // re-upload, no preview_image_keys/perceptual_hash overwrite). Silently
+          // continuing here would have overwritten a live layout's previews with
+          // `[]` and its hash with NULL while logging a false "✓".
+          skipped++;
+          console.log(`  ! ${r.slug}: render blank (page never confirmably painted) — skipping, row left untouched`);
+          continue;
+        }
+        const { shots, perceptualHash } = result;
         if (dry) {
           for (const s of shots) writeFileSync(`/private/tmp/claude-501/-Users-Lucas-Documents-JHMG-Local-layoutlab/bf7033b3-4330-40ef-88e2-2b4a62e4143f/scratchpad/shots/restack-${r.slug}-${s.label}.png`, s.buffer);
           fixed++;

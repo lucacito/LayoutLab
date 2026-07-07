@@ -164,14 +164,22 @@ async function main() {
   let perceptualHash = row.perceptualHash ?? undefined;
   try {
     console.log('[patch] rendering…');
-    const { shots, perceptualHash: ph } = await renderLayout({ title: doc.post_title ?? row.title, postContent: patched }, deps);
-    perceptualHash = ph;
-    const keys: string[] = [];
-    for (const label of ['desktop', 'mobile'] as const) {
-      const shot = shots.find((s) => s.label === label);
-      if (shot) keys.push(await uploadScreenshot(hash, label, shot.buffer, { hasBlobToken }));
+    const result = await renderLayout({ title: doc.post_title ?? row.title, postContent: patched }, deps);
+    if (result.outcome === 'blank') {
+      // Review fix (T2.1): a blank render must not clobber the live layout's
+      // existing perceptualHash (or previewImageKeys) with an empty/undefined
+      // value — keep whatever's already on the row and warn instead.
+      console.warn(`[patch] render blank for ${slug}: page never confirmably painted content — keeping existing previewImageKeys/perceptualHash`);
+    } else {
+      const { shots, perceptualHash: ph } = result;
+      perceptualHash = ph;
+      const keys: string[] = [];
+      for (const label of ['desktop', 'mobile'] as const) {
+        const shot = shots.find((s) => s.label === label);
+        if (shot) keys.push(await uploadScreenshot(hash, label, shot.buffer, { hasBlobToken }));
+      }
+      if (keys.length) previewImageKeys = keys;
     }
-    if (keys.length) previewImageKeys = keys;
   } finally { await close(); }
 
   const { diviJsonBlobKey } = await uploadLayout(hash, newDoc, { hasBlobToken, outDir: 'pipeline/out' });

@@ -96,6 +96,12 @@ export interface RenderAndCaptureDeps {
   captureScreenshots?: typeof captureScreenshots;
   hasBlobToken: boolean;
   logPrefix: string;
+  /** Review fix (T2.1 minor): route blank/failed warnings through the same
+   * injectable logger `run.ts` uses (`RunDeps.log`) instead of a bare
+   * `console.warn`, so pipeline output goes through one consistent channel.
+   * Defaults to `console.warn` (unchanged behavior) when not supplied — kept
+   * optional so existing callers/tests don't need updating. */
+  log?: (message: string) => void;
 }
 
 export interface RenderAndCaptureResult {
@@ -132,17 +138,18 @@ export async function renderAndCapture(
   deps: RenderAndCaptureDeps,
 ): Promise<RenderAndCaptureResult> {
   const doCapture = deps.captureScreenshots ?? captureScreenshots;
+  const doLog = deps.log ?? console.warn;
   try {
     const result = await deps.renderLayout({ title: input.title, postContent: input.postContent }, deps.renderDeps);
     if (result.outcome === 'blank') {
-      console.warn(`${deps.logPrefix} render blank for ${input.hash.slice(0, 12)}: page never confirmably painted content`);
+      doLog(`${deps.logPrefix} render blank for ${input.hash.slice(0, 12)}: page never confirmably painted content`);
       return { previewImageKeys: [], outcome: 'blank' };
     }
     const { previewImageKeys, screenshotPaths } = await doCapture(result.shots, input.hash, { hasBlobToken: deps.hasBlobToken });
     return { previewImageKeys, perceptualHash: result.perceptualHash, screenshotPaths, outcome: 'ok' };
   } catch (e) {
     const message = (e as Error).message;
-    console.warn(`${deps.logPrefix} render failed for ${input.hash.slice(0, 12)}: ${message}`);
+    doLog(`${deps.logPrefix} render failed for ${input.hash.slice(0, 12)}: ${message}`);
     return { previewImageKeys: [], error: message };
   }
 }
@@ -183,6 +190,10 @@ export async function buildRunDeps(opts: BuildRunDepsOptions): Promise<{ deps: R
   const pexelsKey = process.env.PEXELS_API_KEY;
 
   const stubLlm = { complete: async () => '{"content":[]}' };
+  // Single logger shared by `RunDeps.log` and `renderAndCapture`'s blank/failed
+  // warnings (T2.1 minor review fix) — one consistent channel instead of a
+  // console.log-via-RunDeps + bare-console.warn-via-renderAndCapture split.
+  const log = (m: string) => console.log(`${logPrefix} ${m}`);
   const deps: RunDeps = {
     targets,
     guide,
@@ -216,7 +227,7 @@ export async function buildRunDeps(opts: BuildRunDepsOptions): Promise<{ deps: R
     // done with them (and, on a partial failure inside captureScreenshots,
     // by captureScreenshots itself — review fix, T1.3).
     render: renderer
-      ? (input) => renderAndCapture(input, { renderLayout, renderDeps: renderer.deps, hasBlobToken, logPrefix })
+      ? (input) => renderAndCapture(input, { renderLayout, renderDeps: renderer.deps, hasBlobToken, logPrefix, log })
       : undefined,
     // T1.3 vision critic — optional/injected like render/resolveImages; skipped
     // entirely in dry-run (there's no renderer to produce real screenshots for
@@ -229,7 +240,7 @@ export async function buildRunDeps(opts: BuildRunDepsOptions): Promise<{ deps: R
     maxParseRetries: 2,
     maxBudgetUsd: maxBudget,
     onEvent,
-    log: (m) => console.log(`${logPrefix} ${m}`),
+    log,
   };
   return { deps, close: async () => { await renderer?.close(); } };
 }
