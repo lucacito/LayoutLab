@@ -36,7 +36,7 @@ const SITE_JSONLD = [
   organizationJsonLd({
     name: 'Divi5Lab',
     url: SITE_URL,
-    logo: `${SITE_URL}/divi5lab-logo.png`,
+    logo: `${SITE_URL}/divi5lab-logo-dark.png`,
     description: DESCRIPTION,
     email: 'support@divi5lab.com',
     sameAs: [],
