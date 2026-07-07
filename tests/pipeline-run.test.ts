@@ -334,6 +334,39 @@ describe('runPipeline render-miss gate (T1.3)', () => {
     expect(events.some((e) => e.type === 'render_failed')).toBe(true);
     expect(events.some((e) => e.type === 'dropped')).toBe(false);
   });
+
+  // Review fix (T1.3): a THROWING deps.render must take the exact same path as
+  // a render that resolves with no previews — renderFailed++, no ingest — not
+  // fall through to the generic top-level catch (which would tag it a plain
+  // 'error' drop and never touch renderFailed at all). Also asserts the run
+  // continues on to the next target rather than aborting the whole batch.
+  it('a throwing deps.render counts as renderFailed (not a generic error drop) and the run continues to the next target', async () => {
+    const target2 = { type: 'hero', niche: 'saas', style: 'bold' };
+    const llm = llmSeq(genJsonWithContent(1), seoJson, genJsonWithContent(2), seoJson);
+    const render = vi
+      .fn()
+      .mockRejectedValueOnce(new Error('render boom'))
+      .mockResolvedValueOnce({ previewImageKeys: ['p'] });
+    const ingest = vi.fn(async () => ({ deduped: false }));
+    const s = await runPipeline(baseDeps({ targets: [target, target2], llm, render, ingest }) as any);
+    expect(s.renderFailed).toBe(1);
+    expect(s.dropped).toBe(0); // must NOT land in the generic 'dropped' counter
+    expect(s.ingested).toBe(1); // second target still generates → renders → ingests fine
+    expect(ingest).toHaveBeenCalledOnce();
+  });
+
+  it('emits render_failed (not a generic dropped event) when deps.render throws', async () => {
+    const events: RunEvent[] = [];
+    const llm = llmSeq(genJsonWithContent(), seoJson);
+    const render = vi.fn(async () => {
+      throw new Error('render boom');
+    });
+    const deps = baseDeps({ llm, render, onEvent: (e: RunEvent) => events.push(e) });
+    const s = await runPipeline(deps as any);
+    expect(s.renderFailed).toBe(1);
+    expect(events.some((e) => e.type === 'render_failed')).toBe(true);
+    expect(events.some((e) => e.type === 'dropped')).toBe(false);
+  });
 });
 
 // T1.3: after render (and after the T1.2 near-dupe gate — cheapest-first), score
@@ -409,6 +442,23 @@ describe('runPipeline vision critic gate (T1.3)', () => {
     expect(vc).toMatchObject({ score: 2, issues: ['clipping'], passed: false });
   });
 
+  // Review fix (T1.3): a below-threshold vision-critic drop previously only
+  // emitted the `vision_critic` event — it never emitted a `dropped` event, so
+  // the eval harness's dropReasonCounts under-totaled vs summary.dropped (the
+  // score-based drop was invisible in the drop-reason breakdown). Now it must
+  // also emit `dropped` with a reason distinct from validation/content/error.
+  it('also emits a dropped RunEvent with reason=vision_critic on a below-threshold drop', async () => {
+    const events: RunEvent[] = [];
+    const llm = llmSeq(genJsonWithContent(), seoJson);
+    const render = renderWithShots(['/tmp/d.png']);
+    const visionCritic = vi.fn(async () => ({ score: 2, issues: ['clipping'] }));
+    const deps = baseDeps({ llm, render, visionCritic, onEvent: (e: RunEvent) => events.push(e) });
+    const s = await runPipeline(deps as any);
+    expect(s.dropped).toBe(1);
+    const dropped = events.find((e) => e.type === 'dropped');
+    expect(dropped).toMatchObject({ reason: 'vision_critic' });
+  });
+
   it('never runs the critic on a render-miss (render-miss drop happens first, cheapest-first ordering)', async () => {
     const llm = llmSeq(genJsonWithContent(), seoJson);
     const render = vi.fn(async () => ({ previewImageKeys: [] }));
@@ -416,5 +466,36 @@ describe('runPipeline vision critic gate (T1.3)', () => {
     const s = await runPipeline(baseDeps({ llm, render, visionCritic }) as any);
     expect(visionCritic).not.toHaveBeenCalled();
     expect(s.renderFailed).toBe(1);
+  });
+
+  // Review fix (T1.3): a critic that THROWS (CLI failure, unparseable JSON) was
+  // previously undocumented/untested — it fell to the generic top-level catch,
+  // which happens to drop it (sensible: no unscored layout ships) but with no
+  // distinct signal. Make the policy explicit and tested.
+  it('drops the layout (does not ingest) when the vision critic itself throws', async () => {
+    const llm = llmSeq(genJsonWithContent(), seoJson);
+    const render = renderWithShots(['/tmp/d.png']);
+    const visionCritic = vi.fn(async () => {
+      throw new Error('claude CLI exited non-zero');
+    });
+    const ingest = vi.fn(async () => ({ deduped: false }));
+    const s = await runPipeline(baseDeps({ llm, render, visionCritic, ingest }) as any);
+    expect(s.dropped).toBe(1);
+    expect(s.ingested).toBe(0);
+    expect(ingest).not.toHaveBeenCalled();
+  });
+
+  it('emits a dropped RunEvent with reason=vision_critic_error (not the generic error reason) when the critic throws', async () => {
+    const events: RunEvent[] = [];
+    const llm = llmSeq(genJsonWithContent(), seoJson);
+    const render = renderWithShots(['/tmp/d.png']);
+    const visionCritic = vi.fn(async () => {
+      throw new Error('claude CLI exited non-zero');
+    });
+    const deps = baseDeps({ llm, render, visionCritic, onEvent: (e: RunEvent) => events.push(e) });
+    await runPipeline(deps as any);
+    const dropped = events.find((e) => e.type === 'dropped');
+    expect(dropped).toMatchObject({ reason: 'vision_critic_error' });
+    expect(events.some((e) => e.type === 'vision_critic')).toBe(false); // never scored — nothing to report
   });
 });

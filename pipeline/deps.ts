@@ -32,6 +32,60 @@ export async function withTempFile<T>(json: string, fn: (file: string) => Promis
   }
 }
 
+export interface CaptureScreenshotsDeps {
+  hasBlobToken: boolean;
+  /** Override the real `uploadScreenshot`/`writeFile`/`mkdtemp`/`rm` calls —
+   * used by tests to simulate a mid-loop failure without a real Blob token or
+   * filesystem dependency on a specific tmp layout. */
+  uploadScreenshot?: (hash: string, label: string, data: Buffer, deps: { hasBlobToken: boolean }) => Promise<string>;
+  writeFile?: (path: string, data: Buffer) => Promise<void>;
+  mkdtemp?: (prefix: string) => Promise<string>;
+  rm?: (path: string, opts: { recursive?: boolean; force?: boolean }) => Promise<void>;
+}
+
+/**
+ * Uploads each rendered shot to Blob AND writes it to a local temp file under a
+ * fresh `ll-shot-*` dir — the vision critic (T1.3) needs real file paths it can
+ * `Read`, not blob storage keys. If ANY step throws partway through this loop
+ * (e.g. `uploadScreenshot` fails for the mobile shot after the desktop PNG was
+ * already written to disk), the already-written temp dir is removed before
+ * rethrowing — review fix (T1.3): the previous inline version of this logic
+ * returned `{ previewImageKeys: [] }` on any failure without ever cleaning up
+ * whatever had already been written, leaking a temp dir + partial files on
+ * every partial render failure. Extracted out of the `render` closure below
+ * and dependency-injected (mkdtemp/writeFile/rm/uploadScreenshot all
+ * overridable) so this cleanup-on-failure path is independently unit-testable
+ * without a real renderer, Blob token, or filesystem.
+ */
+export async function captureScreenshots(
+  shots: { label: string; buffer: Buffer }[],
+  hash: string,
+  deps: CaptureScreenshotsDeps,
+): Promise<{ previewImageKeys: string[]; screenshotPaths: string[] }> {
+  const doMkdtemp = deps.mkdtemp ?? mkdtemp;
+  const doWriteFile = deps.writeFile ?? writeFile;
+  const doRm = deps.rm ?? rm;
+  const doUploadScreenshot = deps.uploadScreenshot ?? uploadScreenshot;
+  const shotDir = await doMkdtemp(join(tmpdir(), 'll-shot-'));
+  try {
+    const keys: string[] = [];
+    const screenshotPaths: string[] = [];
+    for (const label of ['desktop', 'mobile'] as const) {
+      const shot = shots.find((s) => s.label === label);
+      if (shot) {
+        keys.push(await doUploadScreenshot(hash, label, shot.buffer, { hasBlobToken: deps.hasBlobToken }));
+        const path = join(shotDir, `${label}.png`);
+        await doWriteFile(path, shot.buffer);
+        screenshotPaths.push(path);
+      }
+    }
+    return { previewImageKeys: keys, screenshotPaths };
+  } catch (e) {
+    await doRm(shotDir, { recursive: true, force: true }).catch(() => {});
+    throw e;
+  }
+}
+
 export function arg(name: string): string | undefined {
   const hit = process.argv.find((a) => a.startsWith(`--${name}=`));
   return hit ? hit.split('=')[1] : undefined;
@@ -98,23 +152,14 @@ export async function buildRunDeps(opts: BuildRunDepsOptions): Promise<{ deps: R
       ? async ({ title, postContent, hash }) => {
           try {
             const { shots, perceptualHash } = await renderLayout({ title, postContent }, renderer.deps);
-            const keys: string[] = [];
             // T1.3: also persist each shot to a local temp file — the vision
             // critic runs through the `claude` CLI (constraint #1) and needs
             // real FILE PATHS it can Read, not the blob keys uploadScreenshot
-            // returns. Cleaned up by run.ts once it's done with them.
-            const shotDir = await mkdtemp(join(tmpdir(), 'll-shot-'));
-            const screenshotPaths: string[] = [];
-            for (const label of ['desktop', 'mobile'] as const) {
-              const shot = shots.find((s) => s.label === label);
-              if (shot) {
-                keys.push(await uploadScreenshot(hash, label, shot.buffer, { hasBlobToken }));
-                const path = join(shotDir, `${label}.png`);
-                await writeFile(path, shot.buffer);
-                screenshotPaths.push(path);
-              }
-            }
-            return { previewImageKeys: keys, perceptualHash, screenshotPaths };
+            // returns. Cleaned up by run.ts once it's done with them (and, on a
+            // partial failure inside this call, by captureScreenshots itself —
+            // review fix, T1.3).
+            const { previewImageKeys, screenshotPaths } = await captureScreenshots(shots, hash, { hasBlobToken });
+            return { previewImageKeys, perceptualHash, screenshotPaths };
           } catch (e) {
             console.warn(`${logPrefix} render failed for ${hash.slice(0, 12)}: ${(e as Error).message}`);
             return { previewImageKeys: [] };

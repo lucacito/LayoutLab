@@ -137,6 +137,25 @@ describe('MetricsAccumulator', () => {
     expect(empty.renderFailedRate).toBeNull();
   });
 
+  // Review fix (T1.3): a below-threshold vision-critic drop now also emits a
+  // `dropped` RunEvent (reason: 'vision_critic'), and a critic that throws
+  // emits one with reason 'vision_critic_error' — both must roll up into
+  // dropReasonCounts like every other drop reason, so the eval scoreboard's
+  // drop-reason breakdown totals match RunSummary.dropped.
+  it('rolls vision-critic drops (score-based and critic-error) into dropReasonCounts', () => {
+    const acc = new MetricsAccumulator('baseline', 2);
+    const events: RunEvent[] = [
+      { type: 'generated', target },
+      { type: 'vision_critic', target, score: 2, issues: ['overlap'], passed: false },
+      { type: 'dropped', target, reason: 'vision_critic', detail: 'score 2 issues=overlap' },
+      { type: 'generated', target },
+      { type: 'dropped', target, reason: 'vision_critic_error', detail: 'claude CLI exited non-zero' },
+    ];
+    for (const e of events) acc.add(e);
+    const m = acc.finalize(summary({ generated: 2, dropped: 2 }));
+    expect(m.dropReasonCounts).toEqual({ vision_critic: 1, vision_critic_error: 1 });
+  });
+
   it('builds a vision-critic score distribution + mean from vision_critic events (T1.3), null when the critic never ran', () => {
     const acc = new MetricsAccumulator('baseline', 3);
     const events: RunEvent[] = [

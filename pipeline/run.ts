@@ -1,5 +1,6 @@
 // pipeline/run.ts
 import { rm } from 'node:fs/promises';
+import { dirname, basename } from 'node:path';
 import type { LlmClient, LlmUsage } from './llm';
 import type { Target, Guide } from './recipes';
 import { buildRepairPrompt, buildContentRepairPrompt } from './recipes';
@@ -13,6 +14,7 @@ import { lintLayoutJson } from './content-lint';
 import type { ValidationResult } from './validate';
 import type { UploadResult } from './upload';
 import type { IngestPayload } from '@/lib/ingest/schema';
+import { meetsQualityBar } from './vision-critic';
 import type { VisionCriticContext, VisionCriticResult } from './vision-critic';
 
 /** Card slugs must be unique across the 18-variant matrix, but the AI-written base
@@ -61,7 +63,16 @@ export type RunEvent =
   | { type: 'generated'; target: Target }
   | { type: 'repair_attempt'; target: Target; kind: 'structural' | 'content' }
   | { type: 'content_lint'; target: Target; hit: boolean; codes: string[] }
-  | { type: 'dropped'; target: Target; reason: 'validation' | 'content' | 'error'; detail: string }
+  | {
+      type: 'dropped';
+      target: Target;
+      /** `vision_critic` = scored below threshold; `vision_critic_error` = the
+       * critic itself threw/returned unparseable JSON — both are deliberate
+       * drops (no unscored layout ships), kept distinct from each other and
+       * from a generic `error` drop so the eval scoreboard can tell them apart. */
+      reason: 'validation' | 'content' | 'error' | 'vision_critic' | 'vision_critic_error';
+      detail: string;
+    }
   | { type: 'deduped'; target: Target }
   /** Perceptual-hash near-duplicate drop (T1.2) — see `RunSummary.nearDuped`. */
   | { type: 'near_duplicate'; target: Target; distance: number }
@@ -277,13 +288,23 @@ export async function runPipeline(deps: RunDeps): Promise<RunSummary> {
         renderAttempted = true;
         const parsed = JSON.parse(json) as { post_title?: string; post_content?: string };
         if (parsed.post_content) {
-          const r = await deps.render({ title: parsed.post_title ?? seo.title, postContent: parsed.post_content, hash });
-          if (r.previewImageKeys.length) {
-            previewImageKeys = r.previewImageKeys;
-            perceptualHash = r.perceptualHash;
-            renderedScreenshotPaths = r.screenshotPaths ?? [];
-            localScreenshotPaths = renderedScreenshotPaths;
-            renderSucceeded = true;
+          // Review fix (T1.3): a THROWING deps.render must not fall through to
+          // the generic top-level catch below — that would count it as a
+          // generic 'error' drop (reason: 'error') and bypass `renderFailed`
+          // entirely. Catch it here so a thrown render takes the exact same
+          // path as a render that resolves with no previews: renderSucceeded
+          // stays false, and the render-miss gate right below handles it.
+          try {
+            const r = await deps.render({ title: parsed.post_title ?? seo.title, postContent: parsed.post_content, hash });
+            if (r.previewImageKeys.length) {
+              previewImageKeys = r.previewImageKeys;
+              perceptualHash = r.perceptualHash;
+              renderedScreenshotPaths = r.screenshotPaths ?? [];
+              localScreenshotPaths = renderedScreenshotPaths;
+              renderSucceeded = true;
+            }
+          } catch (err) {
+            log(`render threw for ${target.type}/${target.niche}/${target.style}: ${(err as Error).message}`);
           }
         }
       }
@@ -330,13 +351,32 @@ export async function runPipeline(deps: RunDeps): Promise<RunSummary> {
       if (deps.visionCritic && renderSucceeded) {
         const minScore = deps.visionCriticMinScore ?? 3;
         const criticPaths = renderedScreenshotPaths.length ? renderedScreenshotPaths : previewImageKeys;
-        const critic = await deps.visionCritic(criticPaths, { type: target.type, niche: target.niche, style: target.style });
-        const passed = critic.score >= minScore;
+        // Deliberate policy (review fix, T1.3): this pipeline has no human
+        // review (constraint #4) — the critic IS the QA. If it throws (CLI
+        // failure) or returns unparseable JSON, that is NOT "it looked fine";
+        // it's treated exactly like a failing score: dropped before ingest via
+        // the same `dropped` counter, but logged/tagged distinctly so it's
+        // visible as its own failure mode in the eval scoreboard rather than
+        // silently falling into the generic catch's reason:'error' bucket.
+        let critic: VisionCriticResult;
+        try {
+          critic = await deps.visionCritic(criticPaths, { type: target.type, niche: target.niche, style: target.style });
+        } catch (err) {
+          summary.dropped++;
+          outcome = 'dropped';
+          const detail = (err as Error).message;
+          log(`[run] vision critic errored — dropping unscored layout: ${detail}`);
+          onEvent({ type: 'dropped', target, reason: 'vision_critic_error', detail });
+          continue;
+        }
+        const passed = meetsQualityBar(critic, minScore);
         onEvent({ type: 'vision_critic', target, score: critic.score, issues: critic.issues, passed });
         if (!passed) {
           summary.dropped++;
           outcome = 'dropped';
-          log(`vision-critic drop ${target.type}/${target.niche}/${target.style}: score ${critic.score} issues=${critic.issues.join(',') || 'none'}`);
+          const detail = `score ${critic.score} issues=${critic.issues.join(',') || 'none'}`;
+          log(`vision-critic drop ${target.type}/${target.niche}/${target.style}: ${detail}`);
+          onEvent({ type: 'dropped', target, reason: 'vision_critic', detail });
           continue;
         }
       }
@@ -384,6 +424,17 @@ export async function runPipeline(deps: RunDeps): Promise<RunSummary> {
       // a thrown error, or a clean ingest) so they never leak across a batch run.
       if (localScreenshotPaths.length) {
         await Promise.all(localScreenshotPaths.map((p) => rm(p, { force: true }).catch(() => {})));
+        // Review fix (T1.3): rm'ing the files above leaves the mkdtemp PARENT
+        // directory (`ll-shot-*`, created by pipeline/deps.ts's real renderer)
+        // behind, empty, on every real run. Remove it too — but ONLY when its
+        // basename actually looks like one of ours, so this can never be
+        // tricked into recursively deleting some unrelated directory (e.g. a
+        // differently-wired renderer, or a test fixture, pointing
+        // `screenshotPaths` at a path whose parent is something precious).
+        const shotDirs = new Set(
+          localScreenshotPaths.map((p) => dirname(p)).filter((d) => basename(d).startsWith('ll-shot-')),
+        );
+        await Promise.all([...shotDirs].map((d) => rm(d, { recursive: true, force: true }).catch(() => {})));
       }
     }
   }
