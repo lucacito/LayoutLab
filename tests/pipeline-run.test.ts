@@ -552,6 +552,26 @@ describe('runPipeline vision critic gate (T1.3)', () => {
     expect(ingest).not.toHaveBeenCalled();
   });
 
+  // Review fix (T2.2): the vision critic is an LLM call. If a Phase B retry
+  // (e.g. triggered by a transient ingest failure AFTER the critic already
+  // scored this target) re-ran the whole Phase B body naively, it would
+  // re-invoke the critic too — a second real LLM call for work already done.
+  // The critic's score must be held/memoized across Phase B attempts.
+  it('a Phase B retry after a successful vision-critic score does not re-invoke the critic (T2.2 review fix)', async () => {
+    const llm = llmSeq(genJsonWithContent(), seoJson);
+    const render = renderWithShots(['/tmp/d.png']);
+    const visionCritic = vi.fn(async () => ({ score: 4, issues: [] }));
+    const ingest = vi
+      .fn()
+      .mockRejectedValueOnce(new Error('ECONNRESET'))
+      .mockResolvedValueOnce({ deduped: false });
+    const sleep = vi.fn(async (_ms: number) => {});
+    const s = await runPipeline(baseDeps({ llm, render, visionCritic, ingest, sleep }) as any);
+    expect(s.ingested).toBe(1);
+    expect(visionCritic).toHaveBeenCalledTimes(1); // NOT called again on the ingest retry
+    expect(ingest).toHaveBeenCalledTimes(2);
+  });
+
   it('emits a dropped RunEvent with reason=vision_critic_error (not the generic error reason) when the critic throws', async () => {
     const events: RunEvent[] = [];
     const llm = llmSeq(genJsonWithContent(), seoJson);
@@ -594,11 +614,16 @@ describe('runPipeline error classification + retry with backoff (T2.2)', () => {
     expect(events.some((e) => e.type === 'errored')).toBe(false);
   });
 
-  it('a full-target retry RE-GENERATES (calls the llm again) — documented, not double-charge-prevented', async () => {
-    // The brief allows this: "a full-target retry re-generates; that's
-    // acceptable... say so". This test locks in that documented behavior: the
-    // generator is called once per attempt, and the summed usage across both
-    // attempts (not just the winning one) is what's reported.
+  // Review fix (T2.2): the original implementation wrapped the ENTIRE
+  // per-target body (Phase A generation + Phase B infra) in `withRetry`, so a
+  // transient Phase B failure (e.g. ingest) re-ran Phase A from scratch too —
+  // double-charging LLM calls already completed (constraint #7 violation).
+  // The brief never sanctioned this (a prior report claimed otherwise; that
+  // claim was wrong and has been corrected). Now Phase A (generate/compose,
+  // validate+repair, content-lint, dedupe-hash, SEO) runs ONCE per target and
+  // is NOT wrapped in the retry boundary; only Phase B (upload/render/near-dup/
+  // vision-critic/ingest) is retried, reusing Phase A's output.
+  it('a Phase B retry (e.g. a transient ingest failure) does NOT re-generate — Phase A runs exactly once, llm.complete count unchanged by the retry', async () => {
     const events: RunEvent[] = [];
     const sleep = vi.fn(async (_ms: number) => {});
     const llm = llmWithUsage('{"post_title":"T","post_content":"<!-- wp:divi/text {\\"content\\":\\"Ship faster with real copy\\"} -->"}');
@@ -609,13 +634,38 @@ describe('runPipeline error classification + retry with backoff (T2.2)', () => {
     const deps = baseDeps({ llm, ingest, sleep, onEvent: (e: RunEvent) => events.push(e) });
     const s = await runPipeline(deps as any);
     expect(s.ingested).toBe(1);
-    expect(s.generated).toBe(2); // generateLayout ran again on the retry — a real regeneration, not a resume
-    // 2 llm.complete calls per attempt (generate + seo) x 2 attempts = 4 total.
-    expect(llm.complete).toHaveBeenCalledTimes(4);
+    expect(s.generated).toBe(1); // Phase A (generation) ran exactly ONCE, not re-run by the Phase B retry
+    // Only 2 llm.complete calls total for this target (generate + seo) — the
+    // ingest-triggered retry must not add any more (no re-generation, no re-SEO).
+    expect(llm.complete).toHaveBeenCalledTimes(2);
+    expect(ingest).toHaveBeenCalledTimes(2);
     const usageEvent = usageEventOf(events);
-    // usage.costUsd accumulates across BOTH attempts (0.01 x 4), not just the
-    // winning one — the true total spend for this target is reported.
-    expect(usageEvent.usage.costUsd).toBeCloseTo(0.04, 5);
+    // usage is the true total spend for this target — still just the ONE
+    // generate + ONE seo call's worth (0.01 x 2), since Phase A never re-ran.
+    expect(usageEvent.usage.costUsd).toBeCloseTo(0.02, 5);
+  });
+
+  // Review fix (T2.2): post-ingest bookkeeping (nearDupPool push, summary.ingested++,
+  // log, the 'ingested' onEvent) previously ran INSIDE the retry boundary, so a
+  // throwing event consumer AFTER a successful ingest retried the whole target
+  // and called ingest a second time (reviewer's probe: ingest called 2x,
+  // summary.ingested=2). It must now be impossible: bookkeeping happens once,
+  // strictly after Phase B's retry loop has resolved.
+  it('a transient throw AFTER a successful ingest (e.g. a throwing onEvent consumer) does not re-ingest and does not double-count', async () => {
+    const ingest = vi.fn(async () => ({ deduped: false }));
+    let sawIngestedEvent = false;
+    const onEvent = (e: RunEvent) => {
+      if (e.type === 'ingested') {
+        sawIngestedEvent = true;
+        throw new Error('boom from a misbehaving event consumer');
+      }
+    };
+    const deps = baseDeps({ ingest, onEvent });
+    const s = await runPipeline(deps as any);
+    expect(sawIngestedEvent).toBe(true);
+    expect(ingest).toHaveBeenCalledTimes(1); // must NOT be called again
+    expect(s.ingested).toBe(1); // must NOT be double-counted
+    expect(s.errored).toBe(0);
   });
 
   it('never retries a permanent_infra failure (e.g. an auth error) — fails on the first attempt and counts as errored, not qualityDropped', async () => {
@@ -709,5 +759,22 @@ describe('runPipeline error classification + retry with backoff (T2.2)', () => {
     expect(llm.complete).toHaveBeenCalledTimes(1);
     const errored = events.find((e) => e.type === 'errored');
     expect(errored).toMatchObject({ class: 'permanent_infra', code: 'usage_limit', attempts: 1 });
+  });
+
+  // Minor (T2.2 review): an invalid API key can't recover mid-run either — every
+  // remaining target would fail identically. Extend the abort behavior (until
+  // now usage_limit-only) to the 'auth' code too.
+  it('an auth error also ABORTS the rest of the run (an invalid API key cannot recover mid-run)', async () => {
+    const events: RunEvent[] = [];
+    const target2 = { type: 'hero', niche: 'saas', style: 'bold' };
+    const ingest = vi.fn(async () => {
+      throw new Error('401 unauthorized: invalid api key');
+    });
+    const deps = baseDeps({ targets: [target, target2], ingest, onEvent: (e: RunEvent) => events.push(e) });
+    const s = await runPipeline(deps as any);
+    expect(s.errored).toBe(1);
+    expect(ingest).toHaveBeenCalledTimes(1); // target 2 never attempted
+    const errored = events.find((e) => e.type === 'errored');
+    expect(errored).toMatchObject({ class: 'permanent_infra', code: 'auth' });
   });
 });

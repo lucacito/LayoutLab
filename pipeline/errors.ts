@@ -31,8 +31,16 @@ export interface ClassifiedError {
 const USAGE_LIMIT_RE = /hit your limit|usage limit|rate.?limit|rate.?limited/i;
 const BUDGET_RE = /max.?budget|budget exceeded|exceeded.*budget|cost limit/i;
 const AUTH_RE = /\b401\b|\b403\b|unauthorized|forbidden|invalid api.?key/i;
+// Minor (T2.2 review): the original bare `network` and `try again` substrings
+// were too broad — they'd also match a PERMANENT error whose message merely
+// happens to contain that English phrasing (e.g. "invalid network
+// configuration", or a validation message telling a human to "try again with
+// a different value"), wrongly classifying it as transient/retryable. Tightened
+// to require the phrasing actually look like a transient-infra signal: `network`
+// must be followed by a failure-shaped qualifier, and `try again` must be the
+// "please try again[, ...]" style wording APIs use for a retryable blip.
 const TRANSIENT_RE =
-  /ECONNRESET|ECONNREFUSED|ETIMEDOUT|ECONNABORTED|EAI_AGAIN|ENOTFOUND|EPIPE|socket hang up|network|fetch failed|timed?\s*out|temporarily unavailable|\b(429|500|502|503|504)\b|overloaded|too many requests|try again/i;
+  /ECONNRESET|ECONNREFUSED|ETIMEDOUT|ECONNABORTED|EAI_AGAIN|ENOTFOUND|ENETUNREACH|ENETDOWN|EPIPE|socket hang up|network (error|failure|issue|timeout|unreachable|unavailable)|fetch failed|timed?\s*out|temporarily unavailable|\b(429|500|502|503|504)\b|overloaded|too many requests|please try again\b/i;
 
 export function isUsageLimitMessage(text: string): boolean {
   return USAGE_LIMIT_RE.test(text);

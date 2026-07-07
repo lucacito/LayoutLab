@@ -8,6 +8,7 @@ import { extractJson } from './llm';
 import { generateLayout } from './generate';
 import { composeLanding } from '@/pipeline/compose';
 import { generateSeo } from './seo';
+import type { LayoutSeo } from './seo';
 import { contentHash, nearestDistance, perceptualDupeMaxDistance } from './dedupe';
 import { stackLayoutJsonMobile } from './stack-mobile';
 import { lintLayoutJson } from './content-lint';
@@ -90,9 +91,11 @@ export type RunOutcome =
  * `RunSummary` stays the pipeline's small, stable counter contract; `RunEvent`
  * is the richer per-target detail feed the eval harness aggregates into a
  * scoreboard. Consuming it is entirely optional — omitting `RunDeps.onEvent`
- * changes no pipeline behavior. New quality gates (T1.2 near-dupe, T1.3 vision
- * critic, T2.2 error classes) should add a new event variant here rather than
- * grow RunSummary or reshape this union.
+ * changes no pipeline behavior (a throwing consumer is caught and logged, never
+ * propagated — see `emit` in `runPipeline` below, a T2.2 review fix). New
+ * quality gates (T1.2 near-dupe, T1.3 vision critic, T2.2 error classes) should
+ * add a new event variant here rather than grow RunSummary or reshape this
+ * union.
  */
 export type RunEvent =
   | { type: 'generated'; target: Target }
@@ -107,7 +110,16 @@ export type RunEvent =
        * threw/returned unparseable JSON — both are deliberate QUALITY drops
        * (no unscored layout ships is a content-quality policy, not an infra
        * signal), kept distinct from each other so the eval scoreboard can tell
-       * them apart. */
+       * them apart.
+       *
+       * T2.2 review fix: this variant's `type` stays `'dropped'` (NOT renamed
+       * to `'qualityDropped'` to mirror the `RunSummary` field of the same
+       * name) — every one of these reasons is exactly the "a quality gate
+       * rejected this target" signal `summary.qualityDropped` counts, so the
+       * event and the counter are deliberately compatible in MEANING even
+       * though their names diverge; renaming the event type would be a
+       * needless breaking change for the eval harness (and any other
+       * consumer) that already keys off `event.type === 'dropped'`. */
       reason: 'validation' | 'content' | 'vision_critic' | 'vision_critic_error';
       detail: string;
     }
@@ -206,6 +218,46 @@ export interface RunDeps {
   sleep?: (ms: number) => Promise<void>;
 }
 
+/**
+ * T2.2 review fix — retry-boundary redesign.
+ *
+ * The original T2.2 cut wrapped the ENTIRE per-target body in `withRetry`,
+ * which broke constraint #7 (never double-charge LLM calls already done) two
+ * ways a reviewer's probe confirmed:
+ *   1. Post-ingest bookkeeping (nearDupPool push, `summary.ingested++`, log,
+ *      the `'ingested'` event) ran INSIDE the retry boundary, so a throwing
+ *      event consumer (or any late failure) after a successful ingest retried
+ *      the whole target and called `ingest` a SECOND time.
+ *   2. A transient failure at the very end (e.g. ingest) re-ran the whole
+ *      target from scratch on retry — re-generating, re-validating, re-SEOing
+ *      — double-charging LLM calls that had already returned successfully.
+ *
+ * Fix: split each target's processing into two phases.
+ *
+ * - **Phase A** (`runPhaseA`, below) — LLM-heavy: generate/compose,
+ *   validate+repair loop, content-lint(+repair), dedupe-hash, SEO. Runs
+ *   EXACTLY ONCE per target attempt and is NOT wrapped in `withRetry`. If it
+ *   throws, that's the target's one and only try (see the module-level
+ *   decision note below `runPhaseA` for why this repo doesn't also add a
+ *   per-call retry inside Phase A). Its own quality-gate drops (validation,
+ *   content, dedupe) apply their bookkeeping directly and inline — safe,
+ *   because Phase A only ever executes once, so there's no risk of applying
+ *   it twice.
+ * - **Phase B** (`runPhaseB`, below) — infra: upload, render, near-dup check,
+ *   vision critic, ingest. Wrapped in `withRetry` for `transient_infra`
+ *   failures, REUSING Phase A's output (`json`/`hash`/`seo`) across every
+ *   attempt — it is never regenerated. Render and the vision-critic score are
+ *   memoized (`renderMemo`/`criticMemo`, declared OUTSIDE the retried closure
+ *   so they survive across attempts): a retry triggered by a LATE failure
+ *   (e.g. ingest) reuses whatever Phase B already completed rather than
+ *   redoing it — this matters most for the vision critic, which is itself an
+ *   LLM call, so a retry must never invoke it again once it has already
+ *   returned a verdict.
+ * - Phase B's outcome bookkeeping (`applyPhaseBOutcome`) runs ONCE, AFTER
+ *   `withRetry` has fully resolved — strictly outside the retry boundary —
+ *   closing hole #1 above: nothing that happens after a successful ingest can
+ *   ever trigger another one.
+ */
 export async function runPipeline(deps: RunDeps): Promise<RunSummary> {
   const log = deps.log ?? (() => {});
   const onEvent = deps.onEvent ?? (() => {});
@@ -231,9 +283,17 @@ export async function runPipeline(deps: RunDeps): Promise<RunSummary> {
   // T2.2: a 'usage_limit' classification means every OTHER remaining target
   // would hit the exact same account-level wall — there's nothing to gain (and
   // real budget/time to lose) by iterating the rest of `deps.targets` after
-  // that. Checked after each target's `finally` runs (so its own cleanup still
-  // happens) rather than via an early `return` from inside the loop.
+  // that. T2.2 review fix (Minor): 'auth' gets the same treatment — an invalid
+  // API key can't recover mid-run either, so every remaining target would fail
+  // identically. 'budget' is deliberately NOT included: a per-call budget cap
+  // can legitimately be blown by one unusually expensive target while cheaper
+  // ones downstream would still succeed, so aborting on it would be too
+  // aggressive; it's left as one wasted attempt per remaining target instead
+  // (documented tradeoff, not a bug). Checked after each target's `finally`
+  // runs (so its own cleanup still happens) rather than via an early `return`
+  // from inside the loop.
   let abortRun = false;
+  const ABORT_CODES = new Set(['usage_limit', 'auth']);
 
   for (const target of deps.targets) {
     // Per-target usage meter (T4.1). Wraps deps.llm so every call this target makes
@@ -241,20 +301,19 @@ export async function runPipeline(deps: RunDeps): Promise<RunSummary> {
     // reports cost/tokens without any of those call sites needing to change. Emitted
     // once as a single `llm_usage` event in `finally`, tagged with this target's
     // final outcome so a consumer never has to infer it from event ordering.
-    // T2.2: shared across every retry attempt for this target — a full-target
-    // retry RE-GENERATES (see `attemptTarget` below), and that re-generation is
-    // real spend, so the reported usage is the TRUE total across every attempt,
-    // not just the last (successful, or finally-given-up) one.
+    // T2.2 review fix: Phase A runs exactly once (never retried), and Phase B's
+    // retries never re-run Phase A's LLM calls — so unlike the original T2.2 cut,
+    // this is no longer "the true total across every full-target attempt"; it's
+    // simply this target's one true spend.
     const usage: Required<LlmUsage> = { costUsd: 0, inputTokens: 0, outputTokens: 0 };
     let sawUsage = false;
     let outcome: RunOutcome = 'errored';
     // T1.3: local screenshot temp file paths (if the real renderer produced any)
     // handed to the vision critic — cleaned up unconditionally in `finally`
-    // below regardless of which gate/outcome this target hits. T2.2: a retried
-    // attempt renders AGAIN, so this ACCUMULATES across every attempt (rather
-    // than being overwritten) — otherwise an earlier attempt's temp dir would
-    // leak if that attempt got far enough to render before a later step in the
-    // same attempt threw.
+    // below regardless of which gate/outcome this target hits. T2.2 review fix:
+    // render is now memoized (see `renderMemo` below) and only ever executes
+    // once per target, so this no longer needs to accumulate across retry
+    // attempts — a single push is enough.
     const screenshotPathsToClean: string[] = [];
     const meteredLlm: LlmClient = {
       complete: (input) =>
@@ -270,15 +329,46 @@ export async function runPipeline(deps: RunDeps): Promise<RunSummary> {
         }),
     };
 
-    // T2.2: the body of one attempt at this target. Resolves normally (void)
-    // on every non-error terminal path — a clean ingest OR an early `return`
-    // from a QUALITY gate (validation/content/dedupe/render-miss/near-dupe/
-    // vision-critic), none of which throw. Only an actual infra failure
-    // (network/CLI/upload/ingest/etc. throwing) rejects, which is what
-    // `withRetry` below reacts to. A `return` here previously was a `continue`
-    // in the old single-flat-loop-body version of this function — the drop
-    // gates are unchanged, only how "skip to done" is spelled.
-    const attemptTarget = async (): Promise<void> => {
+    // T2.2 review fix: an `onEvent` consumer must never be able to fail (or,
+    // worse, retry-and-double-ingest) a target just by throwing. This was the
+    // exact reviewer probe for finding #1 — a throwing consumer after a
+    // successful ingest previously bubbled up as a "transient" failure and
+    // retried the whole target. Every emission in this function goes through
+    // `emit`, which swallows and logs instead of propagating.
+    const emit = (event: RunEvent) => {
+      try {
+        onEvent(event);
+      } catch (err) {
+        log(
+          `onEvent handler threw for '${event.type}' on ${target.type}/${target.niche}/${target.style}: ` +
+            `${(err as Error).message} (ignored — a consumer error must never fail or retry the target)`,
+        );
+      }
+    };
+
+    // ---- Phase A -----------------------------------------------------------
+    // LLM-heavy generation, run EXACTLY ONCE per target: generate/compose,
+    // validate+repair loop, content-lint(+repair), dedupe-hash, SEO. Returns
+    // `undefined` if a quality gate already dropped/deduped the target (its
+    // own bookkeeping is applied inline below, since this only ever runs
+    // once) — otherwise the assembled `{ json, hash, seo }` Phase B needs.
+    //
+    // Deliberately NOT wrapped in `withRetry`: retrying this whole phase on a
+    // LATE failure (e.g. Phase B's ingest call) would re-run every completed
+    // LLM call (regenerate, re-repair, re-SEO) — exactly the double-charge
+    // constraint #7 forbids. If Phase A itself throws (e.g. a transient
+    // network blip mid-generation), it is NOT retried here and the target
+    // fails after this one try — see `generate.ts`'s own bounded
+    // parse-retry loop for the one case where retrying an individual Phase A
+    // LLM call already happens (safe: an unparsed response completed no
+    // work, so retrying it isn't a double-charge). Adding a broader per-call
+    // retry around every other Phase A call would also be constraint-#7-safe
+    // in principle, but isn't implemented here — kept out to avoid the
+    // complexity/risk of a partial rewrite for a case (a transient blip
+    // during generation itself) with no reproducing test or reported
+    // incident; it's a reasonable, documented follow-up rather than a gap
+    // this fix silently papers over.
+    const runPhaseA = async (): Promise<{ json: string; hash: string; seo: LayoutSeo } | undefined> => {
       let { json } =
         target.type === 'full_landing'
           ? await composeLanding(target, {
@@ -297,7 +387,7 @@ export async function runPipeline(deps: RunDeps): Promise<RunSummary> {
               maxParseRetries: deps.maxParseRetries,
             });
       summary.generated++;
-      onEvent({ type: 'generated', target });
+      emit({ type: 'generated', target });
 
       // Validate + repair loop (hard gate). Full landings are composed from
       // per-section-validated sections, so the assembled document is valid by
@@ -309,7 +399,7 @@ export async function runPipeline(deps: RunDeps): Promise<RunSummary> {
       while (!result.valid && attempts < repairsAllowed) {
         attempts++;
         summary.repaired++;
-        onEvent({ type: 'repair_attempt', target, kind: 'structural' });
+        emit({ type: 'repair_attempt', target, kind: 'structural' });
         const { system, prompt } = buildRepairPrompt(json, result.violations);
         const text = await meteredLlm.complete({ prompt, system, maxBudgetUsd: deps.maxBudgetUsd });
         json = JSON.stringify(extractJson(text));
@@ -320,8 +410,8 @@ export async function runPipeline(deps: RunDeps): Promise<RunSummary> {
         outcome = 'dropped';
         const detail = result.violations.map((v) => v.code).join(',');
         log(`drop ${target.type}/${target.niche}/${target.style}: ${detail}`);
-        onEvent({ type: 'dropped', target, reason: 'validation', detail });
-        return;
+        emit({ type: 'dropped', target, reason: 'validation', detail });
+        return undefined;
       }
 
       // Swap placeholder images for real stock photos (after validation; URL-for-URL,
@@ -337,13 +427,13 @@ export async function runPipeline(deps: RunDeps): Promise<RunSummary> {
       // effort) — never drop a layout with clean copy over that; only warn.
       if (target.type !== 'full_landing') {
         let lint = lintLayoutJson(json);
-        onEvent({ type: 'content_lint', target, hit: lint.length > 0, codes: lint.map((v) => v.code) });
+        emit({ type: 'content_lint', target, hit: lint.length > 0, codes: lint.map((v) => v.code) });
         let lintAttempts = 0;
         const dropWorthy = (vs: typeof lint) => vs.filter((v) => v.code !== 'PLACEHOLDER_IMAGE');
         while (dropWorthy(lint).length && lintAttempts < deps.maxRepairs) {
           lintAttempts++;
           summary.repaired++;
-          onEvent({ type: 'repair_attempt', target, kind: 'content' });
+          emit({ type: 'repair_attempt', target, kind: 'content' });
           const { system, prompt } = buildContentRepairPrompt(json, lint);
           const text = await meteredLlm.complete({ prompt, system, maxBudgetUsd: deps.maxBudgetUsd });
           json = JSON.stringify(extractJson(text));
@@ -359,8 +449,8 @@ export async function runPipeline(deps: RunDeps): Promise<RunSummary> {
           outcome = 'dropped';
           const detail = dropWorthy(lint).map((v) => v.code).join(',');
           log(`drop(content) ${target.type}/${target.niche}/${target.style}: ${detail}`);
-          onEvent({ type: 'dropped', target, reason: 'content', detail });
-          return;
+          emit({ type: 'dropped', target, reason: 'content', detail });
+          return undefined;
         }
         if (lint.length) log(`warn(content) ${target.type}/${target.niche}/${target.style}: ${lint.map((v) => v.code).join(',')} (best-effort image miss)`);
       }
@@ -375,215 +465,290 @@ export async function runPipeline(deps: RunDeps): Promise<RunSummary> {
         summary.deduped++;
         outcome = 'deduped';
         log(`dedupe ${hash.slice(0, 12)}`);
-        onEvent({ type: 'deduped', target });
-        return;
+        emit({ type: 'deduped', target });
+        return undefined;
       }
 
       const seo = await generateSeo(json, target, { llm: meteredLlm, maxBudgetUsd: deps.maxBudgetUsd });
-      const { diviJsonBlobKey, previewImageKeys: placeholderPreviews } = await deps.upload(hash, json);
+      return { json, hash, seo };
+    };
 
-      // Render real screenshots when a renderer is wired; else keep the placeholders.
-      let previewImageKeys = placeholderPreviews;
-      let perceptualHash: string | undefined;
-      let renderedScreenshotPaths: string[] = [];
-      // `renderAttempted` tracks whether a renderer is wired at all (a real,
-      // non-dry-run pipeline call); `renderSucceeded` tracks whether it actually
-      // produced real previews. The render-miss gate below only fires when a
-      // renderer was wired AND failed to produce previews — when no renderer is
-      // wired (dry-run/unit tests without a `render` dep), `renderAttempted`
-      // stays false and behavior is byte-for-byte what it was before T1.3.
-      let renderAttempted = false;
-      let renderSucceeded = false;
-      // T2.1: distinguishes a CONFIRMED-blank render (renderBlank) from every
-      // other no-previews case (renderFailed) — set only when the render
-      // resolves (not throws) with an explicit `outcome: 'blank'`.
-      let renderBlank = false;
-      // T2.1: the render exception's message (whether it was thrown directly
-      // by `deps.render` or swallowed into a resolved `{ error }` by a
-      // production wrapper like pipeline/deps.ts's `renderAndCapture`) —
-      // surfaced on the `render_failed` RunEvent's `detail` field.
-      let renderErrorDetail: string | undefined;
-      if (deps.render) {
-        renderAttempted = true;
-        const parsed = JSON.parse(json) as { post_title?: string; post_content?: string };
-        if (parsed.post_content) {
-          // Review fix (T1.3): a THROWING deps.render must not fall through to
-          // the generic top-level catch below — that would count it as a
-          // generic infra error and bypass `renderFailed` entirely. Catch it
-          // here so a thrown render takes the exact same path as a render that
-          // resolves with no previews: renderSucceeded stays false, and the
-          // render-miss gate right below handles it.
-          try {
-            const r = await deps.render({ title: parsed.post_title ?? seo.title, postContent: parsed.post_content, hash });
-            if (r.previewImageKeys.length) {
-              previewImageKeys = r.previewImageKeys;
-              perceptualHash = r.perceptualHash;
-              renderedScreenshotPaths = r.screenshotPaths ?? [];
-              screenshotPathsToClean.push(...renderedScreenshotPaths);
-              renderSucceeded = true;
-            } else if (r.outcome === 'blank') {
-              renderBlank = true;
-            } else {
-              // Resolved with no previews and no explicit verdict: either the
-              // legacy shape (pre-T2.1 stub/dry-run) or a production wrapper
-              // that swallowed a render exception into `{ error }` — either
-              // way this is the generic render-miss bucket, not a confirmed
-              // blank page.
-              renderErrorDetail = r.error;
+    // ---- Phase B ------------------------------------------------------------
+    // Infra: upload, render, near-dup check, vision critic, ingest. Wrapped in
+    // `withRetry` below for `transient_infra` failures. `renderMemo`/`uploadMemo`/
+    // `criticMemo` are declared OUTSIDE `runPhaseB` (in this per-target scope)
+    // so they persist across every `withRetry` invocation of it — a retry
+    // triggered by a LATE failure (e.g. ingest) reuses whatever already
+    // completed rather than redoing it. This matters most for the vision
+    // critic: it is itself an LLM call, so once it has returned a verdict a
+    // retry must reuse that verdict, never invoke the critic again.
+    type PhaseBOutcome =
+      | { kind: 'render_failed'; detail?: string }
+      | { kind: 'render_blank' }
+      | { kind: 'near_duplicate'; distance: number }
+      | { kind: 'vision_critic_dropped'; score: number; issues: string[] }
+      | { kind: 'vision_critic_error'; detail: string }
+      | { kind: 'ingested'; seoSlug: string; perceptualHash?: string };
+
+    const runPhaseB = (phaseA: { json: string; hash: string; seo: LayoutSeo }) => {
+      const { json, hash, seo } = phaseA;
+      let uploadMemo: UploadResult | undefined;
+      interface RenderMemo {
+        attempted: boolean;
+        succeeded: boolean;
+        previewImageKeys: string[];
+        perceptualHash?: string;
+        screenshotPaths: string[];
+        blank: boolean;
+        errorDetail?: string;
+      }
+      let renderMemo: RenderMemo | undefined;
+      let criticMemo: VisionCriticResult | undefined;
+
+      return async (): Promise<PhaseBOutcome> => {
+        if (!uploadMemo) uploadMemo = await deps.upload(hash, json);
+        const { diviJsonBlobKey, previewImageKeys: placeholderPreviews } = uploadMemo;
+
+        // Render real screenshots when a renderer is wired; else keep the
+        // placeholders. Memoized: only actually renders on the FIRST Phase B
+        // attempt for this target; a later retry (triggered by e.g. ingest)
+        // reuses this result rather than re-rendering.
+        if (!renderMemo) {
+          renderMemo = {
+            attempted: false,
+            succeeded: false,
+            previewImageKeys: [],
+            screenshotPaths: [],
+            blank: false,
+          };
+          if (deps.render) {
+            renderMemo.attempted = true;
+            const parsed = JSON.parse(json) as { post_title?: string; post_content?: string };
+            if (parsed.post_content) {
+              // Review fix (T1.3): a THROWING deps.render must not fall through to
+              // the generic top-level catch below — that would count it as a
+              // generic infra error and bypass `renderFailed` entirely. Catch it
+              // here so a thrown render takes the exact same path as a render that
+              // resolves with no previews: renderSucceeded stays false, and the
+              // render-miss gate right below handles it.
+              try {
+                const r = await deps.render({ title: parsed.post_title ?? seo.title, postContent: parsed.post_content, hash });
+                if (r.previewImageKeys.length) {
+                  renderMemo.succeeded = true;
+                  renderMemo.previewImageKeys = r.previewImageKeys;
+                  renderMemo.perceptualHash = r.perceptualHash;
+                  renderMemo.screenshotPaths = r.screenshotPaths ?? [];
+                  screenshotPathsToClean.push(...renderMemo.screenshotPaths);
+                } else if (r.outcome === 'blank') {
+                  renderMemo.blank = true;
+                } else {
+                  // Resolved with no previews and no explicit verdict: either the
+                  // legacy shape (pre-T2.1 stub/dry-run) or a production wrapper
+                  // that swallowed a render exception into `{ error }` — either
+                  // way this is the generic render-miss bucket, not a confirmed
+                  // blank page.
+                  renderMemo.errorDetail = r.error;
+                }
+              } catch (err) {
+                renderMemo.errorDetail = (err as Error).message;
+                log(`render threw for ${target.type}/${target.niche}/${target.style}: ${renderMemo.errorDetail}`);
+              }
             }
-          } catch (err) {
-            renderErrorDetail = (err as Error).message;
-            log(`render threw for ${target.type}/${target.niche}/${target.style}: ${renderErrorDetail}`);
           }
         }
-      }
 
-      // Render-miss gate (T1.3, split by T2.1): closes the swallowed-render
-      // hole — a renderer WAS wired for this run but produced no real previews
-      // for this target. Never ingest a layout carrying only placeholder
-      // previews; count it separately from `qualityDropped` so it's visible in
-      // the eval scoreboard as an infra/quality signal, not a generator-quality
-      // one. T2.1 splits this into two distinct counters: a CONFIRMED-blank
-      // page (`renderBlank` — the render pipeline ran to completion and
-      // explicitly verdicted "nothing painted") vs everything else
-      // (`renderFailed` — exception, or a resolved render with no previews and
-      // no verdict at all).
-      if (renderAttempted && !renderSucceeded) {
-        if (renderBlank) {
+        const previewImageKeys = renderMemo.succeeded ? renderMemo.previewImageKeys : placeholderPreviews;
+
+        // Render-miss gate (T1.3, split by T2.1): closes the swallowed-render
+        // hole — a renderer WAS wired for this run but produced no real previews
+        // for this target. Never ingest a layout carrying only placeholder
+        // previews; count it separately from `qualityDropped` so it's visible in
+        // the eval scoreboard as an infra/quality signal, not a generator-quality
+        // one. T2.1 splits this into two distinct counters: a CONFIRMED-blank
+        // page (`renderBlank` — the render pipeline ran to completion and
+        // explicitly verdicted "nothing painted") vs everything else
+        // (`renderFailed` — exception, or a resolved render with no previews and
+        // no verdict at all).
+        if (renderMemo.attempted && !renderMemo.succeeded) {
+          return renderMemo.blank ? { kind: 'render_blank' } : { kind: 'render_failed', detail: renderMemo.errorDetail };
+        }
+
+        // Near-duplicate gate (T1.2), after render/before ingest. Render is
+        // best-effort (T2.1) — no perceptualHash means render was skipped or
+        // failed, so skip this gate gracefully rather than block ingest for it.
+        if (renderMemo.perceptualHash) {
+          const nearest = nearestDistance(renderMemo.perceptualHash, nearDupPool);
+          if (nearest !== undefined && nearest <= maxDistance) {
+            return { kind: 'near_duplicate', distance: nearest };
+          }
+          // NOTE: do NOT push into nearDupPool here. Pushing before ingest succeeds
+          // would poison the pool with a hash for a layout that never actually got
+          // accepted (e.g. ingest throws below) — a later, genuinely distinct target
+          // in the same run would then be wrongly near-dupe-dropped against a layout
+          // that isn't actually published. Only push after `deps.ingest` resolves AND
+          // after `withRetry` has fully settled (review fix — T1.2, tightened T2.2:
+          // see `applyPhaseBOutcome` below, strictly outside the retry boundary).
+        }
+
+        // Vision critic gate (T1.3), after near-dupe (cheapest-first) and before
+        // ingest — this IS the QA since ingest auto-publishes with no human review.
+        // Optional/injected like `deps.render`/`deps.resolveImages`: absent means
+        // skipped. Only runs once render actually produced real previews — nothing
+        // meaningful to critique against placeholders or a render that never happened.
+        if (deps.visionCritic && renderMemo.succeeded) {
+          const minScore = deps.visionCriticMinScore ?? 3;
+          const criticPaths = renderMemo.screenshotPaths.length ? renderMemo.screenshotPaths : previewImageKeys;
+          if (criticMemo === undefined) {
+            // Deliberate policy (review fix, T1.3; reaffirmed T2.2): this pipeline
+            // has no human review (constraint #4) — the critic IS the QA. If it
+            // throws (CLI failure) or returns unparseable JSON, that is NOT "it
+            // looked fine"; it's treated exactly like a failing score: a QUALITY
+            // drop (`qualityDropped`, reason `vision_critic_error`), NOT an infra
+            // `errored` — this is a content-quality policy decision (no unscored
+            // layout ships), not a signal that infra is unhealthy, so it's never
+            // routed through the retry/classification path below and never
+            // retried. Logged/tagged distinctly so it's visible as its own failure
+            // mode in the eval scoreboard.
+            try {
+              criticMemo = await deps.visionCritic(criticPaths, { type: target.type, niche: target.niche, style: target.style });
+            } catch (err) {
+              return { kind: 'vision_critic_error', detail: (err as Error).message };
+            }
+            const passed = meetsQualityBar(criticMemo, minScore);
+            emit({ type: 'vision_critic', target, score: criticMemo.score, issues: criticMemo.issues, passed });
+            if (!passed) return { kind: 'vision_critic_dropped', score: criticMemo.score, issues: criticMemo.issues };
+          } else {
+            // T2.2 review fix: already scored in a prior Phase B attempt for this
+            // target — reuse the held verdict. Do NOT re-invoke the critic (an LLM
+            // call) and do NOT re-emit the `vision_critic` event a second time.
+            if (!meetsQualityBar(criticMemo, minScore)) {
+              return { kind: 'vision_critic_dropped', score: criticMemo.score, issues: criticMemo.issues };
+            }
+          }
+        }
+
+        const payload: IngestPayload = {
+          slug: variantSlug(seo.slug, target),
+          title: seo.title,
+          description: seo.metaDescription,
+          type: seo.axes.type,
+          niche: seo.axes.niche,
+          style: seo.axes.style,
+          // Record the driven variation color first, then any colors the SEO step inferred.
+          colors: target.color ? [target.color, ...seo.axes.colors.filter((c) => c !== target.color)] : seo.axes.colors,
+          diviJsonBlobKey,
+          previewImageKeys,
+          contentHash: hash,
+          perceptualHash: renderMemo.perceptualHash,
+          variant: target.variant,
+          validatorPassed: true,
+          seo: { metaTitle: seo.title, metaDescription: seo.metaDescription, keywords: seo.keywords },
+          tags: [
+            { axis: 'type', slug: seo.axes.type },
+            { axis: 'niche', slug: seo.axes.niche },
+            { axis: 'style', slug: seo.axes.style },
+          ],
+        };
+        await deps.ingest(payload);
+        return { kind: 'ingested', seoSlug: seo.slug, perceptualHash: renderMemo.perceptualHash };
+      };
+    };
+
+    // Bookkeeping for a Phase B terminal outcome. Applied EXACTLY ONCE, and
+    // ONLY after `withRetry` has fully resolved (see the call site below) —
+    // this is the T2.2 review fix for finding #1: nothing that runs after a
+    // successful ingest (summary++, log, nearDupPool push, the `'ingested'`
+    // event) can trigger another retry/re-ingest, because by the time any of
+    // it runs, the retry loop is already done.
+    const applyPhaseBOutcome = (o: {
+      kind: 'render_failed' | 'render_blank' | 'near_duplicate' | 'vision_critic_dropped' | 'vision_critic_error' | 'ingested';
+      detail?: string;
+      distance?: number;
+      score?: number;
+      issues?: string[];
+      seoSlug?: string;
+      perceptualHash?: string;
+    }) => {
+      switch (o.kind) {
+        case 'render_failed':
+          summary.renderFailed++;
+          outcome = 'render_failed';
+          log(`render-miss drop ${target.type}/${target.niche}/${target.style}: ${o.detail ?? 'no real previews'}`);
+          emit({ type: 'render_failed', target, detail: o.detail });
+          break;
+        case 'render_blank':
           summary.renderBlank++;
           outcome = 'render_blank';
           log(`render-blank drop ${target.type}/${target.niche}/${target.style}: page never confirmably painted content`);
-          onEvent({ type: 'render_blank', target });
-        } else {
-          summary.renderFailed++;
-          outcome = 'render_failed';
-          log(`render-miss drop ${target.type}/${target.niche}/${target.style}: ${renderErrorDetail ?? 'no real previews'}`);
-          onEvent({ type: 'render_failed', target, detail: renderErrorDetail });
-        }
-        return;
-      }
-
-      // Near-duplicate gate (T1.2), after render/before ingest. Render is
-      // best-effort (T2.1) — no perceptualHash means render was skipped or
-      // failed, so skip this gate gracefully rather than block ingest for it.
-      if (perceptualHash) {
-        const nearest = nearestDistance(perceptualHash, nearDupPool);
-        if (nearest !== undefined && nearest <= maxDistance) {
+          emit({ type: 'render_blank', target });
+          break;
+        case 'near_duplicate':
           summary.nearDuped++;
           outcome = 'near_duplicate';
-          log(`near-dupe drop ${target.type}/${target.niche}/${target.style}: distance ${nearest}`);
-          onEvent({ type: 'near_duplicate', target, distance: nearest });
-          return;
-        }
-        // NOTE: do NOT push into nearDupPool here. Pushing before ingest succeeds
-        // would poison the pool with a hash for a layout that never actually got
-        // accepted (e.g. ingest throws below) — a later, genuinely distinct target
-        // in the same run would then be wrongly near-dupe-dropped against a layout
-        // that isn't actually published. Only push after `deps.ingest` resolves
-        // (review fix — T1.2).
-      }
-
-      // Vision critic gate (T1.3), after near-dupe (cheapest-first) and before
-      // ingest — this IS the QA since ingest auto-publishes with no human review.
-      // Optional/injected like `deps.render`/`deps.resolveImages`: absent means
-      // skipped. Only runs once render actually produced real previews — nothing
-      // meaningful to critique against placeholders or a render that never happened.
-      if (deps.visionCritic && renderSucceeded) {
-        const minScore = deps.visionCriticMinScore ?? 3;
-        const criticPaths = renderedScreenshotPaths.length ? renderedScreenshotPaths : previewImageKeys;
-        // Deliberate policy (review fix, T1.3; reaffirmed T2.2): this pipeline
-        // has no human review (constraint #4) — the critic IS the QA. If it
-        // throws (CLI failure) or returns unparseable JSON, that is NOT "it
-        // looked fine"; it's treated exactly like a failing score: a QUALITY
-        // drop (`qualityDropped`, reason `vision_critic_error`), NOT an infra
-        // `errored` — this is a content-quality policy decision (no unscored
-        // layout ships), not a signal that infra is unhealthy, so it's never
-        // routed through the retry/classification path below and never
-        // retried. Logged/tagged distinctly so it's visible as its own failure
-        // mode in the eval scoreboard.
-        let critic: VisionCriticResult;
-        try {
-          critic = await deps.visionCritic(criticPaths, { type: target.type, niche: target.niche, style: target.style });
-        } catch (err) {
+          log(`near-dupe drop ${target.type}/${target.niche}/${target.style}: distance ${o.distance}`);
+          emit({ type: 'near_duplicate', target, distance: o.distance as number });
+          break;
+        case 'vision_critic_dropped': {
           summary.qualityDropped++;
           outcome = 'dropped';
-          const detail = (err as Error).message;
-          log(`[run] vision critic errored — dropping unscored layout: ${detail}`);
-          onEvent({ type: 'dropped', target, reason: 'vision_critic_error', detail });
-          return;
-        }
-        const passed = meetsQualityBar(critic, minScore);
-        onEvent({ type: 'vision_critic', target, score: critic.score, issues: critic.issues, passed });
-        if (!passed) {
-          summary.qualityDropped++;
-          outcome = 'dropped';
-          const detail = `score ${critic.score} issues=${critic.issues.join(',') || 'none'}`;
+          const detail = `score ${o.score} issues=${(o.issues ?? []).join(',') || 'none'}`;
           log(`vision-critic drop ${target.type}/${target.niche}/${target.style}: ${detail}`);
-          onEvent({ type: 'dropped', target, reason: 'vision_critic', detail });
-          return;
+          emit({ type: 'dropped', target, reason: 'vision_critic', detail });
+          break;
         }
+        case 'vision_critic_error':
+          summary.qualityDropped++;
+          outcome = 'dropped';
+          log(`[run] vision critic errored — dropping unscored layout: ${o.detail}`);
+          emit({ type: 'dropped', target, reason: 'vision_critic_error', detail: o.detail as string });
+          break;
+        case 'ingested':
+          // Only a layout that actually cleared ingest joins the near-dupe pool —
+          // see the NOTE above where the gate runs.
+          if (o.perceptualHash) nearDupPool.push(o.perceptualHash);
+          summary.ingested++;
+          outcome = 'ingested';
+          log(`ingested ${o.seoSlug}`);
+          emit({ type: 'ingested', target, slug: o.seoSlug as string });
+          break;
       }
-
-      const payload: IngestPayload = {
-        slug: variantSlug(seo.slug, target),
-        title: seo.title,
-        description: seo.metaDescription,
-        type: seo.axes.type,
-        niche: seo.axes.niche,
-        style: seo.axes.style,
-        // Record the driven variation color first, then any colors the SEO step inferred.
-        colors: target.color ? [target.color, ...seo.axes.colors.filter((c) => c !== target.color)] : seo.axes.colors,
-        diviJsonBlobKey,
-        previewImageKeys,
-        contentHash: hash,
-        perceptualHash,
-        variant: target.variant,
-        validatorPassed: true,
-        seo: { metaTitle: seo.title, metaDescription: seo.metaDescription, keywords: seo.keywords },
-        tags: [
-          { axis: 'type', slug: seo.axes.type },
-          { axis: 'niche', slug: seo.axes.niche },
-          { axis: 'style', slug: seo.axes.style },
-        ],
-      };
-      await deps.ingest(payload);
-      // Only a layout that actually cleared ingest joins the near-dupe pool — see
-      // the NOTE above where the gate runs.
-      if (perceptualHash) nearDupPool.push(perceptualHash);
-      summary.ingested++;
-      outcome = 'ingested';
-      log(`ingested ${seo.slug}`);
-      onEvent({ type: 'ingested', target, slug: seo.slug });
     };
 
     // T2.2: shared with the `catch` below (a `let` inside `try {}` isn't
     // visible there) so the `errored` event can report how many tries this
-    // target actually got.
-    let attemptCount = 0;
+    // target actually got. T2.2 review fix: this now counts Phase B attempts
+    // specifically (Phase A never retries, so it's always exactly one try) —
+    // falls back to 1 if Phase A itself threw before Phase B ever started.
+    let phaseBAttempts = 0;
     try {
-      await withRetry(
-        () => {
-          attemptCount++;
-          return attemptTarget();
-        },
-        {
-          retries: maxRetries,
-          baseDelayMs: retryBaseDelayMs,
-          sleep: deps.sleep,
-          onRetry: ({ attempt, classified }) => {
-            log(
-              `retry ${attempt}/${maxRetries} for ${target.type}/${target.niche}/${target.style} ` +
-                `[${classified.class}/${classified.code}]: ${classified.message}`,
-            );
-            onEvent({ type: 'retry', target, attempt, code: classified.code, detail: classified.message });
+      const phaseA = await runPhaseA();
+      if (phaseA !== undefined) {
+        const phaseB = runPhaseB(phaseA);
+        const phaseBOutcome = await withRetry(
+          () => {
+            phaseBAttempts++;
+            return phaseB();
           },
-        },
-      );
-      // NOTE: attemptTarget resolving normally covers BOTH a clean ingest and
-      // every quality-gate early `return` (validation/content/dedupe/
-      // render-miss/near-dupe/vision-critic) — none of those throw, so
-      // `withRetry` never sees or retries them. Only a real infra failure
-      // reaches the `catch` below.
+          {
+            retries: maxRetries,
+            baseDelayMs: retryBaseDelayMs,
+            sleep: deps.sleep,
+            onRetry: ({ attempt, classified }) => {
+              log(
+                `retry ${attempt}/${maxRetries} for ${target.type}/${target.niche}/${target.style} ` +
+                  `[${classified.class}/${classified.code}]: ${classified.message}`,
+              );
+              emit({ type: 'retry', target, attempt, code: classified.code, detail: classified.message });
+            },
+          },
+        );
+        // Bookkeeping happens here — strictly OUTSIDE the retry boundary.
+        applyPhaseBOutcome(phaseBOutcome);
+      }
+      // NOTE: a `phaseA === undefined` result covers every Phase A quality-gate
+      // early return (validation/content/dedupe), whose own bookkeeping already
+      // ran inline above — nothing more to do. Only a real infra failure from
+      // Phase A or Phase B reaches the `catch` below.
     } catch (err) {
       const classified = classifyError(err);
       summary.errored++;
@@ -592,30 +757,29 @@ export async function runPipeline(deps: RunDeps): Promise<RunSummary> {
         `error on ${target.type}/${target.niche}/${target.style} ` +
           `[${classified.class}/${classified.code}]: ${classified.message}`,
       );
-      onEvent({
+      emit({
         type: 'errored',
         target,
         class: classified.class,
         code: classified.code,
         detail: classified.message,
-        attempts: attemptCount,
+        attempts: phaseBAttempts || 1,
       });
-      // T2.2: a usage-limit is an ACCOUNT-level wall — every other remaining
-      // target would hit it identically. Abort the rest of the run rather than
-      // burn time (and, if retries were ever added for it, budget) reproving
-      // that for each one. `generate.ts`'s pre-emptive check keeps this
-      // non-retryable; this is what makes it non-continuable too.
-      if (classified.code === 'usage_limit') {
-        log(`usage-limit hit — aborting the remaining ${deps.targets.length} target(s) in this run`);
+      // T2.2: an account-level wall (usage-limit) or an invalid credential
+      // (auth) means every other remaining target would hit it identically —
+      // abort the rest of the run rather than burn time reproving that for
+      // each one. See `ABORT_CODES` above for what's included and why.
+      if (ABORT_CODES.has(classified.code)) {
+        log(`${classified.code} hit — aborting the remaining ${deps.targets.length} target(s) in this run`);
         abortRun = true;
       }
     } finally {
-      if (sawUsage) onEvent({ type: 'llm_usage', target, usage, outcome });
+      if (sawUsage) emit({ type: 'llm_usage', target, usage, outcome });
       // T1.3: these are scratch temp files written solely so the vision critic's
       // CLI call could Read them — runs on every exit path (any gate's early
       // return, a thrown error, or a clean ingest) so they never leak across a
-      // batch run. T2.2: accumulated across every retry attempt (see
-      // `screenshotPathsToClean` above), not just the last one.
+      // batch run. T2.2 review fix: render is memoized and only ever runs once
+      // per target now, so this list holds at most one render's worth of paths.
       if (screenshotPathsToClean.length) {
         await Promise.all(screenshotPathsToClean.map((p) => rm(p, { force: true }).catch(() => {})));
         // Review fix (T1.3): rm'ing the files above leaves the mkdtemp PARENT
