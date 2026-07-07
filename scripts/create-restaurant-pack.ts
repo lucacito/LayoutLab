@@ -8,21 +8,12 @@
 //   npm run dev            # in another shell (ingest target)
 //   set -a && . ./.env.local && set +a && npm run tsx scripts/create-restaurant-pack.ts
 import { randomUUID } from 'node:crypto';
-import { writeFile, mkdtemp, rm } from 'node:fs/promises';
-import { join } from 'node:path';
-import { tmpdir } from 'node:os';
 import { eq, inArray } from 'drizzle-orm';
 import { db } from '@/db/client';
 import { packs, packLayouts, layouts } from '@/db/schema';
 import { stripe } from '@/lib/stripe/client';
-import { claudeCliClient } from '@/pipeline/llm';
-import { loadGrounding } from '@/pipeline/recipes';
-import { validateLayout } from '@/pipeline/validate';
-import { uploadLayout, uploadScreenshot } from '@/pipeline/upload';
-import { realRenderDeps, renderLayout } from '@/pipeline/render';
-import { resolveLayoutImages, pexelsSearcher } from '@/pipeline/images';
-import { postIngest } from '@/pipeline/ingest';
-import { runThemePack, themePageSlug, type ThemeSpec, type ThemeDeps, type ThemePage } from '@/pipeline/theme';
+import { buildThemeDeps } from '@/pipeline/deps';
+import { runThemePack, themePageSlug, type ThemeSpec, type ThemePage } from '@/pipeline/theme';
 import type { Brief, Step } from '@/pipeline/compose';
 
 // ── The brand (pinned — shared verbatim across all 6 pages) ────────────────────
@@ -141,13 +132,6 @@ const PACK_SEO = {
   ],
 };
 
-async function withTempFile<T>(json: string, fn: (file: string) => Promise<T>): Promise<T> {
-  const dir = await mkdtemp(join(tmpdir(), 'layout-'));
-  const file = join(dir, 'layout.json');
-  await writeFile(file, json);
-  try { return await fn(file); } finally { await rm(dir, { recursive: true, force: true }).catch(() => {}); }
-}
-
 async function upsertPack(slugs: string[]): Promise<void> {
   const rows = await db
     .select({ id: layouts.id, slug: layouts.slug, previews: layouts.previewImageKeys })
@@ -191,53 +175,12 @@ async function upsertPack(slugs: string[]): Promise<void> {
 }
 
 async function main() {
-  const validatorDir = process.env.VALIDATOR_DIR ?? '../Divi 5 Deterministic Validator';
-  const guide = loadGrounding(validatorDir);
-  const hasBlobToken = !!process.env.BLOB_READ_WRITE_TOKEN;
-  const pexelsKey = process.env.PEXELS_API_KEY;
-  const ingestUrl = process.env.INGEST_URL ?? 'http://localhost:3000';
-  const ingestToken = process.env.INGEST_API_TOKEN ?? '';
-  const maxBudget = process.env.PIPELINE_MAX_BUDGET_USD ? Number(process.env.PIPELINE_MAX_BUDGET_USD) : 1;
-  const renderer = await realRenderDeps();
-
-  const deps: ThemeDeps = {
-    llm: claudeCliClient({ model: process.env.PIPELINE_MODEL }),
-    guide,
-    // Resume across usage windows: skip any page already in the catalog.
-    pageExists: async (slug) => {
-      const hit = await db.select({ id: layouts.id }).from(layouts).where(eq(layouts.slug, slug)).limit(1);
-      return hit.length > 0;
-    },
-    validate: (json) => withTempFile(json, (f) => validateLayout(f)),
-    resolveImages: pexelsKey ? (json) => resolveLayoutImages(json, pexelsSearcher(pexelsKey)) : undefined,
-    isDuplicate: async (hash) => {
-      const hit = await db.select({ id: layouts.id }).from(layouts).where(eq(layouts.contentHash, hash)).limit(1);
-      return hit.length > 0;
-    },
-    upload: (hash, json) => uploadLayout(hash, json, { hasBlobToken, outDir: 'pipeline/out' }),
-    render: async ({ title, postContent, hash }) => {
-      try {
-        const { shots, perceptualHash } = await renderLayout({ title, postContent }, renderer.deps);
-        const keys: string[] = [];
-        for (const label of ['desktop', 'mobile'] as const) {
-          const shot = shots.find((s) => s.label === label);
-          if (shot) keys.push(await uploadScreenshot(hash, label, shot.buffer, { hasBlobToken }));
-        }
-        return { previewImageKeys: keys, perceptualHash };
-      } catch (e) {
-        console.warn(`[theme] render failed for ${hash.slice(0, 12)}: ${(e as Error).message}`);
-        return { previewImageKeys: [] };
-      }
-    },
-    ingest: (payload) => postIngest(payload, { url: ingestUrl, token: ingestToken }),
-    // A bit more repair headroom than the matrix pipeline: multi-page themes are
-    // long, and the occasional section BLOCK_PARSE_ERROR is worth another repair
-    // attempt rather than dropping a whole page.
-    maxRepairs: 3,
-    maxParseRetries: 2,
-    maxBudgetUsd: maxBudget,
-    log: (m) => console.log(`[theme] ${m}`),
-  };
+  // Followups #1: shared factory (pipeline/deps.ts) wires the SAME real gates
+  // `npm run pipeline` gets — visionCritic, nearDuplicateHashes (excluding this
+  // pack's own pages — see buildThemeDeps's doc on the T4.2 resume trap),
+  // onEvent, and the T2.1 render-outcome contract — instead of a hand-rolled
+  // deps object that silently lacked all four.
+  const { deps, close } = await buildThemeDeps({ businessName: BRIEF.businessName, logPrefix: '[theme]', defaultMaxBudgetUsd: 1 });
 
   // Optional smoke-test knob: THEME_ONLY_ROLES=home,menu limits which pages generate.
   // (Pack assembly still links whatever pages exist in the DB by slug.)
@@ -246,7 +189,7 @@ async function main() {
 
   console.log(`[theme] generating ${spec.pages.length} ${spec.niche} pages for "${BRIEF.businessName}"…`);
   const result = await runThemePack(spec, deps);
-  await renderer.close();
+  await close();
   console.log('[theme] summary:', { generated: result.generated, ingested: result.ingested, dropped: result.dropped, deduped: result.deduped });
 
   if (onlyRoles.length) { console.log('[theme] partial run (THEME_ONLY_ROLES set) — skipping pack assembly'); return; }

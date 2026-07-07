@@ -880,8 +880,25 @@ export async function processItem(item: PipelineItem, ctx: RunContext): Promise<
         // skipped. Only runs once render actually produced real previews — nothing
         // meaningful to critique against placeholders or a render that never happened.
         if (deps.visionCritic && renderMemo.succeeded) {
+          // Followups #3: `renderMemo.screenshotPaths` are LOCAL file paths the
+          // critic's `claude` CLI call can `Read` (constraint #1) — `previewImageKeys`
+          // are Vercel Blob keys it can't open. This USED to fall back to
+          // `previewImageKeys` whenever `screenshotPaths` was empty (e.g. a
+          // caller that wires a renderer but never populates the T2.1 outcome
+          // contract's `screenshotPaths` — see the theme scripts fixed by
+          // `buildThemeDeps`, pipeline/deps.ts), silently handing the critic
+          // paths it cannot read. Per the documented "no unscored layout ships"
+          // policy (see the vision_critic_error case a few lines down): treat a
+          // missing local-path set as a render-infra problem the critic can't
+          // do its job on, and DROP — never skip the critic and ship the
+          // layout un-critiqued, and never substitute unreadable blob keys.
+          if (renderMemo.screenshotPaths.length === 0) {
+            const detail = 'no local screenshot paths available for the vision critic to read (blob-key fallback removed)';
+            log(`vision-critic skipped (${detail}) — dropping ${target.type}/${target.niche}/${target.style}`);
+            return { kind: 'vision_critic_error', detail };
+          }
           const minScore = deps.visionCriticMinScore ?? 3;
-          const criticPaths = renderMemo.screenshotPaths.length ? renderMemo.screenshotPaths : previewImageKeys;
+          const criticPaths = renderMemo.screenshotPaths;
           if (criticMemo === undefined) {
             // Deliberate policy (review fix, T1.3; reaffirmed T2.2): this pipeline
             // has no human review (constraint #4) — the critic IS the QA. If it

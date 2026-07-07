@@ -62,6 +62,71 @@ describe('composeLanding', () => {
   });
 });
 
+// Followups #2: a permanent failure (usage-limit exhausted, auth) on an
+// OPTIONAL section must abort the whole landing instead of being swallowed
+// into a per-section skip — every remaining call (required or optional) would
+// hit the exact same wall, so swallowing it just burns doomed CLI calls before
+// emitting an incomplete landing. Mirrors run.ts's ABORT_CODES (usage_limit,
+// auth); every other error class keeps the pre-existing swallow-and-skip
+// behavior (already covered by the "skips an optional section" test above).
+describe('composeLanding optional-section catch — permanent-failure rethrow (followups #2)', () => {
+  const threeStep = [
+    { role: 'hero', sectionType: 'hero', job: 'hero job', cta: true },
+    { role: 'benefits', sectionType: 'cards', job: 'benefits job', cta: false },
+    { role: 'final_cta', sectionType: 'cta', job: 'cta job', cta: true },
+  ];
+
+  it('rethrows a usage-limit error from an optional section instead of skipping it', async () => {
+    let n = 0;
+    const outs = [JSON.stringify(brief), section(1)];
+    const llm = {
+      complete: vi.fn(async () => {
+        if (n < outs.length) return outs[n++];
+        throw new Error('You have hit your limit for this session, please try again later');
+      }),
+    };
+    const log = vi.fn();
+    await expect(
+      composeLanding(target as any, { llm, guide, flow: threeStep, maxParseRetries: 0, log }),
+    ).rejects.toThrow(/hit your limit/);
+    // Must NOT have logged a skip — the error propagated instead.
+    expect(log).not.toHaveBeenCalledWith(expect.stringContaining('skip optional section benefits'));
+  });
+
+  it('rethrows an auth error from an optional section instead of skipping it', async () => {
+    let n = 0;
+    const outs = [JSON.stringify(brief), section(1)];
+    const llm = {
+      complete: vi.fn(async () => {
+        if (n < outs.length) return outs[n++];
+        throw new Error('401 unauthorized: invalid api key');
+      }),
+    };
+    const log = vi.fn();
+    await expect(
+      composeLanding(target as any, { llm, guide, flow: threeStep, maxParseRetries: 0, log }),
+    ).rejects.toThrow(/invalid api key/);
+    expect(log).not.toHaveBeenCalledWith(expect.stringContaining('skip optional section benefits'));
+  });
+
+  it('still swallows a non-permanent (e.g. transient network) error on an optional section', async () => {
+    // Calls in flow order: brief, hero (ok), benefits (throws transient), final_cta (ok).
+    const calls = [
+      async () => JSON.stringify(brief),
+      async () => section(1),
+      async () => { throw new Error('connect ECONNRESET'); },
+      async () => section(2),
+    ];
+    let n = 0;
+    const llm = { complete: vi.fn(async () => calls[n++]()) };
+    const log = vi.fn();
+    const { json } = await composeLanding(target as any, { llm, guide, flow: threeStep, maxParseRetries: 0, log });
+    const doc = JSON.parse(json);
+    expect((doc.post_content.match(/wp:divi\/section {/g) || []).length).toBe(2); // hero + final_cta only
+    expect(log).toHaveBeenCalledWith(expect.stringContaining('skip optional section benefits'));
+  });
+});
+
 describe('composeLanding landing-guide grounding (T3.3)', () => {
   const landingGuide = [
     '# Divi 5 Landing Page Conversion Blueprint',

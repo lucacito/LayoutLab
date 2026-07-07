@@ -1186,6 +1186,90 @@ describe('runPipeline error classification + retry with backoff (T2.2)', () => {
   });
 });
 
+// Followups #3: `renderMemo.screenshotPaths` are LOCAL file paths the vision
+// critic's `claude` CLI call can Read; `previewImageKeys` are Vercel Blob
+// storage keys it can't open. A renderer that succeeds (real previews) but
+// never populates `screenshotPaths` (e.g. a caller that doesn't wire the T2.1
+// render-outcome contract) used to fall back to handing the critic the blob
+// keys instead — this policy removes that fallback and drops the target
+// instead (consistent with the "no unscored layout ships" policy already
+// applied to a throwing/unparseable critic call).
+describe('runPipeline vision critic — missing local screenshot paths guard (followups #3)', () => {
+  const genSection = (n = 1) => JSON.stringify({ post_title: `T${n}`, post_content: `<!-- wp:divi/text {"content":"Ship faster with real, specific copy ${n}"} -->` });
+
+  it('drops (does not ingest) and never invokes the critic when render succeeded but screenshotPaths is empty', async () => {
+    const llm = { complete: vi.fn().mockResolvedValueOnce(genSection()).mockResolvedValueOnce(seoJson) };
+    // Succeeds (real previewImageKeys + perceptualHash) but no screenshotPaths at all.
+    const render = vi.fn(async () => ({ previewImageKeys: ['blob-key-desktop'], perceptualHash: 'b'.repeat(64) }));
+    const visionCritic = vi.fn(async () => ({ score: 5, issues: [] }));
+    const ingest = vi.fn(async () => ({ deduped: false }));
+    const s = await runPipeline(baseDeps({ llm, render, visionCritic, ingest }) as any);
+    expect(visionCritic).not.toHaveBeenCalled();
+    expect(s.qualityDropped).toBe(1);
+    expect(s.ingested).toBe(0);
+    expect(ingest).not.toHaveBeenCalled();
+  });
+
+  it('emits a dropped RunEvent with reason=vision_critic_error (distinct from a generic error) when screenshotPaths is missing', async () => {
+    const events: RunEvent[] = [];
+    const llm = { complete: vi.fn().mockResolvedValueOnce(genSection()).mockResolvedValueOnce(seoJson) };
+    const render = vi.fn(async () => ({ previewImageKeys: ['blob-key-desktop'], perceptualHash: 'b'.repeat(64) }));
+    const visionCritic = vi.fn(async () => ({ score: 5, issues: [] }));
+    const deps = baseDeps({ llm, render, visionCritic, onEvent: (e: RunEvent) => events.push(e) });
+    await runPipeline(deps as any);
+    const dropped = events.find((e) => e.type === 'dropped');
+    expect(dropped).toMatchObject({ reason: 'vision_critic_error' });
+    expect(events.some((e) => e.type === 'vision_critic')).toBe(false); // never scored
+  });
+
+  it('an explicit empty screenshotPaths array is treated the same as an absent one', async () => {
+    const llm = { complete: vi.fn().mockResolvedValueOnce(genSection()).mockResolvedValueOnce(seoJson) };
+    const render = vi.fn(async () => ({ previewImageKeys: ['blob-key-desktop'], perceptualHash: 'b'.repeat(64), screenshotPaths: [] }));
+    const visionCritic = vi.fn(async () => ({ score: 5, issues: [] }));
+    const ingest = vi.fn(async () => ({ deduped: false }));
+    const s = await runPipeline(baseDeps({ llm, render, visionCritic, ingest }) as any);
+    expect(visionCritic).not.toHaveBeenCalled();
+    expect(s.qualityDropped).toBe(1);
+    expect(ingest).not.toHaveBeenCalled();
+  });
+
+  it('still runs the critic normally when screenshotPaths IS populated (no regression)', async () => {
+    const llm = { complete: vi.fn().mockResolvedValueOnce(genSection()).mockResolvedValueOnce(seoJson) };
+    const render = vi.fn(async () => ({ previewImageKeys: ['blob-key-desktop'], perceptualHash: 'b'.repeat(64), screenshotPaths: ['/tmp/d.png'] }));
+    const visionCritic = vi.fn(async () => ({ score: 5, issues: [] }));
+    const ingest = vi.fn(async () => ({ deduped: false }));
+    const s = await runPipeline(baseDeps({ llm, render, visionCritic, ingest }) as any);
+    expect(visionCritic).toHaveBeenCalledWith(['/tmp/d.png'], expect.anything());
+    expect(s.ingested).toBe(1);
+    expect(ingest).toHaveBeenCalledOnce();
+  });
+});
+
+// Followups #4: T2.2's ledger flagged the Phase A (generation/validation,
+// pre-render) transient-infra path as untested — Phase A deliberately runs
+// EXACTLY ONCE per target (never wrapped in withRetry; see the module doc
+// above runPhaseA in run.ts) so as not to double-charge LLM calls already
+// completed if a LATER (Phase B) call fails. This proves that invariant holds
+// even for a transient-classified error thrown mid-generation: no retry, one
+// llm.complete call, counted as errored (not qualityDropped), with an errored
+// RunEvent tagged transient_infra.
+describe('runPipeline Phase A transient-infra failure is never retried (followups #4)', () => {
+  it('an ECONNRESET thrown from llm.complete during generation errors once, with no retry', async () => {
+    const events: RunEvent[] = [];
+    const sleep = vi.fn(async (_ms: number) => {});
+    const llm = { complete: vi.fn(async () => { throw new Error('connect ECONNRESET'); }) };
+    const deps = baseDeps({ llm, sleep, onEvent: (e: RunEvent) => events.push(e) });
+    const s = await runPipeline(deps as any);
+    expect(s.errored).toBe(1);
+    expect(s.qualityDropped).toBe(0);
+    expect(s.ingested).toBe(0);
+    expect(llm.complete).toHaveBeenCalledTimes(1); // Phase A is never retried, even for transient_infra
+    expect(sleep).not.toHaveBeenCalled();
+    const errored = events.find((e) => e.type === 'errored');
+    expect(errored).toMatchObject({ class: 'transient_infra', code: 'network', attempts: 1 });
+  });
+});
+
 // T2.4: SEO quality floor + clamp visibility, wired end-to-end through
 // runPipeline's Phase A (pipeline/seo.ts owns the retry/clamp logic itself;
 // this only proves run.ts turns its result into the right RunEvents and never

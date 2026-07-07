@@ -14,6 +14,15 @@ generation run to act on). Listed roughly in priority order.
 
 ## 1. `buildThemeDeps` factory for `scripts/create-*.ts` theme scripts
 
+**DONE (2026-07-07):** added `buildThemeDeps` to `pipeline/deps.ts`, migrated
+`create-restaurant-pack.ts`/`create-radiology-landing.ts`/`create-steakhouse-landing.ts`
+to it. Wires `visionCritic`, `onEvent`, and the T2.1 render-outcome contract
+(via `renderAndCapture`) unconditionally. For the near-dupe resume trap: chose
+the "exclude by slug prefix" option — `nearDuplicateHashes` filters out this
+pack's own rows via `notLike(layouts.slug, \`${slugify(businessName)}-%\`)`,
+cheap since `slug`/`perceptual_hash` are already-queried columns — rather than
+leaving the gate unwired. See `pipeline/deps.ts`'s `buildThemeDeps` doc comment.
+
 `pipeline/theme.ts`'s `ThemeDeps` (T4.2) already extends `RunDeps` so every gate
 `run.ts` grows — `visionCritic`, `nearDuplicateHashes`, `onEvent`, retry knobs,
 the T2.1 render-outcome contract (`ok`/`blank`/error) — is *available* to theme
@@ -47,6 +56,11 @@ TODO(T4.2) comment) for where this plugs in.
 
 ## 2. Optional-section catch in `pipeline/compose/index.ts` should rethrow usage-limit/auth errors
 
+**DONE (2026-07-07):** the optional-section catch now runs the caught error
+through `classifyError` (`pipeline/errors.ts`) and rethrows unconditionally
+when `code` is `usage_limit` or `auth`; every other class keeps the existing
+swallow-and-skip behavior.
+
 `composeLandingSections` (`pipeline/compose/index.ts:141-145`) wraps each
 optional section's `generateValidSection` call in a try/catch and, for any
 non-required role, swallows the error into a `log(...)` + skip:
@@ -75,6 +89,13 @@ optional roles; everything else = today's swallow-and-skip behavior).
 
 ## 3. `criticPaths` blob-key fallback in `run.ts` should skip the critic when no local screenshot paths exist
 
+**DONE (2026-07-07):** removed the `previewImageKeys` fallback. When
+`renderMemo.screenshotPaths` is empty on an otherwise-successful render, the
+critic is never invoked and the target is DROPPED (`vision_critic_error`, with
+a distinct detail message) rather than skipped-and-ingested — consistent with
+the pre-existing "no unscored layout ships" policy for a throwing/unparseable
+critic call.
+
 `pipeline/run.ts:884`:
 
 ```ts
@@ -97,6 +118,12 @@ instead of substituting blob keys that the CLI can't read.
 ---
 
 ## 4. Phase A transient-failure regression test
+
+**DONE (2026-07-07):** added a test in `tests/pipeline-run.test.ts` proving an
+ECONNRESET thrown from `llm.complete` during generation is NOT retried
+(Phase A runs exactly once) — `errored: 1`, `qualityDropped: 0`,
+`llm.complete` called once, and an `errored` RunEvent with
+`class: 'transient_infra'`, `attempts: 1`.
 
 T2.2's ledger entry already flagged this as untested: the Phase A (generation/
 validation, pre-render) transient-infra retry path has no regression test

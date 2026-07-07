@@ -4,6 +4,11 @@ import type { LlmClient } from '@/pipeline/llm';
 import { LlmError, extractJson } from '@/pipeline/llm';
 import type { ValidationResult } from '@/pipeline/validate';
 import { generateLayout } from '@/pipeline/generate';
+// Followups #2: classify a caught optional-section error the same way run.ts's
+// per-target catch does, so a permanent (usage-limit/auth) failure aborts
+// through instead of being swallowed as a per-section skip — see the catch
+// block in composeLanding below for the full rationale.
+import { classifyError } from '@/pipeline/errors';
 import { buildContentRepairPrompt } from '@/pipeline/recipes';
 import { lintLayoutJson, IMAGE_RULE_CODES } from '@/pipeline/content-lint';
 import { buildBriefPrompt, parseBrief, type Brief } from './brief';
@@ -141,6 +146,17 @@ export async function composeLanding(target: Target, deps: ComposeDeps): Promise
       else log(`skip optional section ${step.role}: produced no post_content`);
     } catch (e) {
       if (REQUIRED_ROLES.has(step.role)) throw e;
+      // Followups #2: a permanent failure (usage-limit exhausted, auth) means
+      // every REMAINING call for this landing — required or optional — would
+      // fail the exact same way. Swallowing it here for an optional role used
+      // to keep calling the CLI once per remaining section, burning doomed
+      // calls, before emitting a landing missing several sections instead of
+      // aborting the way run.ts's Phase A/B split does for every other call
+      // site. Rethrow unconditionally for usage_limit/auth (mirrors run.ts's
+      // ABORT_CODES); every other class (transient/validator/unknown) keeps
+      // today's swallow-and-skip behavior — those ARE per-section-recoverable.
+      const classified = classifyError(e);
+      if (classified.code === 'usage_limit' || classified.code === 'auth') throw e;
       log(`skip optional section ${step.role}: ${(e as Error).message}`);
     }
   }

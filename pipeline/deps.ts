@@ -8,7 +8,7 @@
 import { writeFile, mkdtemp, rm } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import { desc, eq, isNotNull } from 'drizzle-orm';
+import { and, desc, eq, isNotNull, notLike } from 'drizzle-orm';
 import { db } from '@/db/client';
 import { layouts } from '@/db/schema';
 import { claudeCliClient } from './llm';
@@ -19,7 +19,9 @@ import { realRenderDeps, renderLayout, type RenderDeps, type RenderResult } from
 import { resolveLayoutImages, pexelsSearcher } from './images';
 import { postIngest } from './ingest';
 import { claudeVisionCritic } from './vision-critic';
+import { slugify } from './seo';
 import type { RunDeps, RunEvent } from './run';
+import type { ThemeDeps } from './theme';
 
 export async function withTempFile<T>(json: string, fn: (file: string) => Promise<T>): Promise<T> {
   const dir = await mkdtemp(join(tmpdir(), 'layout-'));
@@ -272,4 +274,141 @@ export async function buildRunDeps(opts: BuildRunDepsOptions): Promise<{ deps: R
     log,
   };
   return { deps, close: async () => { await renderer?.close(); } };
+}
+
+export interface BuildThemeDepsOptions {
+  /** The pack's pinned brand name (e.g. `ThemeSpec.brief.businessName`) — used
+   * ONLY to derive `packSlugPrefix` for the near-dupe pool exclusion below
+   * (see `nearDuplicateHashes`'s doc). Never sent anywhere. */
+  businessName: string;
+  /** Log-line prefix, e.g. `[theme]`, `[radiology]`, `[steak]`. */
+  logPrefix?: string;
+  /** Additive instrumentation hook (T4.1) — forwarded verbatim to `ThemeDeps.onEvent`. */
+  onEvent?: (event: RunEvent) => void;
+  /** Per-LLM-call budget cap, same resolution order as `buildRunDeps`
+   * (`PIPELINE_MAX_BUDGET_USD` env var wins, then this default). The theme
+   * scripts have historically used a higher default than the matrix
+   * pipeline's $1 — multi-page/long full-landing generations cost more per
+   * call — so each script passes its own via this option rather than relying
+   * on ONE hardcoded default here. */
+  defaultMaxBudgetUsd?: number;
+  /** Theme scripts give sections a bit more repair headroom than the matrix
+   * pipeline (`buildRunDeps` implicitly relies on `RunDeps.maxRepairs` being
+   * supplied by the caller; the theme scripts this factory replaces all used
+   * 3, vs. the matrix pipeline's 2) — long multi-page landings are worth
+   * another repair attempt rather than dropping a whole page over one
+   * BLOCK_PARSE_ERROR. Defaults to 3 to match pre-existing behavior. */
+  maxRepairs?: number;
+  maxParseRetries?: number;
+}
+
+/**
+ * Followups #1 — `buildThemeDeps`: the theme-script analog of `buildRunDeps`
+ * above. Before this factory existed, `scripts/create-restaurant-pack.ts`,
+ * `scripts/create-radiology-landing.ts` and `scripts/create-steakhouse-landing.ts`
+ * each hand-assembled their own `ThemeDeps` object and, in doing so, silently
+ * omitted `visionCritic`, `nearDuplicateHashes`, and `onEvent` — real gates
+ * `npm run pipeline` gets "for free" via `buildRunDeps` — and their hand-rolled
+ * `render` closures returned only `{ previewImageKeys, perceptualHash }`, never
+ * the T2.1 render-outcome contract's `outcome`/`screenshotPaths` fields. That
+ * silently miscounted a blank render as `renderFailed` (losing the distinct
+ * `renderBlank` signal) and left the vision critic with no local file paths to
+ * read even where one WAS wired later — the exact hole the followups #3 guard
+ * (`run.ts`'s `criticPaths`) now hard-drops on instead of silently misbehaving.
+ * Every theme script should now build its `ThemeDeps` via this factory instead
+ * of copy-pasting the wiring (and the gap) forward.
+ *
+ * Reuses the same building blocks `buildRunDeps` does (`claudeCliClient`,
+ * `loadGrounding`, `validateLayout`, `uploadLayout`, `realRenderDeps` +
+ * `renderAndCapture` for the T2.1-compliant render closure, `resolveLayoutImages`,
+ * `postIngest`, `claudeVisionCritic`) rather than a from-scratch reimplementation
+ * — deliberately a SEPARATE function (not a thin wrapper around `buildRunDeps`)
+ * because the two callers' shapes genuinely differ (theme: `pageExists` resume
+ * support + no `targets`/dry-run; matrix: `targets` + dry-run stubs), and
+ * forcing one to wrap the other would couple those two unrelated concerns.
+ */
+export async function buildThemeDeps(opts: BuildThemeDepsOptions): Promise<{ deps: ThemeDeps; close: () => Promise<void> }> {
+  const logPrefix = opts.logPrefix ?? '[theme]';
+  const log = (m: string) => console.log(`${logPrefix} ${m}`);
+
+  const validatorDir = process.env.VALIDATOR_DIR ?? '../Divi 5 Deterministic Validator';
+  const guide = loadGrounding(validatorDir, log);
+
+  const ingestUrl = process.env.INGEST_URL ?? 'http://localhost:3000';
+  const ingestToken = process.env.INGEST_API_TOKEN ?? '';
+  const maxBudget = process.env.PIPELINE_MAX_BUDGET_USD ? Number(process.env.PIPELINE_MAX_BUDGET_USD) : (opts.defaultMaxBudgetUsd ?? 1);
+
+  const hasBlobToken = !!process.env.BLOB_READ_WRITE_TOKEN;
+  const renderer = await realRenderDeps();
+  const pexelsKey = process.env.PEXELS_API_KEY;
+
+  // T4.2/followups #1 "resume trap" (documented in the followups spec and in
+  // pipeline/theme.ts:114's TODO(T4.2) comment): `runThemePack`'s
+  // `createRunContext(runDeps, { growDedupePools: false })` call only stops
+  // THIS run from growing/checking the in-memory near-dupe pool against pages
+  // it itself just ingested — it does nothing about a PRIOR, interrupted run
+  // of the SAME pack. Those earlier pages are already in the DB with a real
+  // `perceptualHash` by the time a resumed run starts, and the pool is seeded
+  // ONCE at `createRunContext` time (see run.ts) — if the seed query pulled
+  // those rows in, the pool would already contain this pack's OWN siblings on
+  // the very first `nearestDistance` check, silently reintroducing the exact
+  // pixel-near-dupe drop the pack is supposed to be exempt from.
+  //
+  // Fix (chosen over leaving `nearDuplicateHashes` unwired for themes
+  // entirely): exclude this pack's own rows from the seed query by slug
+  // prefix. `themePageSlug` (pipeline/theme.ts) always builds the slug as
+  // `slugify(\`${brief.businessName} ${style} ${niche} ${role} page for divi 5\`)`
+  // — the brand name is the FIRST token(s) fed to `slugify`, so every page of
+  // this pack shares the identical `slugify(businessName)` prefix, and no
+  // other pack's brand name collides with it in practice (two packs would
+  // need the exact same business name to share a prefix). Cheap: `slug` and
+  // `perceptual_hash` are both plain, already-queried columns on `layouts` —
+  // no extra table, join, or migration needed.
+  const packSlugPrefix = `${slugify(opts.businessName)}-`;
+
+  const deps: ThemeDeps = {
+    guide,
+    llm: claudeCliClient({ model: process.env.PIPELINE_MODEL }),
+    validate: (json) => withTempFile(json, (f) => validateLayout(f)),
+    resolveImages: pexelsKey ? (json) => resolveLayoutImages(json, pexelsSearcher(pexelsKey)) : undefined,
+    isDuplicate: async (hash) => {
+      const hit = await db.select({ id: layouts.id }).from(layouts).where(eq(layouts.contentHash, hash)).limit(1);
+      return hit.length > 0;
+    },
+    // Resume support (theme-only): skip any page already in the catalog so a
+    // run survives a usage-limit interruption — only the missing pages cost
+    // generation on a re-run.
+    pageExists: async (slug) => {
+      const hit = await db.select({ id: layouts.id }).from(layouts).where(eq(layouts.slug, slug)).limit(1);
+      return hit.length > 0;
+    },
+    nearDuplicateHashes: async () => {
+      const rows = await db
+        .select({ perceptualHash: layouts.perceptualHash })
+        .from(layouts)
+        .where(and(isNotNull(layouts.perceptualHash), notLike(layouts.slug, `${packSlugPrefix}%`)))
+        .orderBy(desc(layouts.createdAt))
+        .limit(2000);
+      return rows.map((r) => r.perceptualHash).filter((h): h is string => !!h);
+    },
+    upload: (hash, json) => uploadLayout(hash, json, { hasBlobToken, outDir: 'pipeline/out' }),
+    // Same T2.1-compliant render closure buildRunDeps wires for the matrix
+    // pipeline: local temp-file screenshot paths (the vision critic's `claude
+    // --allowedTools Read` call needs real files, not blob keys) plus the
+    // ok/blank/error outcome contract — see renderAndCapture's doc above.
+    render: (input) => renderAndCapture(input, { renderLayout, renderDeps: renderer.deps, hasBlobToken, logPrefix, log }),
+    visionCritic: claudeVisionCritic({ model: process.env.VISION_CRITIC_MODEL, maxBudgetUsd: maxBudget }),
+    visionCriticMinScore: process.env.VISION_CRITIC_MIN_SCORE ? Number(process.env.VISION_CRITIC_MIN_SCORE) : 3,
+    copyCriticMinScore: process.env.COPY_CRITIC_MIN_SCORE ? Number(process.env.COPY_CRITIC_MIN_SCORE) : 3,
+    imageRelevanceMinScore: process.env.IMAGE_RELEVANCE_MIN_SCORE ? Number(process.env.IMAGE_RELEVANCE_MIN_SCORE) : 3,
+    ingest: (payload) => postIngest(payload, { url: ingestUrl, token: ingestToken }),
+    maxRepairs: opts.maxRepairs ?? 3,
+    maxParseRetries: opts.maxParseRetries ?? 2,
+    maxBudgetUsd: maxBudget,
+    maxRetries: process.env.PIPELINE_RETRY_MAX ? Number(process.env.PIPELINE_RETRY_MAX) : 2,
+    retryBaseDelayMs: process.env.PIPELINE_RETRY_BASE_DELAY_MS ? Number(process.env.PIPELINE_RETRY_BASE_DELAY_MS) : 250,
+    onEvent: opts.onEvent,
+    log,
+  };
+  return { deps, close: async () => { await renderer.close(); } };
 }
