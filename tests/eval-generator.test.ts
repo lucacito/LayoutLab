@@ -75,6 +75,29 @@ describe('MetricsAccumulator', () => {
     expect(m.tokensPerAccepted).toBeNull();
   });
 
+  it('tracks the "error" drop-reason path separately from "validation", and excludes it from validatorPassRate', () => {
+    // A target that throws mid-pipeline (e.g. render/upload failure) is tagged
+    // reason:'error', not 'validation' — the two must not be conflated: an error
+    // drop is an infra failure, not evidence the generator produced invalid output.
+    const acc = new MetricsAccumulator('baseline', 2);
+    const events: RunEvent[] = [
+      { type: 'generated', target },
+      { type: 'ingested', target, slug: 's1' },
+      { type: 'llm_usage', target, usage: { costUsd: 0.01, inputTokens: 10, outputTokens: 5 }, outcome: 'ingested' },
+      { type: 'generated', target },
+      { type: 'dropped', target, reason: 'error', detail: 'render failed: ECONNREFUSED' },
+      { type: 'llm_usage', target, usage: { costUsd: 0.02, inputTokens: 20, outputTokens: 8 }, outcome: 'dropped' },
+    ];
+    for (const e of events) acc.add(e);
+    const m = acc.finalize(summary({ generated: 2, ingested: 1, dropped: 1 }));
+    expect(m.dropReasonCounts).toEqual({ error: 1 });
+    expect(m.dropReasonCounts.validation).toBeUndefined();
+    // validatorPassRate only subtracts 'validation' drops — an error drop must not
+    // count against it (2 generated, 0 validation drops → 100%, even though 1 of 2 was dropped).
+    expect(m.validatorPassRate).toBe(1);
+    expect(m.costPerAcceptedUsd).toBeCloseTo(0.01, 5);
+  });
+
   it('carries the config label through to the finalized metrics', () => {
     const acc = new MetricsAccumulator('my-config', 3);
     const m = acc.finalize(summary());

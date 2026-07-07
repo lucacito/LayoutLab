@@ -1,6 +1,6 @@
 // tests/pipeline-run.test.ts
 import { describe, it, expect, vi } from 'vitest';
-import { runPipeline } from '@/pipeline/run';
+import { runPipeline, type RunEvent } from '@/pipeline/run';
 
 const guide = { style: 's', schema: 'sc', examples: [] };
 const target = { type: 'hero', niche: 'saas', style: 'minimal' };
@@ -114,5 +114,74 @@ describe('runPipeline', () => {
     // A one-shot path would upload a single-section document (this assertion would fail).
     expect((post.match(/wp:divi\/placeholder -->/g) || []).length).toBe(2);
     expect((post.match(/wp:divi\/section {/g) || []).length).toBeGreaterThanOrEqual(6);
+  });
+});
+
+// T4.1 review fix: no test previously exercised the RunEvent emission wiring
+// itself (the eval harness's whole join to the pipeline depends on it). These
+// assert the emitted event sequence AND that `llm_usage`'s `outcome` tag matches
+// the target's real terminal fate, for the three canonical outcomes.
+function llmWithUsage(response: string, usage = { costUsd: 0.01, inputTokens: 10, outputTokens: 5 }) {
+  return { complete: vi.fn(async ({ onUsage }: { onUsage?: (u: typeof usage) => void }) => {
+    onUsage?.(usage);
+    return response;
+  }) };
+}
+
+function usageEventOf(events: RunEvent[]) {
+  const e = events.find((ev) => ev.type === 'llm_usage');
+  if (!e || e.type !== 'llm_usage') throw new Error('no llm_usage event found');
+  return e;
+}
+
+describe('runPipeline RunEvent emission', () => {
+  it('ingested: emits generated → content_lint → ingested → llm_usage(outcome=ingested), usage summed across generate+seo calls', async () => {
+    const events: RunEvent[] = [];
+    const llm = llmWithUsage('{"content":[]}');
+    const deps = baseDeps({ llm, onEvent: (e: RunEvent) => events.push(e) });
+    const s = await runPipeline(deps as any);
+    expect(s.ingested).toBe(1);
+    expect(events.map((e) => e.type)).toEqual(['generated', 'content_lint', 'ingested', 'llm_usage']);
+    const usageEvent = usageEventOf(events);
+    expect(usageEvent.outcome).toBe('ingested');
+    // 2 llm.complete calls in the happy path (generate + seo) — usage accumulates across both.
+    expect(usageEvent.usage).toEqual({ costUsd: 0.02, inputTokens: 20, outputTokens: 10 });
+  });
+
+  it('validation drop: emits generated → dropped(reason=validation) → llm_usage(outcome=dropped)', async () => {
+    const events: RunEvent[] = [];
+    const llm = llmWithUsage('{"content":[]}');
+    const validate = vi.fn(async () => bad);
+    // maxRepairs: 0 isolates the plain drop path from the separately-covered repair-loop behavior.
+    const deps = baseDeps({ llm, validate, maxRepairs: 0, onEvent: (e: RunEvent) => events.push(e) });
+    const s = await runPipeline(deps as any);
+    expect(s.dropped).toBe(1);
+    expect(events.map((e) => e.type)).toEqual(['generated', 'dropped', 'llm_usage']);
+    const dropped = events.find((e) => e.type === 'dropped');
+    expect(dropped).toMatchObject({ reason: 'validation' });
+    const usageEvent = usageEventOf(events);
+    expect(usageEvent.outcome).toBe('dropped');
+    // only the generate call happens before the drop — no repair, no SEO call.
+    expect(usageEvent.usage).toEqual({ costUsd: 0.01, inputTokens: 10, outputTokens: 5 });
+  });
+
+  it('dedupe skip: emits generated → content_lint → deduped → llm_usage(outcome=deduped), no SEO call counted', async () => {
+    const events: RunEvent[] = [];
+    const llm = llmWithUsage('{"content":[]}');
+    const deps = baseDeps({ llm, isDuplicate: vi.fn(async () => true), onEvent: (e: RunEvent) => events.push(e) });
+    const s = await runPipeline(deps as any);
+    expect(s.deduped).toBe(1);
+    expect(events.map((e) => e.type)).toEqual(['generated', 'content_lint', 'deduped', 'llm_usage']);
+    const usageEvent = usageEventOf(events);
+    expect(usageEvent.outcome).toBe('deduped');
+    // dedupe check happens before generateSeo — only the generate call's usage counted.
+    expect(usageEvent.usage).toEqual({ costUsd: 0.01, inputTokens: 10, outputTokens: 5 });
+  });
+
+  it('never fires llm_usage when the underlying llm client never reports usage (sawUsage stays false)', async () => {
+    const events: RunEvent[] = [];
+    const deps = baseDeps({ onEvent: (e: RunEvent) => events.push(e) }); // baseDeps' default llm never calls onUsage
+    await runPipeline(deps as any);
+    expect(events.some((e) => e.type === 'llm_usage')).toBe(false);
   });
 });

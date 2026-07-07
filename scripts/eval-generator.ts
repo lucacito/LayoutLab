@@ -22,21 +22,10 @@
 // Use --dry-run to smoke-test the harness's own plumbing (stubbed llm/validate/
 // ingest, matching `npm run pipeline -- <mode> --dry-run` semantics) without
 // spending budget or touching the catalog.
-import { eq } from 'drizzle-orm';
-import { db } from '@/db/client';
-import { layouts } from '@/db/schema';
-import { claudeCliClient } from '@/pipeline/llm';
-import { loadGrounding, type Target } from '@/pipeline/recipes';
-import { validateLayout } from '@/pipeline/validate';
-import { uploadLayout, uploadScreenshot } from '@/pipeline/upload';
-import { realRenderDeps, renderLayout } from '@/pipeline/render';
-import { resolveLayoutImages, pexelsSearcher } from '@/pipeline/images';
-import { postIngest } from '@/pipeline/ingest';
+import type { Target } from '@/pipeline/recipes';
 import { runPipeline, type RunDeps, type RunEvent } from '@/pipeline/run';
+import { arg, hasFlag, buildRunDeps } from '@/pipeline/deps';
 import { MetricsAccumulator, formatComparisonTable, type EvalMetrics } from '@/pipeline/eval/metrics';
-import { writeFile, mkdtemp, rm } from 'node:fs/promises';
-import { join } from 'node:path';
-import { tmpdir } from 'node:os';
 
 // Fixed, deterministic target set. Small enough to bound cost/time per config,
 // diverse enough (four section types, four niches/styles) to be informative.
@@ -48,23 +37,6 @@ export const EVAL_TARGET_SET: Target[] = [
   { type: 'pricing', niche: 'fitness', style: 'dark' },
   { type: 'features', niche: 'coaching', style: 'elegant' },
 ];
-
-async function withTempFile<T>(json: string, fn: (file: string) => Promise<T>): Promise<T> {
-  const dir = await mkdtemp(join(tmpdir(), 'eval-layout-'));
-  const file = join(dir, 'layout.json');
-  await writeFile(file, json);
-  try {
-    return await fn(file);
-  } finally {
-    await rm(dir, { recursive: true, force: true }).catch(() => {});
-  }
-}
-
-function arg(name: string): string | undefined {
-  const hit = process.argv.find((a) => a.startsWith(`--${name}=`));
-  return hit ? hit.split('=')[1] : undefined;
-}
-const hasFlag = (name: string) => process.argv.includes(`--${name}`);
 
 interface EvalConfigDef {
   label: string;
@@ -83,53 +55,12 @@ function configsToRun(): EvalConfigDef[] {
   ];
 }
 
+// Wired through pipeline/deps.ts's buildRunDeps — the SAME dependency-construction
+// logic `pipeline/index.ts` uses for a real `npm run pipeline` run, so this harness
+// measures the real path and can never silently drift from it (T4.1 acceptance
+// criterion: "wired to the same deps as run.ts").
 async function buildDeps(dryRun: boolean, onEvent: (e: RunEvent) => void): Promise<{ deps: RunDeps; close: () => Promise<void> }> {
-  const validatorDir = process.env.VALIDATOR_DIR ?? '../Divi 5 Deterministic Validator';
-  const guide = loadGrounding(validatorDir);
-  const ingestUrl = process.env.INGEST_URL ?? 'http://localhost:3000';
-  const ingestToken = process.env.INGEST_API_TOKEN ?? '';
-  const maxBudget = process.env.PIPELINE_MAX_BUDGET_USD ? Number(process.env.PIPELINE_MAX_BUDGET_USD) : 1;
-  const hasBlobToken = !!process.env.BLOB_READ_WRITE_TOKEN;
-  const renderer = dryRun ? null : await realRenderDeps();
-  const pexelsKey = process.env.PEXELS_API_KEY;
-  const stubLlm = { complete: async () => '{"content":[]}' };
-
-  const deps: RunDeps = {
-    targets: EVAL_TARGET_SET,
-    guide,
-    llm: dryRun ? stubLlm : claudeCliClient({ model: process.env.PIPELINE_MODEL }),
-    validate: dryRun ? async () => ({ valid: true, violations: [] }) : (json) => withTempFile(json, (f) => validateLayout(f)),
-    resolveImages: !dryRun && pexelsKey ? (json) => resolveLayoutImages(json, pexelsSearcher(pexelsKey)) : undefined,
-    isDuplicate: async (hash) => {
-      if (dryRun) return false;
-      const hit = await db.select({ id: layouts.id }).from(layouts).where(eq(layouts.contentHash, hash)).limit(1);
-      return hit.length > 0;
-    },
-    upload: (hash, json) => uploadLayout(hash, json, { hasBlobToken, outDir: 'pipeline/out' }),
-    render: renderer
-      ? async ({ title, postContent, hash }) => {
-          try {
-            const { shots, perceptualHash } = await renderLayout({ title, postContent }, renderer.deps);
-            const keys: string[] = [];
-            for (const label of ['desktop', 'mobile'] as const) {
-              const shot = shots.find((s) => s.label === label);
-              if (shot) keys.push(await uploadScreenshot(hash, label, shot.buffer, { hasBlobToken }));
-            }
-            return { previewImageKeys: keys, perceptualHash };
-          } catch (e) {
-            console.warn(`[eval] render failed: ${(e as Error).message}`);
-            return { previewImageKeys: [] };
-          }
-        }
-      : undefined,
-    ingest: dryRun ? async () => ({ deduped: false }) : (payload) => postIngest(payload, { url: ingestUrl, token: ingestToken }),
-    maxRepairs: 2,
-    maxParseRetries: 2,
-    maxBudgetUsd: maxBudget,
-    onEvent,
-    log: (m) => console.log(`[eval] ${m}`),
-  };
-  return { deps, close: async () => { await renderer?.close(); } };
+  return buildRunDeps({ targets: EVAL_TARGET_SET, dryRun, onEvent, logPrefix: '[eval]' });
 }
 
 async function runOneConfig(cfg: EvalConfigDef, dryRun: boolean): Promise<EvalMetrics> {

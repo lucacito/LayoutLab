@@ -1,6 +1,6 @@
 // tests/pipeline-llm.test.ts
 import { describe, it, expect, vi } from 'vitest';
-import { extractJson, parseClaudeEnvelope, claudeCliClient, LlmError } from '@/pipeline/llm';
+import { extractJson, parseClaudeEnvelope, parseClaudeUsage, claudeCliClient, LlmError } from '@/pipeline/llm';
 
 describe('extractJson', () => {
   it('parses a bare JSON object', () => {
@@ -56,6 +56,54 @@ describe('parseClaudeEnvelope', () => {
   });
 });
 
+describe('parseClaudeUsage', () => {
+  it('reads cost/tokens out of a real-shaped claude -p --output-format json envelope', () => {
+    // Full envelope shape the `claude` CLI actually emits in one-shot print mode:
+    // top-level `total_cost_usd` + nested `usage.{input,output}_tokens`, alongside
+    // fields (session_id, duration_ms, num_turns, cache_*) this codebase doesn't
+    // consume — parseClaudeUsage must pick the two fields it cares about and
+    // ignore the rest.
+    const env = JSON.stringify({
+      type: 'result',
+      subtype: 'success',
+      is_error: false,
+      result: 'hello',
+      session_id: 'abc-123',
+      duration_ms: 4213,
+      duration_api_ms: 3980,
+      num_turns: 1,
+      total_cost_usd: 0.0182,
+      usage: {
+        input_tokens: 512,
+        cache_creation_input_tokens: 0,
+        cache_read_input_tokens: 1200,
+        output_tokens: 340,
+        service_tier: 'standard',
+      },
+    });
+    expect(parseClaudeUsage(env)).toEqual({ costUsd: 0.0182, inputTokens: 512, outputTokens: 340 });
+  });
+
+  it('omits fields that are absent or non-numeric rather than defaulting to 0', () => {
+    const env = JSON.stringify({ type: 'result', subtype: 'success', is_error: false, result: 'x', usage: { input_tokens: 10 } });
+    expect(parseClaudeUsage(env)).toEqual({ inputTokens: 10 });
+  });
+
+  it('fails open to {} on unparseable stdout', () => {
+    expect(parseClaudeUsage('not json')).toEqual({});
+  });
+
+  it('fails open to {} when usage/cost fields are the wrong type', () => {
+    const env = JSON.stringify({ total_cost_usd: 'free', usage: { input_tokens: '512', output_tokens: null } });
+    expect(parseClaudeUsage(env)).toEqual({});
+  });
+
+  it('fails open to {} on an error envelope with no usage reported', () => {
+    const env = JSON.stringify({ type: 'result', subtype: 'error_max_budget', is_error: true, result: '' });
+    expect(parseClaudeUsage(env)).toEqual({});
+  });
+});
+
 describe('claudeCliClient', () => {
   it('passes the prompt via stdin and returns parsed result text', async () => {
     const run = vi.fn(async (_cmd: string, _args: string[], input?: string) => ({
@@ -88,5 +136,26 @@ describe('claudeCliClient', () => {
     }));
     const client = claudeCliClient({ run });
     await expect(client.complete({ prompt: 'x' })).rejects.toThrow(/hit your limit/);
+  });
+
+  it('reports usage via onUsage alongside the parsed result text, on success', async () => {
+    const run = vi.fn(async () => ({
+      stdout: JSON.stringify({ type: 'result', subtype: 'success', is_error: false, result: 'hi', total_cost_usd: 0.05, usage: { input_tokens: 20, output_tokens: 10 } }),
+      stderr: '',
+      code: 0,
+    }));
+    const client = claudeCliClient({ run });
+    const onUsage = vi.fn();
+    const out = await client.complete({ prompt: 'x', onUsage });
+    expect(out).toBe('hi');
+    expect(onUsage).toHaveBeenCalledWith({ costUsd: 0.05, inputTokens: 20, outputTokens: 10 });
+  });
+
+  it('never calls onUsage on a non-zero exit (no successful envelope to report from)', async () => {
+    const run = vi.fn(async () => ({ stdout: '', stderr: 'boom', code: 1 }));
+    const client = claudeCliClient({ run });
+    const onUsage = vi.fn();
+    await expect(client.complete({ prompt: 'x', onUsage })).rejects.toBeInstanceOf(LlmError);
+    expect(onUsage).not.toHaveBeenCalled();
   });
 });

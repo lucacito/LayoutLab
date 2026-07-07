@@ -42,7 +42,6 @@ export interface EvalMetrics {
 }
 
 export class MetricsAccumulator {
-  private generated = 0;
   private repairAttempts = 0;
   private contentLintSeen = 0;
   private contentLintHits = 0;
@@ -62,7 +61,9 @@ export class MetricsAccumulator {
   add(event: RunEvent): void {
     switch (event.type) {
       case 'generated':
-        this.generated++;
+        // Headline `generated` count comes from the run's authoritative
+        // `RunSummary` at finalize() — this event only needs to exist so
+        // switch exhaustiveness is checked; nothing to accumulate here.
         break;
       case 'repair_attempt':
         this.repairAttempts++;
