@@ -20,10 +20,13 @@
 //   previews on a render miss (the TODO(T4.2) hole); now the shared render gate
 //   drops them like any other layout — a paid theme page with no real screenshot
 //   is not sellable.
-// - Near-dupe is checked against the EXISTING catalog only, never within the pack:
-//   `growNearDupPool: false` keeps sibling pages (intentionally same palette, shared
-//   header/footer bands) from near-dupe-dropping each other, while a page that
-//   near-duplicates an already-published layout still drops.
+// - Near-dupe/boilerplate are checked against the EXISTING catalog only, never
+//   within the pack: `growDedupePools: false` keeps sibling pages (intentionally
+//   same palette, shared header/footer/brand copy) from near-dupe- or
+//   copy-boilerplate-dropping each other, while a page that near-duplicates an
+//   already-published layout (or reuses its copy verbatim) still drops. One flag
+//   covers both pools (pipeline/run.ts's `RunContext` doc) — theme pages share
+//   both visuals and brand copy on purpose, so both gates opt out together.
 import type { RunDeps, PipelineItem } from './run';
 import { createRunContext, processItem } from './run';
 import type { Brief, Step } from './compose';
@@ -111,9 +114,9 @@ export async function runThemePack(spec: ThemeSpec, deps: ThemeDeps): Promise<Th
   const result: ThemeResult = { pageSlugs: [], generated: 0, ingested: 0, dropped: 0, deduped: 0 };
 
   const runDeps: RunDeps = { ...deps, targets: [] }; // targets unused — the page loop below drives the run
-  // Theme near-dupe adjudication (see module doc): check against the existing
-  // catalog, never against this pack's own sibling pages.
-  const ctx = await createRunContext(runDeps, { growNearDupPool: false });
+  // Theme near-dupe/copy-boilerplate adjudication (see module doc): check
+  // against the existing catalog, never against this pack's own sibling pages.
+  const ctx = await createRunContext(runDeps, { growDedupePools: false });
 
   for (const page of spec.pages) {
     const pageSlug = themePageSlug(spec.brief, spec, page);

@@ -761,17 +761,80 @@ describe('runPipeline copy-boilerplate gate (T5.1, deterministic)', () => {
     expect(s.qualityDropped).toBe(0);
   });
 
-  it('does not apply the boilerplate gate to a theme run (growNearDupPool: false — sibling pages share brand copy on purpose)', async () => {
-    // Simulates the theme wrapper's ctx (createRunContext with growNearDupPool:
+  it('does not apply the boilerplate gate to a theme run (growDedupePools: false — sibling pages share brand copy on purpose)', async () => {
+    // Simulates the theme wrapper's ctx (createRunContext with growDedupePools:
     // false) by driving processItem directly through two items with identical text.
     const { createRunContext, processItem } = await import('@/pipeline/run');
     const llm = llmSeq(genWithText(1, BOILERPLATE), seoJson, genWithText(2, BOILERPLATE), seoJson);
     const deps = baseDeps({ llm }) as any;
-    const ctx = await createRunContext(deps, { growNearDupPool: false });
+    const ctx = await createRunContext(deps, { growDedupePools: false });
     const r1 = await processItem({ target: targetA }, ctx);
     const r2 = await processItem({ target: targetB }, ctx);
     expect(r1.outcome).toBe('ingested');
     expect(r2.outcome).toBe('ingested'); // NOT dropped — theme pages skip this gate
+  });
+
+  // Review fix (T5.1 review, Important): the boilerplate gate must run AFTER the
+  // pre-existing content-hash dedupe check, not before it. A same-run
+  // byte-identical duplicate is the SAME layout being re-submitted, not a
+  // distinct layout that happens to reuse boilerplate wording — it must be
+  // classified `deduped` (T1.x's existing semantics), never `copy_boilerplate`.
+  // Before the fix, the boilerplate gate ran first in Phase A and claimed this
+  // case as a quality drop, so `deduped` never incremented and `ingest` was
+  // never even attempted for a target real dedupe should have short-circuited
+  // identically to the pre-T5.1 "skips a duplicate" test above.
+  it('classifies a same-run byte-identical duplicate as deduped, not copy_boilerplate (gate ordering)', async () => {
+    function genFixed(text: string) {
+      // Deliberately IDENTICAL post_title/post_content both times — byte-for-byte
+      // the same JSON, so `contentHash` is identical and the dedupe check (which
+      // runs after Phase A's mobile-stack normalization) recognizes it as a repeat
+      // of the layout the previous target in THIS run already had ingested.
+      return JSON.stringify({ post_title: 'Fixed Title', post_content: `<!-- wp:divi/text {"content":"${text}"} -->` });
+    }
+    const llm = llmSeq(genFixed(BOILERPLATE), seoJson, genFixed(BOILERPLATE));
+    const seenHashes = new Set<string>();
+    const isDuplicate = vi.fn(async (hash: string) => {
+      if (seenHashes.has(hash)) return true;
+      seenHashes.add(hash);
+      return false;
+    });
+    const ingest = vi.fn(async () => ({ deduped: false }));
+    const events: RunEvent[] = [];
+    const s = await runPipeline(baseDeps({
+      targets: [targetA, targetB],
+      llm, isDuplicate, ingest,
+      onEvent: (e: RunEvent) => events.push(e),
+    }) as any);
+    expect(s.ingested).toBe(1);
+    expect(s.deduped).toBe(1);
+    expect(s.qualityDropped).toBe(0); // must NOT be classified as copy_boilerplate
+    expect(ingest).toHaveBeenCalledOnce();
+    const dropped = events.find((e) => e.type === 'dropped' && (e as any).reason === 'copy_boilerplate');
+    expect(dropped).toBeUndefined();
+    expect(events.some((e) => e.type === 'deduped')).toBe(true);
+  });
+
+  // Review fix (T5.1 review, Minor): mirrors the near-dupe-pool poisoning
+  // regression test above (`does not poison the near-dupe pool when ingest
+  // throws...`) for the new `copyTextPool`. A layout must only join the
+  // boilerplate-comparison pool once it has ACTUALLY been ingested —
+  // `applyPhaseBOutcome`'s `copyTextPool.push` only runs on the `'ingested'`
+  // branch, which is only reached after `withRetry` resolves successfully, so a
+  // throwing ingest for target 1 must never let target 1's text poison the pool
+  // against target 2.
+  it('does not poison the copy-text pool when ingest throws for the first accepted layout (review fix)', async () => {
+    const llm = llmSeq(genWithText(1, BOILERPLATE), seoJson, genWithText(2, BOILERPLATE), seoJson);
+    const ingest = vi
+      .fn()
+      .mockImplementationOnce(async () => {
+        throw new Error('ingest boom');
+      })
+      .mockImplementationOnce(async () => ({ deduped: false }));
+    const s = await runPipeline(baseDeps({ targets: [targetA, targetB], llm, ingest }) as any);
+    expect(ingest).toHaveBeenCalledTimes(2);
+    expect(s.errored).toBe(1); // target 1: ingest error (infra, unknown code, not retried)
+    expect(s.qualityDropped).toBe(0); // target 2 must NOT be wrongly copy_boilerplate-dropped
+    expect(s.ingested).toBe(1); // target 2: ingested normally
   });
 });
 

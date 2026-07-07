@@ -333,25 +333,41 @@ export interface RunContext {
   deps: RunDeps;
   summary: RunSummary;
   /** Near-duplicate pool (T1.2). Seeded once from `deps.nearDuplicateHashes`,
-   * then grown with each accepted hash — but ONLY when `growNearDupPool` is
+   * then grown with each accepted hash — but ONLY when `growDedupePools` is
    * true. Theme runs set it false so sibling pages of ONE pack (intentionally
    * same-palette, shared header/footer bands) are never near-dupe-dropped
    * against each other (T4.2 adjudication) — they're still checked against the
-   * seeded cross-pack pool, just never poison it for each other. */
+   * seeded cross-pack pool, just never poison it for each other.
+   *
+   * Review fix (T5.1 review): the flag is named `growDedupePools` (was
+   * `growNearDupPool`) because it is deliberately scope-neutral — ONE flag
+   * gates BOTH this pool and `copyTextPool` below. The old name only described
+   * this pool and silently hid that coupling. See `copyTextPool`'s doc for the
+   * other half of the same story. */
   nearDupPool: string[];
   /** T5.1: in-run-only pool of extracted layout text this run has ACCEPTED so
    * far — the deterministic cross-layout-boilerplate gate's comparison set. See
    * pipeline/copy-critic.ts's module doc for why there's no DB-seeded
-   * counterpart (unlike `nearDupPool`/`nearDuplicateHashes`) yet. */
+   * counterpart (unlike `nearDupPool`/`nearDuplicateHashes`) yet.
+   *
+   * Review fix (T5.1 review): grown/checked under the SAME `growDedupePools`
+   * flag as `nearDupPool` above, not a separate flag — a theme run
+   * (`growDedupePools: false`) skips BOTH pools together, for the identical
+   * reason: sibling pages of ONE theme pack intentionally share both visuals
+   * AND brand copy (footer/contact text, CTA phrasing), so neither pool may
+   * check-or-grow against a theme pack's own sibling pages. */
   copyTextPool: string[];
   maxDistance: number;
   maxRetries: number;
   retryBaseDelayMs: number;
-  /** T5.1: reused (not a new flag) for `copyTextPool` too — same rationale as
-   * the near-dupe pool: sibling pages of ONE theme pack intentionally share
-   * brand copy (footer/contact text, CTA phrasing), so a theme run must never
-   * check-or-grow the boilerplate pool against/from its own sibling pages. */
-  growNearDupPool: boolean;
+  /** One flag, two pools (see both pools' docs above, and copy-critic.ts's
+   * module doc): `true` (matrix/vary default) grows and checks against BOTH
+   * `nearDupPool` (pixel near-dupe, T1.2) and `copyTextPool` (text boilerplate,
+   * T5.1); `false` (theme runs) disables both together, since a theme pack's
+   * sibling pages intentionally repeat both visuals and brand copy on purpose.
+   * Named `growDedupePools`, not `growNearDupPool` (review fix, T5.1 review) —
+   * the old name only described the near-dupe half of what it controls. */
+  growDedupePools: boolean;
   log: (msg: string) => void;
   onEvent: (event: RunEvent) => void;
 }
@@ -371,9 +387,9 @@ export function newRunSummary(): RunSummary {
 }
 
 /** Build the shared run context: seed the near-dupe pool once (not per item) and
- * resolve the retry/near-dupe knobs. `growNearDupPool` defaults true (matrix); the
- * theme path passes false (see `RunContext.nearDupPool`). */
-export async function createRunContext(deps: RunDeps, opts?: { growNearDupPool?: boolean }): Promise<RunContext> {
+ * resolve the retry/near-dupe knobs. `growDedupePools` defaults true (matrix); the
+ * theme path passes false (see `RunContext.nearDupPool`/`RunContext.copyTextPool`). */
+export async function createRunContext(deps: RunDeps, opts?: { growDedupePools?: boolean }): Promise<RunContext> {
   return {
     deps,
     summary: newRunSummary(),
@@ -384,7 +400,7 @@ export async function createRunContext(deps: RunDeps, opts?: { growNearDupPool?:
     maxDistance: perceptualDupeMaxDistance(),
     maxRetries: deps.maxRetries ?? 2,
     retryBaseDelayMs: deps.retryBaseDelayMs ?? 250,
-    growNearDupPool: opts?.growNearDupPool ?? true,
+    growDedupePools: opts?.growDedupePools ?? true,
     log: deps.log ?? (() => {}),
     onEvent: deps.onEvent ?? (() => {}),
   };
@@ -450,7 +466,7 @@ export interface ItemResult {
  * `outcome`, its ingest `slug`, and whether the run should `abort` (usage-limit/
  * auth). All the retry-boundary and memoization design below is unchanged from the
  * pre-T4.2 per-target loop body; it was extracted verbatim, parameterized only by
- * the item's pins/composeExtras and the context's `growNearDupPool` flag.
+ * the item's pins/composeExtras and the context's `growDedupePools` flag.
  */
 export async function processItem(item: PipelineItem, ctx: RunContext): Promise<ItemResult> {
   const { deps, summary, nearDupPool, copyTextPool, maxDistance, maxRetries, retryBaseDelayMs, log, onEvent } = ctx;
@@ -637,29 +653,6 @@ export async function processItem(item: PipelineItem, ctx: RunContext): Promise<
         if (lint.length) log(`warn(content) ${target.type}/${target.niche}/${target.style}: ${lint.map((v) => v.code).join(',')} (best-effort image miss)`);
       }
 
-      // T5.1: deterministic cross-layout boilerplate gate — separate from, and
-      // stricter than, the LLM copyScore FLAG below (Phase B). "Obvious" reused
-      // copy (high word-shingle overlap with a layout THIS run already accepted)
-      // is a hard DROP, decided without any LLM call, so it happens here in Phase
-      // A — before render/SEO/vision-critic even run — rather than in Phase B
-      // alongside the near-dupe/vision-critic gates: a layout that's already
-      // known-boilerplate shouldn't pay for any of that first. See
-      // pipeline/copy-critic.ts's module doc for why the comparison pool is
-      // in-run-only, and `RunContext.copyTextPool`'s doc for why theme runs
-      // (growNearDupPool: false) skip this gate entirely — their pages
-      // intentionally share brand copy on purpose. `layoutText` is computed
-      // once here and threaded through to Phase B (folded critic prompt +
-      // the pool-growing push on ingest) rather than re-extracted there.
-      const layoutText = extractLayoutText(json);
-      if (ctx.growNearDupPool && isCopyBoilerplate(layoutText, copyTextPool)) {
-        summary.qualityDropped++;
-        outcome = 'dropped';
-        const detail = `overlap > ${(copyBoilerplateMaxOverlap() * 100).toFixed(0)}% with previously accepted copy this run`;
-        log(`drop(copy_boilerplate) ${target.type}/${target.niche}/${target.style}: ${detail}`);
-        emit({ type: 'dropped', target, reason: 'copy_boilerplate', detail });
-        return undefined;
-      }
-
       // Enforce single-column, full-width stacking on phone (deterministic; the
       // model is inconsistent about responsive column sizing). Adds phone-only
       // attributes — desktop layout and validation verdict are unaffected.
@@ -671,6 +664,41 @@ export async function processItem(item: PipelineItem, ctx: RunContext): Promise<
         outcome = 'deduped';
         log(`dedupe ${hash.slice(0, 12)}`);
         emit({ type: 'deduped', target });
+        return undefined;
+      }
+
+      // T5.1: deterministic cross-layout boilerplate gate — separate from, and
+      // stricter than, the LLM copyScore FLAG below (Phase B). "Obvious" reused
+      // copy (high word-shingle overlap with a layout THIS run already accepted)
+      // is a hard DROP, decided without any LLM call, so it happens here in Phase
+      // A — before SEO/render/vision-critic even run — rather than in Phase B
+      // alongside the near-dupe/vision-critic gates: a layout that's already
+      // known-boilerplate shouldn't pay for any of that first.
+      //
+      // Review fix (T5.1 review, Important): this gate runs AFTER the
+      // content-hash dedupe check above, not before it (the original ordering
+      // had it first). A same-run byte-identical duplicate (identical `json`,
+      // therefore identical extracted text) is the SAME layout being
+      // resubmitted, not a distinct layout reusing boilerplate wording — it
+      // must be classified `deduped` (the pre-existing T1.x semantics), never
+      // `copy_boilerplate`. Running dedupe first preserves that: dedupe claims
+      // exact repeats, and only non-identical survivors ever reach this
+      // shingle-overlap check — which is the gate's actual purpose (catching
+      // two DIFFERENT, reworded-but-still-boilerplate layouts).
+      //
+      // See pipeline/copy-critic.ts's module doc for why the comparison pool is
+      // in-run-only, and `RunContext.copyTextPool`'s doc for why theme runs
+      // (growDedupePools: false) skip this gate entirely — their pages
+      // intentionally share brand copy on purpose. `layoutText` is computed
+      // once here and threaded through to Phase B (folded critic prompt +
+      // the pool-growing push on ingest) rather than re-extracted there.
+      const layoutText = extractLayoutText(json);
+      if (ctx.growDedupePools && isCopyBoilerplate(layoutText, copyTextPool)) {
+        summary.qualityDropped++;
+        outcome = 'dropped';
+        const detail = `overlap > ${(copyBoilerplateMaxOverlap() * 100).toFixed(0)}% with previously accepted copy this run`;
+        log(`drop(copy_boilerplate) ${target.type}/${target.niche}/${target.style}: ${detail}`);
+        emit({ type: 'dropped', target, reason: 'copy_boilerplate', detail });
         return undefined;
       }
 
@@ -939,14 +967,14 @@ export async function processItem(item: PipelineItem, ctx: RunContext): Promise<
         case 'ingested':
           // Only a layout that actually cleared ingest joins the near-dupe pool —
           // see the NOTE above where the gate runs. T4.2: skipped entirely for
-          // theme runs (`growNearDupPool` false) so sibling pages of ONE pack —
+          // theme runs (`growDedupePools` false) so sibling pages of ONE pack —
           // intentionally same-palette, shared header/footer bands — never
           // near-dupe-drop each other.
-          if (o.perceptualHash && ctx.growNearDupPool) nearDupPool.push(o.perceptualHash);
-          // T5.1: same reuse-of-`growNearDupPool` rationale as the near-dupe pool
+          if (o.perceptualHash && ctx.growDedupePools) nearDupPool.push(o.perceptualHash);
+          // T5.1: same reuse-of-`growDedupePools` rationale as the near-dupe pool
           // above — grows the in-run boilerplate-comparison pool only for matrix/
           // vary runs, never for a theme pack's own sibling pages.
-          if (o.layoutText && ctx.growNearDupPool) copyTextPool.push(o.layoutText);
+          if (o.layoutText && ctx.growDedupePools) copyTextPool.push(o.layoutText);
           summary.ingested++;
           outcome = 'ingested';
           // Matrix items learn their slug only here (post-SEO); theme items were
@@ -1046,13 +1074,14 @@ export async function processItem(item: PipelineItem, ctx: RunContext): Promise<
 
 /**
  * T4.2: the matrix/vary entry path — a thin loop over `deps.targets`, each run
- * through the shared `processItem` gate pipeline. `growNearDupPool: true` keeps
+ * through the shared `processItem` gate pipeline. `growDedupePools: true` keeps
  * the pre-T4.2 behavior where a `vary` batch minting several near-identical
- * layouts drops the later ones against the earlier ones. Aborts the remaining
- * targets on a usage-limit/auth signal (see `processItem`'s `abort`).
+ * layouts drops the later ones against the earlier ones (both the pixel
+ * near-dupe pool and, since T5.1, the text-boilerplate pool). Aborts the
+ * remaining targets on a usage-limit/auth signal (see `processItem`'s `abort`).
  */
 export async function runPipeline(deps: RunDeps): Promise<RunSummary> {
-  const ctx = await createRunContext(deps, { growNearDupPool: true });
+  const ctx = await createRunContext(deps, { growDedupePools: true });
   for (const target of deps.targets) {
     const { abort } = await processItem({ target }, ctx);
     if (abort) break;
