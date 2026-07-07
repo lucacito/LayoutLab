@@ -17,6 +17,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import type { Target } from '@/pipeline/recipes/matrix';
 import { scoreQuery, tokenize, type Bm25Index } from '@/pipeline/library/bm25';
+import { SECTION_TYPES } from '@/pipeline/recipes/section-types';
 
 interface Exemplar {
   slug: string; source: string; pageType: string; industry: string;
@@ -95,19 +96,15 @@ function rankByBm25(pool: Exemplar[], bm25: Bm25Index | null, queryTerms: string
 // testimonial/FAQ cards, which is worse than falling back to the curated recipes
 // (RECIPE_BY_TYPE in prompts.ts already grounds these two types on real recipes).
 // Left empty on purpose; see the fallback log in getLibraryExemplars below.
-export const KIND_BY_TYPE: Record<string, string[]> = {
-  hero: ['hero'],
-  cta: ['cta'],
-  features: ['features', 'feature_detail', 'stats'],
-  cards: ['features'],
-  pricing: ['pricing'],
-  contact: ['contact'],
-  gallery: ['gallery', 'media', 'slider'],
-  footer: ['cta', 'contact'],
-  testimonials: [],
-  faq: [],
-  full_landing: ['hero', 'features', 'stats', 'pricing', 'cta', 'contact'],
-};
+// T4.3: derived from the SECTION_TYPES registry (pipeline/recipes/section-types.ts)
+// — was a hand-maintained literal; a plain, mutable object (not the registry
+// itself) so existing test mutation (see tests/exemplars.test.ts's
+// `__t34_test_kind__` scratch key) keeps working unchanged.
+export const KIND_BY_TYPE: Record<string, string[]> = Object.fromEntries(
+  Object.entries(SECTION_TYPES)
+    .filter(([, entry]) => entry.libraryKinds !== undefined)
+    .map(([type, entry]) => [type, entry.libraryKinds as string[]]),
+);
 
 /**
  * Top-K real section markups for the target's type. Blend (T3.4): the kind gate

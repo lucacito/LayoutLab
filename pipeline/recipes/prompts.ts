@@ -2,6 +2,7 @@ import type { Target } from './matrix';
 import type { Violation } from '@/pipeline/validate';
 import { getLibraryExemplars, libraryExemplarsEnabled } from '@/pipeline/library/exemplars';
 import { bannedContentProse } from '@/pipeline/content-lint';
+import { SECTION_TYPES } from '@/pipeline/recipes/section-types';
 
 export interface Recipe {
   name: string;
@@ -33,21 +34,14 @@ export interface Guide {
 }
 
 // Which valid section recipes to ground each layout type on (structure to imitate).
-const RECIPE_BY_TYPE: Record<string, string[]> = {
-  hero: ['hero-cta', 'split-image-text'],
-  cta: ['newsletter-social', 'hero-cta'],
-  features: ['icon-features', 'card-grid-3'],
-  cards: ['icon-values', 'blurb-grid', 'card-grid-3'],
-  pricing: ['card-grid-3', 'stats-counter'],
-  testimonials: ['testimonial', 'section-intro'],
-  faq: ['icon-features', 'section-intro'],
-  footer: ['newsletter-social'],
-  header: ['hero-cta'],
-  contact: ['contact-form'],
-  gallery: ['image-gallery', 'image-carousel'],
-  blog: ['blog-feed'],
-  full_landing: ['hero-cta', 'icon-features', 'testimonial', 'stats-counter', 'card-grid-3'],
-};
+// T4.3: derived from the SECTION_TYPES registry (pipeline/recipes/section-types.ts) —
+// was a hand-maintained literal; exported (was module-private) so
+// tests/section-types.test.ts can assert this stays byte-for-byte unchanged.
+export const RECIPE_BY_TYPE: Record<string, string[]> = Object.fromEntries(
+  Object.entries(SECTION_TYPES)
+    .filter(([, entry]) => entry.recipes)
+    .map(([type, entry]) => [type, entry.recipes as string[]]),
+);
 const DEFAULT_RECIPES = ['hero-cta', 'card-grid-3'];
 const MAX_EXAMPLES = 2; // keep the prompt focused + within budget
 // A full landing composes many section types, so it gets a wider grounding set.

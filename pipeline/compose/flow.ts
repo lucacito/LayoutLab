@@ -1,4 +1,5 @@
 import { pickByRendezvous } from './palettes';
+import { sectionTypeForRole } from '@/pipeline/recipes/section-types';
 
 export interface Step {
   role: string;
@@ -12,19 +13,23 @@ export const RECIPE_BY_TYPE_KEYS = [
   'hero', 'cta', 'features', 'cards', 'pricing', 'testimonials', 'faq', 'gallery', 'contact',
 ] as const;
 
-const S = (role: string, sectionType: string, job: string, cta = false): Step => ({ role, sectionType, job, cta });
+// T4.3: sectionType is no longer hand-passed per Step constant — it's looked up
+// from SECTION_TYPES (pipeline/recipes/section-types.ts), the one place a flow
+// role's generated type now lives. This removes the last hand-synced role<->type
+// duplication between this file and section-prompt.ts's ROLE_DESIGN.
+const S = (role: string, job: string, cta = false): Step => ({ role, sectionType: sectionTypeForRole(role), job, cta });
 
 // Persuasion spines from the landing guide, mapped to groundable section types.
-const HERO = S('hero', 'hero', 'Say what is offered, who it is for, why it matters, and the ONE primary action, with a relevant visual.', true);
-const PROBLEM = S('problem', 'features', 'Name 3 sharp pains the visitor feels today (before-state). No pitch yet.');
-const SOLUTION = S('solution', 'features', 'Frame the better way: old-way-vs-new-way, sell the mechanism in plain language.');
-const BENEFITS = S('benefits', 'cards', 'Outcome-led benefit cards (icon + title + one line). Write outcomes, not features.', true);
-const PROOF = S('social_proof', 'testimonials', 'Reduce risk with 2-3 testimonials (bracketed placeholders, never fabricated as real).', true);
-const HOWITWORKS = S('how_it_works', 'cards', '3-4 numbered steps that make the process feel easy.');
-const FEATURES = S('features', 'features', 'Feature detail: what it does, why it matters, what changes for the customer.');
-const FAQ = S('faq', 'faq', 'Answer the real objections: is it hard, how long, who is it for, cost/guarantee.');
-const PRICING = S('pricing', 'pricing', '2-3 plans in columns with the middle plan highlighted and feature checklists.');
-const FINAL = S('final_cta', 'cta', 'Restate the promise and the ONE action. Minimal distractions.', true);
+const HERO = S('hero', 'Say what is offered, who it is for, why it matters, and the ONE primary action, with a relevant visual.', true);
+const PROBLEM = S('problem', 'Name 3 sharp pains the visitor feels today (before-state). No pitch yet.');
+const SOLUTION = S('solution', 'Frame the better way: old-way-vs-new-way, sell the mechanism in plain language.');
+const BENEFITS = S('benefits', 'Outcome-led benefit cards (icon + title + one line). Write outcomes, not features.', true);
+const PROOF = S('social_proof', 'Reduce risk with 2-3 testimonials (bracketed placeholders, never fabricated as real).', true);
+const HOWITWORKS = S('how_it_works', '3-4 numbered steps that make the process feel easy.');
+const FEATURES = S('features', 'Feature detail: what it does, why it matters, what changes for the customer.');
+const FAQ = S('faq', 'Answer the real objections: is it hard, how long, who is it for, cost/guarantee.');
+const PRICING = S('pricing', '2-3 plans in columns with the middle plan highlighted and feature checklists.');
+const FINAL = S('final_cta', 'Restate the promise and the ONE action. Minimal distractions.', true);
 
 /** A named, stable-id flow spine — the same append-stability shape as
  *  `StylePaletteVariant` (palettes.ts) and `RoleTreatment` (section-prompt.ts).

@@ -1,4 +1,5 @@
 import { AXIS_VALUES } from '@/lib/catalog/filters';
+import { SECTION_TYPES } from '@/pipeline/recipes/section-types';
 
 export interface Target {
   type: string;
@@ -108,18 +109,14 @@ export function targetKey(t: Target): string {
 }
 
 // Per-type composition variety (placement / layout instructions for the prompt).
-const LAYOUTS_BY_TYPE: Record<string, string[]> = {
-  hero: ['image on the right of the headline', 'image on the left of the headline', 'centered headline over a full-bleed background image', 'split 50/50 with a sign-up form', 'centered with a product/app shot below the CTA'],
-  cta: ['centered headline and a single button', 'split with a supporting image on one side', 'full-bleed banner with an overlay', 'card-style CTA with a subtle border'],
-  features: ['three columns of cards', 'four columns with icons', 'a two-by-two grid', 'alternating image + text rows', 'a left intro with a feature list on the right'],
-  pricing: ['three pricing columns with a highlighted middle plan', 'a two-column comparison', 'a single highlighted plan with a feature checklist'],
-  testimonials: ['three-column quote cards with avatars', 'one large featured quote with an avatar', 'a logo strip above a featured quote'],
-  faq: ['a two-column accordion', 'a centered single-column list', 'categorized question columns'],
-  contact: ['form on the left, contact details on the right', 'a centered contact form', 'split with a map-style image'],
-  gallery: ['a three-column image grid', 'a masonry-style grid', 'a horizontal image row'],
-  footer: ['multi-column links with a newsletter signup', 'a centered minimal footer'],
-  cards: ['equal columns of icon cards', 'equal columns of numbered step cards'],
-};
+// T4.3: derived from the SECTION_TYPES registry (pipeline/recipes/section-types.ts) —
+// was a hand-maintained literal; exported (was module-private) so
+// tests/section-types.test.ts can assert this stays byte-for-byte unchanged.
+export const LAYOUTS_BY_TYPE: Record<string, string[]> = Object.fromEntries(
+  Object.entries(SECTION_TYPES)
+    .filter(([, entry]) => entry.layouts)
+    .map(([type, entry]) => [type, entry.layouts as string[]]),
+);
 const DEFAULT_LAYOUTS = ['a centered composition', 'an asymmetric split two-column composition', 'a stacked full-width composition'];
 
 // Types we deliberately do NOT generate. Headers need a real Divi menu module
