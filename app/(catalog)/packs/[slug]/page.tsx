@@ -54,7 +54,9 @@ export default async function PackPage({ params }: { params: Promise<{ slug: str
         <Breadcrumbs crumbs={[{ name: 'Home', url: site }, { name: 'Pricing', url: `${site}/pricing` }, { name: pack.title, url }]} />
         <JsonLd data={productJsonLd({
           name: pack.title, description: pack.description, image: pack.coverImageKey ? assetUrl(pack.coverImageKey) : undefined, url,
-          offer: pack.priceCents != null ? { priceCents: pack.priceCents } : undefined,
+          // Always carry an Offer (free packs render $0.00) so every Product satisfies
+          // Google's "offers / review / aggregateRating required" rule.
+          offer: { priceCents: pack.priceCents ?? 0 },
         })} />
         <JsonLd data={itemListJsonLd(layouts.map((l) => ({ name: l.title, url: `${site}/layouts/${l.slug}` })))} />
         <JsonLd data={breadcrumbJsonLd([{ name: 'Home', url: site }, { name: 'Pricing', url: `${site}/pricing` }, { name: pack.title, url }])} />

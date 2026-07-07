@@ -1,6 +1,11 @@
+import type { Metadata } from 'next';
 import { signIn } from '@/lib/auth';
 import { Container } from '@/components/ui/Container';
 import { Card } from '@/components/ui/Card';
+
+// Thin auth utility page — keep it out of the index so it can't be mistaken for
+// (or dilute) a real content section. `follow` still passes equity onward.
+export const metadata: Metadata = { title: 'Sign in', robots: { index: false, follow: true } };
 
 export default function LoginPage() {
   return (

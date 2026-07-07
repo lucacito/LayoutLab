@@ -82,7 +82,13 @@ export default async function LayoutPage({ params }: { params: Promise<{ slug: s
       <Container>
         <TrackView event="product_viewed" props={{ kind: 'layout', slug: layout.slug }} />
         <Breadcrumbs crumbs={[{ name: 'Home', url: site }, { name: 'Browse', url: `${site}/browse` }, { name: layout.title, url }]} />
-        <JsonLd data={productJsonLd({ name: layout.title, description: layout.description, image: cover, url })} />
+        <JsonLd data={productJsonLd({
+          name: layout.title, description: layout.description, image: cover, url,
+          // Layouts are free — a $0.00 Offer satisfies Google's "offers required" rule.
+          offer: { priceCents: 0 },
+          // Real ratings only (helper drops it when ratingCount === 0).
+          aggregateRating: { ratingValue: ratingAvg, ratingCount: layout.ratingCount },
+        })} />
         <JsonLd data={breadcrumbJsonLd([{ name: 'Home', url: site }, { name: 'Browse', url: `${site}/browse` }, { name: layout.title, url }])} />
 
         <h1 className="mt-4 text-h2 text-navy">{layout.title}</h1>

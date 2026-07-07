@@ -18,6 +18,12 @@ describe('sitemapEntries', () => {
     expect(urls).toContain(`${SITE}/pricing`);
   });
 
+  it('includes the primary /packs and /contact sections', () => {
+    const urls = out.map((e) => e.url);
+    expect(urls).toContain(`${SITE}/packs`);
+    expect(urls).toContain(`${SITE}/contact`);
+  });
+
   it('includes every layout and pack url', () => {
     const urls = out.map((e) => e.url);
     expect(urls).toContain(`${SITE}/layouts/a`);

@@ -42,7 +42,9 @@ export default async function BrowsePage({
           }),
           breadcrumbJsonLd([
             { name: 'Home', url: SITE },
-            { name: 'Divi 5 Layouts', url: `${SITE}/browse` },
+            // Same node name Google sees for /browse everywhere else (layout &
+            // taxonomy breadcrumbs) — one URL, one name, one hierarchy.
+            { name: 'Browse', url: `${SITE}/browse` },
           ]),
         ]}
       />

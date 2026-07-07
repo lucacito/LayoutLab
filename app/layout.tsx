@@ -7,7 +7,7 @@ import { Analytics } from '@vercel/analytics/react';
 import { GoogleAnalytics } from '@next/third-parties/google';
 import { SessionProvider } from 'next-auth/react';
 import { JsonLd } from '@/components/JsonLd';
-import { organizationJsonLd, websiteJsonLd } from '@/lib/seo';
+import { organizationJsonLd, websiteJsonLd, siteNavigationJsonLd, organizationId } from '@/lib/seo';
 import { Header } from '@/components/site/Header';
 import { Footer } from '@/components/site/Footer';
 import { InternalLinksBand } from '@/components/site/InternalLinksBand';
@@ -21,7 +21,11 @@ const inter = Inter({ subsets: ['latin'], variable: '--font-sans', display: 'swa
 
 const GA_ID = env.NEXT_PUBLIC_GA_ID ?? 'G-YCK6MN99PR';
 
-const TITLE = 'Free Divi 5 Layouts & Sections — Validated & Import-Ready';
+// Homepage title deliberately differs from /browse ("Free Divi 5 Layouts &
+// Sections — Download & Import") so the two top pages don't compete for the same
+// SERP label. The home/hub title names all three primary sections (layouts,
+// sections, packs) — the exact set we want Google to surface as sitelinks.
+const TITLE = 'Free & Premium Divi 5 Layouts, Sections & Theme Packs';
 const DESCRIPTION =
   'Browse a growing library of free, validated Divi 5 layouts and sections — heroes, pricing tables, CTAs and full landing pages. Download the JSON and import into Divi 5 in seconds. Commercial license included.';
 
@@ -34,13 +38,24 @@ const SITE_JSONLD = [
     url: SITE_URL,
     logo: `${SITE_URL}/divi5lab-logo.png`,
     description: DESCRIPTION,
+    email: 'support@divi5lab.com',
     sameAs: [],
   }),
   websiteJsonLd({
     name: 'Divi5Lab',
     url: SITE_URL,
     searchUrlTemplate: `${SITE_URL}/browse?q={search_term_string}`,
+    publisherId: organizationId(SITE_URL),
   }),
+  // The canonical set of sections we want Google to consider for sitelinks —
+  // identical to the primary nav so on-page links and structured data agree.
+  siteNavigationJsonLd([
+    { name: 'Browse layouts', url: `${SITE_URL}/browse` },
+    { name: 'Themes & Packs', url: `${SITE_URL}/packs` },
+    { name: 'Pricing', url: `${SITE_URL}/pricing` },
+    { name: 'About', url: `${SITE_URL}/about` },
+    { name: 'Contact', url: `${SITE_URL}/contact` },
+  ]),
 ];
 
 export const metadata: Metadata = {

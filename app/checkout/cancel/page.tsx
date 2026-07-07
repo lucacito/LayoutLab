@@ -1,6 +1,10 @@
 // app/checkout/cancel/page.tsx
+import type { Metadata } from 'next';
 import { Container } from '@/components/ui/Container';
 import { Button } from '@/components/ui/Button';
+
+// Abandoned-checkout page — noindex.
+export const metadata: Metadata = { title: 'Checkout canceled', robots: { index: false, follow: true } };
 
 export default function CheckoutCancel() {
   return (

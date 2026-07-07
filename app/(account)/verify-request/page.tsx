@@ -1,5 +1,9 @@
+import type { Metadata } from 'next';
 import { Container } from '@/components/ui/Container';
 import { Card } from '@/components/ui/Card';
+
+// Transient auth confirmation page — noindex.
+export const metadata: Metadata = { title: 'Check your email', robots: { index: false, follow: true } };
 
 export default function VerifyRequestPage() {
   return (

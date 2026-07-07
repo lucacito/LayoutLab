@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildLayoutMetadata, buildPackMetadata, productJsonLd, itemListJsonLd, breadcrumbJsonLd, organizationJsonLd, websiteJsonLd, collectionPageJsonLd } from '@/lib/seo';
+import { buildLayoutMetadata, buildPackMetadata, productJsonLd, itemListJsonLd, breadcrumbJsonLd, organizationJsonLd, websiteJsonLd, collectionPageJsonLd, siteNavigationJsonLd, organizationId, websiteId } from '@/lib/seo';
 
 const SITE = 'https://divi5lab.com';
 
@@ -45,6 +45,22 @@ describe('json-ld', () => {
     expect('offers' in ld).toBe(false);
   });
 
+  it('productJsonLd renders a valid $0.00 Offer for free items', () => {
+    const ld = productJsonLd({ name: 'Free Layout', url: `${SITE}/layouts/x`, offer: { priceCents: 0 } });
+    expect((ld as any).offers.price).toBe('0.00');
+    expect((ld as any).offers.priceCurrency).toBe('USD');
+  });
+
+  it('productJsonLd includes aggregateRating only when there are real ratings', () => {
+    const rated = productJsonLd({ name: 'L', url: `${SITE}/layouts/x`, offer: { priceCents: 0 }, aggregateRating: { ratingValue: 4.5, ratingCount: 12 } });
+    expect((rated as any).aggregateRating['@type']).toBe('AggregateRating');
+    expect((rated as any).aggregateRating.ratingValue).toBe('4.5');
+    expect((rated as any).aggregateRating.ratingCount).toBe(12);
+
+    const unrated = productJsonLd({ name: 'L', url: `${SITE}/layouts/x`, offer: { priceCents: 0 }, aggregateRating: { ratingValue: 0, ratingCount: 0 } });
+    expect('aggregateRating' in unrated).toBe(false);
+  });
+
   it('itemListJsonLd numbers positions from 1', () => {
     const ld = itemListJsonLd([{ name: 'a', url: 'u1' }, { name: 'b', url: 'u2' }]);
     expect(ld.itemListElement).toHaveLength(2);
@@ -88,6 +104,26 @@ describe('json-ld', () => {
   it('websiteJsonLd omits potentialAction when no search template is given', () => {
     const ld = websiteJsonLd({ name: 'Divi5Lab', url: SITE });
     expect('potentialAction' in ld).toBe(false);
+  });
+
+  it('organizationJsonLd carries a stable @id and a support contactPoint', () => {
+    const ld = organizationJsonLd({ name: 'Divi5Lab', url: SITE, email: 'support@divi5lab.com' });
+    expect(ld['@id']).toBe(`${SITE}/#organization`);
+    expect((ld as any).contactPoint.email).toBe('support@divi5lab.com');
+  });
+
+  it('websiteJsonLd links back to the Organization node via publisher @id', () => {
+    const ld = websiteJsonLd({ name: 'Divi5Lab', url: SITE, publisherId: organizationId(SITE) });
+    expect(ld['@id']).toBe(websiteId(SITE));
+    expect((ld as any).publisher['@id']).toBe(`${SITE}/#organization`);
+    expect((ld as any).inLanguage).toBe('en');
+  });
+
+  it('siteNavigationJsonLd emits SiteNavigationElement items in order', () => {
+    const ld = siteNavigationJsonLd([{ name: 'Browse', url: `${SITE}/browse` }, { name: 'Pricing', url: `${SITE}/pricing` }]);
+    expect(ld.itemListElement[0]['@type']).toBe('SiteNavigationElement');
+    expect(ld.itemListElement[0].position).toBe(1);
+    expect(ld.itemListElement[1].url).toBe(`${SITE}/pricing`);
   });
 
   it('collectionPageJsonLd marks a listing page as a CollectionPage', () => {

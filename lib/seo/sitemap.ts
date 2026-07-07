@@ -11,9 +11,13 @@ export function sitemapEntries(i: {
   const staticPages: MetadataRoute.Sitemap = [
     { url: base, changeFrequency: 'weekly', priority: 1 },
     { url: `${base}/browse`, changeFrequency: 'daily', priority: 0.9 },
+    // /packs is a primary nav section (Themes & Packs) — it was previously
+    // omitted from the sitemap, hiding a top-level section from Google.
+    { url: `${base}/packs`, changeFrequency: 'daily', priority: 0.9 },
     { url: `${base}/pricing`, changeFrequency: 'weekly', priority: 0.8 },
-    { url: `${base}/license`, changeFrequency: 'yearly', priority: 0.3 },
     { url: `${base}/about`, changeFrequency: 'yearly', priority: 0.3 },
+    { url: `${base}/contact`, changeFrequency: 'yearly', priority: 0.3 },
+    { url: `${base}/license`, changeFrequency: 'yearly', priority: 0.3 },
   ];
   const taxonomyEntries: MetadataRoute.Sitemap = (['type', 'niche', 'style', 'color'] as const).flatMap((axis) =>
     AXIS_VALUES[axis].map((value) => ({
