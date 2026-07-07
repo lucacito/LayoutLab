@@ -350,14 +350,41 @@ export const SECTION_TYPES: Record<string, SectionTypeEntry> = {
   },
 };
 
+/** Builds a `Record` from (key, value) pairs like `Object.fromEntries`, except
+ *  it THROWS on a duplicate key instead of silently letting the later pair win.
+ *  Both derived maps that flatten SECTION_TYPES' per-type `roles` maps back to
+ *  a single flat `role -> value` shape (`ROLE_TO_TYPE` below and
+ *  `section-prompt.ts`'s `ROLE_DESIGN`) share this guard: without it, a future
+ *  SECTION_TYPES entry that accidentally declares a role name already used by
+ *  another type would silently corrupt both maps (last-wins Object.fromEntries)
+ *  with no signal until generated content quietly used the wrong design/type
+ *  for that role. Exported as a pure function (no SECTION_TYPES dependency) so
+ *  tests can exercise the collision against synthetic pairs without mutating
+ *  the real registry. */
+export function buildUniqueRecord<V>(pairs: ReadonlyArray<readonly [string, V]>, mapName: string): Record<string, V> {
+  const result: Record<string, V> = {};
+  for (const [key, value] of pairs) {
+    if (Object.prototype.hasOwnProperty.call(result, key)) {
+      throw new Error(
+        `${mapName}: duplicate key "${key}" — a role must be declared under exactly one SECTION_TYPES entry's "roles" map.`,
+      );
+    }
+    result[key] = value;
+  }
+  return result;
+}
+
 /** Reverse lookup: role name -> the type it generates as. Built once from
  *  SECTION_TYPES.*.roles, so pipeline/compose/flow.ts's Step constants no
  *  longer hand-duplicate the type each role uses — the ONE place a role's
- *  type lives is its home entry's `roles` map above. */
-const ROLE_TO_TYPE: Record<string, string> = Object.fromEntries(
+ *  type lives is its home entry's `roles` map above. Uses buildUniqueRecord
+ *  (not Object.fromEntries) so a duplicate role key across two type entries
+ *  throws at module-init time instead of silently corrupting the lookup. */
+const ROLE_TO_TYPE: Record<string, string> = buildUniqueRecord(
   Object.entries(SECTION_TYPES).flatMap(([type, entry]) =>
     Object.keys(entry.roles ?? {}).map((role) => [role, type] as const),
   ),
+  'ROLE_TO_TYPE (pipeline/recipes/section-types.ts)',
 );
 
 /** The section type a flow role generates as. Throws for an unknown role —

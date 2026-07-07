@@ -114,7 +114,7 @@ export function targetKey(t: Target): string {
 // tests/section-types.test.ts can assert this stays byte-for-byte unchanged.
 export const LAYOUTS_BY_TYPE: Record<string, string[]> = Object.fromEntries(
   Object.entries(SECTION_TYPES)
-    .filter(([, entry]) => entry.layouts)
+    .filter(([, entry]) => entry.layouts !== undefined)
     .map(([type, entry]) => [type, entry.layouts as string[]]),
 );
 const DEFAULT_LAYOUTS = ['a centered composition', 'an asymmetric split two-column composition', 'a stacked full-width composition'];

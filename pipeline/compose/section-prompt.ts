@@ -1,7 +1,7 @@
 import type { Brief } from './brief';
 import { selectPalette, pickByRendezvous } from './palettes';
 import type { Step } from './flow';
-import { SECTION_TYPES, type RoleTreatment } from '@/pipeline/recipes/section-types';
+import { SECTION_TYPES, buildUniqueRecord, type RoleTreatment } from '@/pipeline/recipes/section-types';
 
 export type { RoleTreatment } from '@/pipeline/recipes/section-types';
 
@@ -41,8 +41,14 @@ export interface SectionContext {
 // role's variant list is scored independently with its own ids; see
 // `treatmentKey`'s doc comment for why reusing one key across every role's
 // selection is safe.
-export const ROLE_DESIGN: Record<string, RoleTreatment[]> = Object.fromEntries(
+//
+// Uses buildUniqueRecord (not Object.fromEntries) so a duplicate role key
+// declared under two different SECTION_TYPES entries throws at module-init
+// time instead of silently letting the later entry's variants win — see
+// buildUniqueRecord's doc comment in section-types.ts.
+export const ROLE_DESIGN: Record<string, RoleTreatment[]> = buildUniqueRecord(
   Object.values(SECTION_TYPES).flatMap((entry) => Object.entries(entry.roles ?? {})),
+  'ROLE_DESIGN (pipeline/compose/section-prompt.ts)',
 );
 
 /** Same key shape as `paletteKey` in palettes.ts (style + niche) — treatment

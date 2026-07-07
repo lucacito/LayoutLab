@@ -5,7 +5,7 @@ import { KIND_BY_TYPE } from '@/pipeline/library/exemplars';
 import { ROLE_DESIGN } from '@/pipeline/compose/section-prompt';
 import { FLOWS } from '@/pipeline/compose/flow';
 import { MATRIX } from '@/pipeline/recipes/matrix';
-import { SECTION_TYPES } from '@/pipeline/recipes/section-types';
+import { SECTION_TYPES, buildUniqueRecord } from '@/pipeline/recipes/section-types';
 
 // T4.3 — characterization snapshots, captured VERBATIM from the five hand-synced
 // maps BEFORE this task's refactor (see prompts.ts:36, exemplars.ts:98, matrix.ts:111,
@@ -86,6 +86,57 @@ const EXPECTED_LAYOUTS_BY_TYPE: Record<string, string[]> = {
   cards: ['equal columns of icon cards', 'equal columns of numbered step cards'],
 };
 
+// Full ROLE_DESIGN characterization: every one of the 15 roles' variant id LIST
+// (ids AND order), captured verbatim from the pre-refactor flat literal (same
+// source as EXPECTED_RECIPE_BY_TYPE etc. above) — a reviewer hand-verified these
+// are drift-free against the current SECTION_TYPES registry before freezing them
+// here. Spot-checking 4/15 roles (the pre-fix state) let a role's id list drift
+// silently; this checks all 15.
+const EXPECTED_ROLE_DESIGN_IDS: Record<string, string[]> = {
+  hero: ['hero-split', 'hero-centered-fullbleed', 'hero-offset-image'],
+  trust: ['trust-strip', 'trust-logo-row'],
+  problem: ['problem-icon-row', 'problem-callout'],
+  solution: ['solution-split', 'solution-before-after'],
+  features: ['features-split', 'features-icon-grid'],
+  why: ['why-split', 'why-icon-row'],
+  benefits: ['benefits-image-cards', 'benefits-numbered-list'],
+  services: ['services-image-cards', 'services-icon-tabs'],
+  how_it_works: ['how_it_works-numbered-badges', 'how_it_works-timeline'],
+  gallery: ['gallery-grid', 'gallery-featured-mosaic'],
+  social_proof: ['social_proof-cards', 'social_proof-featured-quote'],
+  faq: ['faq-accordion', 'faq-two-column-list'],
+  referral: ['referral-split', 'referral-tinted-banner'],
+  pricing: ['pricing-cards', 'pricing-aligned-comparison'],
+  final_cta: ['final_cta-banner', 'final_cta-split'],
+};
+
+// Full FLOWS characterization: every one of the 5 business categories, all
+// variant ids, and the FULL step role/type sequence per variant (not just
+// saas + course/coaching) — captured verbatim from the pre-refactor S(role,
+// sectionType, ...) calls in flow.ts, hand-verified drift-free before freezing.
+const EXPECTED_FLOWS: Record<string, Array<{ id: string; roles: string[]; types: string[] }>> = {
+  saas: [
+    { id: 'saas-problem-solution', roles: ['hero', 'problem', 'solution', 'benefits', 'social_proof', 'how_it_works', 'pricing', 'faq', 'final_cta'], types: ['hero', 'features', 'features', 'cards', 'testimonials', 'cards', 'pricing', 'faq', 'cta'] },
+    { id: 'saas-benefits-first', roles: ['hero', 'benefits', 'features', 'how_it_works', 'social_proof', 'pricing', 'faq', 'final_cta'], types: ['hero', 'cards', 'features', 'cards', 'testimonials', 'pricing', 'faq', 'cta'] },
+  ],
+  'service/agency': [
+    { id: 'service-agency-classic', roles: ['hero', 'problem', 'benefits', 'how_it_works', 'social_proof', 'faq', 'final_cta'], types: ['hero', 'features', 'cards', 'cards', 'testimonials', 'faq', 'cta'] },
+    { id: 'service-agency-proof-led', roles: ['hero', 'social_proof', 'benefits', 'how_it_works', 'features', 'faq', 'final_cta'], types: ['hero', 'testimonials', 'cards', 'cards', 'features', 'faq', 'cta'] },
+  ],
+  'local business': [
+    { id: 'local-business-classic', roles: ['hero', 'benefits', 'features', 'social_proof', 'faq', 'final_cta'], types: ['hero', 'cards', 'features', 'testimonials', 'faq', 'cta'] },
+    { id: 'local-business-howto', roles: ['hero', 'how_it_works', 'benefits', 'social_proof', 'faq', 'final_cta'], types: ['hero', 'cards', 'cards', 'testimonials', 'faq', 'cta'] },
+  ],
+  'product/e-commerce': [
+    { id: 'product-ecommerce-classic', roles: ['hero', 'problem', 'benefits', 'features', 'social_proof', 'pricing', 'faq', 'final_cta'], types: ['hero', 'features', 'cards', 'features', 'testimonials', 'pricing', 'faq', 'cta'] },
+    { id: 'product-ecommerce-benefits-first', roles: ['hero', 'benefits', 'features', 'social_proof', 'pricing', 'faq', 'final_cta'], types: ['hero', 'cards', 'features', 'testimonials', 'pricing', 'faq', 'cta'] },
+  ],
+  'course/coaching': [
+    { id: 'course-coaching-classic', roles: ['hero', 'problem', 'solution', 'benefits', 'social_proof', 'how_it_works', 'pricing', 'faq', 'final_cta'], types: ['hero', 'features', 'features', 'cards', 'testimonials', 'cards', 'pricing', 'faq', 'cta'] },
+    { id: 'course-coaching-outcomes-first', roles: ['hero', 'problem', 'benefits', 'how_it_works', 'social_proof', 'pricing', 'faq', 'final_cta'], types: ['hero', 'features', 'cards', 'cards', 'testimonials', 'pricing', 'faq', 'cta'] },
+  ],
+};
+
 describe('T4.3 characterization — SECTION_TYPES derives the five hand-synced maps unchanged', () => {
   it('RECIPE_BY_TYPE (prompts.ts) is unchanged', () => {
     expect(RECIPE_BY_TYPE).toEqual(EXPECTED_RECIPE_BY_TYPE);
@@ -99,36 +150,25 @@ describe('T4.3 characterization — SECTION_TYPES derives the five hand-synced m
     expect(LAYOUTS_BY_TYPE).toEqual(EXPECTED_LAYOUTS_BY_TYPE);
   });
 
-  it('ROLE_DESIGN (section-prompt.ts) still has exactly the same 15 roles with 2-3 stable-id variants each', () => {
-    expect(Object.keys(ROLE_DESIGN).sort()).toEqual(
-      [
-        'hero', 'trust', 'problem', 'solution', 'features', 'why', 'benefits', 'services',
-        'how_it_works', 'gallery', 'social_proof', 'faq', 'referral', 'pricing', 'final_cta',
-      ].sort(),
-    );
-    // Spot-check a few concrete ids/text survive byte-for-byte (full text is huge;
-    // the id + a distinctive substring is enough to catch drift).
-    expect(ROLE_DESIGN.hero.map((v) => v.id)).toEqual(['hero-split', 'hero-centered-fullbleed', 'hero-offset-image']);
+  it('ROLE_DESIGN (section-prompt.ts) still has exactly the same 15 roles, each with the same variant ids in the same order', () => {
+    expect(Object.keys(ROLE_DESIGN).sort()).toEqual(Object.keys(EXPECTED_ROLE_DESIGN_IDS).sort());
+    for (const [role, ids] of Object.entries(EXPECTED_ROLE_DESIGN_IDS)) {
+      expect(ROLE_DESIGN[role]?.map((v) => v.id), `ROLE_DESIGN.${role} ids`).toEqual(ids);
+    }
+    // Spot-check a couple of concrete text bodies survive byte-for-byte too (full
+    // text is huge; the id list above plus a distinctive substring here is enough
+    // to catch content drift on top of the id/order drift the loop above catches).
     expect(ROLE_DESIGN.hero[0].text).toContain('a bold TWO-COLUMN hero');
-    expect(ROLE_DESIGN.faq.map((v) => v.id)).toEqual(['faq-accordion', 'faq-two-column-list']);
-    expect(ROLE_DESIGN.final_cta.map((v) => v.id)).toEqual(['final_cta-banner', 'final_cta-split']);
     expect(ROLE_DESIGN.referral[1].text).toContain('TINTED BANNER');
   });
 
-  it('FLOWS (flow.ts) still has the same 5 business categories, each with the same variant ids and step role sequences', () => {
-    expect(Object.keys(FLOWS).sort()).toEqual(
-      ['saas', 'service/agency', 'local business', 'product/e-commerce', 'course/coaching'].sort(),
-    );
+  it('FLOWS (flow.ts) still has the same 5 business categories, each with the same variant ids and FULL step role/type sequences', () => {
+    expect(Object.keys(FLOWS).sort()).toEqual(Object.keys(EXPECTED_FLOWS).sort());
     const shape = (cat: string) =>
       FLOWS[cat].map((v) => ({ id: v.id, roles: v.steps.map((s) => s.role), types: v.steps.map((s) => s.sectionType) }));
-    expect(shape('saas')).toEqual([
-      { id: 'saas-problem-solution', roles: ['hero', 'problem', 'solution', 'benefits', 'social_proof', 'how_it_works', 'pricing', 'faq', 'final_cta'], types: ['hero', 'features', 'features', 'cards', 'testimonials', 'cards', 'pricing', 'faq', 'cta'] },
-      { id: 'saas-benefits-first', roles: ['hero', 'benefits', 'features', 'how_it_works', 'social_proof', 'pricing', 'faq', 'final_cta'], types: ['hero', 'cards', 'features', 'cards', 'testimonials', 'pricing', 'faq', 'cta'] },
-    ]);
-    expect(shape('course/coaching')).toEqual([
-      { id: 'course-coaching-classic', roles: ['hero', 'problem', 'solution', 'benefits', 'social_proof', 'how_it_works', 'pricing', 'faq', 'final_cta'], types: ['hero', 'features', 'features', 'cards', 'testimonials', 'cards', 'pricing', 'faq', 'cta'] },
-      { id: 'course-coaching-outcomes-first', roles: ['hero', 'problem', 'benefits', 'how_it_works', 'social_proof', 'pricing', 'faq', 'final_cta'], types: ['hero', 'features', 'cards', 'cards', 'testimonials', 'pricing', 'faq', 'cta'] },
-    ]);
+    for (const [category, expected] of Object.entries(EXPECTED_FLOWS)) {
+      expect(shape(category), `FLOWS['${category}']`).toEqual(expected);
+    }
   });
 });
 
@@ -175,14 +215,6 @@ describe('T4.3 — SECTION_TYPES registry completeness', () => {
     }
   });
 
-  it('fails loudly if a new MATRIX/vary type is added without a registry entry (regression guard)', () => {
-    // Simulates the bug this task fixes: adding `__new_type__` to the generatable
-    // set without adding a matching SECTION_TYPES entry.
-    const types = [...GENERATABLE_TYPES, '__t4_3_test_missing_type__'];
-    const missing = types.filter((t) => !SECTION_TYPES[t]?.recipes?.length);
-    expect(missing).toContain('__t4_3_test_missing_type__');
-  });
-
   it('every role nested under a type entry has 2-3 stable, role-prefixed treatment ids (mirrors ROLE_DESIGN invariant)', () => {
     for (const [type, entry] of Object.entries(SECTION_TYPES)) {
       for (const [role, variants] of Object.entries(entry.roles ?? {})) {
@@ -193,5 +225,40 @@ describe('T4.3 — SECTION_TYPES registry completeness', () => {
         for (const v of variants) expect(v.id.startsWith(`${role}-`)).toBe(true);
       }
     }
+  });
+});
+
+describe('T4.3 — buildUniqueRecord guards the role-key collision', () => {
+  // Both ROLE_TO_TYPE (section-types.ts) and ROLE_DESIGN's flatten
+  // (section-prompt.ts) build a Record by flattening per-type role maps with
+  // Object.fromEntries — last-wins on a duplicate key, so a future type entry
+  // that accidentally reuses a role name already declared under another type
+  // would silently corrupt both derived maps with no signal. buildUniqueRecord
+  // is the shared guard: it throws instead of silently overwriting. Exercised
+  // here against synthetic pairs — never against the real SECTION_TYPES
+  // registry — per the task's "don't mutate the real registry" constraint.
+
+  it('builds a Record unchanged when every key is unique (control case)', () => {
+    const result = buildUniqueRecord(
+      [
+        ['hero', 'a'],
+        ['problem', 'b'],
+      ],
+      'test map',
+    );
+    expect(result).toEqual({ hero: 'a', problem: 'b' });
+  });
+
+  it('throws a clear error when a synthetic duplicate role key is constructed across two type entries', () => {
+    expect(() =>
+      buildUniqueRecord(
+        [
+          ['hero', 'from-type-a'],
+          ['trust', 'from-type-a'],
+          ['hero', 'from-type-b'], // duplicate — simulates two SECTION_TYPES entries both declaring "hero"
+        ],
+        'test map',
+      ),
+    ).toThrow(/duplicate key "hero"/);
   });
 });

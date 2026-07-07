@@ -39,7 +39,7 @@ export interface Guide {
 // tests/section-types.test.ts can assert this stays byte-for-byte unchanged.
 export const RECIPE_BY_TYPE: Record<string, string[]> = Object.fromEntries(
   Object.entries(SECTION_TYPES)
-    .filter(([, entry]) => entry.recipes)
+    .filter(([, entry]) => entry.recipes !== undefined)
     .map(([type, entry]) => [type, entry.recipes as string[]]),
 );
 const DEFAULT_RECIPES = ['hero-cta', 'card-grid-3'];
