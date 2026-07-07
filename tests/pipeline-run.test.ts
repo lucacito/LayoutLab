@@ -33,7 +33,7 @@ describe('runPipeline', () => {
   it('happy path: generate → validate → upload → ingest, summary counts 1 ingested', async () => {
     const deps = baseDeps();
     const s = await runPipeline(deps as any);
-    expect(s).toMatchObject({ generated: 1, dropped: 0, deduped: 0, ingested: 1, renderFailed: 0 });
+    expect(s).toMatchObject({ generated: 1, qualityDropped: 0, errored: 0, deduped: 0, ingested: 1, renderFailed: 0 });
     expect(deps.ingest).toHaveBeenCalledOnce();
   });
 
@@ -49,7 +49,7 @@ describe('runPipeline', () => {
   it('drops a layout that never validates and never ingests it', async () => {
     const ingest = vi.fn(async () => ({ deduped: false }));
     const s = await runPipeline(baseDeps({ validate: vi.fn(async () => bad), ingest }) as any);
-    expect(s.dropped).toBe(1);
+    expect(s.qualityDropped).toBe(1);
     expect(s.ingested).toBe(0);
     expect(ingest).not.toHaveBeenCalled();
   });
@@ -83,7 +83,7 @@ describe('runPipeline', () => {
     const llm = { complete: vi.fn(async () => dirty) }; // generate + every repair stay dirty
     const ingest = vi.fn(async () => ({ deduped: false }));
     const s = await runPipeline(baseDeps({ llm, ingest }) as any);
-    expect(s.dropped).toBe(1);
+    expect(s.qualityDropped).toBe(1);
     expect(s.ingested).toBe(0);
     expect(ingest).not.toHaveBeenCalled();
   });
@@ -186,10 +186,15 @@ describe('runPipeline near-duplicate gate (T1.2)', () => {
 
   it('does not poison the near-dupe pool when ingest throws for the first accepted layout (review fix)', async () => {
     // Target 1 renders successfully and clears the near-dupe gate, but its ingest
-    // call throws (e.g. transient network error). Target 2 renders a near-identical
-    // hash. If the pool were populated BEFORE ingest succeeds (the bug), target 2
-    // would be wrongly dropped as a near-dupe of a layout that was never actually
-    // accepted. It must be ingested instead.
+    // call throws. The message ('ingest boom') doesn't match any transient-infra
+    // pattern in pipeline/errors.ts's classifier, so it's classified
+    // permanent_infra/unknown (T2.2's safe default) and is NOT retried — which
+    // matters here: a retry would re-call `ingest` for target 1 and consume the
+    // mock's second canned response that this test reserves for target 2. Target
+    // 2 then renders a near-identical hash. If the pool were populated BEFORE
+    // ingest succeeds (the bug), target 2 would be wrongly dropped as a
+    // near-dupe of a layout that was never actually accepted. It must be
+    // ingested instead.
     const llm = llmSeq(genJson(1), seoJson, genJson(2), seoJson);
     const render = renderReturning(HASH_A); // identical hash for both targets
     const ingest = vi
@@ -200,7 +205,7 @@ describe('runPipeline near-duplicate gate (T1.2)', () => {
       .mockImplementationOnce(async () => ({ deduped: false }));
     const s = await runPipeline(baseDeps({ targets: [target, target2], llm, render, ingest }) as any);
     expect(ingest).toHaveBeenCalledTimes(2);
-    expect(s.dropped).toBe(1); // target 1: ingest error
+    expect(s.errored).toBe(1); // target 1: ingest error (infra, unknown code, not retried)
     expect(s.nearDuped).toBe(0); // target 2 must NOT be wrongly near-dupe-dropped
     expect(s.ingested).toBe(1); // target 2: ingested normally
   });
@@ -258,7 +263,7 @@ describe('runPipeline RunEvent emission', () => {
     // maxRepairs: 0 isolates the plain drop path from the separately-covered repair-loop behavior.
     const deps = baseDeps({ llm, validate, maxRepairs: 0, onEvent: (e: RunEvent) => events.push(e) });
     const s = await runPipeline(deps as any);
-    expect(s.dropped).toBe(1);
+    expect(s.qualityDropped).toBe(1);
     expect(events.map((e) => e.type)).toEqual(['generated', 'dropped', 'llm_usage']);
     const dropped = events.find((e) => e.type === 'dropped');
     expect(dropped).toMatchObject({ reason: 'validation' });
@@ -350,7 +355,8 @@ describe('runPipeline render-miss gate (T1.3)', () => {
     const ingest = vi.fn(async () => ({ deduped: false }));
     const s = await runPipeline(baseDeps({ targets: [target, target2], llm, render, ingest }) as any);
     expect(s.renderFailed).toBe(1);
-    expect(s.dropped).toBe(0); // must NOT land in the generic 'dropped' counter
+    expect(s.qualityDropped).toBe(0); // must NOT land in the quality-drop counter
+    expect(s.errored).toBe(0); // must NOT land in the generic infra-error counter either
     expect(s.ingested).toBe(1); // second target still generates → renders → ingests fine
     expect(ingest).toHaveBeenCalledOnce();
   });
@@ -457,7 +463,7 @@ describe('runPipeline vision critic gate (T1.3)', () => {
       ['/tmp/d.png', '/tmp/m.png'],
       expect.objectContaining({ type: 'hero', niche: 'saas', style: 'minimal' }),
     );
-    expect(s.dropped).toBe(1);
+    expect(s.qualityDropped).toBe(1);
     expect(s.ingested).toBe(0);
     expect(ingest).not.toHaveBeenCalled();
   });
@@ -469,7 +475,7 @@ describe('runPipeline vision critic gate (T1.3)', () => {
     const ingest = vi.fn(async () => ({ deduped: false }));
     const s = await runPipeline(baseDeps({ llm, render, visionCritic, ingest }) as any);
     expect(s.ingested).toBe(1);
-    expect(s.dropped).toBe(0);
+    expect(s.qualityDropped).toBe(0);
     expect(ingest).toHaveBeenCalledOnce();
   });
 
@@ -479,7 +485,7 @@ describe('runPipeline vision critic gate (T1.3)', () => {
     const visionCritic = vi.fn(async () => ({ score: 3, issues: [] }));
     const ingest = vi.fn(async () => ({ deduped: false }));
     const s = await runPipeline(baseDeps({ llm, render, visionCritic, ingest, visionCriticMinScore: 4 }) as any);
-    expect(s.dropped).toBe(1);
+    expect(s.qualityDropped).toBe(1);
     expect(s.ingested).toBe(0);
   });
 
@@ -489,7 +495,7 @@ describe('runPipeline vision critic gate (T1.3)', () => {
     const ingest = vi.fn(async () => ({ deduped: false }));
     const s = await runPipeline(baseDeps({ llm, render, ingest }) as any);
     expect(s.ingested).toBe(1);
-    expect(s.dropped).toBe(0);
+    expect(s.qualityDropped).toBe(0);
   });
 
   it('emits a vision_critic RunEvent for both pass and drop outcomes', async () => {
@@ -505,9 +511,9 @@ describe('runPipeline vision critic gate (T1.3)', () => {
 
   // Review fix (T1.3): a below-threshold vision-critic drop previously only
   // emitted the `vision_critic` event — it never emitted a `dropped` event, so
-  // the eval harness's dropReasonCounts under-totaled vs summary.dropped (the
-  // score-based drop was invisible in the drop-reason breakdown). Now it must
-  // also emit `dropped` with a reason distinct from validation/content/error.
+  // the eval harness's dropReasonCounts under-totaled vs summary.qualityDropped
+  // (the score-based drop was invisible in the drop-reason breakdown). Now it
+  // must also emit `dropped` with a reason distinct from validation/content.
   it('also emits a dropped RunEvent with reason=vision_critic on a below-threshold drop', async () => {
     const events: RunEvent[] = [];
     const llm = llmSeq(genJsonWithContent(), seoJson);
@@ -515,7 +521,7 @@ describe('runPipeline vision critic gate (T1.3)', () => {
     const visionCritic = vi.fn(async () => ({ score: 2, issues: ['clipping'] }));
     const deps = baseDeps({ llm, render, visionCritic, onEvent: (e: RunEvent) => events.push(e) });
     const s = await runPipeline(deps as any);
-    expect(s.dropped).toBe(1);
+    expect(s.qualityDropped).toBe(1);
     const dropped = events.find((e) => e.type === 'dropped');
     expect(dropped).toMatchObject({ reason: 'vision_critic' });
   });
@@ -541,7 +547,7 @@ describe('runPipeline vision critic gate (T1.3)', () => {
     });
     const ingest = vi.fn(async () => ({ deduped: false }));
     const s = await runPipeline(baseDeps({ llm, render, visionCritic, ingest }) as any);
-    expect(s.dropped).toBe(1);
+    expect(s.qualityDropped).toBe(1);
     expect(s.ingested).toBe(0);
     expect(ingest).not.toHaveBeenCalled();
   });
@@ -558,5 +564,150 @@ describe('runPipeline vision critic gate (T1.3)', () => {
     const dropped = events.find((e) => e.type === 'dropped');
     expect(dropped).toMatchObject({ reason: 'vision_critic_error' });
     expect(events.some((e) => e.type === 'vision_critic')).toBe(false); // never scored — nothing to report
+  });
+});
+
+// T2.2: classify errors caught by the per-target catch into transient_infra
+// (retried with bounded exponential backoff) vs permanent_infra (usage-limit,
+// budget, auth, or an unrecognized error — never retried). Quality gates
+// (validation/content/vision-critic/near-dupe/render-miss) never throw, so
+// they're covered by the existing describe blocks above, unaffected by any of
+// this — see the "does NOT touch qualityDropped" assertions below.
+describe('runPipeline error classification + retry with backoff (T2.2)', () => {
+  it('retries a transient failure (e.g. ECONNRESET) at the per-target level, using the injected sleep, then succeeds', async () => {
+    const events: RunEvent[] = [];
+    const sleep = vi.fn(async (_ms: number) => {});
+    const ingest = vi
+      .fn()
+      .mockRejectedValueOnce(new Error('connect ECONNRESET'))
+      .mockResolvedValueOnce({ deduped: false });
+    const deps = baseDeps({ ingest, sleep, onEvent: (e: RunEvent) => events.push(e) });
+    const s = await runPipeline(deps as any);
+    expect(s.ingested).toBe(1);
+    expect(s.errored).toBe(0);
+    expect(s.qualityDropped).toBe(0);
+    expect(ingest).toHaveBeenCalledTimes(2); // 1 failed attempt + 1 successful retry
+    expect(sleep).toHaveBeenCalledTimes(1);
+    expect(sleep).toHaveBeenCalledWith(250); // default base delay, attempt 1
+    const retryEvents = events.filter((e) => e.type === 'retry');
+    expect(retryEvents).toEqual([{ type: 'retry', target, attempt: 1, code: 'network', detail: 'connect ECONNRESET' }]);
+    expect(events.some((e) => e.type === 'errored')).toBe(false);
+  });
+
+  it('a full-target retry RE-GENERATES (calls the llm again) — documented, not double-charge-prevented', async () => {
+    // The brief allows this: "a full-target retry re-generates; that's
+    // acceptable... say so". This test locks in that documented behavior: the
+    // generator is called once per attempt, and the summed usage across both
+    // attempts (not just the winning one) is what's reported.
+    const events: RunEvent[] = [];
+    const sleep = vi.fn(async (_ms: number) => {});
+    const llm = llmWithUsage('{"post_title":"T","post_content":"<!-- wp:divi/text {\\"content\\":\\"Ship faster with real copy\\"} -->"}');
+    const ingest = vi
+      .fn()
+      .mockRejectedValueOnce(new Error('ECONNRESET'))
+      .mockResolvedValueOnce({ deduped: false });
+    const deps = baseDeps({ llm, ingest, sleep, onEvent: (e: RunEvent) => events.push(e) });
+    const s = await runPipeline(deps as any);
+    expect(s.ingested).toBe(1);
+    expect(s.generated).toBe(2); // generateLayout ran again on the retry — a real regeneration, not a resume
+    // 2 llm.complete calls per attempt (generate + seo) x 2 attempts = 4 total.
+    expect(llm.complete).toHaveBeenCalledTimes(4);
+    const usageEvent = usageEventOf(events);
+    // usage.costUsd accumulates across BOTH attempts (0.01 x 4), not just the
+    // winning one — the true total spend for this target is reported.
+    expect(usageEvent.usage.costUsd).toBeCloseTo(0.04, 5);
+  });
+
+  it('never retries a permanent_infra failure (e.g. an auth error) — fails on the first attempt and counts as errored, not qualityDropped', async () => {
+    const events: RunEvent[] = [];
+    const sleep = vi.fn(async (_ms: number) => {});
+    const ingest = vi.fn(async () => {
+      throw new Error('401 unauthorized: invalid api key');
+    });
+    const deps = baseDeps({ ingest, sleep, onEvent: (e: RunEvent) => events.push(e) });
+    const s = await runPipeline(deps as any);
+    expect(s.errored).toBe(1);
+    expect(s.qualityDropped).toBe(0);
+    expect(s.ingested).toBe(0);
+    expect(ingest).toHaveBeenCalledTimes(1); // no retry at all
+    expect(sleep).not.toHaveBeenCalled();
+    const errored = events.find((e) => e.type === 'errored');
+    expect(errored).toMatchObject({ class: 'permanent_infra', code: 'auth', attempts: 1 });
+    expect(events.some((e) => e.type === 'dropped')).toBe(false);
+  });
+
+  it('an unrecognized error is also never retried (safe default) and counts as errored', async () => {
+    const ingest = vi.fn(async () => {
+      throw new Error('something bizarre happened');
+    });
+    const sleep = vi.fn(async (_ms: number) => {});
+    const s = await runPipeline(baseDeps({ ingest, sleep }) as any);
+    expect(s.errored).toBe(1);
+    expect(ingest).toHaveBeenCalledTimes(1);
+    expect(sleep).not.toHaveBeenCalled();
+  });
+
+  it('a transient failure that never recovers exhausts its bounded retry budget (default 2) and counts as errored', async () => {
+    const events: RunEvent[] = [];
+    const sleep = vi.fn(async (_ms: number) => {});
+    const ingest = vi.fn(async () => {
+      throw new Error('ETIMEDOUT');
+    });
+    const deps = baseDeps({ ingest, sleep, onEvent: (e: RunEvent) => events.push(e) });
+    const s = await runPipeline(deps as any);
+    expect(s.errored).toBe(1);
+    expect(ingest).toHaveBeenCalledTimes(3); // 1 initial + 2 retries, then give up
+    expect(sleep).toHaveBeenCalledTimes(2);
+    // exponential backoff: 250ms, then 500ms
+    expect(sleep.mock.calls[0][0]).toBe(250);
+    expect(sleep.mock.calls[1][0]).toBe(500);
+    const errored = events.find((e) => e.type === 'errored');
+    expect(errored).toMatchObject({ class: 'transient_infra', code: 'network', attempts: 3 });
+  });
+
+  it('respects a configurable maxRetries/retryBaseDelayMs on RunDeps', async () => {
+    const sleep = vi.fn(async (_ms: number) => {});
+    const ingest = vi.fn(async () => {
+      throw new Error('ECONNRESET');
+    });
+    const deps = baseDeps({ ingest, sleep, maxRetries: 1, retryBaseDelayMs: 10 });
+    const s = await runPipeline(deps as any);
+    expect(s.errored).toBe(1);
+    expect(ingest).toHaveBeenCalledTimes(2); // 1 initial + only 1 retry allowed
+    expect(sleep).toHaveBeenCalledTimes(1);
+    expect(sleep).toHaveBeenCalledWith(10);
+  });
+
+  // Acceptance criterion: "a validator/lint failure counts as qualityDropped" —
+  // already covered by the un-renamed tests above (validation drop, content
+  // drop); this asserts the same for the render-miss/vision-critic gates too,
+  // confirming NONE of the T2.2 retry/error machinery is reachable from a
+  // quality gate (they `return`, never `throw`).
+  it('quality gates never retry and never touch errored (validate/content/render-miss/vision-critic all still counted correctly)', async () => {
+    const sleep = vi.fn(async (_ms: number) => {});
+    const s = await runPipeline(baseDeps({ validate: vi.fn(async () => bad), sleep }) as any);
+    expect(s.qualityDropped).toBe(1);
+    expect(s.errored).toBe(0);
+    expect(sleep).not.toHaveBeenCalled(); // never even considered for retry
+  });
+
+  it('a usage-limit error from generation is never retried and ABORTS the rest of the run (subsequent targets are never attempted)', async () => {
+    const events: RunEvent[] = [];
+    const sleep = vi.fn(async (_ms: number) => {});
+    const target2 = { type: 'hero', niche: 'saas', style: 'bold' };
+    const llm = { complete: vi.fn(async () => 'You have hit your limit for this session, please try again later') };
+    const ingest = vi.fn(async () => ({ deduped: false }));
+    const deps = baseDeps({ targets: [target, target2], llm, ingest, sleep, onEvent: (e: RunEvent) => events.push(e) });
+    const s = await runPipeline(deps as any);
+    expect(s.errored).toBe(1);
+    expect(s.generated).toBe(0); // generateLayout throws before summary.generated++
+    expect(s.ingested).toBe(0);
+    expect(ingest).not.toHaveBeenCalled();
+    expect(sleep).not.toHaveBeenCalled(); // non-retryable, no backoff
+    // Only ONE llm.complete call total — target 2 was never even started because
+    // the run aborted after target 1's usage-limit error.
+    expect(llm.complete).toHaveBeenCalledTimes(1);
+    const errored = events.find((e) => e.type === 'errored');
+    expect(errored).toMatchObject({ class: 'permanent_infra', code: 'usage_limit', attempts: 1 });
   });
 });

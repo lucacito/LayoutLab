@@ -11,7 +11,18 @@ import type { RunEvent, RunSummary } from '@/pipeline/run';
 const target = { type: 'hero', niche: 'saas', style: 'minimal' };
 
 function summary(over: Partial<RunSummary> = {}): RunSummary {
-  return { generated: 0, repaired: 0, dropped: 0, deduped: 0, ingested: 0, nearDuped: 0, renderFailed: 0, renderBlank: 0, ...over };
+  return {
+    generated: 0,
+    repaired: 0,
+    qualityDropped: 0,
+    errored: 0,
+    deduped: 0,
+    ingested: 0,
+    nearDuped: 0,
+    renderFailed: 0,
+    renderBlank: 0,
+    ...over,
+  };
 }
 
 describe('MetricsAccumulator', () => {
@@ -55,7 +66,7 @@ describe('MetricsAccumulator', () => {
       { type: 'llm_usage', target, usage: { costUsd: 0.50, inputTokens: 900, outputTokens: 900 }, outcome: 'dropped' },
     ];
     for (const e of events) acc.add(e);
-    const m = acc.finalize(summary({ generated: 2, ingested: 1, dropped: 1 }));
+    const m = acc.finalize(summary({ generated: 2, ingested: 1, qualityDropped: 1 }));
     expect(m.meanRepairAttempts).toBeCloseTo(4 / 2, 5); // (1 structural + 1 content) + 2 structural = 4 attempts / 2 generated
     expect(m.contentLintHitRate).toBe(1); // 1 of 1 content_lint events seen was a hit
     expect(m.validatorPassRate).toBeCloseTo(0.5, 5); // 1 of 2 generated dropped for validation
@@ -75,27 +86,45 @@ describe('MetricsAccumulator', () => {
     expect(m.tokensPerAccepted).toBeNull();
   });
 
-  it('tracks the "error" drop-reason path separately from "validation", and excludes it from validatorPassRate', () => {
-    // A target that throws mid-pipeline (e.g. render/upload failure) is tagged
-    // reason:'error', not 'validation' — the two must not be conflated: an error
-    // drop is an infra failure, not evidence the generator produced invalid output.
+  // T2.2: a target whose per-target processing THREW (e.g. render/upload/ingest
+  // infra failure, exhausted retries) is now reported via a distinct `errored`
+  // event (code-keyed), never via `dropped` — `dropped`/`dropReasonCounts` is
+  // QUALITY-only now (validation/content/vision-critic). The two must not be
+  // conflated: an infra error says nothing about whether the generator
+  // produced invalid output.
+  it('tracks `errored` events (by code) separately from quality `dropReasonCounts`, and excludes them from validatorPassRate', () => {
     const acc = new MetricsAccumulator('baseline', 2);
     const events: RunEvent[] = [
       { type: 'generated', target },
       { type: 'ingested', target, slug: 's1' },
       { type: 'llm_usage', target, usage: { costUsd: 0.01, inputTokens: 10, outputTokens: 5 }, outcome: 'ingested' },
       { type: 'generated', target },
-      { type: 'dropped', target, reason: 'error', detail: 'render failed: ECONNREFUSED' },
-      { type: 'llm_usage', target, usage: { costUsd: 0.02, inputTokens: 20, outputTokens: 8 }, outcome: 'dropped' },
+      { type: 'errored', target, class: 'transient_infra', code: 'network', detail: 'render failed: ECONNREFUSED', attempts: 3 },
+      { type: 'llm_usage', target, usage: { costUsd: 0.02, inputTokens: 20, outputTokens: 8 }, outcome: 'errored' },
     ];
     for (const e of events) acc.add(e);
-    const m = acc.finalize(summary({ generated: 2, ingested: 1, dropped: 1 }));
-    expect(m.dropReasonCounts).toEqual({ error: 1 });
+    const m = acc.finalize(summary({ generated: 2, ingested: 1, errored: 1 }));
+    expect(m.errorCodeCounts).toEqual({ network: 1 });
+    expect(m.dropReasonCounts).toEqual({}); // an infra error must never land in the quality drop-reason breakdown
     expect(m.dropReasonCounts.validation).toBeUndefined();
-    // validatorPassRate only subtracts 'validation' drops — an error drop must not
-    // count against it (2 generated, 0 validation drops → 100%, even though 1 of 2 was dropped).
+    // validatorPassRate only subtracts 'validation' drops — an errored target must
+    // not count against it (2 generated, 0 validation drops → 100%, even though
+    // 1 of 2 errored out).
     expect(m.validatorPassRate).toBe(1);
     expect(m.costPerAcceptedUsd).toBeCloseTo(0.01, 5);
+  });
+
+  it('counts one retryCount per `retry` RunEvent (one per backoff-and-retry, not per target)', () => {
+    const acc = new MetricsAccumulator('baseline', 1);
+    const events: RunEvent[] = [
+      { type: 'generated', target },
+      { type: 'retry', target, attempt: 1, code: 'network', detail: 'ECONNRESET' },
+      { type: 'retry', target, attempt: 2, code: 'network', detail: 'ECONNRESET' },
+      { type: 'ingested', target, slug: 's1' },
+    ];
+    for (const e of events) acc.add(e);
+    const m = acc.finalize(summary({ generated: 1, ingested: 1 }));
+    expect(m.retryCount).toBe(2);
   });
 
   it('computes nearDupeRate from RunSummary.nearDuped (T1.2), and null when nothing was generated', () => {
@@ -160,7 +189,10 @@ describe('MetricsAccumulator', () => {
   // `dropped` RunEvent (reason: 'vision_critic'), and a critic that throws
   // emits one with reason 'vision_critic_error' — both must roll up into
   // dropReasonCounts like every other drop reason, so the eval scoreboard's
-  // drop-reason breakdown totals match RunSummary.dropped.
+  // drop-reason breakdown totals match RunSummary.qualityDropped. T2.2
+  // reaffirms this: a vision-critic-throws is a deliberate content-quality
+  // policy decision ("no unscored layout ships"), not an infra failure, so it
+  // stays a `dropped`/qualityDropped event — never `errored`.
   it('rolls vision-critic drops (score-based and critic-error) into dropReasonCounts', () => {
     const acc = new MetricsAccumulator('baseline', 2);
     const events: RunEvent[] = [
@@ -171,7 +203,7 @@ describe('MetricsAccumulator', () => {
       { type: 'dropped', target, reason: 'vision_critic_error', detail: 'claude CLI exited non-zero' },
     ];
     for (const e of events) acc.add(e);
-    const m = acc.finalize(summary({ generated: 2, dropped: 2 }));
+    const m = acc.finalize(summary({ generated: 2, qualityDropped: 2 }));
     expect(m.dropReasonCounts).toEqual({ vision_critic: 1, vision_critic_error: 1 });
   });
 
@@ -188,7 +220,7 @@ describe('MetricsAccumulator', () => {
       { type: 'ingested', target, slug: 's2' },
     ];
     for (const e of events) acc.add(e);
-    const m = acc.finalize(summary({ generated: 3, ingested: 2, dropped: 1 }));
+    const m = acc.finalize(summary({ generated: 3, ingested: 2, qualityDropped: 1 }));
     expect(m.visionScoreDistribution).toEqual({ '2': 1, '4': 2 });
     expect(m.visionScoreMean).toBeCloseTo((4 + 2 + 4) / 3, 5);
 
@@ -211,5 +243,11 @@ describe('formatComparisonTable', () => {
     expect(table).toContain('cost');
     expect(table).toContain('vision score');
     expect(table).toContain('render-failed');
+    // T2.2: quality drops and infra errors must both be visible, distinctly, in
+    // the scoreboard (the task's "drop-reasons-by-class" requirement).
+    expect(table).toContain('quality dropped');
+    expect(table).toContain('errored');
+    expect(table).toContain('drop reasons (quality)');
+    expect(table).toContain('error codes (infra)');
   });
 });

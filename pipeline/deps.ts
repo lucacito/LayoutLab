@@ -239,6 +239,12 @@ export async function buildRunDeps(opts: BuildRunDepsOptions): Promise<{ deps: R
     maxRepairs: 2,
     maxParseRetries: 2,
     maxBudgetUsd: maxBudget,
+    // T2.2: bounded retry-with-backoff for transient_infra per-target failures.
+    // Defaults (2 retries, 250ms base) match run.ts's own defaults — set
+    // explicitly here so they're documented alongside the other env-tunable
+    // knobs and a real run can override them without touching code.
+    maxRetries: process.env.PIPELINE_RETRY_MAX ? Number(process.env.PIPELINE_RETRY_MAX) : 2,
+    retryBaseDelayMs: process.env.PIPELINE_RETRY_BASE_DELAY_MS ? Number(process.env.PIPELINE_RETRY_BASE_DELAY_MS) : 250,
     onEvent,
     log,
   };

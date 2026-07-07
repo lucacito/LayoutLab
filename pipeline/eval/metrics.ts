@@ -17,7 +17,13 @@ export interface EvalMetrics {
   targetsPlanned: number;
   generated: number;
   ingested: number;
-  dropped: number;
+  /** T2.2: renamed from `dropped` — QUALITY drops only (validation, content
+   * lint, vision-critic score/error). See `errored` for infra failures. */
+  qualityDropped: number;
+  /** T2.2: count of targets whose per-target processing threw and was not (or
+   * was no longer) retryable — see `RunSummary.errored`. Distinct from
+   * `qualityDropped`: says nothing about generated-layout quality. */
+  errored: number;
   deduped: number;
   /** Fraction of generated layouts NOT dropped for a structural-validation reason. */
   validatorPassRate: number | null;
@@ -26,8 +32,18 @@ export interface EvalMetrics {
   /** Fraction of content-lint checks (one per non-full_landing target that reached
    * the content gate) that found at least one violation before any repair. */
   contentLintHitRate: number | null;
-  /** Counts of `dropped` events by reason ('validation' | 'content' | 'error'). */
+  /** Counts of `dropped` events by reason ('validation' | 'content' |
+   * 'vision_critic' | 'vision_critic_error') — QUALITY reasons only; T2.2
+   * moved the old 'error' reason out to `errorCodeCounts` below. */
   dropReasonCounts: Record<string, number>;
+  /** T2.2: counts of `errored` events by `code` ('network' | 'usage_limit' |
+   * 'budget' | 'auth' | 'unknown') — the infra-failure counterpart to
+   * `dropReasonCounts`, making quality vs error classes both visible in the
+   * eval scoreboard. */
+  errorCodeCounts: Record<string, number>;
+  /** T2.2: total number of retry attempts made across all targets (one count
+   * per `retry` RunEvent — i.e. per backoff-and-retry, not per target). */
+  retryCount: number;
   totalCostUsd: number;
   totalInputTokens: number;
   totalOutputTokens: number;
@@ -64,6 +80,10 @@ export class MetricsAccumulator {
   private contentLintSeen = 0;
   private contentLintHits = 0;
   private dropReasonCounts: Record<string, number> = {};
+  /** T2.2: `errored` event counts by `code` — the infra counterpart to
+   * `dropReasonCounts`. */
+  private errorCodeCounts: Record<string, number> = {};
+  private retryCount = 0;
   private acceptedCostUsd = 0;
   private acceptedInputTokens = 0;
   private acceptedOutputTokens = 0;
@@ -108,6 +128,12 @@ export class MetricsAccumulator {
         break;
       case 'ingested':
         break; // tracked via RunSummary.ingested at finalize()
+      case 'retry':
+        this.retryCount++;
+        break;
+      case 'errored':
+        this.errorCodeCounts[event.code] = (this.errorCodeCounts[event.code] ?? 0) + 1;
+        break;
       case 'llm_usage':
         this.totalCostUsd += event.usage.costUsd;
         this.totalInputTokens += event.usage.inputTokens;
@@ -122,8 +148,9 @@ export class MetricsAccumulator {
   }
 
   /** Reconcile with the run's authoritative `RunSummary` for the headline counts
-   * (generated/ingested/dropped/deduped) — `RunSummary` is the pipeline's stable
-   * contract; the accumulated events supply the richer breakdown. */
+   * (generated/ingested/qualityDropped/errored/deduped) — `RunSummary` is the
+   * pipeline's stable contract; the accumulated events supply the richer
+   * breakdown. */
   finalize(summary: RunSummary): EvalMetrics {
     const validationDrops = this.dropReasonCounts['validation'] ?? 0;
     return {
@@ -131,12 +158,15 @@ export class MetricsAccumulator {
       targetsPlanned: this.targetsPlanned,
       generated: summary.generated,
       ingested: summary.ingested,
-      dropped: summary.dropped,
+      qualityDropped: summary.qualityDropped,
+      errored: summary.errored,
       deduped: summary.deduped,
       validatorPassRate: summary.generated ? (summary.generated - validationDrops) / summary.generated : null,
       meanRepairAttempts: summary.generated ? this.repairAttempts / summary.generated : null,
       contentLintHitRate: this.contentLintSeen ? this.contentLintHits / this.contentLintSeen : null,
       dropReasonCounts: { ...this.dropReasonCounts },
+      errorCodeCounts: { ...this.errorCodeCounts },
+      retryCount: this.retryCount,
       totalCostUsd: this.totalCostUsd,
       totalInputTokens: this.totalInputTokens,
       totalOutputTokens: this.totalOutputTokens,
@@ -189,7 +219,9 @@ export function formatComparisonTable(rows: EvalMetrics[]): string {
     ['targets planned', rows.map((r) => String(r.targetsPlanned))],
     ['generated', rows.map((r) => String(r.generated))],
     ['ingested (accepted)', rows.map((r) => String(r.ingested))],
-    ['dropped', rows.map((r) => String(r.dropped))],
+    ['quality dropped', rows.map((r) => String(r.qualityDropped))],
+    ['errored (infra)', rows.map((r) => String(r.errored))],
+    ['retries', rows.map((r) => String(r.retryCount))],
     ['deduped', rows.map((r) => String(r.deduped))],
     ['validator pass-rate', rows.map((r) => fmtPct(r.validatorPassRate))],
     ['mean repair attempts', rows.map((r) => fmtNum(r.meanRepairAttempts))],
@@ -203,11 +235,23 @@ export function formatComparisonTable(rows: EvalMetrics[]): string {
     ['tokens / accepted layout', rows.map((r) => fmtNum(r.tokensPerAccepted, 0))],
     ['total cost', rows.map((r) => fmtUsd(r.totalCostUsd))],
     [
-      'drop reasons',
+      'drop reasons (quality)',
       rows.map((r) =>
         Object.keys(r.dropReasonCounts).length
           ? Object.entries(r.dropReasonCounts)
               .map(([reason, n]) => `${reason}:${n}`)
+              .join(' ')
+          : 'none',
+      ),
+    ],
+    // T2.2: the infra-failure counterpart to 'drop reasons (quality)' above —
+    // makes quality vs error classes both visible in the same scoreboard.
+    [
+      'error codes (infra)',
+      rows.map((r) =>
+        Object.keys(r.errorCodeCounts).length
+          ? Object.entries(r.errorCodeCounts)
+              .map(([code, n]) => `${code}:${n}`)
               .join(' ')
           : 'none',
       ),

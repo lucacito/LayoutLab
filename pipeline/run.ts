@@ -16,6 +16,12 @@ import type { UploadResult } from './upload';
 import type { IngestPayload } from '@/lib/ingest/schema';
 import { meetsQualityBar } from './vision-critic';
 import type { VisionCriticContext, VisionCriticResult } from './vision-critic';
+// T2.2: classify errors caught by the per-target catch below into 'transient_infra'
+// (retried with backoff) vs 'permanent_infra' (usage-limit/budget/auth/unknown —
+// never retried). See pipeline/errors.ts's module doc for why 'quality' drops
+// (validator/lint/near-dupe/vision-critic) have no representation there — they
+// never throw, so they never reach this classifier.
+import { classifyError, withRetry } from './errors';
 
 /** Card slugs must be unique across the 18-variant matrix, but the AI-written base
  * slug collides between near-identical variants (all "feature cards"). Append the
@@ -29,7 +35,18 @@ export function variantSlug(baseSlug: string, target: Target): string {
 export interface RunSummary {
   generated: number;
   repaired: number;
-  dropped: number;
+  /** T2.2: renamed from `dropped` — a QUALITY gate rejected this target
+   * (structural validation, content lint, vision-critic score/error, or the
+   * near-dupe/render-miss gates via their own dedicated counters below). Never
+   * incremented for an infra failure anymore — see `errored`. */
+  qualityDropped: number;
+  /** T2.2: this target's per-target processing THREW and was not (or was no
+   * longer) retryable — either a `permanent_infra` error (usage-limit, budget,
+   * auth, or an unrecognized error — see pipeline/errors.ts's safe default) on
+   * the first attempt, or a `transient_infra` error that exhausted its retry
+   * budget. Distinct from `qualityDropped`: this says nothing about the
+   * generated layout's quality — the target was never fully evaluated. */
+  errored: number;
   deduped: number;
   ingested: number;
   /** Dropped for being within `PERCEPTUAL_DUPE_MAX_DISTANCE` of another hash —
@@ -39,7 +56,7 @@ export interface RunSummary {
   /** T1.3: a renderer WAS wired (a real, non-dry-run pipeline call) but produced
    * no real previews for this target — closes the swallowed-render hole where a
    * layout carrying only placeholder previews would otherwise sail through to
-   * ingest. Distinct from `dropped` (which covers validation/content/error
+   * ingest. Distinct from `qualityDropped` (validation/content/vision-critic
    * drops) and a no-op when `deps.render` is absent entirely (dry-run/unit
    * tests) — see the render-miss gate in `runPipeline` for the exact condition.
    * T2.1: now specifically the "generic no-previews/infra" bucket — a render
@@ -57,8 +74,16 @@ export interface RunSummary {
 
 /** Terminal fate of one target — reported on the paired `llm_usage` event so a
  * consumer can attribute cost/tokens to "accepted" without depending on event
- * ordering. */
-export type RunOutcome = 'ingested' | 'dropped' | 'deduped' | 'near_duplicate' | 'render_failed' | 'render_blank';
+ * ordering. T2.2: `errored` covers both permanent-infra and retry-exhausted
+ * transient-infra failures — see `RunSummary.errored`. */
+export type RunOutcome =
+  | 'ingested'
+  | 'dropped'
+  | 'deduped'
+  | 'near_duplicate'
+  | 'render_failed'
+  | 'render_blank'
+  | 'errored';
 
 /**
  * Additive instrumentation feed (T4.1 eval harness) alongside `RunSummary`.
@@ -76,11 +101,14 @@ export type RunEvent =
   | {
       type: 'dropped';
       target: Target;
-      /** `vision_critic` = scored below threshold; `vision_critic_error` = the
-       * critic itself threw/returned unparseable JSON — both are deliberate
-       * drops (no unscored layout ships), kept distinct from each other and
-       * from a generic `error` drop so the eval scoreboard can tell them apart. */
-      reason: 'validation' | 'content' | 'error' | 'vision_critic' | 'vision_critic_error';
+      /** T2.2: `reason: 'error'` no longer exists — a thrown error is now an
+       * `errored` event (see below), never a `dropped` one. `vision_critic` =
+       * scored below threshold; `vision_critic_error` = the critic itself
+       * threw/returned unparseable JSON — both are deliberate QUALITY drops
+       * (no unscored layout ships is a content-quality policy, not an infra
+       * signal), kept distinct from each other so the eval scoreboard can tell
+       * them apart. */
+      reason: 'validation' | 'content' | 'vision_critic' | 'vision_critic_error';
       detail: string;
     }
   | { type: 'deduped'; target: Target }
@@ -96,6 +124,16 @@ export type RunEvent =
    * dropped — the eval harness (T4.1) aggregates these into a score distribution. */
   | { type: 'vision_critic'; target: Target; score: number; issues: string[]; passed: boolean }
   | { type: 'ingested'; target: Target; slug: string }
+  /** T2.2: emitted once per retry attempt on a `transient_infra` failure,
+   * BEFORE the backoff sleep — lets a consumer count/observe retries without
+   * instrumenting `withRetry` itself. */
+  | { type: 'retry'; target: Target; attempt: number; code: string; detail: string }
+  /** T2.2: terminal state for a target whose per-target processing threw and
+   * was not (or was no longer) retryable — see `RunSummary.errored`. `class`
+   * and `code` come straight from `pipeline/errors.ts`'s `classifyError`;
+   * `attempts` is the total number of tries this target got (1 = failed on the
+   * first try, either `permanent_infra` or retries disabled). */
+  | { type: 'errored'; target: Target; class: 'transient_infra' | 'permanent_infra'; code: string; detail: string; attempts: number }
   | { type: 'llm_usage'; target: Target; usage: Required<LlmUsage>; outcome: RunOutcome };
 
 export interface RunDeps {
@@ -155,17 +193,47 @@ export interface RunDeps {
   log?: (msg: string) => void;
   /** Additive instrumentation hook (T4.1) — see `RunEvent`. */
   onEvent?: (event: RunEvent) => void;
+  /** T2.2: max number of RETRIES (not counting the first attempt) for a
+   * `transient_infra` failure at the per-target level. Default 2 (so up to 3
+   * total tries). A `permanent_infra` error is never retried regardless of
+   * this value. */
+  maxRetries?: number;
+  /** T2.2: base delay for exponential backoff between retries (doubled each
+   * attempt: attempt 1 waits this long, attempt 2 waits 2x, ...). Default 250ms. */
+  retryBaseDelayMs?: number;
+  /** T2.2: injectable so tests run instantly — defaults to a real
+   * `setTimeout`-based delay in production (see pipeline/errors.ts's `withRetry`). */
+  sleep?: (ms: number) => Promise<void>;
 }
 
 export async function runPipeline(deps: RunDeps): Promise<RunSummary> {
   const log = deps.log ?? (() => {});
   const onEvent = deps.onEvent ?? (() => {});
-  const summary: RunSummary = { generated: 0, repaired: 0, dropped: 0, deduped: 0, ingested: 0, nearDuped: 0, renderFailed: 0, renderBlank: 0 };
+  const summary: RunSummary = {
+    generated: 0,
+    repaired: 0,
+    qualityDropped: 0,
+    errored: 0,
+    deduped: 0,
+    ingested: 0,
+    nearDuped: 0,
+    renderFailed: 0,
+    renderBlank: 0,
+  };
   const maxDistance = perceptualDupeMaxDistance();
   // Near-duplicate pool (T1.2): seeded once from the DB (or empty if the dep is
   // omitted), then grown with every perceptual hash THIS run accepts, so later
   // targets in the same batch are checked against earlier ones too.
   const nearDupPool: string[] = deps.nearDuplicateHashes ? await deps.nearDuplicateHashes() : [];
+  const maxRetries = deps.maxRetries ?? 2;
+  const retryBaseDelayMs = deps.retryBaseDelayMs ?? 250;
+
+  // T2.2: a 'usage_limit' classification means every OTHER remaining target
+  // would hit the exact same account-level wall — there's nothing to gain (and
+  // real budget/time to lose) by iterating the rest of `deps.targets` after
+  // that. Checked after each target's `finally` runs (so its own cleanup still
+  // happens) rather than via an early `return` from inside the loop.
+  let abortRun = false;
 
   for (const target of deps.targets) {
     // Per-target usage meter (T4.1). Wraps deps.llm so every call this target makes
@@ -173,13 +241,21 @@ export async function runPipeline(deps: RunDeps): Promise<RunSummary> {
     // reports cost/tokens without any of those call sites needing to change. Emitted
     // once as a single `llm_usage` event in `finally`, tagged with this target's
     // final outcome so a consumer never has to infer it from event ordering.
+    // T2.2: shared across every retry attempt for this target — a full-target
+    // retry RE-GENERATES (see `attemptTarget` below), and that re-generation is
+    // real spend, so the reported usage is the TRUE total across every attempt,
+    // not just the last (successful, or finally-given-up) one.
     const usage: Required<LlmUsage> = { costUsd: 0, inputTokens: 0, outputTokens: 0 };
     let sawUsage = false;
-    let outcome: RunOutcome = 'dropped';
+    let outcome: RunOutcome = 'errored';
     // T1.3: local screenshot temp file paths (if the real renderer produced any)
     // handed to the vision critic — cleaned up unconditionally in `finally`
-    // below regardless of which gate/outcome this target hits.
-    let localScreenshotPaths: string[] = [];
+    // below regardless of which gate/outcome this target hits. T2.2: a retried
+    // attempt renders AGAIN, so this ACCUMULATES across every attempt (rather
+    // than being overwritten) — otherwise an earlier attempt's temp dir would
+    // leak if that attempt got far enough to render before a later step in the
+    // same attempt threw.
+    const screenshotPathsToClean: string[] = [];
     const meteredLlm: LlmClient = {
       complete: (input) =>
         deps.llm.complete({
@@ -194,7 +270,15 @@ export async function runPipeline(deps: RunDeps): Promise<RunSummary> {
         }),
     };
 
-    try {
+    // T2.2: the body of one attempt at this target. Resolves normally (void)
+    // on every non-error terminal path — a clean ingest OR an early `return`
+    // from a QUALITY gate (validation/content/dedupe/render-miss/near-dupe/
+    // vision-critic), none of which throw. Only an actual infra failure
+    // (network/CLI/upload/ingest/etc. throwing) rejects, which is what
+    // `withRetry` below reacts to. A `return` here previously was a `continue`
+    // in the old single-flat-loop-body version of this function — the drop
+    // gates are unchanged, only how "skip to done" is spelled.
+    const attemptTarget = async (): Promise<void> => {
       let { json } =
         target.type === 'full_landing'
           ? await composeLanding(target, {
@@ -232,12 +316,12 @@ export async function runPipeline(deps: RunDeps): Promise<RunSummary> {
         result = await deps.validate(json);
       }
       if (!result.valid) {
-        summary.dropped++;
+        summary.qualityDropped++;
         outcome = 'dropped';
         const detail = result.violations.map((v) => v.code).join(',');
         log(`drop ${target.type}/${target.niche}/${target.style}: ${detail}`);
         onEvent({ type: 'dropped', target, reason: 'validation', detail });
-        continue;
+        return;
       }
 
       // Swap placeholder images for real stock photos (after validation; URL-for-URL,
@@ -271,12 +355,12 @@ export async function runPipeline(deps: RunDeps): Promise<RunSummary> {
           lint = lintLayoutJson(json);
         }
         if (dropWorthy(lint).length) {
-          summary.dropped++;
+          summary.qualityDropped++;
           outcome = 'dropped';
           const detail = dropWorthy(lint).map((v) => v.code).join(',');
           log(`drop(content) ${target.type}/${target.niche}/${target.style}: ${detail}`);
           onEvent({ type: 'dropped', target, reason: 'content', detail });
-          continue;
+          return;
         }
         if (lint.length) log(`warn(content) ${target.type}/${target.niche}/${target.style}: ${lint.map((v) => v.code).join(',')} (best-effort image miss)`);
       }
@@ -292,7 +376,7 @@ export async function runPipeline(deps: RunDeps): Promise<RunSummary> {
         outcome = 'deduped';
         log(`dedupe ${hash.slice(0, 12)}`);
         onEvent({ type: 'deduped', target });
-        continue;
+        return;
       }
 
       const seo = await generateSeo(json, target, { llm: meteredLlm, maxBudgetUsd: deps.maxBudgetUsd });
@@ -325,17 +409,17 @@ export async function runPipeline(deps: RunDeps): Promise<RunSummary> {
         if (parsed.post_content) {
           // Review fix (T1.3): a THROWING deps.render must not fall through to
           // the generic top-level catch below — that would count it as a
-          // generic 'error' drop (reason: 'error') and bypass `renderFailed`
-          // entirely. Catch it here so a thrown render takes the exact same
-          // path as a render that resolves with no previews: renderSucceeded
-          // stays false, and the render-miss gate right below handles it.
+          // generic infra error and bypass `renderFailed` entirely. Catch it
+          // here so a thrown render takes the exact same path as a render that
+          // resolves with no previews: renderSucceeded stays false, and the
+          // render-miss gate right below handles it.
           try {
             const r = await deps.render({ title: parsed.post_title ?? seo.title, postContent: parsed.post_content, hash });
             if (r.previewImageKeys.length) {
               previewImageKeys = r.previewImageKeys;
               perceptualHash = r.perceptualHash;
               renderedScreenshotPaths = r.screenshotPaths ?? [];
-              localScreenshotPaths = renderedScreenshotPaths;
+              screenshotPathsToClean.push(...renderedScreenshotPaths);
               renderSucceeded = true;
             } else if (r.outcome === 'blank') {
               renderBlank = true;
@@ -357,12 +441,13 @@ export async function runPipeline(deps: RunDeps): Promise<RunSummary> {
       // Render-miss gate (T1.3, split by T2.1): closes the swallowed-render
       // hole — a renderer WAS wired for this run but produced no real previews
       // for this target. Never ingest a layout carrying only placeholder
-      // previews; count it separately from `dropped` so it's visible in the
-      // eval scoreboard as an infra/quality signal, not a generator-quality one.
-      // T2.1 splits this into two distinct counters: a CONFIRMED-blank page
-      // (`renderBlank` — the render pipeline ran to completion and explicitly
-      // verdicted "nothing painted") vs everything else (`renderFailed` —
-      // exception, or a resolved render with no previews and no verdict at all).
+      // previews; count it separately from `qualityDropped` so it's visible in
+      // the eval scoreboard as an infra/quality signal, not a generator-quality
+      // one. T2.1 splits this into two distinct counters: a CONFIRMED-blank
+      // page (`renderBlank` — the render pipeline ran to completion and
+      // explicitly verdicted "nothing painted") vs everything else
+      // (`renderFailed` — exception, or a resolved render with no previews and
+      // no verdict at all).
       if (renderAttempted && !renderSucceeded) {
         if (renderBlank) {
           summary.renderBlank++;
@@ -375,7 +460,7 @@ export async function runPipeline(deps: RunDeps): Promise<RunSummary> {
           log(`render-miss drop ${target.type}/${target.niche}/${target.style}: ${renderErrorDetail ?? 'no real previews'}`);
           onEvent({ type: 'render_failed', target, detail: renderErrorDetail });
         }
-        continue;
+        return;
       }
 
       // Near-duplicate gate (T1.2), after render/before ingest. Render is
@@ -388,7 +473,7 @@ export async function runPipeline(deps: RunDeps): Promise<RunSummary> {
           outcome = 'near_duplicate';
           log(`near-dupe drop ${target.type}/${target.niche}/${target.style}: distance ${nearest}`);
           onEvent({ type: 'near_duplicate', target, distance: nearest });
-          continue;
+          return;
         }
         // NOTE: do NOT push into nearDupPool here. Pushing before ingest succeeds
         // would poison the pool with a hash for a layout that never actually got
@@ -406,33 +491,36 @@ export async function runPipeline(deps: RunDeps): Promise<RunSummary> {
       if (deps.visionCritic && renderSucceeded) {
         const minScore = deps.visionCriticMinScore ?? 3;
         const criticPaths = renderedScreenshotPaths.length ? renderedScreenshotPaths : previewImageKeys;
-        // Deliberate policy (review fix, T1.3): this pipeline has no human
-        // review (constraint #4) — the critic IS the QA. If it throws (CLI
-        // failure) or returns unparseable JSON, that is NOT "it looked fine";
-        // it's treated exactly like a failing score: dropped before ingest via
-        // the same `dropped` counter, but logged/tagged distinctly so it's
-        // visible as its own failure mode in the eval scoreboard rather than
-        // silently falling into the generic catch's reason:'error' bucket.
+        // Deliberate policy (review fix, T1.3; reaffirmed T2.2): this pipeline
+        // has no human review (constraint #4) — the critic IS the QA. If it
+        // throws (CLI failure) or returns unparseable JSON, that is NOT "it
+        // looked fine"; it's treated exactly like a failing score: a QUALITY
+        // drop (`qualityDropped`, reason `vision_critic_error`), NOT an infra
+        // `errored` — this is a content-quality policy decision (no unscored
+        // layout ships), not a signal that infra is unhealthy, so it's never
+        // routed through the retry/classification path below and never
+        // retried. Logged/tagged distinctly so it's visible as its own failure
+        // mode in the eval scoreboard.
         let critic: VisionCriticResult;
         try {
           critic = await deps.visionCritic(criticPaths, { type: target.type, niche: target.niche, style: target.style });
         } catch (err) {
-          summary.dropped++;
+          summary.qualityDropped++;
           outcome = 'dropped';
           const detail = (err as Error).message;
           log(`[run] vision critic errored — dropping unscored layout: ${detail}`);
           onEvent({ type: 'dropped', target, reason: 'vision_critic_error', detail });
-          continue;
+          return;
         }
         const passed = meetsQualityBar(critic, minScore);
         onEvent({ type: 'vision_critic', target, score: critic.score, issues: critic.issues, passed });
         if (!passed) {
-          summary.dropped++;
+          summary.qualityDropped++;
           outcome = 'dropped';
           const detail = `score ${critic.score} issues=${critic.issues.join(',') || 'none'}`;
           log(`vision-critic drop ${target.type}/${target.niche}/${target.style}: ${detail}`);
           onEvent({ type: 'dropped', target, reason: 'vision_critic', detail });
-          continue;
+          return;
         }
       }
 
@@ -466,19 +554,70 @@ export async function runPipeline(deps: RunDeps): Promise<RunSummary> {
       outcome = 'ingested';
       log(`ingested ${seo.slug}`);
       onEvent({ type: 'ingested', target, slug: seo.slug });
+    };
+
+    // T2.2: shared with the `catch` below (a `let` inside `try {}` isn't
+    // visible there) so the `errored` event can report how many tries this
+    // target actually got.
+    let attemptCount = 0;
+    try {
+      await withRetry(
+        () => {
+          attemptCount++;
+          return attemptTarget();
+        },
+        {
+          retries: maxRetries,
+          baseDelayMs: retryBaseDelayMs,
+          sleep: deps.sleep,
+          onRetry: ({ attempt, classified }) => {
+            log(
+              `retry ${attempt}/${maxRetries} for ${target.type}/${target.niche}/${target.style} ` +
+                `[${classified.class}/${classified.code}]: ${classified.message}`,
+            );
+            onEvent({ type: 'retry', target, attempt, code: classified.code, detail: classified.message });
+          },
+        },
+      );
+      // NOTE: attemptTarget resolving normally covers BOTH a clean ingest and
+      // every quality-gate early `return` (validation/content/dedupe/
+      // render-miss/near-dupe/vision-critic) — none of those throw, so
+      // `withRetry` never sees or retries them. Only a real infra failure
+      // reaches the `catch` below.
     } catch (err) {
-      summary.dropped++;
-      outcome = 'dropped';
-      const detail = (err as Error).message;
-      log(`error on ${target.type}/${target.niche}/${target.style}: ${detail}`);
-      onEvent({ type: 'dropped', target, reason: 'error', detail });
+      const classified = classifyError(err);
+      summary.errored++;
+      outcome = 'errored';
+      log(
+        `error on ${target.type}/${target.niche}/${target.style} ` +
+          `[${classified.class}/${classified.code}]: ${classified.message}`,
+      );
+      onEvent({
+        type: 'errored',
+        target,
+        class: classified.class,
+        code: classified.code,
+        detail: classified.message,
+        attempts: attemptCount,
+      });
+      // T2.2: a usage-limit is an ACCOUNT-level wall — every other remaining
+      // target would hit it identically. Abort the rest of the run rather than
+      // burn time (and, if retries were ever added for it, budget) reproving
+      // that for each one. `generate.ts`'s pre-emptive check keeps this
+      // non-retryable; this is what makes it non-continuable too.
+      if (classified.code === 'usage_limit') {
+        log(`usage-limit hit — aborting the remaining ${deps.targets.length} target(s) in this run`);
+        abortRun = true;
+      }
     } finally {
       if (sawUsage) onEvent({ type: 'llm_usage', target, usage, outcome });
       // T1.3: these are scratch temp files written solely so the vision critic's
-      // CLI call could Read them — runs on every exit path (any gate's `continue`,
-      // a thrown error, or a clean ingest) so they never leak across a batch run.
-      if (localScreenshotPaths.length) {
-        await Promise.all(localScreenshotPaths.map((p) => rm(p, { force: true }).catch(() => {})));
+      // CLI call could Read them — runs on every exit path (any gate's early
+      // return, a thrown error, or a clean ingest) so they never leak across a
+      // batch run. T2.2: accumulated across every retry attempt (see
+      // `screenshotPathsToClean` above), not just the last one.
+      if (screenshotPathsToClean.length) {
+        await Promise.all(screenshotPathsToClean.map((p) => rm(p, { force: true }).catch(() => {})));
         // Review fix (T1.3): rm'ing the files above leaves the mkdtemp PARENT
         // directory (`ll-shot-*`, created by pipeline/deps.ts's real renderer)
         // behind, empty, on every real run. Remove it too — but ONLY when its
@@ -487,11 +626,13 @@ export async function runPipeline(deps: RunDeps): Promise<RunSummary> {
         // differently-wired renderer, or a test fixture, pointing
         // `screenshotPaths` at a path whose parent is something precious).
         const shotDirs = new Set(
-          localScreenshotPaths.map((p) => dirname(p)).filter((d) => basename(d).startsWith('ll-shot-')),
+          screenshotPathsToClean.map((p) => dirname(p)).filter((d) => basename(d).startsWith('ll-shot-')),
         );
         await Promise.all([...shotDirs].map((d) => rm(d, { recursive: true, force: true }).catch(() => {})));
       }
     }
+
+    if (abortRun) break;
   }
   return summary;
 }
