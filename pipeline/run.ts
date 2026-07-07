@@ -41,14 +41,24 @@ export interface RunSummary {
    * layout carrying only placeholder previews would otherwise sail through to
    * ingest. Distinct from `dropped` (which covers validation/content/error
    * drops) and a no-op when `deps.render` is absent entirely (dry-run/unit
-   * tests) — see the render-miss gate in `runPipeline` for the exact condition. */
+   * tests) — see the render-miss gate in `runPipeline` for the exact condition.
+   * T2.1: now specifically the "generic no-previews/infra" bucket — a render
+   * exception, or a resolved render with empty previews and no explicit
+   * `outcome`. A confirmed-blank page is counted under `renderBlank` instead. */
   renderFailed: number;
+  /** T2.1: the renderer resolved WITHOUT throwing but reported an explicit
+   * `outcome: 'blank'` verdict — the page never confirmably painted content
+   * (pipeline/render.ts's reload loop never crossed its height threshold).
+   * Distinct from `renderFailed` (exception, or no-previews with no verdict at
+   * all): a blank render is a confirmed "nothing to sell" signal, not a
+   * transient infra failure. Never ingested either way. */
+  renderBlank: number;
 }
 
 /** Terminal fate of one target — reported on the paired `llm_usage` event so a
  * consumer can attribute cost/tokens to "accepted" without depending on event
  * ordering. */
-export type RunOutcome = 'ingested' | 'dropped' | 'deduped' | 'near_duplicate' | 'render_failed';
+export type RunOutcome = 'ingested' | 'dropped' | 'deduped' | 'near_duplicate' | 'render_failed' | 'render_blank';
 
 /**
  * Additive instrumentation feed (T4.1 eval harness) alongside `RunSummary`.
@@ -76,8 +86,12 @@ export type RunEvent =
   | { type: 'deduped'; target: Target }
   /** Perceptual-hash near-duplicate drop (T1.2) — see `RunSummary.nearDuped`. */
   | { type: 'near_duplicate'; target: Target; distance: number }
-  /** Render-miss drop (T1.3) — see `RunSummary.renderFailed`. */
-  | { type: 'render_failed'; target: Target }
+  /** Render-miss drop (T1.3) — see `RunSummary.renderFailed`. T2.1: `detail`
+   * carries the thrown error's message when the render step itself threw (a
+   * Minor from T1.3's review) — undefined for the legacy resolved-empty case. */
+  | { type: 'render_failed'; target: Target; detail?: string }
+  /** Confirmed-blank render drop (T2.1) — see `RunSummary.renderBlank`. */
+  | { type: 'render_blank'; target: Target }
   /** Vision-critic score for this target (T1.3), emitted whether it passed or
    * dropped — the eval harness (T4.1) aggregates these into a score distribution. */
   | { type: 'vision_critic'; target: Target; score: number; issues: string[]; passed: boolean }
@@ -98,11 +112,23 @@ export interface RunDeps {
    * drops the layout rather than ingesting one with only placeholder previews.
    * `screenshotPaths` (T1.3), when provided, are LOCAL file paths to the same
    * shots for the vision critic to Read — distinct from `previewImageKeys`,
-   * which are blob storage keys the critic (a CLI file-reading agent) can't open. */
+   * which are blob storage keys the critic (a CLI file-reading agent) can't open.
+   * T2.1: `outcome` distinguishes a confirmed-blank page (`'blank'`) from a
+   * healthy one (`'ok'`) on a RESOLVED call — optional for backward
+   * compatibility; a resolved call with empty `previewImageKeys` and no
+   * `outcome` falls into the legacy generic render-miss bucket (`renderFailed`).
+   * `error`, when present, is the message from a render exception that a
+   * production wrapper (pipeline/deps.ts's `renderAndCapture`) swallowed into a
+   * resolved result instead of letting it throw — surfaced on the
+   * `render_failed` RunEvent's `detail` field. A THROWN rejection (as opposed to
+   * a resolved `error` field) is still supported directly — see the try/catch
+   * around this call below — and is exactly equivalent to it. */
   render?: (input: { title: string; postContent: string; hash: string }) => Promise<{
     previewImageKeys: string[];
     perceptualHash?: string;
     screenshotPaths?: string[];
+    outcome?: 'ok' | 'blank';
+    error?: string;
   }>;
   /** Existing perceptual hashes to compare against for near-duplicate detection
    * (T1.2) — e.g. every non-null `perceptual_hash` row in the DB. Fetched ONCE
@@ -134,7 +160,7 @@ export interface RunDeps {
 export async function runPipeline(deps: RunDeps): Promise<RunSummary> {
   const log = deps.log ?? (() => {});
   const onEvent = deps.onEvent ?? (() => {});
-  const summary: RunSummary = { generated: 0, repaired: 0, dropped: 0, deduped: 0, ingested: 0, nearDuped: 0, renderFailed: 0 };
+  const summary: RunSummary = { generated: 0, repaired: 0, dropped: 0, deduped: 0, ingested: 0, nearDuped: 0, renderFailed: 0, renderBlank: 0 };
   const maxDistance = perceptualDupeMaxDistance();
   // Near-duplicate pool (T1.2): seeded once from the DB (or empty if the dep is
   // omitted), then grown with every perceptual hash THIS run accepts, so later
@@ -284,6 +310,15 @@ export async function runPipeline(deps: RunDeps): Promise<RunSummary> {
       // stays false and behavior is byte-for-byte what it was before T1.3.
       let renderAttempted = false;
       let renderSucceeded = false;
+      // T2.1: distinguishes a CONFIRMED-blank render (renderBlank) from every
+      // other no-previews case (renderFailed) — set only when the render
+      // resolves (not throws) with an explicit `outcome: 'blank'`.
+      let renderBlank = false;
+      // T2.1: the render exception's message (whether it was thrown directly
+      // by `deps.render` or swallowed into a resolved `{ error }` by a
+      // production wrapper like pipeline/deps.ts's `renderAndCapture`) —
+      // surfaced on the `render_failed` RunEvent's `detail` field.
+      let renderErrorDetail: string | undefined;
       if (deps.render) {
         renderAttempted = true;
         const parsed = JSON.parse(json) as { post_title?: string; post_content?: string };
@@ -302,24 +337,44 @@ export async function runPipeline(deps: RunDeps): Promise<RunSummary> {
               renderedScreenshotPaths = r.screenshotPaths ?? [];
               localScreenshotPaths = renderedScreenshotPaths;
               renderSucceeded = true;
+            } else if (r.outcome === 'blank') {
+              renderBlank = true;
+            } else {
+              // Resolved with no previews and no explicit verdict: either the
+              // legacy shape (pre-T2.1 stub/dry-run) or a production wrapper
+              // that swallowed a render exception into `{ error }` — either
+              // way this is the generic render-miss bucket, not a confirmed
+              // blank page.
+              renderErrorDetail = r.error;
             }
           } catch (err) {
-            log(`render threw for ${target.type}/${target.niche}/${target.style}: ${(err as Error).message}`);
+            renderErrorDetail = (err as Error).message;
+            log(`render threw for ${target.type}/${target.niche}/${target.style}: ${renderErrorDetail}`);
           }
         }
       }
 
-      // Render-miss gate (T1.3): closes the swallowed-render hole — a renderer
-      // WAS wired for this run but produced no real previews for this target
-      // (e.g. deps.ts's real renderer catches a WP/Playwright failure and
-      // returns `previewImageKeys: []`). Never ingest a layout carrying only
-      // placeholder previews; count it separately from `dropped` so it's visible
-      // in the eval scoreboard as an infra signal, not a generator-quality one.
+      // Render-miss gate (T1.3, split by T2.1): closes the swallowed-render
+      // hole — a renderer WAS wired for this run but produced no real previews
+      // for this target. Never ingest a layout carrying only placeholder
+      // previews; count it separately from `dropped` so it's visible in the
+      // eval scoreboard as an infra/quality signal, not a generator-quality one.
+      // T2.1 splits this into two distinct counters: a CONFIRMED-blank page
+      // (`renderBlank` — the render pipeline ran to completion and explicitly
+      // verdicted "nothing painted") vs everything else (`renderFailed` —
+      // exception, or a resolved render with no previews and no verdict at all).
       if (renderAttempted && !renderSucceeded) {
-        summary.renderFailed++;
-        outcome = 'render_failed';
-        log(`render-miss drop ${target.type}/${target.niche}/${target.style}: no real previews`);
-        onEvent({ type: 'render_failed', target });
+        if (renderBlank) {
+          summary.renderBlank++;
+          outcome = 'render_blank';
+          log(`render-blank drop ${target.type}/${target.niche}/${target.style}: page never confirmably painted content`);
+          onEvent({ type: 'render_blank', target });
+        } else {
+          summary.renderFailed++;
+          outcome = 'render_failed';
+          log(`render-miss drop ${target.type}/${target.niche}/${target.style}: ${renderErrorDetail ?? 'no real previews'}`);
+          onEvent({ type: 'render_failed', target, detail: renderErrorDetail });
+        }
         continue;
       }
 

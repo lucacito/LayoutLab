@@ -15,7 +15,7 @@ import { claudeCliClient } from './llm';
 import { loadGrounding, type Target } from './recipes';
 import { validateLayout } from './validate';
 import { uploadLayout, uploadScreenshot } from './upload';
-import { realRenderDeps, renderLayout } from './render';
+import { realRenderDeps, renderLayout, type RenderDeps, type RenderResult } from './render';
 import { resolveLayoutImages, pexelsSearcher } from './images';
 import { postIngest } from './ingest';
 import { claudeVisionCritic } from './vision-critic';
@@ -86,6 +86,67 @@ export async function captureScreenshots(
   }
 }
 
+export interface RenderAndCaptureDeps {
+  /** Injectable for tests — production always passes the real `renderLayout`. */
+  renderLayout: (input: { title: string; postContent: string }, renderDeps: RenderDeps) => Promise<RenderResult>;
+  renderDeps: RenderDeps;
+  /** Injectable for tests so a stubbed `renderLayout` never has to touch the
+   * real filesystem/Blob upload path. Production always passes the real
+   * `captureScreenshots`. */
+  captureScreenshots?: typeof captureScreenshots;
+  hasBlobToken: boolean;
+  logPrefix: string;
+}
+
+export interface RenderAndCaptureResult {
+  previewImageKeys: string[];
+  perceptualHash?: string;
+  screenshotPaths?: string[];
+  /** T2.1: present on a resolved (non-throwing) render — 'ok' or 'blank'.
+   * Absent when the render step itself threw (see `error` below); the caller
+   * (run.ts) treats a missing `outcome` + empty `previewImageKeys` as the
+   * legacy/generic render-miss ('failed') case. */
+  outcome?: 'ok' | 'blank';
+  /** T2.1: the thrown error's message, when `renderLayout`/`captureScreenshots`
+   * threw — surfaced on the `render_failed` RunEvent's `detail` field (a Minor
+   * from T1.3's review). Never set alongside `outcome` (an exception preempts
+   * ever reaching the outcome branches). */
+  error?: string;
+}
+
+/**
+ * T2.1 — the extracted, independently-testable version of `buildRunDeps`'s
+ * `render` closure. Preserves the THREE distinct outcomes `run.ts` gates on:
+ *  - renderLayout resolves `{ outcome: 'ok' }` → captures screenshots, returns
+ *    real previews (`outcome: 'ok'`).
+ *  - renderLayout resolves `{ outcome: 'blank' }` → NO captureScreenshots call
+ *    (nothing real to upload), returns `{ previewImageKeys: [], outcome: 'blank' }`.
+ *  - renderLayout OR captureScreenshots THROWS → swallowed here (matching
+ *    T1.3's existing "never let a render exception escape to a production
+ *    caller" convention) into a resolved `{ previewImageKeys: [], error }` —
+ *    distinct from `blank`, so run.ts's render-miss gate can tell a confirmed-
+ *    empty page apart from an infra failure.
+ */
+export async function renderAndCapture(
+  input: { title: string; postContent: string; hash: string },
+  deps: RenderAndCaptureDeps,
+): Promise<RenderAndCaptureResult> {
+  const doCapture = deps.captureScreenshots ?? captureScreenshots;
+  try {
+    const result = await deps.renderLayout({ title: input.title, postContent: input.postContent }, deps.renderDeps);
+    if (result.outcome === 'blank') {
+      console.warn(`${deps.logPrefix} render blank for ${input.hash.slice(0, 12)}: page never confirmably painted content`);
+      return { previewImageKeys: [], outcome: 'blank' };
+    }
+    const { previewImageKeys, screenshotPaths } = await doCapture(result.shots, input.hash, { hasBlobToken: deps.hasBlobToken });
+    return { previewImageKeys, perceptualHash: result.perceptualHash, screenshotPaths, outcome: 'ok' };
+  } catch (e) {
+    const message = (e as Error).message;
+    console.warn(`${deps.logPrefix} render failed for ${input.hash.slice(0, 12)}: ${message}`);
+    return { previewImageKeys: [], error: message };
+  }
+}
+
 export function arg(name: string): string | undefined {
   const hit = process.argv.find((a) => a.startsWith(`--${name}=`));
   return hit ? hit.split('=')[1] : undefined;
@@ -148,23 +209,14 @@ export async function buildRunDeps(opts: BuildRunDepsOptions): Promise<{ deps: R
       return rows.map((r) => r.perceptualHash).filter((h): h is string => !!h);
     },
     upload: (hash, json) => uploadLayout(hash, json, { hasBlobToken, outDir: 'pipeline/out' }),
+    // T2.1: `renderAndCapture` (this file, above) also persists each shot to a
+    // local temp file on a real render — the vision critic runs through the
+    // `claude` CLI (constraint #1) and needs real FILE PATHS it can Read, not
+    // the blob keys uploadScreenshot returns. Cleaned up by run.ts once it's
+    // done with them (and, on a partial failure inside captureScreenshots,
+    // by captureScreenshots itself — review fix, T1.3).
     render: renderer
-      ? async ({ title, postContent, hash }) => {
-          try {
-            const { shots, perceptualHash } = await renderLayout({ title, postContent }, renderer.deps);
-            // T1.3: also persist each shot to a local temp file — the vision
-            // critic runs through the `claude` CLI (constraint #1) and needs
-            // real FILE PATHS it can Read, not the blob keys uploadScreenshot
-            // returns. Cleaned up by run.ts once it's done with them (and, on a
-            // partial failure inside this call, by captureScreenshots itself —
-            // review fix, T1.3).
-            const { previewImageKeys, screenshotPaths } = await captureScreenshots(shots, hash, { hasBlobToken });
-            return { previewImageKeys, perceptualHash, screenshotPaths };
-          } catch (e) {
-            console.warn(`${logPrefix} render failed for ${hash.slice(0, 12)}: ${(e as Error).message}`);
-            return { previewImageKeys: [] };
-          }
-        }
+      ? (input) => renderAndCapture(input, { renderLayout, renderDeps: renderer.deps, hasBlobToken, logPrefix })
       : undefined,
     // T1.3 vision critic — optional/injected like render/resolveImages; skipped
     // entirely in dry-run (there's no renderer to produce real screenshots for

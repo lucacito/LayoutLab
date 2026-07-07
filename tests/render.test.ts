@@ -138,7 +138,7 @@ function deps(over: Partial<RenderDeps> = {}, shot?: Buffer): RenderDeps {
   return {
     createPage: vi.fn(async () => ({ id: '116', url: 'http://wp/?page_id=116' })),
     deletePage: vi.fn(async () => {}),
-    screenshot: vi.fn(async () => shot ?? Buffer.from('')),
+    screenshot: vi.fn(async () => ({ outcome: 'ok' as const, buffer: shot ?? Buffer.from('') })),
     ...over,
   };
 }
@@ -153,6 +153,7 @@ describe('renderLayout', () => {
     expect(d.screenshot).toHaveBeenCalledTimes(2);
     expect(d.screenshot).toHaveBeenCalledWith('http://wp/?page_id=116', { width: 1440, height: 1024 });
     expect(d.screenshot).toHaveBeenCalledWith('http://wp/?page_id=116', { width: 390, height: 844 });
+    expect(res.outcome).toBe('ok');
     expect(res.shots.map((s) => s.label)).toEqual(['desktop', 'mobile']);
     expect(res.perceptualHash).toMatch(/^[0-9a-f]{64}$/);
     expect(d.deletePage).toHaveBeenCalledWith('116');
@@ -162,5 +163,38 @@ describe('renderLayout', () => {
     const d = deps({ screenshot: vi.fn(async () => { throw new Error('shot failed'); }) });
     await expect(renderLayout({ title: 'T', postContent: 'x' }, d)).rejects.toThrow('shot failed');
     expect(d.deletePage).toHaveBeenCalledWith('116');
+  });
+
+  // T2.1: distinguish a persistently-blank render (page never confirmably
+  // painted content) from a healthy one — no silent fullPage fallback.
+  it('reports outcome "blank" with no shots/hash when the desktop screenshot verdict is blank, and still cleans up the page', async () => {
+    const d = deps({ screenshot: vi.fn(async () => ({ outcome: 'blank' as const })) });
+    const res = await renderLayout({ title: 'T', postContent: 'x' }, d);
+    expect(res.outcome).toBe('blank');
+    expect(res.shots).toEqual([]);
+    expect(res.perceptualHash).toBeUndefined();
+    expect(d.deletePage).toHaveBeenCalledWith('116');
+  });
+
+  it('short-circuits on the first blank viewport and does not screenshot the remaining viewport', async () => {
+    const screenshot = vi.fn(async () => ({ outcome: 'blank' as const }));
+    const d = deps({ screenshot });
+    const res = await renderLayout({ title: 'T', postContent: 'x' }, d);
+    expect(res.outcome).toBe('blank');
+    expect(screenshot).toHaveBeenCalledTimes(1); // desktop only — never reaches mobile
+  });
+
+  it('reports outcome "blank" even when only the SECOND viewport (mobile) comes back blank', async () => {
+    const shot = await png('#123456');
+    let call = 0;
+    const screenshot = vi.fn(async () => {
+      call++;
+      return call === 1 ? { outcome: 'ok' as const, buffer: shot } : { outcome: 'blank' as const };
+    });
+    const d = deps({ screenshot });
+    const res = await renderLayout({ title: 'T', postContent: 'x' }, d);
+    expect(res.outcome).toBe('blank');
+    expect(res.shots).toEqual([]); // the earlier ok desktop shot is discarded too
+    expect(screenshot).toHaveBeenCalledTimes(2);
   });
 });

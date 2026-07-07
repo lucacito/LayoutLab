@@ -7,7 +7,8 @@
 // version silently returned `{ previewImageKeys: [] }` on failure without ever
 // removing what had already been written to disk.
 import { describe, it, expect, vi } from 'vitest';
-import { captureScreenshots } from '@/pipeline/deps';
+import { captureScreenshots, renderAndCapture } from '@/pipeline/deps';
+import type { RenderDeps, RenderResult } from '@/pipeline/render';
 
 describe('captureScreenshots (T1.3 review fix — partial-render cleanup)', () => {
   it('cleans up the temp shot dir when uploadScreenshot throws mid-loop, after the desktop file was already written', async () => {
@@ -74,5 +75,72 @@ describe('captureScreenshots (T1.3 review fix — partial-render cleanup)', () =
       captureScreenshots([{ label: 'desktop', buffer: Buffer.from('d') }], 'hash123', { hasBlobToken: true, mkdtemp, rm }),
     ).rejects.toThrow('disk full');
     expect(rm).not.toHaveBeenCalled();
+  });
+});
+
+// T2.1: `renderAndCapture` is the extracted, independently-testable version of
+// `buildRunDeps`'s `render` closure — it must preserve THREE distinct outcomes
+// for run.ts to gate on: ok (real previews), blank (renderLayout's explicit
+// verdict — no captureScreenshots call, no fake previews), and failed
+// (renderLayout OR captureScreenshots throws — converted to a resolved
+// `{ previewImageKeys: [], error }` so run.ts never has to catch an exception
+// from a production-wired renderer, matching T1.3's existing swallow-and-log
+// convention, but now carrying the message for the render_failed RunEvent's
+// `detail` field).
+describe('renderAndCapture (T2.1 — deps.ts render-closure outcome split)', () => {
+  const fakeRenderDeps = {} as RenderDeps; // renderLayout is stubbed below; never actually touches this
+  const noopCapture = vi.fn(async () => ({ previewImageKeys: [], screenshotPaths: [] }));
+
+  it('ok outcome: captures screenshots and returns previews + hash, outcome "ok"', async () => {
+    const shots = [{ label: 'desktop' as const, width: 1440, buffer: Buffer.from('d') }];
+    const renderLayout = vi.fn(async (): Promise<RenderResult> => ({ outcome: 'ok', shots, perceptualHash: 'abc123' }));
+    const captureScreenshotsStub = vi.fn(async () => ({ previewImageKeys: ['k1'], screenshotPaths: ['/tmp/d.png'] }));
+    const result = await renderAndCapture(
+      { title: 'T', postContent: '<p>x</p>', hash: 'hash123' },
+      { renderLayout, renderDeps: fakeRenderDeps, captureScreenshots: captureScreenshotsStub, hasBlobToken: false, logPrefix: '[test]' },
+    );
+    expect(captureScreenshotsStub).toHaveBeenCalledWith(shots, 'hash123', { hasBlobToken: false });
+    expect(result).toEqual({
+      previewImageKeys: ['k1'],
+      perceptualHash: 'abc123',
+      screenshotPaths: ['/tmp/d.png'],
+      outcome: 'ok',
+    });
+  });
+
+  it('blank outcome: never calls captureScreenshots and returns no previews, outcome "blank"', async () => {
+    const renderLayout = vi.fn(async (): Promise<RenderResult> => ({ outcome: 'blank', shots: [] }));
+    const captureScreenshotsStub = vi.fn(noopCapture);
+    const result = await renderAndCapture(
+      { title: 'T', postContent: '<p>x</p>', hash: 'hash123' },
+      { renderLayout, renderDeps: fakeRenderDeps, captureScreenshots: captureScreenshotsStub, hasBlobToken: false, logPrefix: '[test]' },
+    );
+    expect(captureScreenshotsStub).not.toHaveBeenCalled();
+    expect(result).toEqual({ previewImageKeys: [], outcome: 'blank' });
+  });
+
+  it('failed outcome: renderLayout throwing is swallowed into a resolved result carrying the error message (not "blank")', async () => {
+    const renderLayout = vi.fn(async (): Promise<RenderResult> => {
+      throw new Error('wp-cli boom');
+    });
+    const result = await renderAndCapture(
+      { title: 'T', postContent: '<p>x</p>', hash: 'hash123' },
+      { renderLayout, renderDeps: fakeRenderDeps, captureScreenshots: noopCapture, hasBlobToken: false, logPrefix: '[test]' },
+    );
+    expect(result).toEqual({ previewImageKeys: [], error: 'wp-cli boom' });
+    expect(result.outcome).toBeUndefined();
+  });
+
+  it('failed outcome: captureScreenshots throwing after a healthy render is also swallowed as an error (not "blank")', async () => {
+    const shots = [{ label: 'desktop' as const, width: 1440, buffer: Buffer.from('d') }];
+    const renderLayout = vi.fn(async (): Promise<RenderResult> => ({ outcome: 'ok', shots, perceptualHash: 'abc123' }));
+    const captureScreenshotsStub = vi.fn(async () => {
+      throw new Error('blob upload boom');
+    });
+    const result = await renderAndCapture(
+      { title: 'T', postContent: '<p>x</p>', hash: 'hash123' },
+      { renderLayout, renderDeps: fakeRenderDeps, captureScreenshots: captureScreenshotsStub, hasBlobToken: false, logPrefix: '[test]' },
+    );
+    expect(result).toEqual({ previewImageKeys: [], error: 'blob upload boom' });
   });
 });

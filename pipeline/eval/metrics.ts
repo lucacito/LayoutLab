@@ -38,8 +38,16 @@ export interface EvalMetrics {
   /** Fraction of generated layouts dropped by the perceptual near-duplicate gate (T1.2). */
   nearDupeRate: number | null;
   /** Fraction of generated layouts dropped by the render-miss gate (T1.3) — a
-   * renderer was wired but produced no real previews. Distinct from `dropped`. */
+   * renderer was wired but produced no real previews. Distinct from `dropped`.
+   * T2.1: specifically the generic/infra bucket now — see `renderBlankRate`
+   * for the confirmed-blank-page bucket, split out of what used to be the same
+   * counter. */
   renderFailedRate: number | null;
+  /** Fraction of generated layouts dropped because the renderer explicitly
+   * verdicted the page as blank (T2.1) — the render pipeline ran to completion
+   * but no viewport ever confirmably painted content. Distinct from
+   * `renderFailedRate` (exception / no-verdict no-previews case). */
+  renderBlankRate: number | null;
   /** Histogram of vision-critic scores (T1.3), rounded to the nearest integer
    * and keyed by that integer as a string (e.g. `{"2": 1, "4": 3}`). Counts
    * EVERY scored target (pass and drop), not just accepted ones — this is a
@@ -93,6 +101,8 @@ export class MetricsAccumulator {
         break; // tracked via RunSummary.nearDuped at finalize()
       case 'render_failed':
         break; // tracked via RunSummary.renderFailed at finalize()
+      case 'render_blank':
+        break; // tracked via RunSummary.renderBlank at finalize() (T2.1)
       case 'vision_critic':
         this.visionScores.push(event.score);
         break;
@@ -134,6 +144,7 @@ export class MetricsAccumulator {
       tokensPerAccepted: summary.ingested ? (this.acceptedInputTokens + this.acceptedOutputTokens) / summary.ingested : null,
       nearDupeRate: summary.generated ? summary.nearDuped / summary.generated : null,
       renderFailedRate: summary.generated ? summary.renderFailed / summary.generated : null,
+      renderBlankRate: summary.generated ? summary.renderBlank / summary.generated : null,
       visionScoreDistribution: this.visionScores.length ? this.visionScoreDistribution() : null,
       visionScoreMean: this.visionScores.length
         ? this.visionScores.reduce((a, b) => a + b, 0) / this.visionScores.length
@@ -185,6 +196,7 @@ export function formatComparisonTable(rows: EvalMetrics[]): string {
     ['content-lint hit-rate', rows.map((r) => fmtPct(r.contentLintHitRate))],
     ['near-dupe rate', rows.map((r) => fmtPct(r.nearDupeRate))],
     ['render-failed rate', rows.map((r) => fmtPct(r.renderFailedRate))],
+    ['render-blank rate', rows.map((r) => fmtPct(r.renderBlankRate))],
     ['vision score mean', rows.map((r) => fmtNum(r.visionScoreMean))],
     ['vision score dist', rows.map((r) => fmtVisionDist(r.visionScoreDistribution))],
     ['cost / accepted layout', rows.map((r) => fmtUsd(r.costPerAcceptedUsd))],

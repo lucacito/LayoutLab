@@ -20,15 +20,30 @@ export interface RenderShot {
 }
 
 export interface RenderResult {
+  /** T2.1: explicit render verdict. 'ok' = at least a confirmable screenshot for
+   * every viewport; 'blank' = some viewport never painted real content (the
+   * page-height check below never crossed its threshold) — the caller (run.ts,
+   * via pipeline/deps.ts) drops the layout rather than shipping a screenshot of
+   * an empty page. Distinct from an exception (render.ts/deps.ts never catch
+   * those here — they propagate so the caller can count them as `renderFailed`
+   * instead of `renderBlank`). */
+  outcome: 'ok' | 'blank';
   shots: RenderShot[];
-  /** 64-hex-char difference-hash (dHash) of the desktop shot, for near-duplicate detection. */
-  perceptualHash: string;
+  /** 64-hex-char difference-hash (dHash) of the desktop shot, for near-duplicate
+   * detection. Absent when `outcome === 'blank'` (there's no real desktop shot
+   * to hash). */
+  perceptualHash?: string;
 }
+
+/** T2.1: a single viewport's screenshot verdict — 'blank' means the page never
+ * confirmably painted content (no real buffer to return); the caller must NOT
+ * fall back to screenshotting the empty page. */
+export type ScreenshotResult = { outcome: 'ok'; buffer: Buffer } | { outcome: 'blank' };
 
 export interface RenderDeps {
   createPage(input: { title: string; postContent: string }): Promise<{ id: string; url: string }>;
   deletePage(id: string): Promise<void>;
-  screenshot(url: string, opts: { width: number; height: number }): Promise<Buffer>;
+  screenshot(url: string, opts: { width: number; height: number }): Promise<ScreenshotResult>;
 }
 
 const VIEWPORTS: { label: 'desktop' | 'mobile'; width: number; height: number }[] = [
@@ -82,17 +97,28 @@ export async function perceptualHash(png: Buffer): Promise<string> {
   return hex;
 }
 
-/** Render a layout to screenshots (+ perceptual hash). The temp page is always cleaned up. */
+/**
+ * Render a layout to screenshots (+ perceptual hash). The temp page is always
+ * cleaned up. T2.1: if ANY viewport's screenshot comes back with a `blank`
+ * verdict, the whole render is reported `blank` — a layout isn't confirmably
+ * good just because one viewport happened to paint while another didn't — and
+ * we short-circuit without screenshotting the remaining viewports (nothing
+ * salvageable once one viewport is confirmed blank).
+ */
 export async function renderLayout(input: { title: string; postContent: string }, deps: RenderDeps): Promise<RenderResult> {
   const page = await deps.createPage(input);
   try {
     const shots: RenderShot[] = [];
     for (const v of VIEWPORTS) {
-      shots.push({ label: v.label, width: v.width, buffer: await deps.screenshot(page.url, { width: v.width, height: v.height }) });
+      const result = await deps.screenshot(page.url, { width: v.width, height: v.height });
+      if (result.outcome === 'blank') {
+        return { outcome: 'blank', shots: [] };
+      }
+      shots.push({ label: v.label, width: v.width, buffer: result.buffer });
     }
     const desktop = shots.find((s) => s.label === 'desktop') ?? shots[0];
     const perceptualHash_ = await perceptualHash(desktop.buffer);
-    return { shots, perceptualHash: perceptualHash_ };
+    return { outcome: 'ok', shots, perceptualHash: perceptualHash_ };
   } finally {
     await deps.deletePage(page.id).catch(() => {});
   }
@@ -171,7 +197,7 @@ export async function realRenderDeps(): Promise<{ deps: RenderDeps; close: () =>
     async deletePage(id) {
       await run('docker', ['exec', container, 'wp', 'post', 'delete', id, '--force']);
     },
-    async screenshot(url, { width, height }) {
+    async screenshot(url, { width, height }): Promise<ScreenshotResult> {
       const page = await browser.newPage({ viewport: { width, height }, deviceScaleFactor: 1 });
       try {
         // WP can intermittently prepend PHP warnings (translations_api / "headers
@@ -190,20 +216,22 @@ export async function realRenderDeps(): Promise<{ deps: RenderDeps; close: () =>
             // Scrolling through it top-to-bottom forces every section to render first.
             await paintFullPage(page);
             await page.waitForTimeout(300);
-            return await wrapper.screenshot();
+            return { outcome: 'ok', buffer: await wrapper.screenshot() };
           }
           if (attempt < 3) await page.waitForTimeout(1000);
         }
-        // Final fallback: a legitimately short layout (header/footer ≈ 100px) never
-        // crosses the 150px bar. Crop to the wrapper if it has any real height —
-        // only screenshot the empty full viewport when there's no content wrapper.
+        // Final check: a legitimately short layout (header/footer ≈ 100px) never
+        // crosses the 150px bar but still has real content — crop to the wrapper.
+        // T2.1: no more silent `fullPage` fallback screenshotting an empty page
+        // when there's no meaningful wrapper height — report `blank` instead and
+        // let the caller (run.ts, via pipeline/deps.ts) drop the layout.
         await page.addStyleTag({ content: HIDE_CHROME });
         await paintFullPage(page);
         await page.waitForTimeout(250);
         const wrapper = page.locator('.et-l--post').first();
         const box = (await wrapper.count()) ? await wrapper.boundingBox() : null;
-        if (box && box.height > 40) return await wrapper.screenshot();
-        return await page.screenshot({ fullPage: true });
+        if (box && box.height > 40) return { outcome: 'ok', buffer: await wrapper.screenshot() };
+        return { outcome: 'blank' };
       } finally {
         await page.close();
       }

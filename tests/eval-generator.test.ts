@@ -11,7 +11,7 @@ import type { RunEvent, RunSummary } from '@/pipeline/run';
 const target = { type: 'hero', niche: 'saas', style: 'minimal' };
 
 function summary(over: Partial<RunSummary> = {}): RunSummary {
-  return { generated: 0, repaired: 0, dropped: 0, deduped: 0, ingested: 0, nearDuped: 0, renderFailed: 0, ...over };
+  return { generated: 0, repaired: 0, dropped: 0, deduped: 0, ingested: 0, nearDuped: 0, renderFailed: 0, renderBlank: 0, ...over };
 }
 
 describe('MetricsAccumulator', () => {
@@ -135,6 +135,25 @@ describe('MetricsAccumulator', () => {
 
     const empty = new MetricsAccumulator('empty', 0).finalize(summary());
     expect(empty.renderFailedRate).toBeNull();
+  });
+
+  // T2.1: renderBlank is a distinct counter/rate from renderFailed — a
+  // confirmed-blank page, not a generic no-previews/exception miss.
+  it('computes renderBlankRate from RunSummary.renderBlank (T2.1), distinct from renderFailedRate, and null when nothing was generated', () => {
+    const acc = new MetricsAccumulator('baseline', 4);
+    const events: RunEvent[] = [
+      { type: 'generated', target },
+      { type: 'ingested', target, slug: 's1' },
+      { type: 'generated', target },
+      { type: 'render_blank', target },
+    ];
+    for (const e of events) acc.add(e);
+    const m = acc.finalize(summary({ generated: 2, ingested: 1, renderBlank: 1 }));
+    expect(m.renderBlankRate).toBeCloseTo(0.5, 5);
+    expect(m.renderFailedRate).toBe(0);
+
+    const empty = new MetricsAccumulator('empty', 0).finalize(summary());
+    expect(empty.renderBlankRate).toBeNull();
   });
 
   // Review fix (T1.3): a below-threshold vision-critic drop now also emits a

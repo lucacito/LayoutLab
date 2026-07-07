@@ -14,12 +14,17 @@ async function main() {
     for (const hash of hashes) {
       const raw = JSON.parse(await readFile(join(process.cwd(), 'pipeline', 'out', `${hash}.json`), 'utf8')) as { post_title?: string; post_content: string };
       console.log(`re-rendering ${hash.slice(0, 12)} (${raw.post_title})…`);
-      const { shots, perceptualHash } = await renderLayout({ title: raw.post_title ?? 'Section', postContent: raw.post_content }, deps);
+      const result = await renderLayout({ title: raw.post_title ?? 'Section', postContent: raw.post_content }, deps);
+      if (result.outcome === 'blank') {
+        console.warn(`  ! ${hash.slice(0, 12)}: page never confirmably painted content, skipping (not re-uploaded)`);
+        continue;
+      }
+      const { shots, perceptualHash } = result;
       for (const label of ['desktop', 'mobile'] as const) {
         const shot = shots.find((s) => s.label === label);
         if (shot) await uploadScreenshot(hash, label, shot.buffer, { hasBlobToken });
       }
-      console.log(`  ✓ phash ${perceptualHash.slice(0, 12)}`);
+      console.log(`  ✓ phash ${perceptualHash?.slice(0, 12)}`);
     }
   } finally { await close(); }
 }

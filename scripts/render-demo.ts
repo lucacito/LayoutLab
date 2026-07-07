@@ -40,7 +40,12 @@ async function main(): Promise<void> {
         continue;
       }
       console.log(`rendering ${d.slug}…`);
-      const { shots, perceptualHash } = await renderLayout({ title: d.title, postContent }, deps);
+      const result = await renderLayout({ title: d.title, postContent }, deps);
+      if (result.outcome === 'blank') {
+        console.warn(`  ! ${d.slug}: page never confirmably painted content, skipping`);
+        continue;
+      }
+      const { shots, perceptualHash } = result;
       const desktop = shots.find((s) => s.label === 'desktop') ?? shots[0];
 
       await writeFile(join(shotDir, `${d.slug}.png`), desktop.buffer);
@@ -67,7 +72,7 @@ async function main(): Promise<void> {
         status: 'published',
         publishedAt: new Date(),
       });
-      console.log(`  ✓ ${d.slug}  (phash ${perceptualHash.slice(0, 12)}…, ${(desktop.buffer.length / 1024).toFixed(0)} KB)`);
+      console.log(`  ✓ ${d.slug}  (phash ${perceptualHash?.slice(0, 12)}…, ${(desktop.buffer.length / 1024).toFixed(0)} KB)`);
     }
   } finally {
     await close();

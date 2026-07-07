@@ -367,6 +367,67 @@ describe('runPipeline render-miss gate (T1.3)', () => {
     expect(events.some((e) => e.type === 'render_failed')).toBe(true);
     expect(events.some((e) => e.type === 'dropped')).toBe(false);
   });
+
+  // T2.1: a render can resolve WITHOUT throwing and WITHOUT real previews for
+  // two different reasons — a confirmed-blank page (renderBlank) vs a generic
+  // no-previews/infra miss (renderFailed) — and they must be counted/reported
+  // distinctly, never conflated.
+  it('a render stub resolving with outcome "blank" counts as renderBlank (not renderFailed) and does not ingest', async () => {
+    const llm = llmSeq(genJsonWithContent(), seoJson);
+    const render = vi.fn(async () => ({ previewImageKeys: [], outcome: 'blank' as const }));
+    const ingest = vi.fn(async () => ({ deduped: false }));
+    const s = await runPipeline(baseDeps({ llm, render, ingest }) as any);
+    expect(s.renderBlank).toBe(1);
+    expect(s.renderFailed).toBe(0);
+    expect(s.ingested).toBe(0);
+    expect(ingest).not.toHaveBeenCalled();
+  });
+
+  it('emits a render_blank RunEvent (not render_failed or a generic dropped event) on a blank verdict', async () => {
+    const events: RunEvent[] = [];
+    const llm = llmSeq(genJsonWithContent(), seoJson);
+    const render = vi.fn(async () => ({ previewImageKeys: [], outcome: 'blank' as const }));
+    const deps = baseDeps({ llm, render, onEvent: (e: RunEvent) => events.push(e) });
+    const s = await runPipeline(deps as any);
+    expect(s.renderBlank).toBe(1);
+    expect(events.some((e) => e.type === 'render_blank')).toBe(true);
+    expect(events.some((e) => e.type === 'render_failed')).toBe(false);
+    expect(events.some((e) => e.type === 'dropped')).toBe(false);
+  });
+
+  it('a render stub resolving with no outcome and empty previews still counts as renderFailed (legacy/back-compat behavior unchanged)', async () => {
+    const llm = llmSeq(genJsonWithContent(), seoJson);
+    const render = vi.fn(async () => ({ previewImageKeys: [] })); // no outcome field at all
+    const ingest = vi.fn(async () => ({ deduped: false }));
+    const s = await runPipeline(baseDeps({ llm, render, ingest }) as any);
+    expect(s.renderFailed).toBe(1);
+    expect(s.renderBlank).toBe(0);
+    expect(s.ingested).toBe(0);
+  });
+
+  it('a healthy render (outcome "ok" + previews) ingests normally and touches neither renderBlank nor renderFailed', async () => {
+    const llm = llmSeq(genJsonWithContent(), seoJson);
+    const render = vi.fn(async () => ({ previewImageKeys: ['p'], outcome: 'ok' as const }));
+    const ingest = vi.fn(async () => ({ deduped: false }));
+    const s = await runPipeline(baseDeps({ llm, render, ingest }) as any);
+    expect(s.ingested).toBe(1);
+    expect(s.renderBlank).toBe(0);
+    expect(s.renderFailed).toBe(0);
+  });
+
+  // T1.3 review Minor, closed by T2.1: render_failed must carry the thrown
+  // error's message so the eval scoreboard/log isn't just "no real previews".
+  it('a throwing deps.render carries the error message on the render_failed RunEvent detail field', async () => {
+    const events: RunEvent[] = [];
+    const llm = llmSeq(genJsonWithContent(), seoJson);
+    const render = vi.fn(async () => {
+      throw new Error('wp-cli exited 1');
+    });
+    const deps = baseDeps({ llm, render, onEvent: (e: RunEvent) => events.push(e) });
+    await runPipeline(deps as any);
+    const failed = events.find((e) => e.type === 'render_failed');
+    expect(failed).toMatchObject({ detail: 'wp-cli exited 1' });
+  });
 });
 
 // T1.3: after render (and after the T1.2 near-dupe gate — cheapest-first), score
