@@ -1,7 +1,7 @@
 import { spawn } from 'node:child_process';
 import type { LlmClient, RunCommand } from './types';
 import { LlmError } from './types';
-import { parseClaudeEnvelope } from './parse';
+import { parseClaudeEnvelope, parseClaudeUsage } from './parse';
 
 const defaultRun: RunCommand = (cmd, args, input) =>
   new Promise((resolve, reject) => {
@@ -19,7 +19,7 @@ const defaultRun: RunCommand = (cmd, args, input) =>
 export function claudeCliClient(opts: { run?: RunCommand; model?: string } = {}): LlmClient {
   const run = opts.run ?? defaultRun;
   return {
-    async complete({ prompt, system, maxBudgetUsd }) {
+    async complete({ prompt, system, maxBudgetUsd, onUsage }) {
       const args = ['-p', '--output-format', 'json'];
       if (maxBudgetUsd != null) args.push('--max-budget-usd', String(maxBudgetUsd));
       if (system) args.push('--append-system-prompt', system);
@@ -28,6 +28,7 @@ export function claudeCliClient(opts: { run?: RunCommand; model?: string } = {})
       // On failure the CLI often reports the reason on stdout (e.g. usage-limit
       // messages with --output-format json), not stderr — surface whichever has it.
       if (code !== 0) throw new LlmError(`claude CLI exited ${code}: ${(stderr.trim() || stdout).slice(0, 200)}`);
+      if (onUsage) onUsage(parseClaudeUsage(stdout));
       return parseClaudeEnvelope(stdout);
     },
   };

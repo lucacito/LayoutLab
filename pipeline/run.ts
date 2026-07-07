@@ -1,5 +1,5 @@
 // pipeline/run.ts
-import type { LlmClient } from './llm';
+import type { LlmClient, LlmUsage } from './llm';
 import type { Target, Guide } from './recipes';
 import { buildRepairPrompt, buildContentRepairPrompt } from './recipes';
 import { extractJson } from './llm';
@@ -30,6 +30,29 @@ export interface RunSummary {
   ingested: number;
 }
 
+/** Terminal fate of one target — reported on the paired `llm_usage` event so a
+ * consumer can attribute cost/tokens to "accepted" without depending on event
+ * ordering. */
+export type RunOutcome = 'ingested' | 'dropped' | 'deduped';
+
+/**
+ * Additive instrumentation feed (T4.1 eval harness) alongside `RunSummary`.
+ * `RunSummary` stays the pipeline's small, stable counter contract; `RunEvent`
+ * is the richer per-target detail feed the eval harness aggregates into a
+ * scoreboard. Consuming it is entirely optional — omitting `RunDeps.onEvent`
+ * changes no pipeline behavior. New quality gates (T1.2 near-dupe, T1.3 vision
+ * critic, T2.2 error classes) should add a new event variant here rather than
+ * grow RunSummary or reshape this union.
+ */
+export type RunEvent =
+  | { type: 'generated'; target: Target }
+  | { type: 'repair_attempt'; target: Target; kind: 'structural' | 'content' }
+  | { type: 'content_lint'; target: Target; hit: boolean; codes: string[] }
+  | { type: 'dropped'; target: Target; reason: 'validation' | 'content' | 'error'; detail: string }
+  | { type: 'deduped'; target: Target }
+  | { type: 'ingested'; target: Target; slug: string }
+  | { type: 'llm_usage'; target: Target; usage: Required<LlmUsage>; outcome: RunOutcome };
+
 export interface RunDeps {
   targets: Target[];
   guide: Guide;
@@ -46,18 +69,43 @@ export interface RunDeps {
   maxParseRetries?: number;
   maxBudgetUsd?: number;
   log?: (msg: string) => void;
+  /** Additive instrumentation hook (T4.1) — see `RunEvent`. */
+  onEvent?: (event: RunEvent) => void;
 }
 
 export async function runPipeline(deps: RunDeps): Promise<RunSummary> {
   const log = deps.log ?? (() => {});
+  const onEvent = deps.onEvent ?? (() => {});
   const summary: RunSummary = { generated: 0, repaired: 0, dropped: 0, deduped: 0, ingested: 0 };
 
   for (const target of deps.targets) {
+    // Per-target usage meter (T4.1). Wraps deps.llm so every call this target makes
+    // (generate, repairs, SEO — wherever this wrapped client is threaded through)
+    // reports cost/tokens without any of those call sites needing to change. Emitted
+    // once as a single `llm_usage` event in `finally`, tagged with this target's
+    // final outcome so a consumer never has to infer it from event ordering.
+    const usage: Required<LlmUsage> = { costUsd: 0, inputTokens: 0, outputTokens: 0 };
+    let sawUsage = false;
+    let outcome: RunOutcome = 'dropped';
+    const meteredLlm: LlmClient = {
+      complete: (input) =>
+        deps.llm.complete({
+          ...input,
+          onUsage: (u) => {
+            sawUsage = true;
+            usage.costUsd += u.costUsd ?? 0;
+            usage.inputTokens += u.inputTokens ?? 0;
+            usage.outputTokens += u.outputTokens ?? 0;
+            input.onUsage?.(u);
+          },
+        }),
+    };
+
     try {
       let { json } =
         target.type === 'full_landing'
           ? await composeLanding(target, {
-              llm: deps.llm,
+              llm: meteredLlm,
               guide: deps.guide,
               maxBudgetUsd: deps.maxBudgetUsd,
               maxParseRetries: deps.maxParseRetries,
@@ -66,12 +114,13 @@ export async function runPipeline(deps: RunDeps): Promise<RunSummary> {
               log,
             })
           : await generateLayout(target, {
-              llm: deps.llm,
+              llm: meteredLlm,
               guide: deps.guide,
               maxBudgetUsd: deps.maxBudgetUsd,
               maxParseRetries: deps.maxParseRetries,
             });
       summary.generated++;
+      onEvent({ type: 'generated', target });
 
       // Validate + repair loop (hard gate). Full landings are composed from
       // per-section-validated sections, so the assembled document is valid by
@@ -83,14 +132,18 @@ export async function runPipeline(deps: RunDeps): Promise<RunSummary> {
       while (!result.valid && attempts < repairsAllowed) {
         attempts++;
         summary.repaired++;
+        onEvent({ type: 'repair_attempt', target, kind: 'structural' });
         const { system, prompt } = buildRepairPrompt(json, result.violations);
-        const text = await deps.llm.complete({ prompt, system, maxBudgetUsd: deps.maxBudgetUsd });
+        const text = await meteredLlm.complete({ prompt, system, maxBudgetUsd: deps.maxBudgetUsd });
         json = JSON.stringify(extractJson(text));
         result = await deps.validate(json);
       }
       if (!result.valid) {
         summary.dropped++;
-        log(`drop ${target.type}/${target.niche}/${target.style}: ${result.violations.map((v) => v.code).join(',')}`);
+        outcome = 'dropped';
+        const detail = result.violations.map((v) => v.code).join(',');
+        log(`drop ${target.type}/${target.niche}/${target.style}: ${detail}`);
+        onEvent({ type: 'dropped', target, reason: 'validation', detail });
         continue;
       }
 
@@ -107,13 +160,15 @@ export async function runPipeline(deps: RunDeps): Promise<RunSummary> {
       // effort) — never drop a layout with clean copy over that; only warn.
       if (target.type !== 'full_landing') {
         let lint = lintLayoutJson(json);
+        onEvent({ type: 'content_lint', target, hit: lint.length > 0, codes: lint.map((v) => v.code) });
         let lintAttempts = 0;
         const dropWorthy = (vs: typeof lint) => vs.filter((v) => v.code !== 'PLACEHOLDER_IMAGE');
         while (dropWorthy(lint).length && lintAttempts < deps.maxRepairs) {
           lintAttempts++;
           summary.repaired++;
+          onEvent({ type: 'repair_attempt', target, kind: 'content' });
           const { system, prompt } = buildContentRepairPrompt(json, lint);
-          const text = await deps.llm.complete({ prompt, system, maxBudgetUsd: deps.maxBudgetUsd });
+          const text = await meteredLlm.complete({ prompt, system, maxBudgetUsd: deps.maxBudgetUsd });
           json = JSON.stringify(extractJson(text));
           // A copy rewrite must not break structure — re-validate, then re-resolve any
           // new placeholder image URLs the rewrite introduced, then re-lint.
@@ -124,7 +179,10 @@ export async function runPipeline(deps: RunDeps): Promise<RunSummary> {
         }
         if (dropWorthy(lint).length) {
           summary.dropped++;
-          log(`drop(content) ${target.type}/${target.niche}/${target.style}: ${dropWorthy(lint).map((v) => v.code).join(',')}`);
+          outcome = 'dropped';
+          const detail = dropWorthy(lint).map((v) => v.code).join(',');
+          log(`drop(content) ${target.type}/${target.niche}/${target.style}: ${detail}`);
+          onEvent({ type: 'dropped', target, reason: 'content', detail });
           continue;
         }
         if (lint.length) log(`warn(content) ${target.type}/${target.niche}/${target.style}: ${lint.map((v) => v.code).join(',')} (best-effort image miss)`);
@@ -138,11 +196,13 @@ export async function runPipeline(deps: RunDeps): Promise<RunSummary> {
       const hash = contentHash(json);
       if (await deps.isDuplicate(hash)) {
         summary.deduped++;
+        outcome = 'deduped';
         log(`dedupe ${hash.slice(0, 12)}`);
+        onEvent({ type: 'deduped', target });
         continue;
       }
 
-      const seo = await generateSeo(json, target, { llm: deps.llm, maxBudgetUsd: deps.maxBudgetUsd });
+      const seo = await generateSeo(json, target, { llm: meteredLlm, maxBudgetUsd: deps.maxBudgetUsd });
       const { diviJsonBlobKey, previewImageKeys: placeholderPreviews } = await deps.upload(hash, json);
 
       // Render real screenshots when a renderer is wired; else keep the placeholders.
@@ -181,10 +241,17 @@ export async function runPipeline(deps: RunDeps): Promise<RunSummary> {
       };
       await deps.ingest(payload);
       summary.ingested++;
+      outcome = 'ingested';
       log(`ingested ${seo.slug}`);
+      onEvent({ type: 'ingested', target, slug: seo.slug });
     } catch (err) {
       summary.dropped++;
-      log(`error on ${target.type}/${target.niche}/${target.style}: ${(err as Error).message}`);
+      outcome = 'dropped';
+      const detail = (err as Error).message;
+      log(`error on ${target.type}/${target.niche}/${target.style}: ${detail}`);
+      onEvent({ type: 'dropped', target, reason: 'error', detail });
+    } finally {
+      if (sawUsage) onEvent({ type: 'llm_usage', target, usage, outcome });
     }
   }
   return summary;

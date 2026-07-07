@@ -1,4 +1,4 @@
-import { LlmError } from './types';
+import { LlmError, type LlmUsage } from './types';
 
 // Pull a JSON value out of model text. The generation prompt asks for ONLY JSON,
 // so try the whole string first; then a ```json fence; then scan for an embedded
@@ -86,4 +86,25 @@ export function parseClaudeEnvelope(stdout: string): string {
     throw new LlmError(`claude CLI error (subtype=${env.subtype}): ${env.result ?? ''}`);
   }
   return env.result;
+}
+
+// Additive (T4.1 eval harness): the `claude -p --output-format json` envelope also
+// carries cost/token accounting (`total_cost_usd`, `usage.{input,output}_tokens`)
+// that parseClaudeEnvelope discards (it only returns the result text). Parsed
+// separately so parseClaudeEnvelope's existing return shape/contract never changes.
+// Fails open (returns {}) — usage is instrumentation, never allowed to break a run.
+export function parseClaudeUsage(stdout: string): LlmUsage {
+  try {
+    const env = JSON.parse(stdout) as {
+      total_cost_usd?: number;
+      usage?: { input_tokens?: number; output_tokens?: number };
+    };
+    const usage: LlmUsage = {};
+    if (typeof env.total_cost_usd === 'number') usage.costUsd = env.total_cost_usd;
+    if (typeof env.usage?.input_tokens === 'number') usage.inputTokens = env.usage.input_tokens;
+    if (typeof env.usage?.output_tokens === 'number') usage.outputTokens = env.usage.output_tokens;
+    return usage;
+  } catch {
+    return {};
+  }
 }
