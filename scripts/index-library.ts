@@ -126,7 +126,12 @@ function buildDescriptor(pageType: string, industry: string, kind: string, pal: 
 }
 
 function main() {
-  const files = readdirSync(DIR).filter((f) => f.endsWith('.json'));
+  // .sort() is a determinism requirement: readdirSync's order is filesystem-
+  // dependent (varies across OSes/filesystems), and this order flows straight
+  // into exemplar insertion order and the serialized key order of index.json /
+  // index-bm25.json — without it, regenerating on another machine could produce
+  // a functionally-identical but byte-different index.
+  const files = readdirSync(DIR).filter((f) => f.endsWith('.json')).sort();
   const exemplars: Array<{
     slug: string; source: string; pageType: string; industry: string;
     sectionIndex: number; kind: string; palette: Record<string, number>; chars: number;

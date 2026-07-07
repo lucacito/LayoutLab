@@ -55,11 +55,21 @@ export function buildBm25Index(docs: Bm25Doc[], opts: { k1?: number; b?: number 
   return { k1, b, n, avgDocLen: n ? totalLen / n : 0, docLen, df, tf };
 }
 
-function idf(index: Bm25Index, term: string): number {
-  const dfT = index.df[term] ?? 0;
-  // BM25+ style idf (the "+1" inside the log) keeps the value non-negative even
-  // when a term appears in the majority of documents.
-  return Math.log((index.n - dfT + 0.5) / (dfT + 0.5) + 1);
+/**
+ * Inverse document frequency for a term that appears in `df` of `n` total
+ * documents. BM25+-style (the "+1" inside the log) keeps the value non-negative
+ * even when a term appears in the majority of documents.
+ *
+ * Direction (load-bearing, pinned directly by tests/bm25.test.ts): RARE terms
+ * (low `df`) score HIGHER than COMMON terms (high `df`) — that's the entire
+ * point of idf. A numerator/denominator swap here silently inverts every
+ * ranking without breaking `buildBm25Index`'s own stats or a naive "does BM25
+ * beat substring matching" fixture (term-overlap count still dominates), which
+ * is why it's tested in isolation with fixed df/N inputs, not just indirectly
+ * through end-to-end ranking.
+ */
+export function idf(n: number, df: number): number {
+  return Math.log((n - df + 0.5) / (df + 0.5) + 1);
 }
 
 /**
@@ -78,9 +88,10 @@ export function scoreQuery(index: Bm25Index, queryTerms: string[], keys?: string
     for (const term of uniqueTerms) {
       const f = counts[term] ?? 0;
       if (!f) continue;
+      const dfT = index.df[term] ?? 0;
       const num = f * (index.k1 + 1);
       const den = f + index.k1 * (1 - index.b + index.b * (len / (index.avgDocLen || 1)));
-      score += idf(index, term) * (num / den);
+      score += idf(index.n, dfT) * (num / den);
     }
     scores[key] = score;
   }
