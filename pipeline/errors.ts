@@ -20,7 +20,7 @@ export interface ClassifiedError {
   /** Narrower tag for logging/metrics. 'usage_limit' is special-cased by run.ts
    * to abort the whole remaining run (see run.ts's per-target catch) — every
    * other subsequent target would hit the exact same account-level wall. */
-  code: 'usage_limit' | 'budget' | 'auth' | 'network' | 'unknown';
+  code: 'usage_limit' | 'budget' | 'auth' | 'network' | 'validator_output' | 'unknown';
   message: string;
 }
 
@@ -41,6 +41,21 @@ const AUTH_RE = /\b401\b|\b403\b|unauthorized|forbidden|invalid api.?key/i;
 // "please try again[, ...]" style wording APIs use for a retryable blip.
 const TRANSIENT_RE =
   /ECONNRESET|ECONNREFUSED|ETIMEDOUT|ECONNABORTED|EAI_AGAIN|ENOTFOUND|ENETUNREACH|ENETDOWN|EPIPE|socket hang up|network (error|failure|issue|timeout|unreachable|unavailable)|fetch failed|timed?\s*out|temporarily unavailable|\b(429|500|502|503|504)\b|overloaded|too many requests|please try again\b/i;
+// T2.3: pipeline/validate.ts's `validateLayout` throws this exact wording when
+// the validator CLI produces output matching neither PASS nor FAIL shape on
+// TWO consecutive invocations (it already retries once internally before
+// giving up — see validate.ts). Given its own internal retry, TWO
+// back-to-back failures to produce a parseable verdict reads as a real
+// tooling problem (broken CLI wiring, validator crash, PHP fatal) rather
+// than a one-off network blip, so — same as the module-level "safe default"
+// rule above — it's classified 'permanent_infra', but with its OWN code
+// ('validator_output') rather than falling through to 'unknown', so it's
+// distinguishable in logs/metrics from an unrelated unclassified bug. This
+// is deliberately checked BEFORE `TRANSIENT_RE`: the thrown message contains
+// no transient-sounding substrings today, but keeping this check first means
+// it stays correctly classified even if that message wording drifts to
+// include one incidentally.
+const VALIDATOR_OUTPUT_RE = /validator produced unexpected output/i;
 
 export function isUsageLimitMessage(text: string): boolean {
   return USAGE_LIMIT_RE.test(text);
@@ -51,6 +66,7 @@ export function classifyError(err: unknown): ClassifiedError {
   if (isUsageLimitMessage(message)) return { class: 'permanent_infra', code: 'usage_limit', message };
   if (BUDGET_RE.test(message)) return { class: 'permanent_infra', code: 'budget', message };
   if (AUTH_RE.test(message)) return { class: 'permanent_infra', code: 'auth', message };
+  if (VALIDATOR_OUTPUT_RE.test(message)) return { class: 'permanent_infra', code: 'validator_output', message };
   if (TRANSIENT_RE.test(message)) return { class: 'transient_infra', code: 'network', message };
   return { class: 'permanent_infra', code: 'unknown', message };
 }

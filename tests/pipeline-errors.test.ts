@@ -40,6 +40,17 @@ describe('classifyError', () => {
     expect(c.code).toBe('auth');
   });
 
+  it('classifies validate.ts\'s persistent-ambiguous-output error as permanent_infra with code validator_output (T2.3)', () => {
+    const c = classifyError(
+      new Error(
+        'validator produced unexpected output on both the initial run and the retry ' +
+          '(exit 0 with no PASS: line in output) — treating as an infra error, not a quality drop',
+      ),
+    );
+    expect(c.class).toBe('permanent_infra');
+    expect(c.code).toBe('validator_output');
+  });
+
   it('defaults an unrecognized error to permanent_infra with code unknown (safe default: never blindly retry an unknown failure)', () => {
     const c = classifyError(new Error('TypeError: cannot read properties of undefined'));
     expect(c.class).toBe('permanent_infra');
