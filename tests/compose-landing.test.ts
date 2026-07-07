@@ -75,6 +75,34 @@ describe('composeLanding flow selection (T3.2)', () => {
   });
 });
 
+describe('composeLanding flow-variant key stability (T3.2 review fix)', () => {
+  // The flow-variant key must be built from stable Target/brief facts
+  // (businessType category + niche + style), NOT the LLM-generated
+  // `businessName` — a re-run of the exact same Target produces a fresh Brief
+  // (and thus a fresh businessName) each time, which must not reshuffle the
+  // page's section flow. `Meridian Coaching` vs. `Totally Different Name Co`
+  // are picked because they hash to two DIFFERENT flow variants for the
+  // course/coaching category when (incorrectly) keyed on businessName alone
+  // — so this test would fail under the old keying and passes under the fix.
+  async function flowSignatureFor(businessName: string): Promise<(string | undefined)[]> {
+    const b = { ...brief, businessName };
+    let n = 0;
+    const llm = { complete: vi.fn(async () => (n === 0 ? (n++, JSON.stringify(b)) : section(n++))) };
+    await composeLanding(target as any, { llm, guide });
+    // Every section-generation call (i.e. every call after the brief) embeds
+    // "Section role: <job>." via buildSectionRolePrompt — extract that to
+    // recover which flow variant (sequence of roles/jobs) was selected.
+    return llm.complete.mock.calls.slice(1).map(([arg]: any[]) => (arg.prompt.match(/Section role: [^.]+\./) ?? [])[0]);
+  }
+
+  it('selects the same flow variant regardless of businessName differences, for the same Target', async () => {
+    const seqA = await flowSignatureFor('Meridian Coaching');
+    const seqB = await flowSignatureFor('Totally Different Name Co');
+    expect(seqA.length).toBeGreaterThan(0);
+    expect(seqA).toEqual(seqB);
+  });
+});
+
 describe('composeLanding per-section validation', () => {
   const invalid = { valid: false, violations: [{ code: 'BLOCK_PARSE_ERROR', message: 'bad', path: '' }] };
   const ok = { valid: true, violations: [] };

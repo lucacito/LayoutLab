@@ -15,7 +15,12 @@ export interface SectionContext {
 
 /** One named, prompt-ready treatment for a role. `id` is the append-stability
  *  anchor for `pickByRendezvous` — never derive it from array position (same
- *  rationale as `StylePaletteVariant` in palettes.ts). */
+ *  rationale as `StylePaletteVariant` in palettes.ts).
+ *
+ *  Selection is keyed by `treatmentKey` (style + niche) below — deliberately
+ *  NOT by role, since each role's variant list is scored independently with
+ *  its own ids; see `treatmentKey`'s doc comment for why reusing one key
+ *  across every role's selection is safe. */
 export interface RoleTreatment {
   id: string;
   text: string;
@@ -129,8 +134,8 @@ export const ROLE_DESIGN: Record<string, RoleTreatment[]> = {
       text: 'Design: a clean 2–3 column image grid/gallery of real, relevant photos with a consistent corner radius and small gaps. Bright and reassuring; let the images carry the section.',
     },
     {
-      id: 'gallery-masonry',
-      text: 'Design: a MASONRY-style photo layout — mixed image sizes (one larger, several smaller) tiled with small consistent gaps and a shared corner radius, giving a livelier, less uniform showcase than a strict grid.',
+      id: 'gallery-featured-mosaic',
+      text: 'Design: a FEATURED-PHOTO mosaic — build it from real rows with an ASYMMETRIC column split (e.g. a wide column for one large photo beside a narrower column stacking 2 smaller photos), then repeat with the split reversed for a second row, using real photos (divi/image) in each column rather than a single uniform gallery grid. Shared corner radius and small consistent gaps. Bright and reassuring; let the images carry the section, at varied sizes without a strict grid.',
     },
   ],
   social_proof: [
@@ -169,8 +174,8 @@ export const ROLE_DESIGN: Record<string, RoleTreatment[]> = {
       text: 'Design: 2–3 plan columns as cards, the MIDDLE plan highlighted (slightly scaled or an accent border + deeper shadow + a small "Most popular" tag), each with a price, a feature checklist (small check icons), and one button. Equal full-width columns.',
     },
     {
-      id: 'pricing-comparison-table',
-      text: 'Design: a single COMPARISON TABLE — plans as columns, features as rows, checkmarks/values in each cell, the recommended plan\'s column subtly tinted or bordered; a price + button in the header row of each column.',
+      id: 'pricing-aligned-comparison',
+      text: 'Design: 2–3 plan CARDS aligned for at-a-glance comparison — every card lists the SAME short feature labels in the SAME order (a check icon or short dash marks whether that plan includes it) so features line up row-by-row as you scan across cards; the recommended plan\'s card is visually distinguished with an accent border/background and a small "Recommended" tag, price + one button on every card.',
     },
   ],
   final_cta: [

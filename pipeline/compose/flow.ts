@@ -124,9 +124,14 @@ export function normalizeBusinessType(businessType: string, onUnmatched?: Unmatc
 export interface FlowSelectionOptions {
   /** Key used to select a variant WITHIN the resolved category (rendezvous
    *  hashing, so it's append-stable — see palettes.ts). Defaults to the raw
-   *  `businessType` string; callers with a more specific stable identity
-   *  (e.g. the Brief's `businessName`) should pass it here for per-landing
-   *  variety even across pages sharing the same businessType. */
+   *  `businessType` string. Callers wanting per-landing variety within one
+   *  category should pass a key built from STABLE target facts — e.g.
+   *  `compose/index.ts` uses `${normalizedBusinessType}|${niche}|${style}`,
+   *  the same (style, niche) signal `treatmentKey` in section-prompt.ts uses
+   *  for role treatments. Do NOT key on Brief fields like `businessName`:
+   *  they're LLM-generated and vary across re-runs of the same Target, which
+   *  would make the flow variant (and thus the page structure) non-deterministic
+   *  for what should be the same generation. */
   key?: string;
   onUnmatched?: UnmatchedLogger;
 }

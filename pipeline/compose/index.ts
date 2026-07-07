@@ -7,7 +7,7 @@ import { generateLayout } from '@/pipeline/generate';
 import { buildContentRepairPrompt } from '@/pipeline/recipes';
 import { lintLayoutJson, IMAGE_RULE_CODES } from '@/pipeline/content-lint';
 import { buildBriefPrompt, parseBrief, type Brief } from './brief';
-import { flowForBusinessType, type Step } from './flow';
+import { flowForBusinessType, normalizeBusinessType, type Step } from './flow';
 import { buildSectionRolePrompt } from './section-prompt';
 import { assembleSections } from './assemble';
 
@@ -102,13 +102,18 @@ export async function composeLanding(target: Target, deps: ComposeDeps): Promise
   }
 
   // 2. Sections (one small call each) via the existing generation path.
-  // `key: brief.businessName` gives flow-variant variety across pages that
-  // share a businessType (see FlowSelectionOptions in flow.ts); `onUnmatched`
-  // surfaces business-type strings the signal rules don't recognize so the
-  // mapping in flow.ts can grow instead of them silently collapsing to the
-  // service/agency default.
+  // `key: "<normalized businessType>|<niche>|<style>"` gives flow-variant
+  // variety across pages of different Targets while staying STABLE for the
+  // same Target across re-runs — the same (style, niche) signal `treatmentKey`
+  // in section-prompt.ts uses for role treatments (see FlowSelectionOptions in
+  // flow.ts). Deliberately NOT keyed on `brief.businessName`: that's
+  // LLM-generated and varies from call to call even for the identical Target,
+  // which would make the section flow non-deterministic across re-runs.
+  // `onUnmatched` surfaces business-type strings the signal rules don't
+  // recognize so the mapping in flow.ts can grow instead of them silently
+  // collapsing to the service/agency default.
   const flow = deps.flow ?? flowForBusinessType(brief.businessType, {
-    key: brief.businessName,
+    key: `${normalizeBusinessType(brief.businessType)}|${target.niche}|${target.style}`,
     onUnmatched: (bt) => log(`unmatched business type "${bt}" — defaulting to service/agency flow`),
   });
   const brandFacts = deps.brandFacts ? ` ${deps.brandFacts}` : '';
