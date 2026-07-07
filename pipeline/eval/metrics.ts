@@ -73,6 +73,20 @@ export interface EvalMetrics {
   /** Mean vision-critic score across every scored target. `null` under the same
    * conditions as `visionScoreDistribution`. */
   visionScoreMean: number | null;
+  /** T2.4: count of `seo_floor_miss` events — metaDescription/keyword count
+   * still under pipeline/seo.ts's minimum quality floor after its one retry.
+   * NOT a drop reason (these targets still ingest); a pure QA signal for how
+   * often the SEO step is producing thin metadata. */
+  seoFloorMissCount: number;
+  /** T2.4: total count of `seo_clamped` events — every individual axis/color
+   * value pipeline/seo.ts's clampOne/clampMany silently reverted across all
+   * targets (a single target can contribute more than one clamp, e.g. both
+   * `type` and `colors` in the same SEO response). */
+  seoClampCount: number;
+  /** T2.4: `seoClampCount` broken down by axis ('type' | 'niche' | 'style' |
+   * 'colors') — the model disagreeing with the assigned taxonomy on a
+   * specific axis often means the render doesn't match that axis's target. */
+  seoClampCountsByAxis: Record<string, number>;
 }
 
 export class MetricsAccumulator {
@@ -92,6 +106,10 @@ export class MetricsAccumulator {
   private totalOutputTokens = 0;
   /** Raw vision-critic scores (T1.3) — one entry per scored target, pass or drop. */
   private visionScores: number[] = [];
+  /** T2.4: count of `seo_floor_miss` events. */
+  private seoFloorMissCount = 0;
+  /** T2.4: count of `seo_clamped` events, by axis. */
+  private seoClampCountsByAxis: Record<string, number> = {};
 
   constructor(
     private readonly label: string,
@@ -133,6 +151,12 @@ export class MetricsAccumulator {
         break;
       case 'errored':
         this.errorCodeCounts[event.code] = (this.errorCodeCounts[event.code] ?? 0) + 1;
+        break;
+      case 'seo_floor_miss':
+        this.seoFloorMissCount++;
+        break;
+      case 'seo_clamped':
+        this.seoClampCountsByAxis[event.axis] = (this.seoClampCountsByAxis[event.axis] ?? 0) + 1;
         break;
       case 'llm_usage':
         this.totalCostUsd += event.usage.costUsd;
@@ -179,6 +203,9 @@ export class MetricsAccumulator {
       visionScoreMean: this.visionScores.length
         ? this.visionScores.reduce((a, b) => a + b, 0) / this.visionScores.length
         : null,
+      seoFloorMissCount: this.seoFloorMissCount,
+      seoClampCount: Object.values(this.seoClampCountsByAxis).reduce((a, b) => a + b, 0),
+      seoClampCountsByAxis: { ...this.seoClampCountsByAxis },
     };
   }
 
@@ -231,6 +258,21 @@ export function formatComparisonTable(rows: EvalMetrics[]): string {
     ['render-blank rate', rows.map((r) => fmtPct(r.renderBlankRate))],
     ['vision score mean', rows.map((r) => fmtNum(r.visionScoreMean))],
     ['vision score dist', rows.map((r) => fmtVisionDist(r.visionScoreDistribution))],
+    // T2.4: SEO quality-floor misses (flagged, never dropped) + axis/color
+    // clamp counts — see pipeline/seo.ts and the seo_floor_miss/seo_clamped
+    // RunEvents in pipeline/run.ts.
+    ['seo floor misses', rows.map((r) => String(r.seoFloorMissCount))],
+    ['seo axis clamps', rows.map((r) => String(r.seoClampCount))],
+    [
+      'seo clamps by axis',
+      rows.map((r) =>
+        Object.keys(r.seoClampCountsByAxis).length
+          ? Object.entries(r.seoClampCountsByAxis)
+              .map(([axis, n]) => `${axis}:${n}`)
+              .join(' ')
+          : 'none',
+      ),
+    ],
     ['cost / accepted layout', rows.map((r) => fmtUsd(r.costPerAcceptedUsd))],
     ['tokens / accepted layout', rows.map((r) => fmtNum(r.tokensPerAccepted, 0))],
     ['total cost', rows.map((r) => fmtUsd(r.totalCostUsd))],

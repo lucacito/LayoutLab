@@ -228,6 +228,49 @@ describe('MetricsAccumulator', () => {
     expect(empty.visionScoreDistribution).toBeNull();
     expect(empty.visionScoreMean).toBeNull();
   });
+
+  // T2.4: SEO quality-floor misses are flagged, never dropped — they must
+  // still be counted somewhere in the scoreboard so a run that's silently
+  // shipping thin metadata is visible.
+  it('counts seo_floor_miss events without affecting qualityDropped/ingested', () => {
+    const acc = new MetricsAccumulator('baseline', 2);
+    const events: RunEvent[] = [
+      { type: 'generated', target },
+      { type: 'seo_floor_miss', target, metaDescriptionLength: 12, keywordCount: 1 },
+      { type: 'ingested', target, slug: 's1' },
+      { type: 'generated', target },
+      { type: 'ingested', target, slug: 's2' },
+    ];
+    for (const e of events) acc.add(e);
+    const m = acc.finalize(summary({ generated: 2, ingested: 2 }));
+    expect(m.seoFloorMissCount).toBe(1);
+    expect(m.qualityDropped).toBe(0);
+  });
+
+  it('counts seo_clamped events by axis', () => {
+    const acc = new MetricsAccumulator('baseline', 1);
+    const events: RunEvent[] = [
+      { type: 'generated', target },
+      { type: 'seo_clamped', target, axis: 'type', proposed: 'bogus', clamped: 'hero' },
+      { type: 'seo_clamped', target, axis: 'colors', proposed: ['blue', 'nope'], clamped: ['blue'] },
+      { type: 'seo_clamped', target, axis: 'type', proposed: 'also-bogus', clamped: 'hero' },
+      { type: 'ingested', target, slug: 's1' },
+    ];
+    for (const e of events) acc.add(e);
+    const m = acc.finalize(summary({ generated: 1, ingested: 1 }));
+    expect(m.seoClampCountsByAxis).toEqual({ type: 2, colors: 1 });
+    expect(m.seoClampCount).toBe(3);
+  });
+
+  it('leaves seo floor/clamp counts at zero when neither event ever fires', () => {
+    const acc = new MetricsAccumulator('baseline', 1);
+    acc.add({ type: 'generated', target });
+    acc.add({ type: 'ingested', target, slug: 's1' });
+    const m = acc.finalize(summary({ generated: 1, ingested: 1 }));
+    expect(m.seoFloorMissCount).toBe(0);
+    expect(m.seoClampCount).toBe(0);
+    expect(m.seoClampCountsByAxis).toEqual({});
+  });
 });
 
 describe('formatComparisonTable', () => {
@@ -249,5 +292,9 @@ describe('formatComparisonTable', () => {
     expect(table).toContain('errored');
     expect(table).toContain('drop reasons (quality)');
     expect(table).toContain('error codes (infra)');
+    // T2.4: SEO quality-floor misses + axis/color clamp visibility.
+    expect(table).toContain('seo floor misses');
+    expect(table).toContain('seo axis clamps');
+    expect(table).toContain('seo clamps by axis');
   });
 });

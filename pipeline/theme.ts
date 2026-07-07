@@ -139,7 +139,12 @@ export async function runThemePack(spec: ThemeSpec, deps: ThemeDeps): Promise<Th
 
       // 5. SEO metadata/keywords/axes; slug + title pinned to brand+role for coherence.
       const seoTarget = { type: 'full_landing', niche: spec.niche, style: spec.style, color: spec.color };
-      const seo = await generateSeo(json, seoTarget, { llm: deps.llm, maxBudgetUsd: deps.maxBudgetUsd });
+      // T2.4: pass `log` through so quality-floor misses and axis/color clamps
+      // are visible here too (see pipeline/seo.ts). theme.ts has no `onEvent`/
+      // `RunEvent` plumbing of its own (it's the "second orchestrator" flagged
+      // as a TODO(T4.2) duplicate of run.ts above) — log is the extent of what
+      // it can surface without a broader unification pass.
+      const seo = await generateSeo(json, seoTarget, { llm: deps.llm, maxBudgetUsd: deps.maxBudgetUsd, log });
       const slug = pageSlug;
       const title = themePageTitle(spec.brief, spec, page);
 

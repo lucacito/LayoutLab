@@ -23,7 +23,7 @@ function baseDeps(over: Partial<any> = {}) {
 
 // A minimal seo() response shared by the near-dupe tests below (generateSeo is
 // invoked with the metered llm — its mock must return this JSON).
-const seoJson = JSON.stringify({ title: 'T', slug: 's', metaDescription: 'd', keywords: [], axes: { type: 'hero', niche: 'saas', style: 'minimal', colors: [] } });
+const seoJson = JSON.stringify({ title: 'T', slug: 's', metaDescription: 'A clean, conversion-focused section built for real marketing teams shipping fast.', keywords: ['hero', 'saas', 'minimal'], axes: { type: 'hero', niche: 'saas', style: 'minimal', colors: [] } });
 
 function renderReturning(perceptualHash: string | undefined) {
   return vi.fn(async () => ({ previewImageKeys: ['p'], perceptualHash }));
@@ -39,7 +39,13 @@ describe('runPipeline', () => {
 
   it('repairs once when first validation fails then passes', async () => {
     const validate = vi.fn().mockResolvedValueOnce(bad).mockResolvedValueOnce(ok);
-    const llm = { complete: vi.fn(async () => '{"content":[]}') };
+    // T2.4: the 3rd (SEO) call must be a floor-passing response (`seoJson`) —
+    // otherwise the new quality-floor gate retries it, adding a 4th call this
+    // test isn't about.
+    const llm = { complete: vi.fn()
+      .mockResolvedValueOnce('{"content":[]}') // generate
+      .mockResolvedValueOnce('{"content":[]}') // repair
+      .mockResolvedValueOnce(seoJson) };       // seo
     const s = await runPipeline(baseDeps({ validate, llm }) as any);
     expect(s.repaired).toBe(1);
     expect(s.ingested).toBe(1);
@@ -66,7 +72,7 @@ describe('runPipeline', () => {
   it('content gate: repairs placeholder copy then ingests the cleaned layout', async () => {
     const dirty = JSON.stringify({ post_title: 'T', post_content: '<!-- wp:divi/text {"content":"Lorem ipsum dolor sit amet"} -->' });
     const clean = JSON.stringify({ post_title: 'T', post_content: '<!-- wp:divi/text {"content":"Ship faster with real copy"} -->' });
-    const seo = JSON.stringify({ title: 'T', slug: 's', metaDescription: 'd', keywords: [], axes: { type: 'hero', niche: 'saas', style: 'minimal', colors: [] } });
+    const seo = JSON.stringify({ title: 'T', slug: 's', metaDescription: 'A clean, conversion-focused section built for real marketing teams shipping fast.', keywords: ['hero', 'saas', 'minimal'], axes: { type: 'hero', niche: 'saas', style: 'minimal', colors: [] } });
     const llm = { complete: vi.fn()
       .mockResolvedValueOnce(dirty)   // generate
       .mockResolvedValueOnce(clean)   // content repair
@@ -90,7 +96,7 @@ describe('runPipeline', () => {
 
   it('content gate: does NOT drop clean copy that only has an unresolved placeholder image (best-effort)', async () => {
     const clean = JSON.stringify({ post_title: 'T', post_content: '<!-- wp:divi/image {"src":"https://loremflickr.com/800/600/saas"} -->Real specific headline here' });
-    const seo = JSON.stringify({ title: 'T', slug: 's', metaDescription: 'd', keywords: [], axes: { type: 'hero', niche: 'saas', style: 'minimal', colors: [] } });
+    const seo = JSON.stringify({ title: 'T', slug: 's', metaDescription: 'A clean, conversion-focused section built for real marketing teams shipping fast.', keywords: ['hero', 'saas', 'minimal'], axes: { type: 'hero', niche: 'saas', style: 'minimal', colors: [] } });
     const llm = { complete: vi.fn().mockResolvedValueOnce(clean).mockResolvedValueOnce(seo) };
     const ingest = vi.fn(async () => ({ deduped: false }));
     const s = await runPipeline(baseDeps({ llm, ingest }) as any);
@@ -107,7 +113,7 @@ describe('runPipeline', () => {
     const llm = { complete: vi.fn(async ({ prompt }: { prompt: string }) => {
       if (prompt.includes('landing-page brief')) return JSON.stringify(brief);
       if (prompt.startsWith('Generate a Divi 5')) return section(n++);
-      return JSON.stringify({ title: 'T', slug: 's', metaDescription: 'd', keywords: [], axes: { type: 'full_landing', niche: 'coaching', style: 'elegant', colors: [] } });
+      return JSON.stringify({ title: 'T', slug: 's', metaDescription: 'A clean, conversion-focused section built for real marketing teams shipping fast.', keywords: ['hero', 'saas', 'minimal'], axes: { type: 'full_landing', niche: 'coaching', style: 'elegant', colors: [] } });
     }) };
     // Capture the JSON handed to upload — that's the assembled document.
     const upload = vi.fn(async () => ({ diviJsonBlobKey: 'k', previewImageKeys: ['p'] }));
@@ -212,7 +218,10 @@ describe('runPipeline near-duplicate gate (T1.2)', () => {
 
   it('emits a near_duplicate RunEvent and tags llm_usage outcome=near_duplicate', async () => {
     const events: RunEvent[] = [];
-    const llm = llmWithUsage(genJson(1));
+    // T2.4: the 2nd (SEO) call must be floor-passing so this test's event
+    // sequence isn't polluted by seo_floor_miss/seo_clamped noise unrelated
+    // to what it's actually testing.
+    const llm = llmWithUsageSeq([genJson(1), seoJson]);
     // Force a near-dupe against a pre-seeded DB pool so this single target drops.
     const render = renderReturning(HASH_A);
     const nearDuplicateHashes = vi.fn(async () => [HASH_A]);
@@ -236,6 +245,20 @@ function llmWithUsage(response: string, usage = { costUsd: 0.01, inputTokens: 10
   }) };
 }
 
+// T2.4: like `llmWithUsage`, but returns a DIFFERENT canned response per call
+// (pinned to the last one once the list is exhausted) — needed wherever a test's
+// SEO call must return a floor-passing response (see `seoJson`) even though its
+// generate/repair call(s) return something else entirely.
+function llmWithUsageSeq(responses: string[], usage = { costUsd: 0.01, inputTokens: 10, outputTokens: 5 }) {
+  let i = 0;
+  return { complete: vi.fn(async ({ onUsage }: { onUsage?: (u: typeof usage) => void }) => {
+    onUsage?.(usage);
+    const r = responses[Math.min(i, responses.length - 1)];
+    i++;
+    return r;
+  }) };
+}
+
 function usageEventOf(events: RunEvent[]) {
   const e = events.find((ev) => ev.type === 'llm_usage');
   if (!e || e.type !== 'llm_usage') throw new Error('no llm_usage event found');
@@ -245,7 +268,9 @@ function usageEventOf(events: RunEvent[]) {
 describe('runPipeline RunEvent emission', () => {
   it('ingested: emits generated → content_lint → ingested → llm_usage(outcome=ingested), usage summed across generate+seo calls', async () => {
     const events: RunEvent[] = [];
-    const llm = llmWithUsage('{"content":[]}');
+    // T2.4: floor-passing SEO response on the 2nd call — this test asserts the
+    // exact event sequence, which would otherwise gain seo_floor_miss/seo_clamped.
+    const llm = llmWithUsageSeq(['{"content":[]}', seoJson]);
     const deps = baseDeps({ llm, onEvent: (e: RunEvent) => events.push(e) });
     const s = await runPipeline(deps as any);
     expect(s.ingested).toBe(1);
@@ -626,7 +651,12 @@ describe('runPipeline error classification + retry with backoff (T2.2)', () => {
   it('a Phase B retry (e.g. a transient ingest failure) does NOT re-generate — Phase A runs exactly once, llm.complete count unchanged by the retry', async () => {
     const events: RunEvent[] = [];
     const sleep = vi.fn(async (_ms: number) => {});
-    const llm = llmWithUsage('{"post_title":"T","post_content":"<!-- wp:divi/text {\\"content\\":\\"Ship faster with real copy\\"} -->"}');
+    // T2.4: 2nd (SEO) call must be floor-passing, or the new quality-floor
+    // retry would add a 3rd llm.complete call this test explicitly rules out.
+    const llm = llmWithUsageSeq([
+      '{"post_title":"T","post_content":"<!-- wp:divi/text {\\"content\\":\\"Ship faster with real copy\\"} -->"}',
+      seoJson,
+    ]);
     const ingest = vi
       .fn()
       .mockRejectedValueOnce(new Error('ECONNRESET'))
@@ -776,5 +806,78 @@ describe('runPipeline error classification + retry with backoff (T2.2)', () => {
     expect(ingest).toHaveBeenCalledTimes(1); // target 2 never attempted
     const errored = events.find((e) => e.type === 'errored');
     expect(errored).toMatchObject({ class: 'permanent_infra', code: 'auth' });
+  });
+});
+
+// T2.4: SEO quality floor + clamp visibility, wired end-to-end through
+// runPipeline's Phase A (pipeline/seo.ts owns the retry/clamp logic itself;
+// this only proves run.ts turns its result into the right RunEvents and never
+// drops the target for either signal).
+describe('runPipeline SEO quality floor + clamp visibility (T2.4)', () => {
+  const thinSeo = JSON.stringify({
+    title: 'T',
+    metaDescription: 'short',
+    keywords: ['x'],
+    axes: { type: 'hero', niche: 'saas', style: 'minimal', colors: [] },
+  });
+
+  it('emits seo_floor_miss (and still ingests) when metaDescription/keywords stay thin after the retry', async () => {
+    const events: RunEvent[] = [];
+    // generate, then SEO call #1 and its retry both return thin metadata.
+    const llm = { complete: vi.fn()
+      .mockResolvedValueOnce('{"content":[]}')
+      .mockResolvedValueOnce(thinSeo)
+      .mockResolvedValueOnce(thinSeo) };
+    const deps = baseDeps({ llm, onEvent: (e: RunEvent) => events.push(e) });
+    const s = await runPipeline(deps as any);
+    expect(s.ingested).toBe(1); // NOT a drop gate
+    expect(llm.complete).toHaveBeenCalledTimes(3); // generate + seo + one seo retry
+    const floorMiss = events.find((e) => e.type === 'seo_floor_miss');
+    expect(floorMiss).toMatchObject({ metaDescriptionLength: 5, keywordCount: 1 });
+  });
+
+  it('does not emit seo_floor_miss once the retry produces floor-passing metadata', async () => {
+    const events: RunEvent[] = [];
+    const llm = { complete: vi.fn()
+      .mockResolvedValueOnce('{"content":[]}')
+      .mockResolvedValueOnce(thinSeo)
+      .mockResolvedValueOnce(seoJson) };
+    const deps = baseDeps({ llm, onEvent: (e: RunEvent) => events.push(e) });
+    const s = await runPipeline(deps as any);
+    expect(s.ingested).toBe(1);
+    expect(events.some((e) => e.type === 'seo_floor_miss')).toBe(false);
+  });
+
+  it('emits one seo_clamped event per off-enum axis/color value, and still ingests', async () => {
+    const events: RunEvent[] = [];
+    const clampedSeo = JSON.stringify({
+      title: 'T',
+      metaDescription: 'A clean, conversion-focused section built for real marketing teams shipping fast.',
+      keywords: ['hero', 'saas', 'minimal'],
+      axes: { type: 'bogus-type', niche: 'saas', style: 'minimal', colors: ['blue', 'not-a-real-color'] },
+    });
+    const llm = { complete: vi.fn()
+      .mockResolvedValueOnce('{"content":[]}')
+      .mockResolvedValueOnce(clampedSeo) };
+    const deps = baseDeps({ llm, onEvent: (e: RunEvent) => events.push(e) });
+    const s = await runPipeline(deps as any);
+    expect(s.ingested).toBe(1); // clamps are a QA signal, never a drop gate
+    const clamps = events.filter((e) => e.type === 'seo_clamped');
+    expect(clamps).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ axis: 'type', proposed: 'bogus-type', clamped: 'hero' }),
+        expect.objectContaining({ axis: 'colors', proposed: ['blue', 'not-a-real-color'], clamped: ['blue'] }),
+      ]),
+    );
+  });
+
+  it('emits no seo_clamped events when every axis value is already valid', async () => {
+    const events: RunEvent[] = [];
+    const llm = { complete: vi.fn()
+      .mockResolvedValueOnce('{"content":[]}')
+      .mockResolvedValueOnce(seoJson) };
+    const deps = baseDeps({ llm, onEvent: (e: RunEvent) => events.push(e) });
+    await runPipeline(deps as any);
+    expect(events.some((e) => e.type === 'seo_clamped')).toBe(false);
   });
 });

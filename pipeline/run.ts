@@ -140,6 +140,18 @@ export type RunEvent =
    * BEFORE the backoff sleep — lets a consumer count/observe retries without
    * instrumenting `withRetry` itself. */
   | { type: 'retry'; target: Target; attempt: number; code: string; detail: string }
+  /** T2.4: the SEO step's metaDescription/keyword count still missed the
+   * minimum quality floor (pipeline/seo.ts's `seoMinMetaDescriptionLength`/
+   * `seoMinKeywords`) even after its one allowed retry. Deliberately NOT a
+   * drop gate — the brief calls for "logged/flagged", so the target still
+   * proceeds to ingest with whatever metadata the model produced; this event
+   * exists purely so the eval scoreboard can count how often that happens. */
+  | { type: 'seo_floor_miss'; target: Target; metaDescriptionLength: number; keywordCount: number }
+  /** T2.4: pipeline/seo.ts's `clampOne`/`clampMany` silently reverted an
+   * off-enum (or, for colors, partially off-enum) axis value the model
+   * proposed — a useful QA signal: the model disagreeing with the assigned
+   * taxonomy often means the render doesn't match the target. */
+  | { type: 'seo_clamped'; target: Target; axis: 'type' | 'niche' | 'style' | 'colors'; proposed: unknown; clamped: string | string[] }
   /** T2.2: terminal state for a target whose per-target processing threw and
    * was not (or was no longer) retryable — see `RunSummary.errored`. `class`
    * and `code` come straight from `pipeline/errors.ts`'s `classifyError`;
@@ -469,7 +481,17 @@ export async function runPipeline(deps: RunDeps): Promise<RunSummary> {
         return undefined;
       }
 
-      const seo = await generateSeo(json, target, { llm: meteredLlm, maxBudgetUsd: deps.maxBudgetUsd });
+      const seo = await generateSeo(json, target, { llm: meteredLlm, maxBudgetUsd: deps.maxBudgetUsd, log });
+      // T2.4: surface the quality floor + clamp signals from seo.ts as events —
+      // never a drop gate (floor miss) and never information the layout is
+      // withheld for (clamps); both are purely visible via log + RunEvent so
+      // the eval scoreboard (pipeline/eval/metrics.ts) can count them.
+      if (seo.seoFloorMissed) {
+        emit({ type: 'seo_floor_miss', target, metaDescriptionLength: seo.metaDescription.trim().length, keywordCount: seo.keywords.length });
+      }
+      for (const c of seo.seoClamps) {
+        emit({ type: 'seo_clamped', target, axis: c.axis, proposed: c.proposed, clamped: c.clamped });
+      }
       return { json, hash, seo };
     };
 
