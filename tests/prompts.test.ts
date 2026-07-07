@@ -126,6 +126,23 @@ describe('image guide grounding (T3.3)', () => {
     expect(repair).toBe(gen);
     expect(repair).toContain('IMAGE_GUIDE_MARKER_TEXT');
   });
+
+  // Review fix follow-up: the T1.4 cache-hit invariant ("system prompt is
+  // BYTE-IDENTICAL across targets that share a type") was only exercised
+  // without an image guide. Extend it: with guide.imageGuide present, the
+  // system prompt must STILL be a pure function of (target.type, guide) —
+  // i.e. still byte-identical across varying niche/style/color for a shared
+  // type — since stableGroundingBlock folds imageGuide in as guide-level
+  // (not target-level) content.
+  it('the system prompt is BYTE-IDENTICAL across targets that share a type, with an image guide present too', () => {
+    const a = buildGenerationPrompt({ type: 'hero', niche: 'saas', style: 'minimal', color: 'blue' }, guideWithImageGuide).system;
+    const b = buildGenerationPrompt(
+      { type: 'hero', niche: 'restaurant', style: 'bold', color: 'red', layout: 'image right' },
+      guideWithImageGuide,
+    ).system;
+    expect(a).toBe(b);
+    expect(a).toContain('IMAGE_GUIDE_MARKER_TEXT');
+  });
 });
 
 describe('content-ban single source of truth', () => {

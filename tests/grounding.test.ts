@@ -96,6 +96,32 @@ describe('loadGrounding — landing + image guide extraction', () => {
     }
   });
 
+  it('warns via the optional log callback when a guide file is absent, and stays silent (no throw) with the default no-op logger', () => {
+    const dir = makeFixtureValidatorDir({ landingGuide: false, imageGuide: false });
+    try {
+      const messages: string[] = [];
+      const guide = loadGrounding(dir, (m) => messages.push(m));
+      expect(guide.landingGuide).toBeUndefined();
+      expect(messages.some((m) => m.includes('LandingGuide'))).toBe(true);
+      expect(messages.some((m) => m.includes('ImageGuide'))).toBe(true);
+      // default (no logger passed) must not throw
+      expect(() => loadGrounding(dir)).not.toThrow();
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('does NOT warn when both guide files extract successfully', () => {
+    const dir = makeFixtureValidatorDir();
+    try {
+      const messages: string[] = [];
+      loadGrounding(dir, (m) => messages.push(m));
+      expect(messages).toEqual([]);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
   it('falls back gracefully when only one of the two guide files is present', () => {
     const dir = makeFixtureValidatorDir({ imageGuide: false });
     try {
@@ -126,6 +152,113 @@ describe('loadGrounding — landing + image guide extraction', () => {
     }
   });
 });
+
+// Review fix (T3.3 follow-up): the extraction regex was a non-greedy match up to
+// the FIRST `\nMD;` line. That's truthy-but-WRONG (silent truncation, not the
+// documented fail-soft `undefined`) whenever the heredoc body itself contains a
+// line that looks like a terminator (e.g. quoting heredoc syntax in the guide
+// prose) or whenever a second heredoc exists later in the file. Hardened
+// `extractHeredocMarkdown` must turn that ambiguity into `undefined` rather than
+// silently truncating.
+function makeMinimalValidatorDirWithRawLandingGuide(phpContent: string): string {
+  const dir = mkdtempSync(join(tmpdir(), 'grounding-ambiguity-'));
+  mkdirSync(join(dir, 'docs'), { recursive: true });
+  mkdirSync(join(dir, 'wp-plugin', 'data'), { recursive: true });
+  mkdirSync(join(dir, 'wp-plugin', 'src'), { recursive: true });
+  writeFileSync(join(dir, 'docs', 'STYLE.md'), '# style');
+  writeFileSync(join(dir, 'docs', 'SCHEMA.md'), '# schema');
+  writeFileSync(
+    join(dir, 'wp-plugin', 'data', 'section-recipes.json'),
+    JSON.stringify([{ name: 'hero-cta', title: 'Hero', description: 'd', when: 'w', markup: 'M' }]),
+  );
+  writeFileSync(join(dir, 'wp-plugin', 'src', 'LandingGuide.php'), phpContent);
+  return dir;
+}
+
+describe('extractHeredocMarkdown hardening — ambiguity yields undefined, never truncation', () => {
+  it('returns undefined (not a truncated string) when the heredoc body itself contains a literal "MD;" line', () => {
+    const dir = makeMinimalValidatorDirWithRawLandingGuide(
+      [
+        "<?php",
+        "final class LandingGuide {",
+        "  public static function markdown(): string {",
+        "    return <<<'MD'",
+        "# Guide",
+        "Some example below shows a raw terminator like this:",
+        "MD;",
+        "And more real content continues after that fake terminator.",
+        "MD;",
+        "  }",
+        "}",
+      ].join('\n'),
+    );
+    try {
+      const guide = loadGrounding(dir);
+      // Must NOT be the truncated body (stopping at the first "MD;" line) —
+      // it must fail soft to undefined since the file is ambiguous.
+      expect(guide.landingGuide).toBeUndefined();
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('returns undefined (ambiguous) when the file contains two separate heredoc blocks', () => {
+    const dir = makeMinimalValidatorDirWithRawLandingGuide(
+      [
+        "<?php",
+        "final class LandingGuide {",
+        "  public static function markdown(): string {",
+        "    return <<<'MD'",
+        "# Guide One",
+        "MD;",
+        "  }",
+        "  public static function otherMarkdown(): string {",
+        "    return <<<'MD'",
+        "# Guide Two",
+        "MD;",
+        "  }",
+        "}",
+      ].join('\n'),
+    );
+    try {
+      const guide = loadGrounding(dir);
+      expect(guide.landingGuide).toBeUndefined();
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('still extracts the full body for the real single-heredoc shape (no false-positive ambiguity)', () => {
+    const dir = makeMinimalValidatorDirWithRawLandingGoodShape();
+    try {
+      const guide = loadGrounding(dir);
+      expect(guide.landingGuide).toBeDefined();
+      expect(guide.landingGuide).toContain('# Fake Landing Guide');
+      expect(guide.landingGuide).toContain('- **SaaS**: hero -> problem -> proof -> final CTA.');
+      expect(guide.landingGuide).toContain('- **Service / agency**: hero -> proof -> final CTA.');
+      expect(guide.landingGuide).not.toContain('<?php');
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+});
+
+function makeMinimalValidatorDirWithRawLandingGoodShape(): string {
+  return makeMinimalValidatorDirWithRawLandingGuide(
+    [
+      "<?php",
+      "final class LandingGuide {",
+      "  public static function markdown(): string {",
+      "    return <<<'MD'",
+      "# Fake Landing Guide",
+      "- **SaaS**: hero -> problem -> proof -> final CTA.",
+      "- **Service / agency**: hero -> proof -> final CTA.",
+      "MD;",
+      "  }",
+      "}",
+    ].join('\n'),
+  );
+}
 
 describe.skipIf(!hasRealValidator)('loadGrounding against the real sibling validator repo', () => {
   it('extracts real landing + image guidance', () => {

@@ -178,8 +178,15 @@ export async function buildRunDeps(opts: BuildRunDepsOptions): Promise<{ deps: R
   const { targets, dryRun, onEvent } = opts;
   const logPrefix = opts.logPrefix ?? '[pipeline]';
 
+  // Single logger shared by `RunDeps.log`, `renderAndCapture`'s blank/failed
+  // warnings (T2.1 minor review fix), and `loadGrounding`'s guide-extraction
+  // warnings (T3.3 minor review fix) — one consistent channel instead of
+  // several console.log/console.warn call sites. Defined before `loadGrounding`
+  // so it can be threaded straight in rather than logging separately after.
+  const log = (m: string) => console.log(`${logPrefix} ${m}`);
+
   const validatorDir = process.env.VALIDATOR_DIR ?? '../Divi 5 Deterministic Validator';
-  const guide = loadGrounding(validatorDir);
+  const guide = loadGrounding(validatorDir, log);
 
   const ingestUrl = process.env.INGEST_URL ?? 'http://localhost:3000';
   const ingestToken = process.env.INGEST_API_TOKEN ?? '';
@@ -190,10 +197,6 @@ export async function buildRunDeps(opts: BuildRunDepsOptions): Promise<{ deps: R
   const pexelsKey = process.env.PEXELS_API_KEY;
 
   const stubLlm = { complete: async () => '{"content":[]}' };
-  // Single logger shared by `RunDeps.log` and `renderAndCapture`'s blank/failed
-  // warnings (T2.1 minor review fix) — one consistent channel instead of a
-  // console.log-via-RunDeps + bare-console.warn-via-renderAndCapture split.
-  const log = (m: string) => console.log(`${logPrefix} ${m}`);
   const deps: RunDeps = {
     targets,
     guide,
