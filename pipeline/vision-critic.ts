@@ -34,10 +34,23 @@ export interface VisionCriticContext {
   text?: string;
 }
 
+/** T5.2: `imageRelevanceScore`/`imageIssues` — does each visible photo actually
+ * match the section's stated niche/subject (a dental-clinic hero must not show
+ * a car)? Additive, like `CopyCriticResult`, but NOT gated behind an optional
+ * context field the way copyScore is gated behind `context.text` — the critic
+ * already has the rendered screenshots on EVERY call, so the prompt asks for
+ * this on every call. Still parsed optionally (present only when the model
+ * actually returned it) so an older prompt/response, or a model that ignores
+ * the rubric, never breaks existing `{score, issues}` parsing/consumers. */
+export interface ImageRelevanceCriticResult {
+  imageRelevanceScore?: number;
+  imageIssues?: string[];
+}
+
 /** T5.1: `copyScore`/`copyIssues` are additive (`CopyCriticResult`) — present only
  * when `VisionCriticContext.text` was supplied AND the model returned them.
  * Missing copy fields must never break existing `{score, issues}` consumers. */
-export interface VisionCriticResult extends CopyCriticResult {
+export interface VisionCriticResult extends CopyCriticResult, ImageRelevanceCriticResult {
   score: number;
   issues: string[];
 }
@@ -46,17 +59,27 @@ export interface VisionCriticResult extends CopyCriticResult {
  * plain function, not a class, so a stub in unit tests is just `vi.fn()`. */
 export type VisionCritic = (paths: string[], context: VisionCriticContext) => Promise<VisionCriticResult>;
 
+/** T5.2: the additive JSON-contract fragment for `imageRelevanceScore`/
+ * `imageIssues` — unlike `COPY_JSON_CONTRACT_FIELDS` (copy-critic.ts), this is
+ * part of the BASE contract on every call (see `buildVisionCriticPrompt`), not
+ * gated behind an optional context field, so it's defined here rather than in
+ * a separate module. */
+const IMAGE_RELEVANCE_JSON_CONTRACT_FIELDS = '"imageRelevanceScore": <1-5 integer>, "imageIssues": [<string>, ...]';
+
 const SYSTEM_PROMPT =
   'You are a strict visual QA reviewer for a marketplace that sells premium, ' +
   'professionally designed Divi 5 page-section layouts. You are given local ' +
   'screenshot file paths on disk — use the Read tool to open and inspect each ' +
   'one before judging. Respond with ONLY a JSON object of the exact shape ' +
   '{"score": <integer 1-5>, "issues": [<string>, ...]} — no prose, no markdown ' +
-  'code fence, nothing before or after the JSON. T5.1: when the prompt also ' +
-  'includes a "Section copy" block, ALSO rate that copy per its rubric and ' +
-  'include "copyScore" (integer 1-5) and "copyIssues" ([string, ...]) in the ' +
-  'same JSON object, additively — the exact contract is restated at the end of ' +
-  'the prompt.';
+  'code fence, nothing before or after the JSON. T5.2: ALSO separately rate ' +
+  'whether every visible photo actually matches the section\'s stated niche/ ' +
+  'subject and include "imageRelevanceScore" (integer 1-5) and "imageIssues" ' +
+  '([string, ...], naming any off-topic image) in the same JSON object, ' +
+  'additively. T5.1: when the prompt also includes a "Section copy" block, ' +
+  'ALSO rate that copy per its rubric and include "copyScore" (integer 1-5) ' +
+  'and "copyIssues" ([string, ...]) in the same JSON object, additively — the ' +
+  'exact contract is restated at the end of the prompt.';
 
 /** Builds the critic's prompt: the rubric (per the T1.3 brief) + the concrete
  * screenshot paths + section context to judge them against. Exported so the
@@ -71,9 +94,12 @@ export function buildVisionCriticPrompt(
   // layout with no extractable prose) sees no behavior change whatsoever.
   const hasCopy = !!context.text && context.text.trim().length > 0;
   const copySection = hasCopy ? buildCopyRubricSection(context.text as string) : '';
-  const jsonContract = hasCopy
-    ? `{"score": <1-5 integer>, "issues": ["short specific issue", ...], ${COPY_JSON_CONTRACT_FIELDS}}`
-    : '{"score": <1-5 integer>, "issues": ["short specific issue", ...]}';
+  // T5.2: image relevance is asked for on EVERY call (unlike the copy fields,
+  // which are gated behind `context.text` being supplied) — the critic already
+  // has the rendered screenshots regardless of whether copy text was extracted,
+  // so there's nothing to gate this additive field on.
+  const baseFields = `"score": <1-5 integer>, "issues": ["short specific issue", ...], ${IMAGE_RELEVANCE_JSON_CONTRACT_FIELDS}`;
+  const jsonContract = hasCopy ? `{${baseFields}, ${COPY_JSON_CONTRACT_FIELDS}}` : `{${baseFields}}`;
   const prompt = `Section context: type="${context.type}", niche="${context.niche}", style="${context.style}".
 
 Screenshot files to review (Read each file before scoring):
@@ -90,7 +116,16 @@ Divi 5 marketplace. Check specifically for:
 - overall premium quality: would a paying buyer feel this looks professionally designed?
 
 Scoring guide: 1 = broken/unusable, 3 = passable but flawed, 5 = premium with no
-notable issues.${copySection}
+notable issues.
+
+Additionally, rate IMAGE RELEVANCE separately from the score above: for each
+visible photo in the screenshots, does it plausibly match the section's stated
+niche/subject (e.g. a dental clinic hero must not show a car; a restaurant
+gallery must not show an office)? Include this as "imageRelevanceScore" (1-5
+integer, 5 = every image matches, 1 = clearly off-topic) with "imageIssues"
+(short strings naming any off-topic image, e.g. "hero photo shows a car, not a
+dental clinic"). Use an empty issues array and score 5 when every image
+matches.${copySection}
 
 Respond with ONLY JSON: ${jsonContract}.
 Use an empty issues array when there are none.`;
@@ -107,6 +142,8 @@ export function parseVisionCriticResult(text: string): VisionCriticResult {
     issues?: unknown;
     copyScore?: unknown;
     copyIssues?: unknown;
+    imageRelevanceScore?: unknown;
+    imageIssues?: unknown;
   };
   const score = Number(parsed?.score);
   if (!Number.isFinite(score)) {
@@ -125,6 +162,17 @@ export function parseVisionCriticResult(text: string): VisionCriticResult {
   if (Array.isArray(parsed?.copyIssues)) {
     result.copyIssues = parsed.copyIssues.filter((s): s is string => typeof s === 'string');
   }
+  // T5.2: same additive-parsing treatment as copyScore/copyIssues above — only
+  // set when present AND well-formed, so a response that never mentions image
+  // relevance (older prompt, or a model that ignored the rubric) parses to
+  // exactly the pre-T5.2 shape, no `undefined`-valued keys tacked on.
+  const imageRelevanceScore = Number(parsed?.imageRelevanceScore);
+  if (parsed?.imageRelevanceScore !== undefined && Number.isFinite(imageRelevanceScore)) {
+    result.imageRelevanceScore = imageRelevanceScore;
+  }
+  if (Array.isArray(parsed?.imageIssues)) {
+    result.imageIssues = parsed.imageIssues.filter((s): s is string => typeof s === 'string');
+  }
   return result;
 }
 
@@ -132,6 +180,18 @@ export function parseVisionCriticResult(text: string): VisionCriticResult {
  * one-line call and this logic is independently unit-testable. */
 export function meetsQualityBar(result: VisionCriticResult, minScore: number): boolean {
   return result.score >= minScore;
+}
+
+/**
+ * T5.2: mirrors copy-critic.ts's `meetsCopyBar` — a DISTINCT function (not a
+ * shared generic) since a `false` here carries FLAG, not DROP, policy weight
+ * (see pipeline/run.ts's `image_relevance` RunEvent). `imageRelevanceScore ===
+ * undefined` (the model didn't return the additive field) is treated as
+ * passing: no signal is not a bad signal.
+ */
+export function meetsImageRelevanceBar(imageRelevanceScore: number | undefined, minScore: number): boolean {
+  if (imageRelevanceScore === undefined) return true;
+  return imageRelevanceScore >= minScore;
 }
 
 export interface ScoreScreenshotsDeps {

@@ -85,6 +85,26 @@ export interface EvalMetrics {
    * copyScore FLAG (never a drop) fired. Distinct from `dropReasonCounts`'s
    * `copy_boilerplate` entry, which IS a drop (the deterministic shingle gate). */
   copyFlagCount: number;
+  /** T5.2: histogram of LLM imageRelevanceScores (same folded critic call —
+   * see pipeline/vision-critic.ts), same bucketing convention as
+   * `visionScoreDistribution`/`copyScoreDistribution`. Only counts targets
+   * where the model actually returned an `imageRelevanceScore` (additive/
+   * optional) — `null` when none did. */
+  imageRelevanceScoreDistribution: Record<string, number> | null;
+  /** Mean LLM imageRelevanceScore across every target that returned one. `null`
+   * under the same conditions as `imageRelevanceScoreDistribution`. */
+  imageRelevanceScoreMean: number | null;
+  /** T5.2: count of `image_relevance` events with `passed: false` — the LLM
+   * imageRelevanceScore FLAG (never a drop) fired. Mirrors `copyFlagCount`. */
+  imageRelevanceFlagCount: number;
+  /** T5.2: count of `placeholder_image_miss` events — a PLACEHOLDER_IMAGE
+   * content-lint violation survived the repair loop (the Pexels swap missed
+   * for at least one image). Never a drop reason; a pure QA signal for how
+   * often the image-resolution step fails to find a real photo. */
+  placeholderImageMissCount: number;
+  /** Fraction of generated layouts that hit the placeholder-image miss path
+   * above. `null` when nothing was generated. */
+  placeholderImageMissRate: number | null;
   /** T2.4: count of `seo_floor_miss` events — metaDescription/keyword count
    * still under pipeline/seo.ts's minimum quality floor after its one retry.
    * NOT a drop reason (these targets still ingest); a pure QA signal for how
@@ -122,6 +142,13 @@ export class MetricsAccumulator {
   private copyScores: number[] = [];
   /** T5.1: count of `copy_critic` events with `passed: false` (flag, not drop). */
   private copyFlagCount = 0;
+  /** T5.2: raw LLM imageRelevanceScores — one entry per target the model
+   * returned one for. Mirrors `copyScores`. */
+  private imageRelevanceScores: number[] = [];
+  /** T5.2: count of `image_relevance` events with `passed: false` (flag, not drop). */
+  private imageRelevanceFlagCount = 0;
+  /** T5.2: count of `placeholder_image_miss` events. */
+  private placeholderImageMissCount = 0;
   /** T2.4: count of `seo_floor_miss` events. */
   private seoFloorMissCount = 0;
   /** T2.4: count of `seo_clamped` events, by axis. */
@@ -163,6 +190,13 @@ export class MetricsAccumulator {
       case 'copy_critic':
         this.copyScores.push(event.copyScore);
         if (!event.passed) this.copyFlagCount++;
+        break;
+      case 'image_relevance':
+        this.imageRelevanceScores.push(event.imageRelevanceScore);
+        if (!event.passed) this.imageRelevanceFlagCount++;
+        break;
+      case 'placeholder_image_miss':
+        this.placeholderImageMissCount++;
         break;
       case 'ingested':
         break; // tracked via RunSummary.ingested at finalize()
@@ -226,6 +260,13 @@ export class MetricsAccumulator {
       copyScoreDistribution: this.copyScores.length ? scoreDistribution(this.copyScores) : null,
       copyScoreMean: this.copyScores.length ? this.copyScores.reduce((a, b) => a + b, 0) / this.copyScores.length : null,
       copyFlagCount: this.copyFlagCount,
+      imageRelevanceScoreDistribution: this.imageRelevanceScores.length ? scoreDistribution(this.imageRelevanceScores) : null,
+      imageRelevanceScoreMean: this.imageRelevanceScores.length
+        ? this.imageRelevanceScores.reduce((a, b) => a + b, 0) / this.imageRelevanceScores.length
+        : null,
+      imageRelevanceFlagCount: this.imageRelevanceFlagCount,
+      placeholderImageMissCount: this.placeholderImageMissCount,
+      placeholderImageMissRate: summary.generated ? this.placeholderImageMissCount / summary.generated : null,
       seoFloorMissCount: this.seoFloorMissCount,
       seoClampCount: Object.values(this.seoClampCountsByAxis).reduce((a, b) => a + b, 0),
       seoClampCountsByAxis: { ...this.seoClampCountsByAxis },
@@ -291,6 +332,13 @@ export function formatComparisonTable(rows: EvalMetrics[]): string {
     ['copy score mean', rows.map((r) => fmtNum(r.copyScoreMean))],
     ['copy score dist', rows.map((r) => fmtScoreDist(r.copyScoreDistribution))],
     ['copy flags (not dropped)', rows.map((r) => String(r.copyFlagCount))],
+    // T5.2: image-relevance gate (flag-only) + the placeholder-image miss rate
+    // — see pipeline/vision-critic.ts's imageRelevanceScore/imageIssues and the
+    // image_relevance/placeholder_image_miss RunEvents in pipeline/run.ts.
+    ['image relevance score mean', rows.map((r) => fmtNum(r.imageRelevanceScoreMean))],
+    ['image relevance score dist', rows.map((r) => fmtScoreDist(r.imageRelevanceScoreDistribution))],
+    ['image relevance flags (not dropped)', rows.map((r) => String(r.imageRelevanceFlagCount))],
+    ['placeholder-image miss rate', rows.map((r) => fmtPct(r.placeholderImageMissRate))],
     // T2.4: SEO quality-floor misses (flagged, never dropped) + axis/color
     // clamp counts — see pipeline/seo.ts and the seo_floor_miss/seo_clamped
     // RunEvents in pipeline/run.ts.

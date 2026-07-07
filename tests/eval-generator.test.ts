@@ -318,6 +318,59 @@ describe('MetricsAccumulator', () => {
     const m = acc.finalize(summary({ generated: 2, ingested: 1, qualityDropped: 1 }));
     expect(m.dropReasonCounts).toEqual({ copy_boilerplate: 1 });
   });
+
+  // T5.2: the LLM imageRelevanceScore rides the SAME folded critic call as
+  // vision_critic/copy_critic — flag-only, so it needs its own distribution/
+  // mean/flag-count, exactly mirroring copyScore's accumulator shape.
+  it('builds an image-relevance-score distribution + mean from image_relevance events, and counts below-threshold flags, null when the critic never returns one', () => {
+    const acc = new MetricsAccumulator('baseline', 3);
+    const events: RunEvent[] = [
+      { type: 'generated', target },
+      { type: 'image_relevance', target, imageRelevanceScore: 5, imageIssues: [], passed: true },
+      { type: 'ingested', target, slug: 's1' },
+      { type: 'generated', target },
+      { type: 'image_relevance', target, imageRelevanceScore: 1, imageIssues: ['hero photo shows a car, not a dental clinic'], passed: false },
+      { type: 'ingested', target, slug: 's2' },
+      { type: 'generated', target },
+      { type: 'image_relevance', target, imageRelevanceScore: 5, imageIssues: [], passed: true },
+      { type: 'ingested', target, slug: 's3' },
+    ];
+    for (const e of events) acc.add(e);
+    const m = acc.finalize(summary({ generated: 3, ingested: 3 }));
+    expect(m.imageRelevanceScoreDistribution).toEqual({ '1': 1, '5': 2 });
+    expect(m.imageRelevanceScoreMean).toBeCloseTo((5 + 1 + 5) / 3, 5);
+    expect(m.imageRelevanceFlagCount).toBe(1);
+    // An image-relevance flag never touches qualityDropped — flag-only policy.
+    expect(m.qualityDropped).toBe(0);
+
+    const empty = new MetricsAccumulator('empty', 0).finalize(summary());
+    expect(empty.imageRelevanceScoreDistribution).toBeNull();
+    expect(empty.imageRelevanceScoreMean).toBeNull();
+    expect(empty.imageRelevanceFlagCount).toBe(0);
+  });
+
+  // T5.2: placeholder-miss rate — count of layouts where a PLACEHOLDER_IMAGE
+  // lint violation survived resolution (the Pexels-swap best-effort miss path),
+  // surfaced as its own rate alongside the other quality-signal rates
+  // (nearDupeRate, renderFailedRate, ...).
+  it('computes placeholderImageMissRate from placeholder_image_miss events, and null when nothing was generated', () => {
+    const acc = new MetricsAccumulator('baseline', 4);
+    const events: RunEvent[] = [
+      { type: 'generated', target },
+      { type: 'ingested', target, slug: 's1' },
+      { type: 'generated', target },
+      { type: 'placeholder_image_miss', target },
+      { type: 'ingested', target, slug: 's2' },
+    ];
+    for (const e of events) acc.add(e);
+    const m = acc.finalize(summary({ generated: 2, ingested: 2 }));
+    expect(m.placeholderImageMissCount).toBe(1);
+    expect(m.placeholderImageMissRate).toBeCloseTo(0.5, 5);
+
+    const empty = new MetricsAccumulator('empty', 0).finalize(summary());
+    expect(empty.placeholderImageMissRate).toBeNull();
+    expect(empty.placeholderImageMissCount).toBe(0);
+  });
 });
 
 describe('formatComparisonTable', () => {
@@ -347,5 +400,9 @@ describe('formatComparisonTable', () => {
     expect(table).toContain('copy score mean');
     expect(table).toContain('copy score dist');
     expect(table).toContain('copy flags (not dropped)');
+    // T5.2: image-relevance gate + placeholder-miss rate rows.
+    expect(table).toContain('image relevance score mean');
+    expect(table).toContain('image relevance flags (not dropped)');
+    expect(table).toContain('placeholder-image miss rate');
   });
 });

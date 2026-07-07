@@ -12,6 +12,7 @@ import {
   scoreScreenshots,
   parseVisionCriticResult,
   meetsQualityBar,
+  meetsImageRelevanceBar,
   claudeVisionCritic,
   buildVisionCriticPrompt,
 } from '@/pipeline/vision-critic';
@@ -195,6 +196,81 @@ describe('T5.1 copy critic fold (additive prompt + JSON contract)', () => {
     const result = parseVisionCriticResult('{"score":4,"issues":[],"copyScore":3}');
     expect(result.copyScore).toBe(3);
     expect(result.copyIssues).toBeUndefined();
+  });
+});
+
+// T5.2: image relevance is a SEPARATE additive field from the base {score, issues}
+// — the critic already sees the rendered screenshots, so unlike copyScore (which
+// needs `context.text` supplied) this is asked for on EVERY call, but still parsed
+// optionally/additively so an older prompt/model response that omits it never
+// breaks existing `{score, issues}` (or `{score, issues, copyScore, copyIssues}`)
+// consumers.
+describe('T5.2 image relevance (additive prompt + JSON contract)', () => {
+  it('buildVisionCriticPrompt always asks for imageRelevanceScore/imageIssues, even without context.text', () => {
+    const { prompt } = buildVisionCriticPrompt(['/tmp/a.png'], { type: 'hero', niche: 'dental', style: 'minimal' });
+    expect(prompt).toMatch(/image relevance/i);
+    expect(prompt).toMatch(/imageRelevanceScore/);
+    expect(prompt).toMatch(/imageIssues/);
+  });
+
+  it('is still byte-identical whether or not context.text is supplied (T5.1 backward-compat invariant unaffected)', () => {
+    const context = { type: 'hero', niche: 'saas', style: 'minimal' };
+    const withoutText = buildVisionCriticPrompt(['/tmp/a.png'], context);
+    const withEmptyText = buildVisionCriticPrompt(['/tmp/a.png'], { ...context, text: '' });
+    expect(withoutText).toEqual(withEmptyText);
+  });
+
+  it('parseVisionCriticResult parses additive imageRelevanceScore/imageIssues when present', () => {
+    const result = parseVisionCriticResult(
+      '{"score":2,"issues":["off-topic hero image"],"imageRelevanceScore":1,"imageIssues":["hero photo shows a car, not a dental clinic"]}',
+    );
+    expect(result).toEqual({
+      score: 2,
+      issues: ['off-topic hero image'],
+      imageRelevanceScore: 1,
+      imageIssues: ['hero photo shows a car, not a dental clinic'],
+    });
+  });
+
+  it('omits imageRelevanceScore/imageIssues entirely when absent (exact pre-T5.2 shape)', () => {
+    const result = parseVisionCriticResult('{"score":4,"issues":[]}');
+    expect(result).toEqual({ score: 4, issues: [] });
+    expect('imageRelevanceScore' in result).toBe(false);
+    expect('imageIssues' in result).toBe(false);
+  });
+
+  it('ignores a non-numeric imageRelevanceScore rather than throwing (the base score still parses)', () => {
+    const result = parseVisionCriticResult('{"score":4,"issues":[],"imageRelevanceScore":"n/a"}');
+    expect(result).toEqual({ score: 4, issues: [] });
+  });
+
+  it('composes with the T5.1 copy fields on the same response (both additive fields independently present)', () => {
+    const result = parseVisionCriticResult(
+      '{"score":4,"issues":[],"copyScore":2,"copyIssues":["generic"],"imageRelevanceScore":5,"imageIssues":[]}',
+    );
+    expect(result).toEqual({
+      score: 4,
+      issues: [],
+      copyScore: 2,
+      copyIssues: ['generic'],
+      imageRelevanceScore: 5,
+      imageIssues: [],
+    });
+  });
+});
+
+describe('meetsImageRelevanceBar', () => {
+  it('passes at or above the threshold', () => {
+    expect(meetsImageRelevanceBar(3, 3)).toBe(true);
+    expect(meetsImageRelevanceBar(5, 3)).toBe(true);
+  });
+
+  it('fails below the threshold', () => {
+    expect(meetsImageRelevanceBar(1, 3)).toBe(false);
+  });
+
+  it('treats an absent score as passing (no signal is not a bad signal, mirrors meetsCopyBar)', () => {
+    expect(meetsImageRelevanceBar(undefined, 3)).toBe(true);
   });
 });
 

@@ -16,7 +16,7 @@ import { lintLayoutJson } from './content-lint';
 import type { ValidationResult } from './validate';
 import type { UploadResult } from './upload';
 import type { IngestPayload } from '@/lib/ingest/schema';
-import { meetsQualityBar } from './vision-critic';
+import { meetsQualityBar, meetsImageRelevanceBar } from './vision-critic';
 import type { VisionCriticContext, VisionCriticResult } from './vision-critic';
 // T5.1: copy-quality gate — extractLayoutText feeds the folded vision-critic
 // prompt (see vision-critic.ts); isCopyBoilerplate/copyBoilerplateMaxOverlap are
@@ -108,6 +108,14 @@ export type RunEvent =
   | { type: 'generated'; target: Target }
   | { type: 'repair_attempt'; target: Target; kind: 'structural' | 'content' }
   | { type: 'content_lint'; target: Target; hit: boolean; codes: string[] }
+  /** T5.2: a `PLACEHOLDER_IMAGE` content-lint violation survived the repair
+   * loop (pipeline/content-lint.ts's rule of the same name — an unresolved
+   * loremflickr/placehold.co/etc. host) — this is the "Pexels swap missed"
+   * signal: deliberately never a drop reason (see the `warn(content)` log line
+   * this rides alongside in `runPhaseA` below), but visible in the eval
+   * scoreboard (pipeline/eval/metrics.ts) as a placeholder-miss rate so it's
+   * clear how often the image-resolution step fails to find a real photo. */
+  | { type: 'placeholder_image_miss'; target: Target }
   | {
       type: 'dropped';
       target: Target;
@@ -153,6 +161,18 @@ export type RunEvent =
    * ingest; see `meetsCopyBar`'s module doc for why. Absent entirely when the
    * model didn't return a `copyScore` (nothing to report). */
   | { type: 'copy_critic'; target: Target; copyScore: number; copyIssues: string[]; passed: boolean }
+  /** T5.2: the LLM imageRelevanceScore from the SAME folded critic call
+   * (pipeline/vision-critic.ts) — emitted alongside `vision_critic`/`copy_critic`
+   * whenever the model returned an `imageRelevanceScore`, whether or not it met
+   * `IMAGE_RELEVANCE_MIN_SCORE`. `passed: false` is a FLAG, not a drop — the
+   * target still proceeds to ingest; controller resolution (see
+   * pipeline/vision-critic.ts's `meetsImageRelevanceBar` doc) deliberately
+   * rejected a re-resolve-and-rescore loop as a follow-up, not this task, since
+   * render+critic are both memoized per target (see `criticMemo`/`renderMemo`
+   * below) and a second pass would re-render and re-score — expensive and
+   * complex for a first cut. Absent entirely when the model didn't return an
+   * `imageRelevanceScore` (nothing to report). */
+  | { type: 'image_relevance'; target: Target; imageRelevanceScore: number; imageIssues: string[]; passed: boolean }
   | { type: 'ingested'; target: Target; slug: string }
   /** T2.2: emitted once per retry attempt on a `transient_infra` failure,
    * BEFORE the backoff sleep — lets a consumer count/observe retries without
@@ -233,6 +253,12 @@ export interface RunDeps {
    * is emitted with `passed: false`. FLAG-only: unlike `visionCriticMinScore`,
    * failing this bar never drops the target — see `meetsCopyBar`. */
   copyCriticMinScore?: number;
+  /** T5.2: IMAGE_RELEVANCE_MIN_SCORE — minimum acceptable LLM
+   * imageRelevanceScore (default 3, mirrors `copyCriticMinScore`'s resolution)
+   * before the `image_relevance` RunEvent is emitted with `passed: false`.
+   * FLAG-only, same policy as `copyCriticMinScore`: failing this bar never
+   * drops the target — see `meetsImageRelevanceBar`. */
+  imageRelevanceMinScore?: number;
   ingest: (payload: IngestPayload) => Promise<{ deduped: boolean }>;
   maxRepairs: number;
   maxParseRetries?: number;
@@ -650,7 +676,15 @@ export async function processItem(item: PipelineItem, ctx: RunContext): Promise<
           emit({ type: 'dropped', target, reason: 'content', detail });
           return undefined;
         }
-        if (lint.length) log(`warn(content) ${target.type}/${target.niche}/${target.style}: ${lint.map((v) => v.code).join(',')} (best-effort image miss)`);
+        // T5.2: by construction, anything surviving here (dropWorthy is empty)
+        // can only be PLACEHOLDER_IMAGE (the sole code `dropWorthy` excludes) —
+        // the Pexels swap missed for at least one image. Best-effort, never a
+        // drop reason (see the log line this rides alongside) — but visible in
+        // the eval scoreboard via its own RunEvent/metric (placeholder-miss rate).
+        if (lint.length) {
+          log(`warn(content) ${target.type}/${target.niche}/${target.style}: ${lint.map((v) => v.code).join(',')} (best-effort image miss)`);
+          emit({ type: 'placeholder_image_miss', target });
+        }
       }
 
       // Enforce single-column, full-width stacking on phone (deterministic; the
@@ -887,6 +921,24 @@ export async function processItem(item: PipelineItem, ctx: RunContext): Promise<
                 log(
                   `copy-critic flag ${target.type}/${target.niche}/${target.style}: ` +
                     `score ${criticMemo.copyScore} issues=${copyIssues.join(',') || 'none'} (flagged, not dropped)`,
+                );
+              }
+            }
+            // T5.2: image relevance — FLAG-only, same policy shape as the copy
+            // gate above (never contributes to `passed`/the drop below, on its
+            // own). Controller resolution: a below-threshold score is logged +
+            // reported, never re-resolved — see `RunEvent`'s `image_relevance`
+            // doc for why a re-resolve-and-rescore loop is a documented
+            // follow-up rather than implemented here.
+            if (criticMemo.imageRelevanceScore !== undefined) {
+              const imgMinScore = deps.imageRelevanceMinScore ?? 3;
+              const imgPassed = meetsImageRelevanceBar(criticMemo.imageRelevanceScore, imgMinScore);
+              const imageIssues = criticMemo.imageIssues ?? [];
+              emit({ type: 'image_relevance', target, imageRelevanceScore: criticMemo.imageRelevanceScore, imageIssues, passed: imgPassed });
+              if (!imgPassed) {
+                log(
+                  `image-relevance flag ${target.type}/${target.niche}/${target.style}: ` +
+                    `score ${criticMemo.imageRelevanceScore} issues=${imageIssues.join(',') || 'none'} (flagged, not dropped)`,
                 );
               }
             }

@@ -243,6 +243,10 @@ export async function buildRunDeps(opts: BuildRunDepsOptions): Promise<{ deps: R
     // visionCriticMinScore, missing this env var below is low-stakes; it only
     // changes when the `copy_critic` RunEvent's `passed` flips, never ingest.
     copyCriticMinScore: process.env.COPY_CRITIC_MIN_SCORE ? Number(process.env.COPY_CRITIC_MIN_SCORE) : 3,
+    // T5.2: the imageRelevanceScore this SAME critic call returns (pipeline/
+    // vision-critic.ts) is FLAG-only — see RunDeps.imageRelevanceMinScore's doc
+    // — same low-stakes default resolution as copyCriticMinScore above.
+    imageRelevanceMinScore: process.env.IMAGE_RELEVANCE_MIN_SCORE ? Number(process.env.IMAGE_RELEVANCE_MIN_SCORE) : 3,
     ingest: dryRun ? async () => ({ deduped: false }) : (payload) => postIngest(payload, { url: ingestUrl, token: ingestToken }),
     maxRepairs: 2,
     maxParseRetries: 2,

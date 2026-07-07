@@ -714,6 +714,157 @@ describe('runPipeline copy critic (T5.1 — LLM copyScore, flag-only)', () => {
   });
 });
 
+// T5.2: image relevance rides the SAME folded critic call as copyScore
+// (pipeline/vision-critic.ts) — FLAG only, per the controller resolution: a
+// re-resolve loop would re-render and re-score (expensive), so a below-threshold
+// imageRelevanceScore is logged + reported via a RunEvent but never drops the
+// target on its own.
+describe('runPipeline image relevance (T5.2 — LLM imageRelevanceScore, flag-only)', () => {
+  function llmSeq(...responses: string[]) {
+    const fn = vi.fn();
+    for (const r of responses) fn.mockResolvedValueOnce(r);
+    return { complete: fn };
+  }
+  function genJsonWithContent(n = 1) {
+    return JSON.stringify({ post_title: `T${n}`, post_content: `<!-- wp:divi/text {"content":"Ship faster with real, specific copy ${n}"} -->` });
+  }
+  function renderWithShots(paths: string[], perceptualHash = 'a'.repeat(64)) {
+    return vi.fn(async () => ({ previewImageKeys: ['p'], perceptualHash, screenshotPaths: paths }));
+  }
+
+  it('flags a below-threshold imageRelevanceScore (off-topic hero image) but still ingests the layout', async () => {
+    const events: RunEvent[] = [];
+    const llm = llmSeq(genJsonWithContent(), seoJson);
+    const render = renderWithShots(['/tmp/d.png']);
+    const visionCritic = vi.fn(async () => ({
+      score: 4,
+      issues: [],
+      imageRelevanceScore: 1,
+      imageIssues: ['hero photo shows a car, not a dental clinic'],
+    }));
+    const ingest = vi.fn(async () => ({ deduped: false }));
+    const deps = baseDeps({ llm, render, visionCritic, ingest, onEvent: (e: RunEvent) => events.push(e) });
+    const s = await runPipeline(deps as any);
+    expect(s.ingested).toBe(1);
+    expect(s.qualityDropped).toBe(0);
+    expect(ingest).toHaveBeenCalledOnce();
+    const ir = events.find((e) => e.type === 'image_relevance');
+    expect(ir).toMatchObject({
+      imageRelevanceScore: 1,
+      imageIssues: ['hero photo shows a car, not a dental clinic'],
+      passed: false,
+    });
+  });
+
+  it('marks passed:true for an imageRelevanceScore at/above the default threshold (3)', async () => {
+    const events: RunEvent[] = [];
+    const llm = llmSeq(genJsonWithContent(), seoJson);
+    const render = renderWithShots(['/tmp/d.png']);
+    const visionCritic = vi.fn(async () => ({ score: 4, issues: [], imageRelevanceScore: 5, imageIssues: [] }));
+    const deps = baseDeps({ llm, render, visionCritic, onEvent: (e: RunEvent) => events.push(e) });
+    const s = await runPipeline(deps as any);
+    expect(s.ingested).toBe(1);
+    const ir = events.find((e) => e.type === 'image_relevance');
+    expect(ir).toMatchObject({ imageRelevanceScore: 5, passed: true });
+  });
+
+  it('respects a configurable threshold via deps.imageRelevanceMinScore', async () => {
+    const events: RunEvent[] = [];
+    const llm = llmSeq(genJsonWithContent(), seoJson);
+    const render = renderWithShots(['/tmp/d.png']);
+    const visionCritic = vi.fn(async () => ({ score: 4, issues: [], imageRelevanceScore: 3, imageIssues: [] }));
+    const deps = baseDeps({ llm, render, visionCritic, imageRelevanceMinScore: 4, onEvent: (e: RunEvent) => events.push(e) });
+    const s = await runPipeline(deps as any);
+    expect(s.ingested).toBe(1); // still ingests — flag-only
+    const ir = events.find((e) => e.type === 'image_relevance');
+    expect(ir).toMatchObject({ imageRelevanceScore: 3, passed: false });
+  });
+
+  it('does not emit image_relevance when the model omits imageRelevanceScore (backward compatible)', async () => {
+    const events: RunEvent[] = [];
+    const llm = llmSeq(genJsonWithContent(), seoJson);
+    const render = renderWithShots(['/tmp/d.png']);
+    const visionCritic = vi.fn(async () => ({ score: 4, issues: [] }));
+    const deps = baseDeps({ llm, render, visionCritic, onEvent: (e: RunEvent) => events.push(e) });
+    const s = await runPipeline(deps as any);
+    expect(s.ingested).toBe(1);
+    expect(events.some((e) => e.type === 'image_relevance')).toBe(false);
+  });
+
+  it('critic errors are unchanged: still drop with reason vision_critic_error, no image_relevance event', async () => {
+    const events: RunEvent[] = [];
+    const llm = llmSeq(genJsonWithContent(), seoJson);
+    const render = renderWithShots(['/tmp/d.png']);
+    const visionCritic = vi.fn(async () => {
+      throw new Error('claude CLI exited non-zero');
+    });
+    const deps = baseDeps({ llm, render, visionCritic, onEvent: (e: RunEvent) => events.push(e) });
+    const s = await runPipeline(deps as any);
+    expect(s.qualityDropped).toBe(1);
+    expect(s.ingested).toBe(0);
+    const dropped = events.find((e) => e.type === 'dropped');
+    expect(dropped).toMatchObject({ reason: 'vision_critic_error' });
+    expect(events.some((e) => e.type === 'image_relevance')).toBe(false);
+  });
+
+  it('a Phase B retry after a successful score does not re-emit image_relevance a second time', async () => {
+    const llm = llmSeq(genJsonWithContent(), seoJson);
+    const render = renderWithShots(['/tmp/d.png']);
+    const visionCritic = vi.fn(async () => ({ score: 4, issues: [], imageRelevanceScore: 2, imageIssues: ['off-topic'] }));
+    const events: RunEvent[] = [];
+    const ingest = vi
+      .fn()
+      .mockRejectedValueOnce(new Error('ECONNRESET'))
+      .mockResolvedValueOnce({ deduped: false });
+    const sleep = vi.fn(async (_ms: number) => {});
+    const deps = baseDeps({ llm, render, visionCritic, ingest, sleep, onEvent: (e: RunEvent) => events.push(e) });
+    const s = await runPipeline(deps as any);
+    expect(s.ingested).toBe(1);
+    expect(visionCritic).toHaveBeenCalledTimes(1);
+    expect(events.filter((e) => e.type === 'image_relevance')).toHaveLength(1);
+  });
+});
+
+// T5.2: placeholder-miss rate metric. content-lint.ts's PLACEHOLDER_IMAGE code
+// is deliberately excluded from the drop-worthy set (the Pexels swap is
+// best-effort infra, not a copy-quality failure) — a layout carrying a
+// surviving placeholder-image URL still ships, but must be visible in the eval
+// scoreboard as a Pexels-miss signal (a RunEvent alongside the existing warn log).
+describe('runPipeline placeholder-image miss (T5.2)', () => {
+  function llmSeq(...responses: string[]) {
+    const fn = vi.fn();
+    for (const r of responses) fn.mockResolvedValueOnce(r);
+    return { complete: fn };
+  }
+
+  it('emits a placeholder_image_miss RunEvent when a PLACEHOLDER_IMAGE lint violation survives repair, and still ingests', async () => {
+    const withPlaceholderImage = JSON.stringify({
+      post_title: 'T',
+      post_content: '<!-- wp:divi/image {"src":"https://placehold.co/800x600"} -->',
+    });
+    const llm = llmSeq(withPlaceholderImage, seoJson);
+    const events: RunEvent[] = [];
+    const ingest = vi.fn(async () => ({ deduped: false }));
+    const deps = baseDeps({ llm, ingest, onEvent: (e: RunEvent) => events.push(e) });
+    const s = await runPipeline(deps as any);
+    expect(s.ingested).toBe(1);
+    expect(s.qualityDropped).toBe(0);
+    const miss = events.find((e) => e.type === 'placeholder_image_miss');
+    expect(miss).toBeDefined();
+    expect(miss).toMatchObject({ target });
+  });
+
+  it('does not emit placeholder_image_miss for a clean layout with no image-host violations', async () => {
+    const clean = JSON.stringify({ post_title: 'T', post_content: '<!-- wp:divi/text {"content":"Ship faster with real copy"} -->' });
+    const llm = llmSeq(clean, seoJson);
+    const events: RunEvent[] = [];
+    const deps = baseDeps({ llm, onEvent: (e: RunEvent) => events.push(e) });
+    const s = await runPipeline(deps as any);
+    expect(s.ingested).toBe(1);
+    expect(events.some((e) => e.type === 'placeholder_image_miss')).toBe(false);
+  });
+});
+
 // T5.1: deterministic cross-layout boilerplate detection — a DROP, distinct from
 // (and independent of) the LLM copyScore flag above. No LLM call is involved:
 // this is a Phase A gate (pipeline/copy-critic.ts's `isCopyBoilerplate`), so it
