@@ -41,7 +41,19 @@ export interface VisionCriticContext {
  * already has the rendered screenshots on EVERY call, so the prompt asks for
  * this on every call. Still parsed optionally (present only when the model
  * actually returned it) so an older prompt/response, or a model that ignores
- * the rubric, never breaks existing `{score, issues}` parsing/consumers. */
+ * the rubric, never breaks existing `{score, issues}` parsing/consumers.
+ *
+ * Decoupled from the droppable `score` (review fix, post-bd9b2c7): subject/
+ * niche mismatch is judged ONLY here, and `buildVisionCriticPrompt` explicitly
+ * tells the model this must NOT lower the overall `score` — that field is
+ * gated by `meetsQualityBar`/`VISION_CRITIC_MIN_SCORE`, which HARD-DROPS,
+ * while `imageRelevanceScore` is gated by `meetsImageRelevanceBar`, which only
+ * FLAGS (see pipeline/run.ts). Before this fix the rubric asked the model to
+ * factor "image relevance" into the overall score too, so an off-topic image
+ * could tank both signals and drop anyway, making the flag-only policy
+ * unenforceable outside stubbed tests. The overall score still legitimately
+ * drops for a broken/corrupted/garbled image — that's an image-quality defect,
+ * not a subject/topic judgment. */
 export interface ImageRelevanceCriticResult {
   imageRelevanceScore?: number;
   imageIssues?: string[];
@@ -112,7 +124,9 @@ Divi 5 marketplace. Check specifically for:
 - no content clipping/overflow (text or images cut off, spilling past their section)
 - mobile column widths are sane (not 1-character-wide, not absurdly narrow)
 - contrast/legibility: text is readable against its background
-- image relevance: images plausibly match the section's stated niche/subject
+- image quality: images are not broken, corrupted, blurry, or garbled (do NOT
+  judge whether an image's SUBJECT matches the niche here — that is rated
+  separately below in imageRelevanceScore and must NOT affect this score)
 - overall premium quality: would a paying buyer feel this looks professionally designed?
 
 Scoring guide: 1 = broken/unusable, 3 = passable but flawed, 5 = premium with no
@@ -125,7 +139,12 @@ gallery must not show an office)? Include this as "imageRelevanceScore" (1-5
 integer, 5 = every image matches, 1 = clearly off-topic) with "imageIssues"
 (short strings naming any off-topic image, e.g. "hero photo shows a car, not a
 dental clinic"). Use an empty issues array and score 5 when every image
-matches.${copySection}
+matches. A subject/topic mismatch must NOT lower the overall score above — rate
+it ONLY here in imageRelevanceScore. The overall score keeps judging
+visual/layout quality (spacing, overlap, clipping, contrast, mobile sanity,
+premium feel); a broken, corrupted, or otherwise genuinely bad-looking image
+still legitimately lowers the overall score, but an on-topic subject is not
+what the overall score is for.${copySection}
 
 Respond with ONLY JSON: ${jsonContract}.
 Use an empty issues array when there are none.`;

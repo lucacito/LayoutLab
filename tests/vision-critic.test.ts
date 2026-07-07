@@ -244,6 +244,27 @@ describe('T5.2 image relevance (additive prompt + JSON contract)', () => {
     expect(result).toEqual({ score: 4, issues: [] });
   });
 
+  // Review fix (post-bd9b2c7): the rubric must not double-count image subject/
+  // niche relevance into the droppable `score` (gated by VISION_CRITIC_MIN_SCORE,
+  // which HARD-DROPS) — that judgment belongs ONLY in the flag-only
+  // `imageRelevanceScore`. Otherwise an off-topic image tanks both signals and
+  // drops anyway, making the flag-only policy unenforceable outside stubbed tests.
+  it('explicitly instructs that a subject/relevance mismatch must NOT lower the overall score', () => {
+    const { prompt } = buildVisionCriticPrompt(['/tmp/a.png'], { type: 'hero', niche: 'dental', style: 'minimal' });
+    expect(prompt).toMatch(/must not (lower|affect|reduce) the (overall )?score/i);
+  });
+
+  it('does not list subject/niche image relevance among the overall-score criteria bullets', () => {
+    const { prompt } = buildVisionCriticPrompt(['/tmp/a.png'], { type: 'hero', niche: 'dental', style: 'minimal' });
+    const start = prompt.indexOf('Check specifically for:');
+    const end = prompt.indexOf('Scoring guide:');
+    expect(start).toBeGreaterThan(-1);
+    expect(end).toBeGreaterThan(start);
+    const scoreCriteria = prompt.slice(start, end);
+    expect(scoreCriteria).not.toMatch(/niche\/subject/i);
+    expect(scoreCriteria.toLowerCase()).not.toContain('image relevance');
+  });
+
   it('composes with the T5.1 copy fields on the same response (both additive fields independently present)', () => {
     const result = parseVisionCriticResult(
       '{"score":4,"issues":[],"copyScore":2,"copyIssues":["generic"],"imageRelevanceScore":5,"imageIssues":[]}',
