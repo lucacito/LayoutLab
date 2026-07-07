@@ -142,8 +142,19 @@ describe('runPipeline near-duplicate gate (T1.2)', () => {
     for (const r of responses) fn.mockResolvedValueOnce(r);
     return { complete: fn };
   }
+  // T5.1 note: these two must be genuinely DIFFERENT prose (not just a trailing
+  // digit swapped) — this describe block is testing PIXEL/perceptual-hash
+  // near-duplicate detection, decoupled from the new deterministic TEXT-overlap
+  // boilerplate gate (pipeline/copy-critic.ts) added in T5.1. Two near-identical
+  // sentences differing only by one word/number would (correctly) trip THAT
+  // gate too, which isn't what any test in this block is about.
+  const GEN_TEXT: Record<number, string> = {
+    1: 'Same-day emergency plumbing for Austin homeowners, licensed and insured',
+    2: 'Boutique bridal photography across the Hill Country, booking weekends now',
+  };
   function genJson(n: number) {
-    return JSON.stringify({ post_title: `T${n}`, post_content: `<!-- wp:divi/text {"content":"Ship faster with real copy number ${n}"} -->` });
+    const text = GEN_TEXT[n] ?? `Distinct unrelated filler copy variant number ${n} for testing`;
+    return JSON.stringify({ post_title: `T${n}`, post_content: `<!-- wp:divi/text {"content":"${text}"} -->` });
   }
 
   it('drops the second of two visually-identical-but-reworded layouts within the same run (in-memory pool)', async () => {
@@ -609,6 +620,158 @@ describe('runPipeline vision critic gate (T1.3)', () => {
     const dropped = events.find((e) => e.type === 'dropped');
     expect(dropped).toMatchObject({ reason: 'vision_critic_error' });
     expect(events.some((e) => e.type === 'vision_critic')).toBe(false); // never scored — nothing to report
+  });
+});
+
+// T5.1: the LLM copyScore rides the SAME folded critic call (pipeline/
+// copy-critic.ts) — FLAG only, never a drop signal by itself.
+describe('runPipeline copy critic (T5.1 — LLM copyScore, flag-only)', () => {
+  function llmSeq(...responses: string[]) {
+    const fn = vi.fn();
+    for (const r of responses) fn.mockResolvedValueOnce(r);
+    return { complete: fn };
+  }
+  function genJsonWithContent(n = 1) {
+    return JSON.stringify({ post_title: `T${n}`, post_content: `<!-- wp:divi/text {"content":"Ship faster with real, specific copy ${n}"} -->` });
+  }
+  function renderWithShots(paths: string[], perceptualHash = 'a'.repeat(64)) {
+    return vi.fn(async () => ({ previewImageKeys: ['p'], perceptualHash, screenshotPaths: paths }));
+  }
+
+  it('flags a below-threshold copyScore but still ingests the layout (never drops for it alone)', async () => {
+    const events: RunEvent[] = [];
+    const llm = llmSeq(genJsonWithContent(), seoJson);
+    const render = renderWithShots(['/tmp/d.png']);
+    const visionCritic = vi.fn(async () => ({ score: 4, issues: [], copyScore: 1, copyIssues: ['generic tagline'] }));
+    const ingest = vi.fn(async () => ({ deduped: false }));
+    const deps = baseDeps({ llm, render, visionCritic, ingest, onEvent: (e: RunEvent) => events.push(e) });
+    const s = await runPipeline(deps as any);
+    expect(s.ingested).toBe(1);
+    expect(s.qualityDropped).toBe(0);
+    expect(ingest).toHaveBeenCalledOnce();
+    const cc = events.find((e) => e.type === 'copy_critic');
+    expect(cc).toMatchObject({ copyScore: 1, copyIssues: ['generic tagline'], passed: false });
+  });
+
+  it('marks passed:true for a copyScore at/above the default threshold (3)', async () => {
+    const events: RunEvent[] = [];
+    const llm = llmSeq(genJsonWithContent(), seoJson);
+    const render = renderWithShots(['/tmp/d.png']);
+    const visionCritic = vi.fn(async () => ({ score: 4, issues: [], copyScore: 4, copyIssues: [] }));
+    const deps = baseDeps({ llm, render, visionCritic, onEvent: (e: RunEvent) => events.push(e) });
+    const s = await runPipeline(deps as any);
+    expect(s.ingested).toBe(1);
+    const cc = events.find((e) => e.type === 'copy_critic');
+    expect(cc).toMatchObject({ copyScore: 4, passed: true });
+  });
+
+  it('respects a configurable threshold via deps.copyCriticMinScore', async () => {
+    const events: RunEvent[] = [];
+    const llm = llmSeq(genJsonWithContent(), seoJson);
+    const render = renderWithShots(['/tmp/d.png']);
+    const visionCritic = vi.fn(async () => ({ score: 4, issues: [], copyScore: 3, copyIssues: [] }));
+    const deps = baseDeps({ llm, render, visionCritic, copyCriticMinScore: 4, onEvent: (e: RunEvent) => events.push(e) });
+    const s = await runPipeline(deps as any);
+    expect(s.ingested).toBe(1); // still ingests — flag-only
+    const cc = events.find((e) => e.type === 'copy_critic');
+    expect(cc).toMatchObject({ copyScore: 3, passed: false });
+  });
+
+  it('does not emit copy_critic when the model omits copyScore (backward compatible)', async () => {
+    const events: RunEvent[] = [];
+    const llm = llmSeq(genJsonWithContent(), seoJson);
+    const render = renderWithShots(['/tmp/d.png']);
+    const visionCritic = vi.fn(async () => ({ score: 4, issues: [] }));
+    const deps = baseDeps({ llm, render, visionCritic, onEvent: (e: RunEvent) => events.push(e) });
+    const s = await runPipeline(deps as any);
+    expect(s.ingested).toBe(1);
+    expect(events.some((e) => e.type === 'copy_critic')).toBe(false);
+  });
+
+  it('critic errors are unchanged: still drop with reason vision_critic_error, no copy_critic event', async () => {
+    const events: RunEvent[] = [];
+    const llm = llmSeq(genJsonWithContent(), seoJson);
+    const render = renderWithShots(['/tmp/d.png']);
+    const visionCritic = vi.fn(async () => {
+      throw new Error('claude CLI exited non-zero');
+    });
+    const deps = baseDeps({ llm, render, visionCritic, onEvent: (e: RunEvent) => events.push(e) });
+    const s = await runPipeline(deps as any);
+    expect(s.qualityDropped).toBe(1);
+    expect(s.ingested).toBe(0);
+    const dropped = events.find((e) => e.type === 'dropped');
+    expect(dropped).toMatchObject({ reason: 'vision_critic_error' });
+    expect(events.some((e) => e.type === 'copy_critic')).toBe(false);
+  });
+
+  it('the critic call receives the extracted layout text as context.text', async () => {
+    const llm = llmSeq(genJsonWithContent(7), seoJson);
+    const render = renderWithShots(['/tmp/d.png']);
+    const visionCritic = vi.fn(async (_paths: string[], _context: unknown) => ({ score: 4, issues: [] as string[] }));
+    await runPipeline(baseDeps({ llm, render, visionCritic }) as any);
+    const [, context] = visionCritic.mock.calls[0];
+    expect((context as any).text).toContain('Ship faster with real, specific copy 7');
+  });
+});
+
+// T5.1: deterministic cross-layout boilerplate detection — a DROP, distinct from
+// (and independent of) the LLM copyScore flag above. No LLM call is involved:
+// this is a Phase A gate (pipeline/copy-critic.ts's `isCopyBoilerplate`), so it
+// never even reaches upload/render/vision-critic for the dropped target.
+describe('runPipeline copy-boilerplate gate (T5.1, deterministic)', () => {
+  const targetA = { type: 'hero', niche: 'saas', style: 'minimal' };
+  const targetB = { type: 'hero', niche: 'saas', style: 'bold' };
+  const BOILERPLATE = 'We deliver quality solutions to help your business grow and succeed in a competitive market today';
+
+  function genWithText(n: number, text: string) {
+    return JSON.stringify({ post_title: `T${n}`, post_content: `<!-- wp:divi/text {"content":"${text}"} -->` });
+  }
+  function llmSeq(...responses: string[]) {
+    const fn = vi.fn();
+    for (const r of responses) fn.mockResolvedValueOnce(r);
+    return { complete: fn };
+  }
+
+  it('ingests the first occurrence, then drops a near-identical second layout as copy_boilerplate — cheaply, before upload/render', async () => {
+    const llm = llmSeq(genWithText(1, BOILERPLATE), seoJson, genWithText(2, BOILERPLATE));
+    const upload = vi.fn(async () => ({ diviJsonBlobKey: 'k', previewImageKeys: ['p'] }));
+    const ingest = vi.fn(async () => ({ deduped: false }));
+    const events: RunEvent[] = [];
+    const s = await runPipeline(baseDeps({
+      targets: [targetA, targetB],
+      llm, upload, ingest,
+      onEvent: (e: RunEvent) => events.push(e),
+    }) as any);
+    expect(s.ingested).toBe(1);
+    expect(s.qualityDropped).toBe(1);
+    expect(upload).toHaveBeenCalledTimes(1); // second target never reaches Phase B at all
+    const dropped = events.find((e) => e.type === 'dropped' && (e as any).reason === 'copy_boilerplate');
+    expect(dropped).toBeTruthy();
+  });
+
+  it('does not drop two independently-written, distinct layouts', async () => {
+    const llm = llmSeq(
+      genWithText(1, 'Same-day emergency plumbing for Austin homeowners licensed and insured'),
+      seoJson,
+      genWithText(2, 'Boutique bridal photography across the Hill Country booking weekends now'),
+      seoJson,
+    );
+    const s = await runPipeline(baseDeps({ targets: [targetA, targetB], llm }) as any);
+    expect(s.ingested).toBe(2);
+    expect(s.qualityDropped).toBe(0);
+  });
+
+  it('does not apply the boilerplate gate to a theme run (growNearDupPool: false — sibling pages share brand copy on purpose)', async () => {
+    // Simulates the theme wrapper's ctx (createRunContext with growNearDupPool:
+    // false) by driving processItem directly through two items with identical text.
+    const { createRunContext, processItem } = await import('@/pipeline/run');
+    const llm = llmSeq(genWithText(1, BOILERPLATE), seoJson, genWithText(2, BOILERPLATE), seoJson);
+    const deps = baseDeps({ llm }) as any;
+    const ctx = await createRunContext(deps, { growNearDupPool: false });
+    const r1 = await processItem({ target: targetA }, ctx);
+    const r2 = await processItem({ target: targetB }, ctx);
+    expect(r1.outcome).toBe('ingested');
+    expect(r2.outcome).toBe('ingested'); // NOT dropped — theme pages skip this gate
   });
 });
 

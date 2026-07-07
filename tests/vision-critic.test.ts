@@ -148,6 +148,56 @@ describe('scoreScreenshots (CLI wiring)', () => {
   });
 });
 
+// T5.1: the copy-quality check is FOLDED into this same call — additive prompt/
+// contract, tested here since vision-critic.ts owns the prompt/parse contract.
+// The extraction/shingle/threshold logic itself is tested in copy-critic.test.ts.
+describe('T5.1 copy critic fold (additive prompt + JSON contract)', () => {
+  it('buildVisionCriticPrompt is BYTE-IDENTICAL when context.text is omitted (backward compatible)', () => {
+    const context = { type: 'hero', niche: 'saas', style: 'minimal' };
+    const withoutText = buildVisionCriticPrompt(['/tmp/a.png'], context);
+    const withEmptyText = buildVisionCriticPrompt(['/tmp/a.png'], { ...context, text: '' });
+    expect(withoutText).toEqual(withEmptyText);
+    expect(withoutText.prompt).not.toContain('copyScore');
+    expect(withoutText.prompt).not.toContain('Section copy');
+  });
+
+  it('appends the copy rubric + additive JSON contract when context.text is supplied', () => {
+    const { prompt } = buildVisionCriticPrompt(['/tmp/a.png'], {
+      type: 'hero',
+      niche: 'saas',
+      style: 'minimal',
+      text: 'Ship faster with copy built for real teams',
+    });
+    expect(prompt).toContain('Ship faster with copy built for real teams');
+    expect(prompt).toContain('Section copy');
+    expect(prompt).toMatch(/copyScore/);
+    expect(prompt).toMatch(/copyIssues/);
+  });
+
+  it('parseVisionCriticResult parses additive copyScore/copyIssues when present', () => {
+    const result = parseVisionCriticResult('{"score":4,"issues":[],"copyScore":2,"copyIssues":["generic tagline"]}');
+    expect(result).toEqual({ score: 4, issues: [], copyScore: 2, copyIssues: ['generic tagline'] });
+  });
+
+  it('parseVisionCriticResult omits copy fields entirely when absent (exact pre-T5.1 shape)', () => {
+    const result = parseVisionCriticResult('{"score":4,"issues":[]}');
+    expect(result).toEqual({ score: 4, issues: [] });
+    expect('copyScore' in result).toBe(false);
+    expect('copyIssues' in result).toBe(false);
+  });
+
+  it('ignores a non-numeric copyScore rather than throwing (the base score still parses)', () => {
+    const result = parseVisionCriticResult('{"score":4,"issues":[],"copyScore":"good"}');
+    expect(result).toEqual({ score: 4, issues: [] });
+  });
+
+  it('defaults copyIssues to undefined (not []) when copyScore is present but copyIssues is absent', () => {
+    const result = parseVisionCriticResult('{"score":4,"issues":[],"copyScore":3}');
+    expect(result.copyScore).toBe(3);
+    expect(result.copyIssues).toBeUndefined();
+  });
+});
+
 describe('claudeVisionCritic factory', () => {
   it('returns a VisionCritic bound to the given run/model/budget, mirroring claudeCliClient', async () => {
     const run = stubRun('{"score":3,"issues":["cramped mobile column"]}');

@@ -18,6 +18,12 @@ import type { UploadResult } from './upload';
 import type { IngestPayload } from '@/lib/ingest/schema';
 import { meetsQualityBar } from './vision-critic';
 import type { VisionCriticContext, VisionCriticResult } from './vision-critic';
+// T5.1: copy-quality gate — extractLayoutText feeds the folded vision-critic
+// prompt (see vision-critic.ts); isCopyBoilerplate/copyBoilerplateMaxOverlap are
+// the deterministic cross-layout-duplication DROP gate; meetsCopyBar is the
+// LLM-copyScore FLAG-only threshold (never drops by itself — see pipeline/
+// copy-critic.ts's module doc for the full flag-vs-drop policy rationale).
+import { extractLayoutText, isCopyBoilerplate, copyBoilerplateMaxOverlap, meetsCopyBar } from './copy-critic';
 // T2.2: classify errors caught by the per-target catch below into 'transient_infra'
 // (retried with backoff) vs 'permanent_infra' (usage-limit/budget/auth/unknown —
 // never retried). See pipeline/errors.ts's module doc for why 'quality' drops
@@ -111,7 +117,11 @@ export type RunEvent =
        * threw/returned unparseable JSON — both are deliberate QUALITY drops
        * (no unscored layout ships is a content-quality policy, not an infra
        * signal), kept distinct from each other so the eval scoreboard can tell
-       * them apart.
+       * them apart. T5.1 adds `'copy_boilerplate'` — the DETERMINISTIC shingle-
+       * overlap cross-layout-duplication gate (pipeline/copy-critic.ts's
+       * `isCopyBoilerplate`); deliberately NOT `'vision_critic'`/reused from the
+       * LLM copyScore — that score is a FLAG-only signal (see the `copy_critic`
+       * event below) and never drops a target by itself.
        *
        * T2.2 review fix: this variant's `type` stays `'dropped'` (NOT renamed
        * to `'qualityDropped'` to mirror the `RunSummary` field of the same
@@ -121,7 +131,7 @@ export type RunEvent =
        * though their names diverge; renaming the event type would be a
        * needless breaking change for the eval harness (and any other
        * consumer) that already keys off `event.type === 'dropped'`. */
-      reason: 'validation' | 'content' | 'vision_critic' | 'vision_critic_error';
+      reason: 'validation' | 'content' | 'vision_critic' | 'vision_critic_error' | 'copy_boilerplate';
       detail: string;
     }
   | { type: 'deduped'; target: Target }
@@ -136,6 +146,13 @@ export type RunEvent =
   /** Vision-critic score for this target (T1.3), emitted whether it passed or
    * dropped — the eval harness (T4.1) aggregates these into a score distribution. */
   | { type: 'vision_critic'; target: Target; score: number; issues: string[]; passed: boolean }
+  /** T5.1: the LLM copyScore from the SAME folded critic call (pipeline/
+   * copy-critic.ts) — emitted alongside `vision_critic` whenever the model
+   * returned a `copyScore`, whether or not it met `COPY_CRITIC_MIN_SCORE`.
+   * `passed: false` is a FLAG, not a drop — the target still proceeds to
+   * ingest; see `meetsCopyBar`'s module doc for why. Absent entirely when the
+   * model didn't return a `copyScore` (nothing to report). */
+  | { type: 'copy_critic'; target: Target; copyScore: number; copyIssues: string[]; passed: boolean }
   | { type: 'ingested'; target: Target; slug: string }
   /** T2.2: emitted once per retry attempt on a `transient_infra` failure,
    * BEFORE the backoff sleep — lets a consumer count/observe retries without
@@ -211,6 +228,11 @@ export interface RunDeps {
   /** VISION_CRITIC_MIN_SCORE — minimum acceptable score (default 3, resolved by
    * pipeline/deps.ts from the env var of the same name). */
   visionCriticMinScore?: number;
+  /** T5.1: COPY_CRITIC_MIN_SCORE — minimum acceptable LLM copyScore (default 3,
+   * mirrors `visionCriticMinScore`'s resolution) before the `copy_critic` event
+   * is emitted with `passed: false`. FLAG-only: unlike `visionCriticMinScore`,
+   * failing this bar never drops the target — see `meetsCopyBar`. */
+  copyCriticMinScore?: number;
   ingest: (payload: IngestPayload) => Promise<{ deduped: boolean }>;
   maxRepairs: number;
   maxParseRetries?: number;
@@ -317,9 +339,18 @@ export interface RunContext {
    * against each other (T4.2 adjudication) — they're still checked against the
    * seeded cross-pack pool, just never poison it for each other. */
   nearDupPool: string[];
+  /** T5.1: in-run-only pool of extracted layout text this run has ACCEPTED so
+   * far — the deterministic cross-layout-boilerplate gate's comparison set. See
+   * pipeline/copy-critic.ts's module doc for why there's no DB-seeded
+   * counterpart (unlike `nearDupPool`/`nearDuplicateHashes`) yet. */
+  copyTextPool: string[];
   maxDistance: number;
   maxRetries: number;
   retryBaseDelayMs: number;
+  /** T5.1: reused (not a new flag) for `copyTextPool` too — same rationale as
+   * the near-dupe pool: sibling pages of ONE theme pack intentionally share
+   * brand copy (footer/contact text, CTA phrasing), so a theme run must never
+   * check-or-grow the boilerplate pool against/from its own sibling pages. */
   growNearDupPool: boolean;
   log: (msg: string) => void;
   onEvent: (event: RunEvent) => void;
@@ -347,6 +378,9 @@ export async function createRunContext(deps: RunDeps, opts?: { growNearDupPool?:
     deps,
     summary: newRunSummary(),
     nearDupPool: deps.nearDuplicateHashes ? await deps.nearDuplicateHashes() : [],
+    // T5.1: no DB-seeded source (see the module doc on `RunContext.copyTextPool`)
+    // — starts empty every run, grown only from what THIS run itself accepts.
+    copyTextPool: [],
     maxDistance: perceptualDupeMaxDistance(),
     maxRetries: deps.maxRetries ?? 2,
     retryBaseDelayMs: deps.retryBaseDelayMs ?? 250,
@@ -419,7 +453,7 @@ export interface ItemResult {
  * the item's pins/composeExtras and the context's `growNearDupPool` flag.
  */
 export async function processItem(item: PipelineItem, ctx: RunContext): Promise<ItemResult> {
-  const { deps, summary, nearDupPool, maxDistance, maxRetries, retryBaseDelayMs, log, onEvent } = ctx;
+  const { deps, summary, nearDupPool, copyTextPool, maxDistance, maxRetries, retryBaseDelayMs, log, onEvent } = ctx;
   const target = item.target;
   // T2.2: a 'usage_limit' classification means every OTHER remaining target
   // would hit the exact same account-level wall — there's nothing to gain (and
@@ -512,7 +546,7 @@ export async function processItem(item: PipelineItem, ctx: RunContext): Promise<
     // during generation itself) with no reproducing test or reported
     // incident; it's a reasonable, documented follow-up rather than a gap
     // this fix silently papers over.
-    const runPhaseA = async (): Promise<{ json: string; hash: string; seo: LayoutSeo } | undefined> => {
+    const runPhaseA = async (): Promise<{ json: string; hash: string; seo: LayoutSeo; layoutText: string } | undefined> => {
       let { json } =
         target.type === 'full_landing'
           ? await composeLanding(target, {
@@ -603,6 +637,29 @@ export async function processItem(item: PipelineItem, ctx: RunContext): Promise<
         if (lint.length) log(`warn(content) ${target.type}/${target.niche}/${target.style}: ${lint.map((v) => v.code).join(',')} (best-effort image miss)`);
       }
 
+      // T5.1: deterministic cross-layout boilerplate gate — separate from, and
+      // stricter than, the LLM copyScore FLAG below (Phase B). "Obvious" reused
+      // copy (high word-shingle overlap with a layout THIS run already accepted)
+      // is a hard DROP, decided without any LLM call, so it happens here in Phase
+      // A — before render/SEO/vision-critic even run — rather than in Phase B
+      // alongside the near-dupe/vision-critic gates: a layout that's already
+      // known-boilerplate shouldn't pay for any of that first. See
+      // pipeline/copy-critic.ts's module doc for why the comparison pool is
+      // in-run-only, and `RunContext.copyTextPool`'s doc for why theme runs
+      // (growNearDupPool: false) skip this gate entirely — their pages
+      // intentionally share brand copy on purpose. `layoutText` is computed
+      // once here and threaded through to Phase B (folded critic prompt +
+      // the pool-growing push on ingest) rather than re-extracted there.
+      const layoutText = extractLayoutText(json);
+      if (ctx.growNearDupPool && isCopyBoilerplate(layoutText, copyTextPool)) {
+        summary.qualityDropped++;
+        outcome = 'dropped';
+        const detail = `overlap > ${(copyBoilerplateMaxOverlap() * 100).toFixed(0)}% with previously accepted copy this run`;
+        log(`drop(copy_boilerplate) ${target.type}/${target.niche}/${target.style}: ${detail}`);
+        emit({ type: 'dropped', target, reason: 'copy_boilerplate', detail });
+        return undefined;
+      }
+
       // Enforce single-column, full-width stacking on phone (deterministic; the
       // model is inconsistent about responsive column sizing). Adds phone-only
       // attributes — desktop layout and validation verdict are unaffected.
@@ -628,7 +685,7 @@ export async function processItem(item: PipelineItem, ctx: RunContext): Promise<
       for (const c of seo.seoClamps) {
         emit({ type: 'seo_clamped', target, axis: c.axis, proposed: c.proposed, clamped: c.clamped });
       }
-      return { json, hash, seo };
+      return { json, hash, seo, layoutText };
     };
 
     // ---- Phase B ------------------------------------------------------------
@@ -646,10 +703,14 @@ export async function processItem(item: PipelineItem, ctx: RunContext): Promise<
       | { kind: 'near_duplicate'; distance: number }
       | { kind: 'vision_critic_dropped'; score: number; issues: string[] }
       | { kind: 'vision_critic_error'; detail: string }
-      | { kind: 'ingested'; seoSlug: string; perceptualHash?: string };
+      // T5.1: `layoutText` rides along on the ingested outcome so `applyPhaseBOutcome`
+      // (declared outside this closure, in `processItem`'s own scope — see its
+      // comment) can grow `copyTextPool` for FUTURE targets without needing its
+      // own reference to Phase A's `json`.
+      | { kind: 'ingested'; seoSlug: string; perceptualHash?: string; layoutText: string };
 
-    const runPhaseB = (phaseA: { json: string; hash: string; seo: LayoutSeo }) => {
-      const { json, hash, seo } = phaseA;
+    const runPhaseB = (phaseA: { json: string; hash: string; seo: LayoutSeo; layoutText: string }) => {
+      const { json, hash, seo, layoutText } = phaseA;
       let uploadMemo: UploadResult | undefined;
       interface RenderMemo {
         attempted: boolean;
@@ -771,12 +832,36 @@ export async function processItem(item: PipelineItem, ctx: RunContext): Promise<
             // retried. Logged/tagged distinctly so it's visible as its own failure
             // mode in the eval scoreboard.
             try {
-              criticMemo = await deps.visionCritic(criticPaths, { type: target.type, niche: target.niche, style: target.style });
+              // T5.1: same CLI call also rates the layout's extracted copy —
+              // `text` is additive on `VisionCriticContext` (vision-critic.ts);
+              // omitted/empty text (nothing extractable) yields the pre-T5.1
+              // visual-only prompt, so this never changes the visual-only path.
+              criticMemo = await deps.visionCritic(criticPaths, {
+                type: target.type,
+                niche: target.niche,
+                style: target.style,
+                text: layoutText,
+              });
             } catch (err) {
               return { kind: 'vision_critic_error', detail: (err as Error).message };
             }
             const passed = meetsQualityBar(criticMemo, minScore);
             emit({ type: 'vision_critic', target, score: criticMemo.score, issues: criticMemo.issues, passed });
+            // T5.1: FLAG-only — logged/emitted, but never contributes to `passed`
+            // above or to its own drop. Only emitted when the model actually
+            // returned a copyScore (additive/optional field — see CopyCriticResult).
+            if (criticMemo.copyScore !== undefined) {
+              const copyMinScore = deps.copyCriticMinScore ?? 3;
+              const copyPassed = meetsCopyBar(criticMemo.copyScore, copyMinScore);
+              const copyIssues = criticMemo.copyIssues ?? [];
+              emit({ type: 'copy_critic', target, copyScore: criticMemo.copyScore, copyIssues, passed: copyPassed });
+              if (!copyPassed) {
+                log(
+                  `copy-critic flag ${target.type}/${target.niche}/${target.style}: ` +
+                    `score ${criticMemo.copyScore} issues=${copyIssues.join(',') || 'none'} (flagged, not dropped)`,
+                );
+              }
+            }
             if (!passed) return { kind: 'vision_critic_dropped', score: criticMemo.score, issues: criticMemo.issues };
           } else {
             // T2.2 review fix: already scored in a prior Phase B attempt for this
@@ -798,7 +883,7 @@ export async function processItem(item: PipelineItem, ctx: RunContext): Promise<
           perceptualHash: renderMemo.perceptualHash,
         });
         await deps.ingest(payload);
-        return { kind: 'ingested', seoSlug: seo.slug, perceptualHash: renderMemo.perceptualHash };
+        return { kind: 'ingested', seoSlug: seo.slug, perceptualHash: renderMemo.perceptualHash, layoutText };
       };
     };
 
@@ -816,6 +901,7 @@ export async function processItem(item: PipelineItem, ctx: RunContext): Promise<
       issues?: string[];
       seoSlug?: string;
       perceptualHash?: string;
+      layoutText?: string;
     }) => {
       switch (o.kind) {
         case 'render_failed':
@@ -857,6 +943,10 @@ export async function processItem(item: PipelineItem, ctx: RunContext): Promise<
           // intentionally same-palette, shared header/footer bands — never
           // near-dupe-drop each other.
           if (o.perceptualHash && ctx.growNearDupPool) nearDupPool.push(o.perceptualHash);
+          // T5.1: same reuse-of-`growNearDupPool` rationale as the near-dupe pool
+          // above — grows the in-run boilerplate-comparison pool only for matrix/
+          // vary runs, never for a theme pack's own sibling pages.
+          if (o.layoutText && ctx.growNearDupPool) copyTextPool.push(o.layoutText);
           summary.ingested++;
           outcome = 'ingested';
           // Matrix items learn their slug only here (post-SEO); theme items were

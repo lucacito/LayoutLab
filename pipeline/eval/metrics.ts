@@ -73,6 +73,18 @@ export interface EvalMetrics {
   /** Mean vision-critic score across every scored target. `null` under the same
    * conditions as `visionScoreDistribution`. */
   visionScoreMean: number | null;
+  /** T5.1: histogram of LLM copyScores (same folded critic call — see
+   * pipeline/copy-critic.ts), same bucketing convention as
+   * `visionScoreDistribution`. Only counts targets where the model actually
+   * returned a `copyScore` (additive/optional) — `null` when none did. */
+  copyScoreDistribution: Record<string, number> | null;
+  /** Mean LLM copyScore across every target that returned one. `null` under the
+   * same conditions as `copyScoreDistribution`. */
+  copyScoreMean: number | null;
+  /** T5.1: count of `copy_critic` events with `passed: false` — the LLM
+   * copyScore FLAG (never a drop) fired. Distinct from `dropReasonCounts`'s
+   * `copy_boilerplate` entry, which IS a drop (the deterministic shingle gate). */
+  copyFlagCount: number;
   /** T2.4: count of `seo_floor_miss` events — metaDescription/keyword count
    * still under pipeline/seo.ts's minimum quality floor after its one retry.
    * NOT a drop reason (these targets still ingest); a pure QA signal for how
@@ -106,6 +118,10 @@ export class MetricsAccumulator {
   private totalOutputTokens = 0;
   /** Raw vision-critic scores (T1.3) — one entry per scored target, pass or drop. */
   private visionScores: number[] = [];
+  /** T5.1: raw LLM copyScores — one entry per target the model returned one for. */
+  private copyScores: number[] = [];
+  /** T5.1: count of `copy_critic` events with `passed: false` (flag, not drop). */
+  private copyFlagCount = 0;
   /** T2.4: count of `seo_floor_miss` events. */
   private seoFloorMissCount = 0;
   /** T2.4: count of `seo_clamped` events, by axis. */
@@ -143,6 +159,10 @@ export class MetricsAccumulator {
         break; // tracked via RunSummary.renderBlank at finalize() (T2.1)
       case 'vision_critic':
         this.visionScores.push(event.score);
+        break;
+      case 'copy_critic':
+        this.copyScores.push(event.copyScore);
+        if (!event.passed) this.copyFlagCount++;
         break;
       case 'ingested':
         break; // tracked via RunSummary.ingested at finalize()
@@ -199,26 +219,31 @@ export class MetricsAccumulator {
       nearDupeRate: summary.generated ? summary.nearDuped / summary.generated : null,
       renderFailedRate: summary.generated ? summary.renderFailed / summary.generated : null,
       renderBlankRate: summary.generated ? summary.renderBlank / summary.generated : null,
-      visionScoreDistribution: this.visionScores.length ? this.visionScoreDistribution() : null,
+      visionScoreDistribution: this.visionScores.length ? scoreDistribution(this.visionScores) : null,
       visionScoreMean: this.visionScores.length
         ? this.visionScores.reduce((a, b) => a + b, 0) / this.visionScores.length
         : null,
+      copyScoreDistribution: this.copyScores.length ? scoreDistribution(this.copyScores) : null,
+      copyScoreMean: this.copyScores.length ? this.copyScores.reduce((a, b) => a + b, 0) / this.copyScores.length : null,
+      copyFlagCount: this.copyFlagCount,
       seoFloorMissCount: this.seoFloorMissCount,
       seoClampCount: Object.values(this.seoClampCountsByAxis).reduce((a, b) => a + b, 0),
       seoClampCountsByAxis: { ...this.seoClampCountsByAxis },
     };
   }
 
-  /** Buckets raw scores by nearest integer (the rubric asks for 1-5 integers,
-   * but nothing downstream enforces that, so round rather than assume). */
-  private visionScoreDistribution(): Record<string, number> {
-    const dist: Record<string, number> = {};
-    for (const s of this.visionScores) {
-      const key = String(Math.round(s));
-      dist[key] = (dist[key] ?? 0) + 1;
-    }
-    return dist;
+}
+
+/** Buckets raw scores by nearest integer (both the vision and T5.1 copy rubrics
+ * ask for 1-5 integers, but nothing downstream enforces that, so round rather
+ * than assume). Shared by `visionScoreDistribution`/`copyScoreDistribution`. */
+function scoreDistribution(scores: number[]): Record<string, number> {
+  const dist: Record<string, number> = {};
+  for (const s of scores) {
+    const key = String(Math.round(s));
+    dist[key] = (dist[key] ?? 0) + 1;
   }
+  return dist;
 }
 
 function fmtPct(v: number | null): string {
@@ -230,7 +255,7 @@ function fmtNum(v: number | null, digits = 2): string {
 function fmtUsd(v: number | null): string {
   return v == null ? 'n/a' : `$${v.toFixed(4)}`;
 }
-function fmtVisionDist(dist: Record<string, number> | null): string {
+function fmtScoreDist(dist: Record<string, number> | null): string {
   if (!dist || !Object.keys(dist).length) return 'n/a';
   return Object.entries(dist)
     .sort(([a], [b]) => Number(a) - Number(b))
@@ -257,7 +282,15 @@ export function formatComparisonTable(rows: EvalMetrics[]): string {
     ['render-failed rate', rows.map((r) => fmtPct(r.renderFailedRate))],
     ['render-blank rate', rows.map((r) => fmtPct(r.renderBlankRate))],
     ['vision score mean', rows.map((r) => fmtNum(r.visionScoreMean))],
-    ['vision score dist', rows.map((r) => fmtVisionDist(r.visionScoreDistribution))],
+    ['vision score dist', rows.map((r) => fmtScoreDist(r.visionScoreDistribution))],
+    // T5.1: LLM copyScore (flag-only) + the deterministic boilerplate DROP gate.
+    // The boilerplate drop count itself needs no new row — 'copy_boilerplate' is
+    // just another entry in the generic 'drop reasons (quality)' row below, since
+    // MetricsAccumulator.add's 'dropped' case already buckets by `event.reason`
+    // for any reason string.
+    ['copy score mean', rows.map((r) => fmtNum(r.copyScoreMean))],
+    ['copy score dist', rows.map((r) => fmtScoreDist(r.copyScoreDistribution))],
+    ['copy flags (not dropped)', rows.map((r) => String(r.copyFlagCount))],
     // T2.4: SEO quality-floor misses (flagged, never dropped) + axis/color
     // clamp counts — see pipeline/seo.ts and the seo_floor_miss/seo_clamped
     // RunEvents in pipeline/run.ts.

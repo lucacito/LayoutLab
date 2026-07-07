@@ -271,6 +271,53 @@ describe('MetricsAccumulator', () => {
     expect(m.seoClampCount).toBe(0);
     expect(m.seoClampCountsByAxis).toEqual({});
   });
+
+  // T5.1: the LLM copyScore rides the SAME folded critic call as vision_critic
+  // (see pipeline/copy-critic.ts) — flag-only, so it needs its OWN distribution/
+  // mean/flag-count, distinct from qualityDropped/dropReasonCounts.
+  it('builds a copy-score distribution + mean from copy_critic events, and counts below-threshold flags, null when the critic never returns one', () => {
+    const acc = new MetricsAccumulator('baseline', 3);
+    const events: RunEvent[] = [
+      { type: 'generated', target },
+      { type: 'copy_critic', target, copyScore: 4, copyIssues: [], passed: true },
+      { type: 'ingested', target, slug: 's1' },
+      { type: 'generated', target },
+      { type: 'copy_critic', target, copyScore: 1, copyIssues: ['generic tagline'], passed: false },
+      { type: 'ingested', target, slug: 's2' },
+      { type: 'generated', target },
+      { type: 'copy_critic', target, copyScore: 4, copyIssues: [], passed: true },
+      { type: 'ingested', target, slug: 's3' },
+    ];
+    for (const e of events) acc.add(e);
+    const m = acc.finalize(summary({ generated: 3, ingested: 3 }));
+    expect(m.copyScoreDistribution).toEqual({ '1': 1, '4': 2 });
+    expect(m.copyScoreMean).toBeCloseTo((4 + 1 + 4) / 3, 5);
+    expect(m.copyFlagCount).toBe(1);
+    // A copy_critic flag never touches qualityDropped — flag-only policy.
+    expect(m.qualityDropped).toBe(0);
+
+    const empty = new MetricsAccumulator('empty', 0).finalize(summary());
+    expect(empty.copyScoreDistribution).toBeNull();
+    expect(empty.copyScoreMean).toBeNull();
+    expect(empty.copyFlagCount).toBe(0);
+  });
+
+  // T5.1: the deterministic shingle-overlap boilerplate gate is a DROP with its
+  // own `dropped` reason ('copy_boilerplate') — no new accumulator field needed,
+  // it's already covered by the generic per-reason bucketing `dropReasonCounts`
+  // uses for every 'dropped' event, same as 'vision_critic'/'validation'/etc.
+  it('rolls copy_boilerplate drops into dropReasonCounts like any other drop reason', () => {
+    const acc = new MetricsAccumulator('baseline', 2);
+    const events: RunEvent[] = [
+      { type: 'generated', target },
+      { type: 'ingested', target, slug: 's1' },
+      { type: 'generated', target },
+      { type: 'dropped', target, reason: 'copy_boilerplate', detail: 'overlap > 50% with previously accepted copy this run' },
+    ];
+    for (const e of events) acc.add(e);
+    const m = acc.finalize(summary({ generated: 2, ingested: 1, qualityDropped: 1 }));
+    expect(m.dropReasonCounts).toEqual({ copy_boilerplate: 1 });
+  });
 });
 
 describe('formatComparisonTable', () => {
@@ -296,5 +343,9 @@ describe('formatComparisonTable', () => {
     expect(table).toContain('seo floor misses');
     expect(table).toContain('seo axis clamps');
     expect(table).toContain('seo clamps by axis');
+    // T5.1: copy-quality gate rows.
+    expect(table).toContain('copy score mean');
+    expect(table).toContain('copy score dist');
+    expect(table).toContain('copy flags (not dropped)');
   });
 });

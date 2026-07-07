@@ -14,14 +14,30 @@
 // helper (the same brace-aware, prose-tolerant parser generation/repair use).
 import { extractJson, claudeCliClient } from './llm';
 import type { LlmClient, RunCommand } from './llm';
+// T5.1: the copy-quality check is FOLDED into this same CLI call rather than a
+// second `claude -p` round-trip per target — see pipeline/copy-critic.ts's module
+// doc for the full rationale. This module only needs its rubric-section builder
+// (for the prompt) and its result shape (for the additive JSON contract); the
+// text extraction, shingle-overlap boilerplate gate, and flag-threshold policy
+// all live over there, independently testable without any CLI/prompt plumbing.
+import { buildCopyRubricSection, COPY_JSON_CONTRACT_FIELDS } from './copy-critic';
+import type { CopyCriticResult } from './copy-critic';
 
 export interface VisionCriticContext {
   type: string;
   niche: string;
   style: string;
+  /** T5.1: the layout's extracted copy (pipeline/copy-critic.ts's
+   * `extractLayoutText`), when the caller wants this same call to ALSO rate
+   * specificity/tone/repetition. Omit (or pass "") to get the pre-T5.1 visual-
+   * only prompt/contract, byte-for-byte — additive, never a required field. */
+  text?: string;
 }
 
-export interface VisionCriticResult {
+/** T5.1: `copyScore`/`copyIssues` are additive (`CopyCriticResult`) — present only
+ * when `VisionCriticContext.text` was supplied AND the model returned them.
+ * Missing copy fields must never break existing `{score, issues}` consumers. */
+export interface VisionCriticResult extends CopyCriticResult {
   score: number;
   issues: string[];
 }
@@ -36,7 +52,11 @@ const SYSTEM_PROMPT =
   'screenshot file paths on disk — use the Read tool to open and inspect each ' +
   'one before judging. Respond with ONLY a JSON object of the exact shape ' +
   '{"score": <integer 1-5>, "issues": [<string>, ...]} — no prose, no markdown ' +
-  'code fence, nothing before or after the JSON.';
+  'code fence, nothing before or after the JSON. T5.1: when the prompt also ' +
+  'includes a "Section copy" block, ALSO rate that copy per its rubric and ' +
+  'include "copyScore" (integer 1-5) and "copyIssues" ([string, ...]) in the ' +
+  'same JSON object, additively — the exact contract is restated at the end of ' +
+  'the prompt.';
 
 /** Builds the critic's prompt: the rubric (per the T1.3 brief) + the concrete
  * screenshot paths + section context to judge them against. Exported so the
@@ -46,6 +66,14 @@ export function buildVisionCriticPrompt(
   context: VisionCriticContext,
 ): { system: string; prompt: string } {
   const list = paths.map((p, i) => `${i + 1}. ${p}`).join('\n');
+  // T5.1: additive — an absent/empty `context.text` produces the EXACT pre-T5.1
+  // prompt/contract (byte-for-byte), so a caller that never extracts copy (or a
+  // layout with no extractable prose) sees no behavior change whatsoever.
+  const hasCopy = !!context.text && context.text.trim().length > 0;
+  const copySection = hasCopy ? buildCopyRubricSection(context.text as string) : '';
+  const jsonContract = hasCopy
+    ? `{"score": <1-5 integer>, "issues": ["short specific issue", ...], ${COPY_JSON_CONTRACT_FIELDS}}`
+    : '{"score": <1-5 integer>, "issues": ["short specific issue", ...]}';
   const prompt = `Section context: type="${context.type}", niche="${context.niche}", style="${context.style}".
 
 Screenshot files to review (Read each file before scoring):
@@ -62,9 +90,9 @@ Divi 5 marketplace. Check specifically for:
 - overall premium quality: would a paying buyer feel this looks professionally designed?
 
 Scoring guide: 1 = broken/unusable, 3 = passable but flawed, 5 = premium with no
-notable issues.
+notable issues.${copySection}
 
-Respond with ONLY JSON: {"score": <1-5 integer>, "issues": ["short specific issue", ...]}.
+Respond with ONLY JSON: ${jsonContract}.
 Use an empty issues array when there are none.`;
   return { system: SYSTEM_PROMPT, prompt };
 }
@@ -74,13 +102,30 @@ Use an empty issues array when there are none.`;
  * Throws if there's no usable numeric score — a critic response we can't parse
  * is treated as a failure by the caller, not a silent pass. */
 export function parseVisionCriticResult(text: string): VisionCriticResult {
-  const parsed = extractJson(text) as { score?: unknown; issues?: unknown };
+  const parsed = extractJson(text) as {
+    score?: unknown;
+    issues?: unknown;
+    copyScore?: unknown;
+    copyIssues?: unknown;
+  };
   const score = Number(parsed?.score);
   if (!Number.isFinite(score)) {
     throw new Error(`vision critic: response missing a numeric "score" (got ${JSON.stringify(parsed?.score)})`);
   }
   const issues = Array.isArray(parsed?.issues) ? parsed.issues.filter((s): s is string => typeof s === 'string') : [];
-  return { score, issues };
+  const result: VisionCriticResult = { score, issues };
+  // T5.1: additive fields — only set when present AND well-formed, so a response
+  // that never mentions them (older prompt, or a model that ignored the copy
+  // rubric) parses to exactly the pre-T5.1 `{score, issues}` shape, no `undefined`-
+  // valued keys tacked on.
+  const copyScore = Number(parsed?.copyScore);
+  if (parsed?.copyScore !== undefined && Number.isFinite(copyScore)) {
+    result.copyScore = copyScore;
+  }
+  if (Array.isArray(parsed?.copyIssues)) {
+    result.copyIssues = parsed.copyIssues.filter((s): s is string => typeof s === 'string');
+  }
+  return result;
 }
 
 /** Pure threshold check, kept out of pipeline/run.ts so the gate there is a

@@ -238,6 +238,11 @@ export async function buildRunDeps(opts: BuildRunDepsOptions): Promise<{ deps: R
     // than the generator uses; the same PIPELINE_MAX_BUDGET_USD cap applies.
     visionCritic: dryRun ? undefined : claudeVisionCritic({ model: process.env.VISION_CRITIC_MODEL, maxBudgetUsd: maxBudget }),
     visionCriticMinScore: process.env.VISION_CRITIC_MIN_SCORE ? Number(process.env.VISION_CRITIC_MIN_SCORE) : 3,
+    // T5.1: the copyScore this SAME critic call returns (pipeline/copy-critic.ts)
+    // is FLAG-only — see RunDeps.copyCriticMinScore's doc — so, unlike
+    // visionCriticMinScore, missing this env var below is low-stakes; it only
+    // changes when the `copy_critic` RunEvent's `passed` flips, never ingest.
+    copyCriticMinScore: process.env.COPY_CRITIC_MIN_SCORE ? Number(process.env.COPY_CRITIC_MIN_SCORE) : 3,
     ingest: dryRun ? async () => ({ deduped: false }) : (payload) => postIngest(payload, { url: ingestUrl, token: ingestToken }),
     maxRepairs: 2,
     maxParseRetries: 2,
