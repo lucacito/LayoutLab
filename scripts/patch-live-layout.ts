@@ -131,6 +131,31 @@ const PATCHES: Record<string, Patch> = {
     if (!tail.includes(colBefore)) throw new Error('consultation: final CTA column layout not found (already patched?)');
     return head + tail.replace(colBefore, colAfter);
   },
+
+  // Maison Verity residences, FAQ button: the label sits LEFT inside the button
+  // when the button stretches full-width on phone (the column IS a centered flex
+  // column, but phone collapses it and the block-level button fills the width, so
+  // the wrapped 2-line label exposes its left alignment; the final-CTA button has
+  // the same stretch but its one-line label masks it). Module-level
+  // `orientation:center` (sub-fix 1) did NOT reach the label — the label obeys the
+  // button FONT's own textAlign, so sub-fix 2 sets that. Idempotent: applies
+  // whichever sub-fixes still apply. Both targets verified unique (the hero
+  // button's font differs: letterSpacing 1.5px, color #F5F3FF).
+  'maison-verity-elegant-real-estate-residences-page-for-divi-5': (c) => {
+    let out = c;
+    // 1. orientation:center on the button module (kept from the first attempt).
+    out = out.replace(
+      '"builderVersion":"5.0.0-public-beta.1","modulePreset":["default"],"module":{"decoration":{"layout":{"desktop":{"value":{"display":"block"}}}}}} /-->',
+      '"builderVersion":"5.0.0-public-beta.1","modulePreset":["default"],"module":{"advanced":{"text":{"text":{"desktop":{"value":{"orientation":"center"}}}}},"decoration":{"layout":{"desktop":{"value":{"display":"block"}}}}}} /-->',
+    );
+    // 2. textAlign:center on the button font — what the label actually obeys.
+    out = out.replace(
+      '{"family":"Outfit","weight":"600","size":"15px","letterSpacing":"1px","color":"#FFFFFF"}',
+      '{"family":"Outfit","weight":"600","size":"15px","letterSpacing":"1px","color":"#FFFFFF","textAlign":"center"}',
+    );
+    if (out === c) throw new Error('residences: nothing left to change (already patched)');
+    return out;
+  },
 };
 
 async function withTempFile<T>(json: string, fn: (file: string) => Promise<T>): Promise<T> {
