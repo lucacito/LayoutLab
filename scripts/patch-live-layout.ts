@@ -111,6 +111,26 @@ const PATCHES: Record<string, Patch> = {
     if (out === c) throw new Error('contact: no (415) phone numbers found');
     return out;
   },
+
+  // Maison Verity consultation, Final CTA: eyebrow/headline/body are centered but
+  // the inline-block button sits left — `orientation:center` on the button module
+  // doesn't move it (same failure mode as the steakhouse hero above). Make the
+  // final section's COLUMN a centered flex column; text blocks keep their centered
+  // text (the body copy keeps its maxWidth + auto margins). Scoped to the LAST
+  // section only so the other five sections' identical block columns are untouched.
+  'maison-verity-elegant-real-estate-private-consultation-page-for-divi-5': (c) => {
+    const idx = c.lastIndexOf('<!-- wp:divi/section');
+    if (idx < 0) throw new Error('consultation: no section found');
+    const head = c.slice(0, idx);
+    const tail = c.slice(idx);
+    if (!tail.includes('"adminLabel":{"desktop":{"value":"Final CTA"}}')) {
+      throw new Error('consultation: last section is not the Final CTA');
+    }
+    const colBefore = '"decoration":{"layout":{"desktop":{"value":{"display":"block"}}},"sizing":{"phone":{"value":{"flexType":"24_24"}}}}';
+    const colAfter = '"decoration":{"layout":{"desktop":{"value":{"display":"flex","flexDirection":"column","alignItems":"center"}}},"sizing":{"phone":{"value":{"flexType":"24_24"}}}}';
+    if (!tail.includes(colBefore)) throw new Error('consultation: final CTA column layout not found (already patched?)');
+    return head + tail.replace(colBefore, colAfter);
+  },
 };
 
 async function withTempFile<T>(json: string, fn: (file: string) => Promise<T>): Promise<T> {
