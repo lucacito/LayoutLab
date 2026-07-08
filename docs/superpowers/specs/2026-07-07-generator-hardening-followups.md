@@ -198,3 +198,31 @@ conversion pipeline against them:
 No code changes needed — the gap is purely "this content doesn't exist in the
 corpus yet," and the procedure to close it once new source packs are in hand
 is already documented and scripted.
+
+---
+
+## First real A/B eval run (2026-07-07, T1.4 grounding placement)
+
+`scripts/eval-generator.ts --env-var=PROMPT_GROUNDING_IN_SYSTEM` over the fixed 4-target set.
+**Headline: validator pass-rate 100% in BOTH configs → no adherence regression from the
+system-prompt grounding move (T1.4's acceptance criterion).** Cost comparison inconclusive:
+the grounding-in-system config was truncated (ingest 500s on the cta target — likely the
+known deferred slug-collision bug, since config 1 had already published a near-identical
+cta — then a usage-limit abort), so only 1/4 accepted and its cost-per-accepted is not
+comparable. Gates verified live: vision critic dropped a broken-mobile hero (score 2),
+transient ingest 500s retried and classified `network`, usage-limit aborted the run cleanly.
+
+```
+metric                               grounding-in-user  grounding-in-system
+targets planned                      4                  4
+ingested (accepted)                  3                  1
+quality dropped                      1 (vision_critic)  0
+errored (infra)                      0                  2 (network, usage_limit)
+validator pass-rate                  100.0%             100.0%
+mean repair attempts                 0.25               0.67
+vision score mean                    4.00               4.00
+cost / accepted layout               $0.9989            $1.9019 (truncated run — not comparable)
+total cost                           $3.6906            $3.8137
+```
+
+Re-run when convenient for a complete cost comparison (both configs to 4/4 accepted).
