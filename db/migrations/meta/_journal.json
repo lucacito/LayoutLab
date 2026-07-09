@@ -57,6 +57,13 @@
       "when": 1783010584088,
       "tag": "0007_brown_christian_walker",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1783598247688,
+      "tag": "0008_lethal_trish_tilby",
+      "breakpoints": true
     }
   ]
 }

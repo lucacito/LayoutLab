@@ -1,7 +1,8 @@
 import { describe, it, expect, vi } from 'vitest';
 import { generateTaxonomyCopy } from '@/pipeline/seo-copy';
 
-const VALID = JSON.stringify({ intro: 'AI intro', metaTitle: 'AI title', metaDescription: 'AI desc' });
+const BODY = 'Long-form landing body copy. '.repeat(30);
+const VALID = JSON.stringify({ intro: 'AI intro', body: BODY, metaTitle: 'AI title', metaDescription: 'AI desc' });
 
 function deps(over: Partial<any> = {}) {
   return {
@@ -15,7 +16,7 @@ function deps(over: Partial<any> = {}) {
 
 describe('generateTaxonomyCopy', () => {
   it('skips values that already have stored copy', async () => {
-    const d = deps({ getCopy: vi.fn(async () => ({ intro: 'x', metaTitle: 'x', metaDescription: 'x' })) });
+    const d = deps({ getCopy: vi.fn(async () => ({ intro: 'x', body: 'existing body', metaTitle: 'x', metaDescription: 'x' })) });
     const r = await generateTaxonomyCopy(d);
     expect(d.llm.complete).not.toHaveBeenCalled();
     expect(d.upsert).not.toHaveBeenCalled();
@@ -31,7 +32,15 @@ describe('generateTaxonomyCopy', () => {
     expect(r.failed).toBe(0);
     // upsert receives the parsed AI copy
     const firstCall = d.upsert.mock.calls[0] as unknown[];
-    expect(firstCall[2]).toEqual({ intro: 'AI intro', metaTitle: 'AI title', metaDescription: 'AI desc' });
+    expect(firstCall[2]).toEqual({ intro: 'AI intro', body: BODY.trim(), metaTitle: 'AI title', metaDescription: 'AI desc' });
+  });
+
+  it('REgenerates rows that have intro copy but no body yet (backfill path)', async () => {
+    const d = deps({ getCopy: vi.fn(async () => ({ intro: 'x', body: null, metaTitle: 'x', metaDescription: 'x' })) });
+    const r = await generateTaxonomyCopy(d);
+    expect(d.llm.complete).toHaveBeenCalled();
+    expect(r.generated).toBeGreaterThan(0);
+    expect(r.skipped).toBe(0);
   });
 
   it('continues (does not throw) when one value returns unparseable output', async () => {

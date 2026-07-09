@@ -10,15 +10,21 @@ const AXES: TaxonomyAxis[] = ['type', 'niche', 'style', 'color'];
 
 const SYSTEM =
   'You write SEO landing-page copy for a Divi 5 layout marketplace. Respond with ONLY a JSON object: ' +
-  '{ "intro": string (2-3 sentences), "metaTitle": string (<=60 chars), "metaDescription": string (<=155 chars) }.';
+  '{ "intro": string (2-3 sentences), "body": string (300-500 words of markdown), ' +
+  '"metaTitle": string (<=60 chars), "metaDescription": string (<=155 chars) }. ' +
+  'The body renders below the layout grid: explain what makes a good layout of this category, who uses it, ' +
+  'and how to customize one in Divi 5 (presets, palette, copy). Write like a designer, never a keyword stuffer. ' +
+  'Facts you may rely on: every layout is validated against Divi 5 structure before publication, sections are ' +
+  'free downloads (email-gated) with a commercial license, screenshots show real desktop+mobile renders.';
 
 function parseCopy(text: string): TaxonomyCopy {
   const obj = extractJson(text) as Record<string, unknown>;
   const intro = String(obj.intro ?? '').trim();
+  const body = String(obj.body ?? '').trim();
   const metaTitle = String(obj.metaTitle ?? '').trim();
   const metaDescription = String(obj.metaDescription ?? '').trim();
-  if (!intro || !metaTitle || !metaDescription) throw new Error('incomplete copy');
-  return { intro, metaTitle: metaTitle.slice(0, 70), metaDescription: metaDescription.slice(0, 160) };
+  if (!intro || !body || !metaTitle || !metaDescription) throw new Error('incomplete copy');
+  return { intro, body, metaTitle: metaTitle.slice(0, 70), metaDescription: metaDescription.slice(0, 160) };
 }
 
 export async function generateTaxonomyCopy(deps: {
@@ -37,7 +43,11 @@ export async function generateTaxonomyCopy(deps: {
 
   for (const axis of AXES) {
     for (const value of AXIS_VALUES[axis]) {
-      if (await getCopy(axis, value)) {
+      // Skip only when the row is COMPLETE (has the long-form body). Rows
+      // written before the body column existed regenerate — that's the
+      // taxonomy-body backfill path.
+      const existing = await getCopy(axis, value);
+      if (existing?.body) {
         skipped++;
         continue;
       }

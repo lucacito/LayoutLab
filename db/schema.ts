@@ -224,6 +224,10 @@ export const taxonomyPages = pgTable('taxonomy_pages', {
   axis: text('axis').notNull(),
   value: text('value').notNull(),
   intro: text('intro').notNull(),
+  // Long-form landing copy (markdown, ~300–500 words) rendered below the grid —
+  // what makes the page a ranking asset instead of a bare archive. Nullable:
+  // rows predating the SEO overhaul backfill have intro only.
+  body: text('body'),
   metaTitle: text('meta_title').notNull(),
   metaDescription: text('meta_description').notNull(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),

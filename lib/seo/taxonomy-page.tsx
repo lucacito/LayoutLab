@@ -6,6 +6,7 @@ import { env } from '@/lib/env';
 import { TaxonomyLanding } from '@/components/TaxonomyLanding';
 import { getTaxonomyCopy, type TaxonomyAxis } from '@/lib/seo/taxonomy';
 import { taxonomyFallbackCopy } from '@/lib/seo/taxonomy-copy';
+import { listGuides } from '@/lib/guides';
 
 // AXIS_VALUES uses key 'color' for the 4th axis; the column filter also uses 'color'.
 const VALUES: Record<TaxonomyAxis, readonly string[]> = {
@@ -60,6 +61,7 @@ export function makeTaxonomyPage(axis: TaxonomyAxis) {
     const sp = (await searchParams) ?? {};
     const page = readPage(sp);
     const { layouts, totalPages, copy } = await resolve(value, page);
+    const guides = listGuides().slice(0, 3).map((g) => ({ slug: g.slug, title: g.title }));
     return (
       <TaxonomyLanding
         axis={axis}
@@ -70,6 +72,7 @@ export function makeTaxonomyPage(axis: TaxonomyAxis) {
         searchParams={sp}
         currentPage={page}
         totalPages={totalPages}
+        guides={guides}
       />
     );
   }
