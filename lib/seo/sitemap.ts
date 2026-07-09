@@ -1,5 +1,6 @@
 import type { MetadataRoute } from 'next';
 import { AXIS_VALUES } from '@/lib/catalog/filters';
+import { listKeywordPages } from '@/lib/seo/keyword-pages';
 
 export function sitemapEntries(i: {
   siteUrl: string;
@@ -19,6 +20,13 @@ export function sitemapEntries(i: {
     { url: `${base}/contact`, changeFrequency: 'yearly', priority: 0.3 },
     { url: `${base}/license`, changeFrequency: 'yearly', priority: 0.3 },
   ];
+  // Broad-keyword landing pages (/divi-layouts, /divi-templates, …) — money
+  // pages for head terms, prioritized just under /browse.
+  const keywordEntries: MetadataRoute.Sitemap = listKeywordPages().map((p) => ({
+    url: `${base}/${p.slug}`,
+    changeFrequency: 'weekly' as const,
+    priority: 0.8,
+  }));
   const taxonomyEntries: MetadataRoute.Sitemap = (['type', 'niche', 'style', 'color'] as const).flatMap((axis) =>
     AXIS_VALUES[axis].map((value) => ({
       url: `${base}/${axis}/${value}`,
@@ -38,5 +46,5 @@ export function sitemapEntries(i: {
     changeFrequency: 'monthly',
     priority: 0.6,
   }));
-  return [...staticPages, ...taxonomyEntries, ...packEntries, ...layoutEntries];
+  return [...staticPages, ...keywordEntries, ...taxonomyEntries, ...packEntries, ...layoutEntries];
 }
