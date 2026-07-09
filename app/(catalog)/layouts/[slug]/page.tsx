@@ -25,6 +25,7 @@ import { PaidLayoutCta } from '@/components/PaidLayoutCta';
 import { DownloadButton } from '@/components/DownloadButton';
 import { BookmarkButton } from '@/components/bookmarks/BookmarkButton';
 import { RelatedElements } from '@/components/RelatedElements';
+import { RequiresWooBadge } from '@/components/RequiresWooBadge';
 import { VariantSwitcher } from '@/components/VariantSwitcher';
 import { StarRating } from '@/components/ratings/StarRating';
 import { Stars } from '@/components/ratings/Stars';
@@ -104,6 +105,7 @@ export default async function LayoutPage({ params }: { params: Promise<{ slug: s
         )}
 
         <h1 className="mt-4 text-h2 text-navy">{layout.title}</h1>
+        {layout.type === 'shop' && <RequiresWooBadge />}
         <div className="mt-3 flex flex-wrap gap-2">
           {[
             { axis: 'type', value: layout.type },
