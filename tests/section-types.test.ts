@@ -27,6 +27,7 @@ const EXPECTED_RECIPE_BY_TYPE: Record<string, string[]> = {
   contact: ['contact-form'],
   gallery: ['image-gallery', 'image-carousel'],
   blog: ['blog-feed'],
+  shop: ['shop-grid', 'section-intro'],
   full_landing: ['hero-cta', 'icon-features', 'testimonial', 'stats-counter', 'card-grid-3'],
 };
 
@@ -41,6 +42,7 @@ const EXPECTED_KIND_BY_TYPE: Record<string, string[]> = {
   footer: ['cta', 'contact'],
   testimonials: [],
   faq: [],
+  shop: [],
   full_landing: ['hero', 'features', 'stats', 'pricing', 'cta', 'contact'],
 };
 
@@ -84,6 +86,11 @@ const EXPECTED_LAYOUTS_BY_TYPE: Record<string, string[]> = {
   gallery: ['a three-column image grid', 'a masonry-style grid', 'a horizontal image row'],
   footer: ['multi-column links with a newsletter signup', 'a centered minimal footer'],
   cards: ['equal columns of icon cards', 'equal columns of numbered step cards'],
+  shop: [
+    'a full-width product grid under a short heading',
+    'a heading and intro line above a multi-column product grid',
+    'a compact product grid with a centered section title',
+  ],
 };
 
 // Full ROLE_DESIGN characterization: every one of the 15 roles' variant id LIST

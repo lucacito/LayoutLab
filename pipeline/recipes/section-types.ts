@@ -338,6 +338,21 @@ export const SECTION_TYPES: Record<string, SectionTypeEntry> = {
     // literal. blog is never a MATRIX/vary/set target today.
     recipes: ['blog-feed'],
   },
+  shop: {
+    // Grounded on the shop-grid recipe (validator repo section-recipes.json),
+    // whose markup is a heading + divi/shop (the WooCommerce products grid).
+    recipes: ['shop-grid', 'section-intro'],
+    // Documented corpus gap (like testimonials/faq): the D5 library has zero
+    // divi/shop modules, so there are no BM25 exemplars to retrieve.
+    libraryKinds: [],
+    layouts: [
+      'a full-width product grid under a short heading',
+      'a heading and intro line above a multi-column product grid',
+      'a compact product grid with a centered section title',
+    ],
+    // No `roles`: shop is a standalone target type, never a flow Step's role
+    // (same as footer/contact/blog).
+  },
   full_landing: {
     recipes: ['hero-cta', 'icon-features', 'testimonial', 'stats-counter', 'card-grid-3'],
     libraryKinds: ['hero', 'features', 'stats', 'pricing', 'cta', 'contact'],
