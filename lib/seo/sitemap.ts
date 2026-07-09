@@ -1,6 +1,7 @@
 import type { MetadataRoute } from 'next';
 import { AXIS_VALUES } from '@/lib/catalog/filters';
 import { listKeywordPages } from '@/lib/seo/keyword-pages';
+import { listGuides } from '@/lib/guides';
 
 export function sitemapEntries(i: {
   siteUrl: string;
@@ -27,6 +28,15 @@ export function sitemapEntries(i: {
     changeFrequency: 'weekly' as const,
     priority: 0.8,
   }));
+  const guideEntries: MetadataRoute.Sitemap = [
+    { url: `${base}/guides`, changeFrequency: 'weekly' as const, priority: 0.7 },
+    ...listGuides().map((g) => ({
+      url: `${base}/guides/${g.slug}`,
+      lastModified: new Date(g.updated ?? g.date),
+      changeFrequency: 'monthly' as const,
+      priority: 0.6,
+    })),
+  ];
   const taxonomyEntries: MetadataRoute.Sitemap = (['type', 'niche', 'style', 'color'] as const).flatMap((axis) =>
     AXIS_VALUES[axis].map((value) => ({
       url: `${base}/${axis}/${value}`,
@@ -46,5 +56,5 @@ export function sitemapEntries(i: {
     changeFrequency: 'monthly',
     priority: 0.6,
   }));
-  return [...staticPages, ...keywordEntries, ...taxonomyEntries, ...packEntries, ...layoutEntries];
+  return [...staticPages, ...keywordEntries, ...guideEntries, ...taxonomyEntries, ...packEntries, ...layoutEntries];
 }
