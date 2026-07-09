@@ -2,6 +2,9 @@ export function productJsonLd(p: {
   name: string;
   description?: string | null;
   image?: string;
+  // Screenshot set as captioned ImageObjects — richer than a bare URL for
+  // Google Images and product rich results. Wins over `image` when both given.
+  images?: { url: string; caption: string }[];
   url: string;
   // Always pass an offer — Google requires every Product to carry one of
   // `offers` / `review` / `aggregateRating`, else Search Console flags it. Free
@@ -18,7 +21,11 @@ export function productJsonLd(p: {
     url: p.url,
   };
   if (p.description) base.description = p.description;
-  if (p.image) base.image = p.image;
+  if (p.images && p.images.length) {
+    base.image = p.images.map((im) => ({ '@type': 'ImageObject', contentUrl: im.url, caption: im.caption }));
+  } else if (p.image) {
+    base.image = p.image;
+  }
   if (p.offer) {
     base.offers = {
       '@type': 'Offer',
@@ -154,6 +161,36 @@ export function collectionPageJsonLd(c: { name: string; description?: string; ur
     url: c.url,
   };
   if (c.description) base.description = c.description;
+  return base;
+}
+
+// Editorial content (guides). `author` is the brand Organization — there is no
+// human byline to fabricate. `publisher` references the sitewide Organization
+// node by @id so all Articles roll up to one brand entity.
+export function articleJsonLd(a: {
+  headline: string;
+  description: string;
+  url: string;
+  datePublished: string;
+  dateModified?: string;
+  authorName: string;
+  publisherId?: string;
+  image?: string;
+}) {
+  const base: Record<string, unknown> = {
+    '@context': 'https://schema.org',
+    '@type': 'Article',
+    headline: a.headline,
+    description: a.description,
+    url: a.url,
+    mainEntityOfPage: a.url,
+    datePublished: a.datePublished,
+    author: { '@type': 'Organization', name: a.authorName },
+    inLanguage: 'en',
+  };
+  if (a.dateModified) base.dateModified = a.dateModified;
+  if (a.publisherId) base.publisher = { '@id': a.publisherId };
+  if (a.image) base.image = a.image;
   return base;
 }
 

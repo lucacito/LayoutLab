@@ -1,6 +1,8 @@
 import { Container } from '@/components/ui/Container';
 import { SectionTitle } from '@/components/ui/SectionTitle';
 import { Icon } from '@/components/ui/Icon';
+import { JsonLd } from '@/components/JsonLd';
+import { faqJsonLd } from '@/lib/seo';
 
 const FAQS = [
   {
@@ -32,6 +34,7 @@ const FAQS = [
 export function FaqSection() {
   return (
     <section className="py-20">
+      <JsonLd data={faqJsonLd(FAQS.map((f) => ({ question: f.q, answer: f.a })))} />
       <Container className="max-w-3xl">
         <SectionTitle eyebrow="FAQ" title="Questions, answered">
           Everything you need to know before you import.
