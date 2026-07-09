@@ -1,13 +1,15 @@
 import { Container } from '@/components/ui/Container';
 import { LayoutCard } from '@/components/LayoutCard';
+import { Pagination } from '@/components/Pagination';
 import { JsonLd } from '@/components/JsonLd';
 import { itemListJsonLd, breadcrumbJsonLd } from '@/lib/seo/jsonld';
 import { axisLabel } from '@/lib/seo/taxonomy-copy';
 import type { TaxonomyAxis, TaxonomyCopy } from '@/lib/seo/taxonomy';
 import type { LayoutRow } from '@/lib/catalog/queries';
 
-export function TaxonomyLanding({ axis, value, siteUrl, copy, layouts }: {
+export function TaxonomyLanding({ axis, value, siteUrl, copy, layouts, searchParams, currentPage, totalPages }: {
   axis: TaxonomyAxis; value: string; siteUrl: string; copy: TaxonomyCopy; layouts: LayoutRow[];
+  searchParams: Record<string, string | string[] | undefined>; currentPage: number; totalPages: number;
 }) {
   const label = axisLabel(value);
   const pageUrl = `${siteUrl}/${axis}/${value}`;
@@ -23,9 +25,17 @@ export function TaxonomyLanding({ axis, value, siteUrl, copy, layouts }: {
         {layouts.length === 0 ? (
           <p className="mt-10 text-body text-muted">No layouts here yet — check back soon.</p>
         ) : (
-          <div className="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {layouts.map((l) => <LayoutCard key={l.id} layout={l} />)}
-          </div>
+          <>
+            <div className="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {layouts.map((l) => <LayoutCard key={l.id} layout={l} />)}
+            </div>
+            <Pagination
+              basePath={`/${axis}/${value}`}
+              searchParams={searchParams}
+              currentPage={currentPage}
+              totalPages={totalPages}
+            />
+          </>
         )}
       </Container>
 

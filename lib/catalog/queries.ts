@@ -12,6 +12,13 @@ export async function listLayouts(f: CatalogFilters): Promise<LayoutRow[]> {
   return db.select().from(layouts).where(where).orderBy(orderBy).limit(limit).offset(offset);
 }
 
+/** Total published layouts matching the same filters (for pagination). */
+export async function countLayouts(f: CatalogFilters): Promise<number> {
+  const { where } = buildLayoutFilters(f);
+  const [row] = await db.select({ n: sql<number>`count(*)::int` }).from(layouts).where(where);
+  return row?.n ?? 0;
+}
+
 /** All published layouts, newest first — used to build the homepage category sections. */
 export async function listPublishedLayouts(): Promise<LayoutRow[]> {
   return db.select().from(layouts)

@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { AXIS_VALUES } from '@/lib/catalog/filters';
-import { listLayouts, facetCounts } from '@/lib/catalog/queries';
+import { AXIS_VALUES, PAGE_SIZE } from '@/lib/catalog/filters';
+import { listLayouts, countLayouts, facetCounts } from '@/lib/catalog/queries';
 import { env } from '@/lib/env';
 import { TaxonomyLanding } from '@/components/TaxonomyLanding';
 import { getTaxonomyCopy, type TaxonomyAxis } from '@/lib/seo/taxonomy';
@@ -12,8 +12,14 @@ const VALUES: Record<TaxonomyAxis, readonly string[]> = {
   type: AXIS_VALUES.type, niche: AXIS_VALUES.niche, style: AXIS_VALUES.style, color: AXIS_VALUES.color,
 };
 
-function emptyFilters() {
-  return { type: [], niche: [], style: [], color: [], columns: [], sort: 'newest' as const, page: 1 };
+function emptyFilters(page = 1) {
+  return { type: [], niche: [], style: [], color: [], columns: [], sort: 'newest' as const, page };
+}
+
+function readPage(sp: Record<string, string | string[] | undefined> | undefined): number {
+  const raw = Array.isArray(sp?.page) ? sp?.page[0] : sp?.page;
+  const n = Number.parseInt(raw ?? '', 10);
+  return Number.isInteger(n) && n >= 1 ? n : 1;
 }
 
 async function loadCopy(axis: TaxonomyAxis, value: string) {
@@ -24,11 +30,15 @@ async function loadCopy(axis: TaxonomyAxis, value: string) {
 }
 
 export function makeTaxonomyPage(axis: TaxonomyAxis) {
-  async function resolve(value: string) {
+  async function resolve(value: string, page: number) {
     if (!VALUES[axis].includes(value)) notFound();
-    const layouts = await listLayouts({ ...emptyFilters(), [axis]: [value] });
-    const copy = await loadCopy(axis, value);
-    return { layouts, copy };
+    const filters = { ...emptyFilters(page), [axis]: [value] };
+    const [layouts, total, copy] = await Promise.all([
+      listLayouts(filters),
+      countLayouts(filters),
+      loadCopy(axis, value),
+    ]);
+    return { layouts, totalPages: Math.max(1, Math.ceil(total / PAGE_SIZE)), copy };
   }
 
   async function generateMetadata({ params }: { params: Promise<{ value: string }> }): Promise<Metadata> {
@@ -39,10 +49,29 @@ export function makeTaxonomyPage(axis: TaxonomyAxis) {
     return { title: copy.metaTitle, description: copy.metaDescription, alternates: { canonical: url } };
   }
 
-  async function Page({ params }: { params: Promise<{ value: string }> }) {
+  async function Page({
+    params,
+    searchParams,
+  }: {
+    params: Promise<{ value: string }>;
+    searchParams?: Promise<Record<string, string | string[] | undefined>>;
+  }) {
     const { value } = await params;
-    const { layouts, copy } = await resolve(value);
-    return <TaxonomyLanding axis={axis} value={value} siteUrl={env.NEXT_PUBLIC_SITE_URL} copy={copy} layouts={layouts} />;
+    const sp = (await searchParams) ?? {};
+    const page = readPage(sp);
+    const { layouts, totalPages, copy } = await resolve(value, page);
+    return (
+      <TaxonomyLanding
+        axis={axis}
+        value={value}
+        siteUrl={env.NEXT_PUBLIC_SITE_URL}
+        copy={copy}
+        layouts={layouts}
+        searchParams={sp}
+        currentPage={page}
+        totalPages={totalPages}
+      />
+    );
   }
 
   return { generateMetadata, Page };

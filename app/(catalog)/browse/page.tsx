@@ -1,10 +1,11 @@
 // app/(catalog)/browse/page.tsx
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { parseFilters } from '@/lib/catalog/filters';
-import { listLayouts, facetCounts } from '@/lib/catalog/queries';
+import { parseFilters, PAGE_SIZE } from '@/lib/catalog/filters';
+import { listLayouts, countLayouts, facetCounts } from '@/lib/catalog/queries';
 import { FacetFilters } from '@/components/FacetFilters';
 import { SearchSort } from '@/components/SearchSort';
+import { Pagination } from '@/components/Pagination';
 import { LayoutCard } from '@/components/LayoutCard';
 import { Container } from '@/components/ui/Container';
 import { JsonLd } from '@/components/JsonLd';
@@ -28,7 +29,12 @@ export default async function BrowsePage({
 }) {
   const sp = await searchParams;
   const filters = parseFilters(sp);
-  const [layouts, counts] = await Promise.all([listLayouts(filters), facetCounts()]);
+  const [layouts, total, counts] = await Promise.all([
+    listLayouts(filters),
+    countLayouts(filters),
+    facetCounts(),
+  ]);
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const groups = hubLinkGroups();
 
   return (
@@ -64,9 +70,17 @@ export default async function BrowsePage({
             {layouts.length === 0 ? (
               <p className="py-16 text-center text-muted">No layouts match these filters.</p>
             ) : (
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {layouts.map((l) => <LayoutCard key={l.id} layout={l} />)}
-              </div>
+              <>
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                  {layouts.map((l) => <LayoutCard key={l.id} layout={l} />)}
+                </div>
+                <Pagination
+                  basePath="/browse"
+                  searchParams={sp}
+                  currentPage={filters.page}
+                  totalPages={totalPages}
+                />
+              </>
             )}
           </section>
         </div>

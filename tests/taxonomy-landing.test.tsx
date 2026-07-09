@@ -10,7 +10,8 @@ describe('TaxonomyLanding', () => {
   it('renders the intro, the grid, and ItemList + BreadcrumbList JSON-LD', () => {
     const { container, getByText } = render(
       <TaxonomyLanding axis="style" value="minimal" siteUrl="https://divi5lab.com"
-        copy={{ intro: 'Minimal intro here', metaTitle: 'x', metaDescription: 'y' }} layouts={[layout]} />,
+        copy={{ intro: 'Minimal intro here', metaTitle: 'x', metaDescription: 'y' }} layouts={[layout]}
+        searchParams={{}} currentPage={1} totalPages={1} />,
       { wrapper: BookmarksProvider },
     );
     expect(getByText(/Minimal intro here/)).toBeTruthy();
@@ -23,7 +24,8 @@ describe('TaxonomyLanding', () => {
   it('shows an empty state when there are no layouts', () => {
     const { getByText } = render(
       <TaxonomyLanding axis="type" value="faq" siteUrl="https://divi5lab.com"
-        copy={{ intro: 'i', metaTitle: 'x', metaDescription: 'y' }} layouts={[]} />,
+        copy={{ intro: 'i', metaTitle: 'x', metaDescription: 'y' }} layouts={[]}
+        searchParams={{}} currentPage={1} totalPages={1} />,
     );
     expect(getByText(/no layouts/i)).toBeTruthy();
   });
