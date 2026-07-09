@@ -156,7 +156,210 @@ const PATCHES: Record<string, Patch> = {
     if (out === c) throw new Error('residences: nothing left to change (already patched)');
     return out;
   },
+
+  // Caldwell & Pierce law-firm landing: five defects found on visual review.
+  //   1. Phone drift (same generator flaw as the Bella Nota pages): four invented
+  //      (312) numbers + one tel: link. Canonicalize to brandFacts' (312) 555-0177.
+  //   2. Final-CTA photo was a German police officer ("Polizei" vest) — swap for a
+  //      verified Pexels photo of an attorney in a dark suit (26150470).
+  //   3. Testimonial avatar #3 (family-law client) was a CHILD (pravatar random
+  //      seed) — swap for a verified adult professional headshot (Pexels 7860654).
+  //   4. Gallery grid hole: rows were 1|2 and 2|1 images per column (all photos
+  //      share the same 3:2 aspect, so the 1-image columns left big white gaps).
+  //      Move one image to make row2 = 2|2 and row3 = 1|1 — and since the moved
+  //      image was an off-brand key-in-a-door photo, retarget it to a verified
+  //      contract-signing photo (8730998) with a matching alt.
+  //   5. Mismatched practice-card icons (monitor=Family Law, wrench=Litigation,
+  //      phone=Real Estate…) — remap all 9 blurb icons to semantically correct FA
+  //      glyphs. NOTE: the six practice-card icon objects are double-escaped in
+  //      the attr JSON (literal &), the three step-card ones are plain &.
+  'caldwell-pierce-corporate-legal-landing-page-for-divi-5': (c) => {
+    let out = c;
+    // 1. Phones (five text occurrences across 4 invented numbers + tel: href).
+    out = out.replace(/\(312\) \d{3}-\d{4}/g, '(312) 555-0177');
+    out = out.replace('tel:+13126428140', 'tel:+13125550177');
+    // 2. Final-CTA image: Polizei photo → attorney portrait (same CDN params).
+    out = out.replace(
+      'photos/9486944/pexels-photo-9486944.jpeg',
+      'photos/26150470/pexels-photo-26150470.jpeg',
+    );
+    // 3. Testimonial avatar #3: child → adult professional headshot.
+    out = out.replace(
+      'https://i.pravatar.cc/300?u=caldwell-pierce-client-3',
+      'https://images.pexels.com/photos/7860654/pexels-photo-7860654.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=300&h=300',
+    );
+    // 4. Gallery rebalance: cut the key-photo block (29940222) from row3-colA…
+    const keyPos = out.indexOf('photos/29940222');
+    if (keyPos < 0) throw new Error('lawfirm: key photo not found (already patched?)');
+    const bStart = out.lastIndexOf('<!-- wp:divi/image', keyPos);
+    const bEnd = out.indexOf(' /-->', bStart) + ' /-->'.length;
+    let block = out.slice(bStart, bEnd);
+    out = out.slice(0, bStart) + out.slice(bEnd);
+    // …retarget it to the contract-signing photo…
+    block = block
+      .replace(/photos\/29940222\/pexels-photo-29940222\.jpeg/g, 'photos/8730998/pexels-photo-8730998.jpeg')
+      .replace(
+        "A reading corner in the firm's Monroe Street offices",
+        'A client agreement prepared for signature — fees quoted in writing before work begins',
+      );
+    // …and insert it right after the conference-room image (13323673) in row2-colA.
+    const confPos = out.indexOf('photos/13323673');
+    if (confPos < 0) throw new Error('lawfirm: conference-room photo not found');
+    const aStart = out.lastIndexOf('<!-- wp:divi/image', confPos);
+    const aEnd = out.indexOf(' /-->', aStart) + ' /-->'.length;
+    out = out.slice(0, aEnd) + block + out.slice(aEnd);
+    // 5. Icons — practice cards (escaped & form; document order = card order).
+    const esc = (u: string, t: string, w: string) => `{"unicode":"\\u0026#x${u};","type":"${t}","weight":"${w}"}`;
+    const plain = (u: string, t: string, w: string) => `{"unicode":"&#x${u};","type":"${t}","weight":"${w}"}`;
+    const iconSwaps: Array<[string, string]> = [
+      [esc('e00e', 'divi', '400'), esc('f0c0', 'fa', '900')], // Family Law: monitor → users
+      [esc('f518', 'fa', '900'), esc('f573', 'fa', '900')], // Estate: book-open → file-signature
+      [esc('f201', 'fa', '900'), esc('f0b1', 'fa', '900')], // Business: chart-line → briefcase
+      [esc('f0ad', 'fa', '900'), esc('f24e', 'fa', '900')], // Litigation: wrench → balance-scale
+      [esc('e00b', 'divi', '400'), esc('f015', 'fa', '900')], // Real Estate: phone → home
+      [esc('f590', 'fa', '900'), esc('f508', 'fa', '900')], // Employment: headset → user-tie
+      [plain('e01d', 'divi', '400'), plain('f274', 'fa', '900')], // Step 1: pin → calendar-check
+      [plain('f518', 'fa', '900'), plain('f086', 'fa', '900')], // Step 2: book-open → comments
+      [plain('f201', 'fa', '900'), plain('f46c', 'fa', '900')], // Step 3: chart-line → clipboard-check
+    ];
+    for (const [from, to] of iconSwaps) {
+      if (!out.includes(from)) throw new Error(`lawfirm: icon not found: ${from}`);
+      out = out.replace(from, to);
+    }
+    if (out === c) throw new Error('lawfirm: no change');
+    return out;
+  },
 };
+
+// ── Generic patch: center un-centered CTA buttons (PATCH_MODE=center-buttons) ─
+// The recurring generator flaw (see memory layoutlab-button-centering): in a
+// centered-text column, `orientation:center` never moves the block/inline-block
+// button, and on phone a stretched full-width button exposes a left-aligned
+// label. Two proven sub-fixes, applied together:
+//   1. Every column that contains BOTH a button module AND a centered-text
+//      signal becomes a centered flex column (display:flex/column/alignItems:
+//      center) — merged into its existing decoration.layout if present.
+//   2. Every button module's font gets textAlign:center (no-op visually for
+//      inline-block buttons, fixes the wrapped label in stretched ones).
+// Attrs are JSON.parse'd and re-stringified (key insertion order preserved), so
+// this works on any layout regardless of its exact serialized strings.
+const COL_OPEN = '<!-- wp:divi/column ';
+const COL_CLOSE = '<!-- /wp:divi/column -->';
+
+function centerButtons(c: string): string {
+  let changed = false;
+  // 1. Centered-flex columns.
+  let out = '';
+  let i = 0;
+  for (;;) {
+    const start = c.indexOf(COL_OPEN, i);
+    if (start < 0) { out += c.slice(i); break; }
+    const jsonStart = start + COL_OPEN.length;
+    const tagEnd = c.indexOf(' -->', jsonStart);
+    if (tagEnd < 0) throw new Error('malformed column open tag');
+    const close = c.indexOf(COL_CLOSE, tagEnd);
+    if (close < 0) throw new Error('unclosed column');
+    const attrsRaw = c.slice(jsonStart, tagEnd);
+    const inner = c.slice(tagEnd + 4, close); // detection only; never rewritten here
+    const hasButton = inner.includes('<!-- wp:divi/button ');
+    const centered =
+      attrsRaw.includes('"orientation":"center"') ||
+      inner.includes('"orientation":"center"') ||
+      inner.includes('"textAlign":"center"');
+    let newAttrsRaw = attrsRaw;
+    if (hasButton && centered) {
+      const attrs = JSON.parse(attrsRaw);
+      const val =
+        ((((((attrs.module ??= {}).decoration ??= {}).layout ??= {}).desktop ??= {}).value ??= {}));
+      if (val.display !== 'flex' || val.alignItems !== 'center') {
+        val.display = 'flex';
+        val.flexDirection = 'column';
+        val.alignItems = 'center';
+        newAttrsRaw = JSON.stringify(attrs);
+        changed = true;
+      }
+    }
+    out += c.slice(i, start) + COL_OPEN + newAttrsRaw + ' -->';
+    i = tagEnd + 4; // continue right after the open tag (handles any nesting)
+  }
+  // 2. textAlign:center on every button font.
+  out = out.replace(/<!-- wp:divi\/button ({.*?}) \/-->/g, (m, j: string) => {
+    const attrs = JSON.parse(j);
+    const val =
+      (((((((attrs.button ??= {}).decoration ??= {}).font ??= {}).font ??= {}).desktop ??= {}).value ??= {}));
+    if (val.textAlign === 'center') return m;
+    val.textAlign = 'center';
+    changed = true;
+    return '<!-- wp:divi/button ' + JSON.stringify(attrs) + ' /-->';
+  });
+  if (!changed) throw new Error('center-buttons: nothing to change (no centered-text button column, all labels already centered)');
+  return out;
+}
+
+// ── Generic patch pass 2: lone-button columns (PATCH_MODE=center-lone-buttons) ─
+// centerButtons misses the common "features/testimonials grid + bottom CTA row"
+// shape: the button sits ALONE in its own column, so the column itself has no
+// centered-text signal. Center such a column only when its enclosing SECTION has
+// centered text — measured with button modules stripped, so a button's own
+// font.textAlign (added by pass 1) can't count as a signal and left-aligned
+// designs (pulsegrid, fitness-cta) are left alone.
+const SEC_OPEN = '<!-- wp:divi/section';
+const SEC_CLOSE = '<!-- /wp:divi/section -->';
+const BUTTON_RE = /<!-- wp:divi\/button {.*?} \/-->/g;
+
+function centerLoneButtonColumns(c: string): string {
+  let changed = false;
+  let out = '';
+  let i = 0;
+  for (;;) {
+    const sStart = c.indexOf(SEC_OPEN, i);
+    if (sStart < 0) { out += c.slice(i); break; }
+    const sEnd = c.indexOf(SEC_CLOSE, sStart);
+    if (sEnd < 0) throw new Error('unclosed section');
+    const secEnd = sEnd + SEC_CLOSE.length;
+    let section = c.slice(sStart, secEnd);
+    const nonButton = section.replace(BUTTON_RE, '');
+    const sectionCentered =
+      nonButton.includes('"orientation":"center"') || nonButton.includes('"textAlign":"center"');
+    if (sectionCentered) {
+      // rewrite lone-button columns inside this section
+      let secOut = '';
+      let j = 0;
+      for (;;) {
+        const cStart = section.indexOf(COL_OPEN, j);
+        if (cStart < 0) { secOut += section.slice(j); break; }
+        const jsonStart = cStart + COL_OPEN.length;
+        const tagEnd = section.indexOf(' -->', jsonStart);
+        const cClose = section.indexOf(COL_CLOSE, tagEnd);
+        if (tagEnd < 0 || cClose < 0) throw new Error('malformed column in section');
+        const attrsRaw = section.slice(jsonStart, tagEnd);
+        const inner = section.slice(tagEnd + 4, cClose);
+        const loneButton =
+          inner.includes('<!-- wp:divi/button ') && inner.replace(BUTTON_RE, '').trim() === '';
+        let newAttrsRaw = attrsRaw;
+        if (loneButton) {
+          const attrs = JSON.parse(attrsRaw);
+          const val =
+            ((((((attrs.module ??= {}).decoration ??= {}).layout ??= {}).desktop ??= {}).value ??= {}));
+          if (val.display !== 'flex' || val.alignItems !== 'center') {
+            val.display = 'flex';
+            val.flexDirection = 'column';
+            val.alignItems = 'center';
+            newAttrsRaw = JSON.stringify(attrs);
+            changed = true;
+          }
+        }
+        secOut += section.slice(j, cStart) + COL_OPEN + newAttrsRaw + ' -->';
+        j = tagEnd + 4;
+      }
+      section = secOut;
+    }
+    out += c.slice(i, sStart) + section;
+    i = secEnd;
+  }
+  if (!changed) throw new Error('center-lone-buttons: nothing to change');
+  return out;
+}
 
 async function withTempFile<T>(json: string, fn: (file: string) => Promise<T>): Promise<T> {
   const dir = await mkdtemp(join(tmpdir(), 'patch-'));
@@ -176,7 +379,11 @@ async function main() {
     if (o === c) throw new Error('no (415) phone numbers found');
     return o;
   };
-  const patch = process.env.PATCH_MODE === 'phone' ? phoneCanon : PATCHES[slug];
+  const patch =
+    process.env.PATCH_MODE === 'phone' ? phoneCanon
+    : process.env.PATCH_MODE === 'center-buttons' ? centerButtons
+    : process.env.PATCH_MODE === 'center-lone-buttons' ? centerLoneButtonColumns
+    : PATCHES[slug];
   if (!patch) { console.error(`no patch registered for slug: ${slug}`); process.exit(1); }
 
   const [row] = await db.select().from(layouts).where(eq(layouts.slug, slug)).limit(1);
