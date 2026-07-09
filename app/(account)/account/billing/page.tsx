@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { requireUser } from '@/lib/auth/admin';
 import { getUserIdByEmail, getActiveSubscription } from '@/lib/account/queries';
 import { Container } from '@/components/ui/Container';
@@ -37,9 +38,9 @@ export default async function BillingPage() {
             </div>
           </div>
           <div className="mt-6">{active ? <BillingButton /> : (
-            <a href="/pricing" className="inline-flex h-10 items-center justify-center rounded-full bg-action px-5 text-small font-semibold text-paper transition hover:brightness-110">
+            <Link href="/pricing" className="inline-flex h-10 items-center justify-center rounded-full bg-action px-5 text-small font-semibold text-paper transition hover:brightness-110">
               See plans
-            </a>
+            </Link>
           )}</div>
         </Card>
 

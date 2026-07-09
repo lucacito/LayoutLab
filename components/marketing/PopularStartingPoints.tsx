@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { Container } from '@/components/ui/Container';
 import { Icon } from '@/components/ui/Icon';
 import { LayoutCard } from '@/components/LayoutCard';
@@ -20,9 +21,9 @@ export function PopularStartingPoints({ layouts }: { layouts: LayoutRow[] }) {
             </p>
             <h2 className="mt-1 text-h3 text-navy">Great places to begin</h2>
           </div>
-          <a href="/browse" className="shrink-0 whitespace-nowrap text-small font-semibold text-action hover:underline">
+          <Link href="/browse" className="shrink-0 whitespace-nowrap text-small font-semibold text-action hover:underline">
             Browse all <span aria-hidden>→</span>
-          </a>
+          </Link>
         </div>
         <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {layouts.map((l) => (

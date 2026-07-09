@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
 import { CtaNote } from '@/components/ui/CtaNote';
 
@@ -20,12 +21,12 @@ export function ClosingCta({ image }: { image: string }) {
         <div className="mt-9 flex flex-col items-center gap-4">
           <div className="flex flex-wrap items-center justify-center gap-3">
             <Button href="/browse">Browse layouts</Button>
-            <a
+            <Link
               href="/contact"
               className="inline-flex h-12 items-center justify-center rounded-button border border-paper/40 px-6 text-base font-semibold text-paper backdrop-blur transition hover:bg-paper/10"
             >
               Need a custom build?
-            </a>
+            </Link>
           </div>
           <CtaNote className="text-paper/80" />
         </div>
