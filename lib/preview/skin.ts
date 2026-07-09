@@ -28,6 +28,7 @@ const TYPE_TO_ARCHETYPE: Record<string, PreviewArchetype> = {
   contact: 'form',
   gallery: 'grid',
   blog: 'grid',
+  shop: 'grid',
   full_landing: 'page',
   pack: 'pack',
 };

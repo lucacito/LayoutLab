@@ -16,6 +16,7 @@ export const AXIS_META: Record<NavAxis, Record<string, { icon: string; blurb: st
     contact: { icon: 'mail', blurb: 'Contact & lead forms' },
     gallery: { icon: 'photo_library', blurb: 'Image galleries' },
     blog: { icon: 'article', blurb: 'Article & blog layouts' },
+    shop: { icon: 'storefront', blurb: 'WooCommerce product grids' },
     full_landing: { icon: 'web_asset', blurb: 'Complete landing pages' },
   },
   niche: {
@@ -53,6 +54,7 @@ export const TYPE_LABELS: Record<string, string> = {
   contact: 'Contact forms',
   gallery: 'Galleries',
   blog: 'Blog layouts',
+  shop: 'Shop / product grids',
   full_landing: 'Full landing pages',
 };
 
