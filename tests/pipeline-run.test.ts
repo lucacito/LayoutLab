@@ -2,6 +2,12 @@
 import { describe, it, expect, vi } from 'vitest';
 import { runPipeline, type RunEvent } from '@/pipeline/run';
 
+// Every pre-existing test here asserts exact LLM call counts/sequences; the
+// long-form SEO article step (default ON) would add one call per ingested
+// layout. Disable it for this file — the article path has its own describe
+// block at the bottom that re-enables it explicitly.
+process.env.SEO_ARTICLE_DISABLED = '1';
+
 const guide = { style: 's', schema: 'sc', examples: [] };
 const target = { type: 'hero', niche: 'saas', style: 'minimal' };
 const ok = { valid: true, violations: [] };
@@ -1340,5 +1346,63 @@ describe('runPipeline SEO quality floor + clamp visibility (T2.4)', () => {
     const deps = baseDeps({ llm, onEvent: (e: RunEvent) => events.push(e) });
     await runPipeline(deps as any);
     expect(events.some((e) => e.type === 'seo_clamped')).toBe(false);
+  });
+});
+
+describe('runPipeline SEO article step (default ON — disabled above for legacy call-count tests)', () => {
+  const articleJson = JSON.stringify({
+    article: {
+      overview: 'A deliberate hero built around a strong headline hierarchy. '.repeat(20),
+      features: ['Native hero module', 'Responsive at 390px', 'Single icon family', 'Preset-friendly palette', 'Real button modules'],
+      whoItsFor: 'SaaS marketing teams shipping a first landing page.',
+      customization: 'Change the palette via global presets first, then swap imagery at matching aspect ratios.',
+      faq: [
+        { q: 'Is it responsive?', a: 'Yes — tuned at desktop and 390px widths.' },
+        { q: 'Are images included?', a: 'Placeholder imagery ships with the layout.' },
+        { q: 'Does it need plugins?', a: 'No, only Divi 5 itself.' },
+      ],
+    },
+    meta: {
+      metaTitle: 'T — Free SaaS Hero Divi 5 Layout',
+      metaDescription:
+        'Download this minimal SaaS hero for Divi 5: validated JSON, native modules, responsive at every width, free with a commercial license included.',
+    },
+  });
+
+  it('attaches the article + SERP meta to the ingest payload when enabled', async () => {
+    delete process.env.SEO_ARTICLE_DISABLED;
+    try {
+      const llm = { complete: vi.fn()
+        .mockResolvedValueOnce('{"content":[]}') // generate
+        .mockResolvedValueOnce(seoJson)          // seo
+        .mockResolvedValueOnce(articleJson) };   // article
+      const ingest = vi.fn(async () => ({ deduped: false }));
+      const s = await runPipeline(baseDeps({ llm, ingest }) as any);
+      expect(s.ingested).toBe(1);
+      const payload = ingest.mock.calls[0][0] as any;
+      expect(payload.seo.article.features).toHaveLength(5);
+      expect(payload.seo.metaTitle).toBe('T — Free SaaS Hero Divi 5 Layout');
+      expect(payload.seo.metaDescription).toMatch(/^Download this minimal SaaS hero/);
+    } finally {
+      process.env.SEO_ARTICLE_DISABLED = '1';
+    }
+  });
+
+  it('ships the layout without an article when article generation throws', async () => {
+    delete process.env.SEO_ARTICLE_DISABLED;
+    try {
+      const llm = { complete: vi.fn()
+        .mockResolvedValueOnce('{"content":[]}') // generate
+        .mockResolvedValueOnce(seoJson)          // seo
+        .mockRejectedValueOnce(new Error('llm down')) }; // article fails
+      const ingest = vi.fn(async () => ({ deduped: false }));
+      const s = await runPipeline(baseDeps({ llm, ingest }) as any);
+      expect(s.ingested).toBe(1); // never a drop gate
+      const payload = ingest.mock.calls[0][0] as any;
+      expect(payload.seo.article).toBeUndefined();
+      expect(payload.seo.metaTitle).toBe('T'); // base seo fallback
+    } finally {
+      process.env.SEO_ARTICLE_DISABLED = '1';
+    }
   });
 });

@@ -6,6 +6,16 @@ const seoSchema = z
     metaDescription: z.string().optional(),
     ogImageKey: z.string().optional(),
     keywords: z.array(z.string()).optional(),
+    // Long-form product-page content (see pipeline/seo-article.ts).
+    article: z
+      .object({
+        overview: z.string().min(1),
+        features: z.array(z.string().min(1)),
+        whoItsFor: z.string().min(1),
+        customization: z.string().min(1),
+        faq: z.array(z.object({ q: z.string().min(1), a: z.string().min(1) })),
+      })
+      .optional(),
   })
   .optional();
 

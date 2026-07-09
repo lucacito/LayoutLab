@@ -10,6 +10,8 @@ import { composeLanding } from '@/pipeline/compose';
 import type { Brief, Step } from '@/pipeline/compose';
 import { generateSeo } from './seo';
 import type { LayoutSeo } from './seo';
+import { generateLayoutArticle } from './seo-article';
+import type { GenerateArticleResult } from './seo-article';
 import { contentHash, nearestDistance, perceptualDupeMaxDistance } from './dedupe';
 import { stackLayoutJsonMobile } from './stack-mobile';
 import { lintLayoutJson } from './content-lint';
@@ -318,10 +320,17 @@ export interface PipelineItem {
  * outputs, applying an item's pins when present (theme) or falling back to the
  * matrix defaults (`variantSlug` + the SEO-inferred axes). Extracted so both
  * paths build byte-identical payloads through ONE code path. */
+/** Env knob: set SEO_ARTICLE_DISABLED=1 to skip long-form article generation
+ * (one extra LLM call per layout). Default ON — new layouts ship SEO-complete. */
+export function seoArticleEnabled(): boolean {
+  return process.env.SEO_ARTICLE_DISABLED !== '1';
+}
+
 function buildIngestPayload(
   item: PipelineItem,
   seo: LayoutSeo,
   parts: { diviJsonBlobKey: string; previewImageKeys: string[]; hash: string; perceptualHash?: string },
+  article?: GenerateArticleResult,
 ): IngestPayload {
   const { target, pins } = item;
   const type = pins?.type ?? seo.axes.type;
@@ -343,7 +352,14 @@ function buildIngestPayload(
     perceptualHash: parts.perceptualHash,
     variant: target.variant,
     validatorPassed: true,
-    seo: { metaTitle: seo.title, metaDescription: seo.metaDescription, keywords: seo.keywords },
+    // Article meta (SERP-tuned title/description) wins over the base SEO
+    // result when its quality floor was met; the base values stay the fallback.
+    seo: {
+      metaTitle: article && !article.floorMissed ? article.meta.metaTitle : seo.title,
+      metaDescription: article && !article.floorMissed ? article.meta.metaDescription : seo.metaDescription,
+      keywords: seo.keywords,
+      ...(article ? { article: article.article } : {}),
+    },
     tags: [
       { axis: 'type', slug: type },
       { axis: 'niche', slug: niche },
@@ -588,7 +604,7 @@ export async function processItem(item: PipelineItem, ctx: RunContext): Promise<
     // during generation itself) with no reproducing test or reported
     // incident; it's a reasonable, documented follow-up rather than a gap
     // this fix silently papers over.
-    const runPhaseA = async (): Promise<{ json: string; hash: string; seo: LayoutSeo; layoutText: string } | undefined> => {
+    const runPhaseA = async (): Promise<{ json: string; hash: string; seo: LayoutSeo; article?: GenerateArticleResult; layoutText: string } | undefined> => {
       let { json } =
         target.type === 'full_landing'
           ? await composeLanding(target, {
@@ -747,7 +763,32 @@ export async function processItem(item: PipelineItem, ctx: RunContext): Promise<
       for (const c of seo.seoClamps) {
         emit({ type: 'seo_clamped', target, axis: c.axis, proposed: c.proposed, clamped: c.clamped });
       }
-      return { json, hash, seo, layoutText };
+
+      // Long-form product-page article (overview/features/FAQ + SERP meta).
+      // Non-blocking by design: a failure here must never drop a layout that
+      // already passed every hard gate — it just ships without an article
+      // (backfillable later via scripts/backfill-seo-articles.ts).
+      let article: GenerateArticleResult | undefined;
+      if (seoArticleEnabled()) {
+        try {
+          article = await generateLayoutArticle(
+            {
+              title: item.pins?.title ?? seo.title,
+              type: item.pins?.type ?? seo.axes.type,
+              niche: item.pins?.niche ?? seo.axes.niche,
+              style: item.pins?.style ?? seo.axes.style,
+              // Theme items (pins) are built for paid packs — their copy must
+              // not promise a free download. Matrix sections are free.
+              paid: Boolean(item.pins),
+              layoutJson: json,
+            },
+            { llm: meteredLlm, maxBudgetUsd: deps.maxBudgetUsd, log },
+          );
+        } catch (err) {
+          log(`[seo-article] generation failed for ${target.type}/${target.niche}/${target.style}: ${(err as Error).message} (layout ships without an article)`);
+        }
+      }
+      return { json, hash, seo, article, layoutText };
     };
 
     // ---- Phase B ------------------------------------------------------------
@@ -771,8 +812,8 @@ export async function processItem(item: PipelineItem, ctx: RunContext): Promise<
       // own reference to Phase A's `json`.
       | { kind: 'ingested'; seoSlug: string; perceptualHash?: string; layoutText: string };
 
-    const runPhaseB = (phaseA: { json: string; hash: string; seo: LayoutSeo; layoutText: string }) => {
-      const { json, hash, seo, layoutText } = phaseA;
+    const runPhaseB = (phaseA: { json: string; hash: string; seo: LayoutSeo; article?: GenerateArticleResult; layoutText: string }) => {
+      const { json, hash, seo, article, layoutText } = phaseA;
       let uploadMemo: UploadResult | undefined;
       interface RenderMemo {
         attempted: boolean;
@@ -978,7 +1019,7 @@ export async function processItem(item: PipelineItem, ctx: RunContext): Promise<
           previewImageKeys,
           hash,
           perceptualHash: renderMemo.perceptualHash,
-        });
+        }, article);
         await deps.ingest(payload);
         return { kind: 'ingested', seoSlug: seo.slug, perceptualHash: renderMemo.perceptualHash, layoutText };
       };
