@@ -361,6 +361,26 @@ function centerLoneButtonColumns(c: string): string {
   return out;
 }
 
+// ── Generic patch: label-only (PATCH_MODE=center-labels) ──────────────────────
+// Only sub-fix 2 of centerButtons: textAlign:center on every button font. For
+// layouts where the columns must NOT be touched (e.g. a side-by-side button
+// PAIR that flex-column would stack) but stretched full-width mobile buttons
+// still show a left-aligned wrapped label.
+function centerLabels(c: string): string {
+  let changed = false;
+  const out = c.replace(/<!-- wp:divi\/button ({.*?}) \/-->/g, (m, j: string) => {
+    const attrs = JSON.parse(j);
+    const val =
+      (((((((attrs.button ??= {}).decoration ??= {}).font ??= {}).font ??= {}).desktop ??= {}).value ??= {}));
+    if (val.textAlign === 'center') return m;
+    val.textAlign = 'center';
+    changed = true;
+    return '<!-- wp:divi/button ' + JSON.stringify(attrs) + ' /-->';
+  });
+  if (!changed) throw new Error('center-labels: nothing to change');
+  return out;
+}
+
 async function withTempFile<T>(json: string, fn: (file: string) => Promise<T>): Promise<T> {
   const dir = await mkdtemp(join(tmpdir(), 'patch-'));
   const file = join(dir, 'layout.json');
@@ -383,6 +403,7 @@ async function main() {
     process.env.PATCH_MODE === 'phone' ? phoneCanon
     : process.env.PATCH_MODE === 'center-buttons' ? centerButtons
     : process.env.PATCH_MODE === 'center-lone-buttons' ? centerLoneButtonColumns
+    : process.env.PATCH_MODE === 'center-labels' ? centerLabels
     : PATCHES[slug];
   if (!patch) { console.error(`no patch registered for slug: ${slug}`); process.exit(1); }
 
