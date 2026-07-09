@@ -326,14 +326,17 @@ export function seoArticleEnabled(): boolean {
   return process.env.SEO_ARTICLE_DISABLED !== '1';
 }
 
-function buildIngestPayload(
+export function buildIngestPayload(
   item: PipelineItem,
   seo: LayoutSeo,
   parts: { diviJsonBlobKey: string; previewImageKeys: string[]; hash: string; perceptualHash?: string },
   article?: GenerateArticleResult,
 ): IngestPayload {
   const { target, pins } = item;
-  const type = pins?.type ?? seo.axes.type;
+  // `shop` is a structurally-determined type (the section contains divi/shop) —
+  // pin it so the SEO classification step can't relabel it (which would strip the
+  // shop facet + the "requires WooCommerce" badge). See pipeline/recipes/section-types.ts.
+  const type = pins?.type ?? (target.type === 'shop' ? 'shop' : seo.axes.type);
   const niche = pins?.niche ?? seo.axes.niche;
   const style = pins?.style ?? seo.axes.style;
   const leadColor = pins?.color ?? target.color;
