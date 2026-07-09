@@ -7,6 +7,10 @@ const nextConfig = {
     '/api/download/**': ['./lib/license/commercial-license.txt'],
   },
   images: {
+    // Screenshots are pre-optimized by the pipeline (WebP, ≤1600px, ~≤250KB), so
+    // Vercel's Image Optimization adds cost (transformation quota) without value.
+    // Serve every image as-is.
+    unoptimized: true,
     remotePatterns: [
       // Preview screenshots are served from Vercel Blob (pipeline output).
       { protocol: 'https', hostname: '*.public.blob.vercel-storage.com' },

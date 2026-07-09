@@ -78,7 +78,9 @@ async function main() {
       const diviJsonBlobKey = await resolveAsset(row.diviJsonBlobKey, `layouts/${hash}.json`, 'application/json');
       const previewImageKeys: string[] = [];
       for (let i = 0; i < previews.length; i++) {
-        previewImageKeys.push(await resolveAsset(previews[i]!, `layouts/${hash}-${i}.png`, 'image/png'));
+        // Preserve the source format: new screenshots are WebP, pre-optimization ones PNG.
+        const ext = /\.webp$/i.test(previews[i]!) ? 'webp' : 'png';
+        previewImageKeys.push(await resolveAsset(previews[i]!, `layouts/${hash}-${i}.${ext}`, `image/${ext}`));
       }
       const tagRows = await db
         .select({ axis: tagsTable.axis, slug: tagsTable.slug })

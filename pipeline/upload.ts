@@ -1,10 +1,14 @@
 import { writeFileSync, mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
 import { uploadAsset } from '@/lib/blob';
+import { optimizeScreenshot, type OptimizedScreenshot } from '@/pipeline/optimize-image';
 
-// Persist a rendered screenshot and return its preview key. With a Blob token →
-// `layouts/<hash>-<label>.png` (a real-screenshot key). Locally → written to
-// public/screenshots and served as `/screenshots/<hash>-<label>.png`. Both are
+// Persist a rendered screenshot and return its preview key. The raw Playwright
+// PNG is always compressed to WebP (≤1600px wide, ~≤250KB) first — blobs are
+// served directly by the site (next/image `unoptimized`), so what's uploaded
+// here is exactly what buyers download over the wire. With a Blob token →
+// `layouts/<hash>-<label>.webp` (a real-screenshot key). Locally → written to
+// public/screenshots and served as `/screenshots/<hash>-<label>.webp`. Both are
 // recognized by PreviewImage's isRealScreenshot.
 export async function uploadScreenshot(
   hash: string,
@@ -15,19 +19,21 @@ export async function uploadScreenshot(
     publicDir?: string;
     upload?: (key: string, data: Buffer, ct: string) => Promise<{ url: string }>;
     writeFile?: (path: string, data: Buffer) => void;
+    optimize?: (png: Buffer) => Promise<OptimizedScreenshot>;
   },
 ): Promise<string> {
+  const { buffer } = await (deps.optimize ?? optimizeScreenshot)(data);
   if (deps.hasBlobToken) {
-    const key = `layouts/${hash}-${label}.png`;
+    const key = `layouts/${hash}-${label}.webp`;
     // Store the real public Blob URL (not the key) — Vercel Blob URLs are
     // `https://<id>.public.blob.vercel-storage.com/...`, not a guessable base.
-    const { url } = await (deps.upload ?? ((k, d, ct) => uploadAsset(k, d, ct)))(key, data, 'image/png');
+    const { url } = await (deps.upload ?? ((k, d, ct) => uploadAsset(k, d, ct)))(key, buffer, 'image/webp');
     return url;
   }
   const dir = deps.publicDir ?? 'public/screenshots';
   const write = deps.writeFile ?? ((p, d) => { mkdirSync(dirname(p), { recursive: true }); writeFileSync(p, d); });
-  write(`${dir}/${hash}-${label}.png`, data);
-  return `/screenshots/${hash}-${label}.png`;
+  write(`${dir}/${hash}-${label}.webp`, buffer);
+  return `/screenshots/${hash}-${label}.webp`;
 }
 
 export interface UploadResult {

@@ -1,5 +1,8 @@
 // Re-render a pipeline layout by content hash → overwrite its screenshots in place
-// (same keys the DB already references). Usage: npm run rerender -- <hash> [<hash> …]
+// (same keys the DB already references). Screenshots upload as `.webp` — rows still
+// referencing legacy `.png` keys must be migrated first (scripts/optimize-live-images.ts),
+// or the overwrite lands on a key the DB doesn't point at.
+// Usage: npm run rerender -- <hash> [<hash> …]
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { realRenderDeps, renderLayout } from '@/pipeline/render';
