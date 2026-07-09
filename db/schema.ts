@@ -72,6 +72,15 @@ export const layouts = pgTable('layouts', {
     metaDescription?: string;
     ogImageKey?: string;
     keywords?: string[];
+    // Long-form on-page SEO content (rendered on /layouts/[slug]). Generated
+    // by pipeline/seo-article.ts; markdown fields go through <Markdown/>.
+    article?: {
+      overview: string;              // ~250–450 words: design explanation
+      features: string[];            // 5–8 concrete feature bullets
+      whoItsFor: string;             // industries / use cases
+      customization: string;         // customization tips
+      faq: { q: string; a: string }[];
+    };
   }>(),
   status: layoutStatus('status').notNull().default('pending'),
   // Structured variant attributes for cross-linking sibling variations (same group,

@@ -5,7 +5,8 @@ import { notFound } from 'next/navigation';
 import { env } from '@/lib/env';
 import { getLayoutBySlug, getPacksForLayout, getLayoutsForPack, listRelatedLayouts, listVariantSiblings } from '@/lib/catalog/queries';
 import { assetUrl } from '@/lib/blob';
-import { buildLayoutMetadata, productJsonLd, breadcrumbJsonLd } from '@/lib/seo';
+import { buildLayoutMetadata, productJsonLd, breadcrumbJsonLd, faqJsonLd } from '@/lib/seo';
+import { LayoutArticle, SHARED_LAYOUT_FAQ } from '@/components/LayoutArticle';
 import { axisLabel } from '@/lib/seo/taxonomy-copy';
 import { ResponsivePreview } from '@/components/ResponsivePreview';
 import { Breadcrumbs } from '@/components/Breadcrumbs';
@@ -77,6 +78,13 @@ export default async function LayoutPage({ params }: { params: Promise<{ slug: s
   const url = `${site}/layouts/${layout.slug}`;
   const cover = layout.previewImageKeys[0] ? assetUrl(layout.previewImageKeys[0]) : undefined;
   const ratingAvg = ratingAverage(layout.ratingSum, layout.ratingCount);
+  const altBase = layoutAltText(layout);
+  // Screenshots as captioned ImageObjects (Google Images + product rich results).
+  const productImages = layout.previewImageKeys.map((k) => ({
+    url: assetUrl(k),
+    caption: /-mobile\./.test(k) ? `${altBase} — mobile screenshot` : `${altBase} — desktop screenshot`,
+  }));
+  const article = layout.seo?.article;
 
   return (
     <main className="py-12">
@@ -84,13 +92,16 @@ export default async function LayoutPage({ params }: { params: Promise<{ slug: s
         <TrackView event="product_viewed" props={{ kind: 'layout', slug: layout.slug }} />
         <Breadcrumbs crumbs={[{ name: 'Home', url: site }, { name: 'Browse', url: `${site}/browse` }, { name: layout.title, url }]} />
         <JsonLd data={productJsonLd({
-          name: layout.title, description: layout.description, image: cover, url,
+          name: layout.title, description: layout.description, image: cover, images: productImages, url,
           // Layouts are free — a $0.00 Offer satisfies Google's "offers required" rule.
           offer: { priceCents: 0 },
           // Real ratings only (helper drops it when ratingCount === 0).
           aggregateRating: { ratingValue: ratingAvg, ratingCount: layout.ratingCount },
         })} />
         <JsonLd data={breadcrumbJsonLd([{ name: 'Home', url: site }, { name: 'Browse', url: `${site}/browse` }, { name: layout.title, url }])} />
+        {article && (
+          <JsonLd data={faqJsonLd([...article.faq, ...SHARED_LAYOUT_FAQ].map((f) => ({ question: f.q, answer: f.a })))} />
+        )}
 
         <h1 className="mt-4 text-h2 text-navy">{layout.title}</h1>
         <div className="mt-3 flex flex-wrap gap-2">
@@ -149,7 +160,9 @@ export default async function LayoutPage({ params }: { params: Promise<{ slug: s
           </div>
         </Card>
 
-        <div className="mt-6"><ResponsivePreview keys={layout.previewImageKeys} title={layout.title} altBase={layoutAltText(layout)} type={layout.type} color={layout.colors?.[0]} layoutStyle={layout.style} /></div>
+        <div className="mt-6"><ResponsivePreview keys={layout.previewImageKeys} title={layout.title} altBase={altBase} type={layout.type} color={layout.colors?.[0]} layoutStyle={layout.style} /></div>
+
+        <LayoutArticle title={layout.title} article={article} />
 
         {packs.length > 0 && (
           <section className="mt-10">
