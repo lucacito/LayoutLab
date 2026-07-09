@@ -20,11 +20,20 @@ export async function uploadScreenshot(
     upload?: (key: string, data: Buffer, ct: string) => Promise<{ url: string }>;
     writeFile?: (path: string, data: Buffer) => void;
     optimize?: (png: Buffer) => Promise<OptimizedScreenshot>;
+    /** Descriptive stem (usually the layout's final slug) for a keyword-rich
+     * filename — Google Images reads filenames. An 8-char hash prefix keeps
+     * keys unique/idempotent; the label stays LAST so `-mobile.` detection in
+     * PreviewImage/ResponsivePreview keeps working. Omitted → legacy hash key. */
+    seoName?: string;
   },
 ): Promise<string> {
   const { buffer } = await (deps.optimize ?? optimizeScreenshot)(data);
+  const stem = deps.seoName
+    ? `${deps.seoName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')}-${hash.slice(0, 8)}`
+    : hash;
+  const file = `${stem}-${label}.webp`;
   if (deps.hasBlobToken) {
-    const key = `layouts/${hash}-${label}.webp`;
+    const key = `layouts/${file}`;
     // Store the real public Blob URL (not the key) — Vercel Blob URLs are
     // `https://<id>.public.blob.vercel-storage.com/...`, not a guessable base.
     const { url } = await (deps.upload ?? ((k, d, ct) => uploadAsset(k, d, ct)))(key, buffer, 'image/webp');
@@ -32,8 +41,8 @@ export async function uploadScreenshot(
   }
   const dir = deps.publicDir ?? 'public/screenshots';
   const write = deps.writeFile ?? ((p, d) => { mkdirSync(dirname(p), { recursive: true }); writeFileSync(p, d); });
-  write(`${dir}/${hash}-${label}.webp`, buffer);
-  return `/screenshots/${hash}-${label}.webp`;
+  write(`${dir}/${file}`, buffer);
+  return `/screenshots/${file}`;
 }
 
 export interface UploadResult {

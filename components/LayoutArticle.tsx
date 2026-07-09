@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { Markdown } from '@/components/Markdown';
 import { Icon } from '@/components/ui/Icon';
 
@@ -72,7 +73,7 @@ export function LayoutArticle({ title, article }: { title: string; article: Layo
           {INSTALL_STEPS.map((s) => <li key={s}>{s}</li>)}
         </ol>
         <p className="mt-3 text-small text-muted">
-          Full walkthrough with troubleshooting: <a href="/guides/how-to-import-a-divi-5-layout" className="text-action hover:underline">How to Import a Divi 5 Layout</a>.
+          Full walkthrough with troubleshooting: <Link href="/guides/how-to-import-a-divi-5-layout" className="text-action hover:underline">How to Import a Divi 5 Layout</Link>.
         </p>
       </section>
 

@@ -36,10 +36,13 @@ export async function withTempFile<T>(json: string, fn: (file: string) => Promis
 
 export interface CaptureScreenshotsDeps {
   hasBlobToken: boolean;
+  /** Descriptive filename stem for the uploaded screenshots (usually the
+   * layout's final slug) — see uploadScreenshot's seoName doc. */
+  seoName?: string;
   /** Override the real `uploadScreenshot`/`writeFile`/`mkdtemp`/`rm` calls —
    * used by tests to simulate a mid-loop failure without a real Blob token or
    * filesystem dependency on a specific tmp layout. */
-  uploadScreenshot?: (hash: string, label: string, data: Buffer, deps: { hasBlobToken: boolean }) => Promise<string>;
+  uploadScreenshot?: (hash: string, label: string, data: Buffer, deps: { hasBlobToken: boolean; seoName?: string }) => Promise<string>;
   writeFile?: (path: string, data: Buffer) => Promise<void>;
   mkdtemp?: (prefix: string) => Promise<string>;
   rm?: (path: string, opts: { recursive?: boolean; force?: boolean }) => Promise<void>;
@@ -75,7 +78,7 @@ export async function captureScreenshots(
     for (const label of ['desktop', 'mobile'] as const) {
       const shot = shots.find((s) => s.label === label);
       if (shot) {
-        keys.push(await doUploadScreenshot(hash, label, shot.buffer, { hasBlobToken: deps.hasBlobToken }));
+        keys.push(await doUploadScreenshot(hash, label, shot.buffer, { hasBlobToken: deps.hasBlobToken, seoName: deps.seoName }));
         const path = join(shotDir, `${label}.png`);
         await doWriteFile(path, shot.buffer);
         screenshotPaths.push(path);
@@ -144,7 +147,7 @@ export interface RenderAndCaptureResult {
  *    empty page apart from an infra failure.
  */
 export async function renderAndCapture(
-  input: { title: string; postContent: string; hash: string },
+  input: { title: string; postContent: string; hash: string; seoName?: string },
   deps: RenderAndCaptureDeps,
 ): Promise<RenderAndCaptureResult> {
   const doCapture = deps.captureScreenshots ?? captureScreenshots;
@@ -158,7 +161,7 @@ export async function renderAndCapture(
       doLog(`render blank for ${input.hash.slice(0, 12)}: page never confirmably painted content`);
       return { previewImageKeys: [], outcome: 'blank' };
     }
-    const { previewImageKeys, screenshotPaths } = await doCapture(result.shots, input.hash, { hasBlobToken: deps.hasBlobToken });
+    const { previewImageKeys, screenshotPaths } = await doCapture(result.shots, input.hash, { hasBlobToken: deps.hasBlobToken, seoName: input.seoName });
     return { previewImageKeys, perceptualHash: result.perceptualHash, screenshotPaths, outcome: 'ok' };
   } catch (e) {
     const message = (e as Error).message;

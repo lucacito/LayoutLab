@@ -225,7 +225,7 @@ export interface RunDeps {
    * `render_failed` RunEvent's `detail` field. A THROWN rejection (as opposed to
    * a resolved `error` field) is still supported directly — see the try/catch
    * around this call below — and is exactly equivalent to it. */
-  render?: (input: { title: string; postContent: string; hash: string }) => Promise<{
+  render?: (input: { title: string; postContent: string; hash: string; seoName?: string }) => Promise<{
     previewImageKeys: string[];
     perceptualHash?: string;
     screenshotPaths?: string[];
@@ -857,7 +857,10 @@ export async function processItem(item: PipelineItem, ctx: RunContext): Promise<
                 // T4.2: theme items render under their pinned brand+role title;
                 // matrix items use the generated post_title (falling back to SEO).
                 const renderTitle = item.pins?.title ?? parsed.post_title ?? seo.title;
-                const r = await deps.render({ title: renderTitle, postContent: parsed.post_content, hash });
+                // Descriptive screenshot filenames (Google Images): the final
+                // ingest slug — same expression buildIngestPayload uses.
+                const seoName = item.pins?.slug ?? variantSlug(seo.slug, target);
+                const r = await deps.render({ title: renderTitle, postContent: parsed.post_content, hash, seoName });
                 if (r.previewImageKeys.length) {
                   renderMemo.succeeded = true;
                   renderMemo.previewImageKeys = r.previewImageKeys;
