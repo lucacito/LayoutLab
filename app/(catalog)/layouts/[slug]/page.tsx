@@ -29,6 +29,7 @@ import { StarRating } from '@/components/ratings/StarRating';
 import { Stars } from '@/components/ratings/Stars';
 import { RewardsProgress } from '@/components/rewards/RewardsProgress';
 import { ratingAverage } from '@/lib/ratings/compute';
+import { layoutAltText } from '@/lib/seo/alt-text';
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
@@ -148,7 +149,7 @@ export default async function LayoutPage({ params }: { params: Promise<{ slug: s
           </div>
         </Card>
 
-        <div className="mt-6"><ResponsivePreview keys={layout.previewImageKeys} title={layout.title} type={layout.type} color={layout.colors?.[0]} layoutStyle={layout.style} /></div>
+        <div className="mt-6"><ResponsivePreview keys={layout.previewImageKeys} title={layout.title} altBase={layoutAltText(layout)} type={layout.type} color={layout.colors?.[0]} layoutStyle={layout.style} /></div>
 
         {packs.length > 0 && (
           <section className="mt-10">

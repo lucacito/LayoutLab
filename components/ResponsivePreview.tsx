@@ -11,13 +11,17 @@ export function ResponsivePreview({
   type,
   color,
   layoutStyle,
+  altBase,
 }: {
   keys: string[];
   title: string;
   type?: string | null;
   color?: string | null;
   layoutStyle?: string | null;
+  // Descriptive alt-text stem (see lib/seo/alt-text). Falls back to the title.
+  altBase?: string;
 }) {
+  const stem = altBase ?? title;
   const desktop = keys.find((k) => !/-mobile\./.test(k)) ?? keys[0] ?? null;
   const mobile = keys.find((k) => /-mobile\./.test(k)) ?? null;
   const [view, setView] = useState<'desktop' | 'mobile'>('desktop');
@@ -49,7 +53,7 @@ export function ResponsivePreview({
         <div className="mx-auto w-full max-w-[360px]">
           <div className="overflow-hidden rounded-[2rem] border-[7px] border-navy bg-navy shadow-soft">
             <button type="button" onClick={() => setZoom(true)} className="block w-full">
-              <PreviewImage src={mobile!} alt={`${title} — mobile preview`} type={type} color={color} layoutStyle={layoutStyle} sizes="360px" className="aspect-[9/16]" />
+              <PreviewImage src={mobile!} alt={`${stem} — mobile screenshot`} type={type} color={color} layoutStyle={layoutStyle} sizes="360px" className="aspect-[9/16]" />
             </button>
           </div>
         </div>
@@ -61,7 +65,7 @@ export function ResponsivePreview({
             <span className="h-2.5 w-2.5 rounded-full bg-emerald-400/70" />
           </div>
           <button type="button" onClick={() => setZoom(true)} className="block max-h-[640px] w-full overflow-hidden">
-            <PreviewImage src={desktop} alt={`${title} — desktop preview`} type={type} color={color} layoutStyle={layoutStyle} natural />
+            <PreviewImage src={desktop} alt={`${stem} — desktop screenshot`} type={type} color={color} layoutStyle={layoutStyle} natural />
           </button>
         </div>
       )}
@@ -83,7 +87,7 @@ export function ResponsivePreview({
           <div className={`mx-auto ${onMobile ? 'max-w-[420px]' : 'max-w-5xl'}`} onClick={(e) => e.stopPropagation()}>
             <PreviewImage
               src={onMobile ? mobile! : desktop}
-              alt={`${title} — full preview`}
+              alt={`${stem} — full-page screenshot`}
               type={type}
               color={color}
               layoutStyle={layoutStyle}

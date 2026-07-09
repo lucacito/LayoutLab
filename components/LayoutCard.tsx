@@ -5,6 +5,7 @@ import { PreviewImage } from '@/components/PreviewImage';
 import { BookmarkButton } from '@/components/bookmarks/BookmarkButton';
 import { CardRating } from '@/components/ratings/CardRating';
 import { ratingAverage } from '@/lib/ratings/compute';
+import { layoutAltText } from '@/lib/seo/alt-text';
 
 export function LayoutCard({ layout, flat = false }: { layout: LayoutRow; flat?: boolean }) {
   const cover = layout.previewImageKeys[0];
@@ -16,7 +17,7 @@ export function LayoutCard({ layout, flat = false }: { layout: LayoutRow; flat?:
       <BookmarkButton slug={layout.slug} className="absolute right-3 top-3 z-10" />
       <PreviewImage
         src={cover}
-        alt={layout.title}
+        alt={layoutAltText(layout)}
         label={layout.type}
         type={layout.type}
         color={layout.colors?.[0]}
