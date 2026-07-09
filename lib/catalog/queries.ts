@@ -44,6 +44,26 @@ export async function listVariantSiblings(group: string): Promise<LayoutRow[]> {
     .where(and(eq(layouts.status, 'published'), sql`${layouts.variant}->>'group' = ${group}`));
 }
 
+/**
+ * Layouts downloadable for free — the complement of isPaidOnlyLayout
+ * (lib/stripe/entitlements): a layout is free unless EVERY published pack it
+ * belongs to is paid. So: no paid pack, or at least one free pack.
+ */
+export async function listFreeLayouts(limit = 48): Promise<LayoutRow[]> {
+  const paidExists = sql`EXISTS (
+    SELECT 1 FROM pack_layouts pl JOIN packs p ON p.id = pl.pack_id
+    WHERE pl.layout_id = ${layouts.id} AND p.status = 'published' AND p.kind = 'paid')`;
+  const freeExists = sql`EXISTS (
+    SELECT 1 FROM pack_layouts pl JOIN packs p ON p.id = pl.pack_id
+    WHERE pl.layout_id = ${layouts.id} AND p.status = 'published' AND p.kind = 'free')`;
+  return db
+    .select()
+    .from(layouts)
+    .where(and(eq(layouts.status, 'published'), sql`(NOT ${paidExists} OR ${freeExists})`))
+    .orderBy(desc(layouts.publishedAt), desc(layouts.createdAt))
+    .limit(limit);
+}
+
 export async function getLayoutBySlug(slug: string): Promise<LayoutRow | null> {
   const rows = await db.select().from(layouts)
     .where(and(eq(layouts.slug, slug), eq(layouts.status, 'published'))).limit(1);

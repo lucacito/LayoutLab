@@ -8,7 +8,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { env } from '@/lib/env';
 import { getKeywordPage, listKeywordPages } from '@/lib/seo/keyword-pages';
-import { listLayouts, listPacks } from '@/lib/catalog/queries';
+import { listLayouts, listFreeLayouts, listPacks } from '@/lib/catalog/queries';
 import { collectionPageJsonLd, breadcrumbJsonLd, faqJsonLd, itemListJsonLd } from '@/lib/seo';
 import { hubLinkGroups } from '@/lib/seo/internal-links';
 import { JsonLd } from '@/components/JsonLd';
@@ -61,7 +61,9 @@ export default async function KeywordLandingPage({ params }: { params: Promise<{
     page: 1,
   };
   const [layouts, packs] = await Promise.all([
-    listLayouts(filters).then((rows) => rows.slice(0, GRID_SIZE)),
+    // Free pages show genuinely free layouts (not paid-only ones) — the page's
+    // promise is "every card here is a free download".
+    page.freeOnly ? listFreeLayouts(GRID_SIZE) : listLayouts(filters).then((rows) => rows.slice(0, GRID_SIZE)),
     page.freeOnly ? listPacks().then((ps) => ps.filter((p) => p.kind === 'free')) : Promise.resolve([]),
   ]);
 
