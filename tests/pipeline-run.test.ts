@@ -1379,7 +1379,7 @@ describe('runPipeline SEO article step (default ON — disabled above for legacy
       const ingest = vi.fn(async () => ({ deduped: false }));
       const s = await runPipeline(baseDeps({ llm, ingest }) as any);
       expect(s.ingested).toBe(1);
-      const payload = ingest.mock.calls[0][0] as any;
+      const payload = (ingest.mock.calls[0] as any[])[0];
       expect(payload.seo.article.features).toHaveLength(5);
       expect(payload.seo.metaTitle).toBe('T — Free SaaS Hero Divi 5 Layout');
       expect(payload.seo.metaDescription).toMatch(/^Download this minimal SaaS hero/);
@@ -1398,7 +1398,7 @@ describe('runPipeline SEO article step (default ON — disabled above for legacy
       const ingest = vi.fn(async () => ({ deduped: false }));
       const s = await runPipeline(baseDeps({ llm, ingest }) as any);
       expect(s.ingested).toBe(1); // never a drop gate
-      const payload = ingest.mock.calls[0][0] as any;
+      const payload = (ingest.mock.calls[0] as any[])[0];
       expect(payload.seo.article).toBeUndefined();
       expect(payload.seo.metaTitle).toBe('T'); // base seo fallback
     } finally {
