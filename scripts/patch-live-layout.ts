@@ -229,6 +229,44 @@ const PATCHES: Record<string, Patch> = {
     if (out === c) throw new Error('lawfirm: no change');
     return out;
   },
+
+  // Idea Sprint CTA card: shipped with a MIXED alignment — headline centered but
+  // eyebrow, body, button, and footer all left. Lucas asked to center the whole
+  // card. centerButtons makes the single column a centered flex column (button +
+  // blocks center) and centers the button font; then set textAlign:center on all
+  // 3 text modules (eyebrow/body/footer) so their copy centers too (the heading
+  // already carries textAlign:center). Uses JSON.parse per module (self-closing
+  // divi/text + divi/heading), so it's robust to the exact serialized strings.
+  'playful-agency-cta-idea-sprint-booking-card': (c) => {
+    let out = centerButtons(c); // column → centered flex + button font textAlign
+    out = out.replace(/<!-- wp:divi\/text ({.*?}) \/-->/g, (m, j: string) => {
+      const a = JSON.parse(j);
+      a.content ??= {};
+      a.content.decoration ??= {};
+      a.content.decoration.bodyFont ??= {};
+      a.content.decoration.bodyFont.body ??= {};
+      a.content.decoration.bodyFont.body.font ??= {};
+      a.content.decoration.bodyFont.body.font.desktop ??= {};
+      const v = (a.content.decoration.bodyFont.body.font.desktop.value ??= {});
+      if (v.textAlign === 'center') return m;
+      v.textAlign = 'center';
+      return '<!-- wp:divi/text ' + JSON.stringify(a) + ' /-->';
+    });
+    out = out.replace(/<!-- wp:divi\/heading ({.*?}) \/-->/g, (m, j: string) => {
+      const a = JSON.parse(j);
+      a.title ??= {};
+      a.title.decoration ??= {};
+      a.title.decoration.font ??= {};
+      a.title.decoration.font.font ??= {};
+      a.title.decoration.font.font.desktop ??= {};
+      const v = (a.title.decoration.font.font.desktop.value ??= {});
+      if (v.textAlign === 'center') return m;
+      v.textAlign = 'center';
+      return '<!-- wp:divi/heading ' + JSON.stringify(a) + ' /-->';
+    });
+    if (out === c) throw new Error('idea-sprint: no change');
+    return out;
+  },
 };
 
 // ── Generic patch: center un-centered CTA buttons (PATCH_MODE=center-buttons) ─
