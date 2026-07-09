@@ -52,6 +52,7 @@ const SITE_JSONLD = [
   siteNavigationJsonLd([
     { name: 'Browse layouts', url: `${SITE_URL}/browse` },
     { name: 'Themes & Packs', url: `${SITE_URL}/packs` },
+    { name: 'Guides', url: `${SITE_URL}/guides` },
     { name: 'Pricing', url: `${SITE_URL}/pricing` },
     { name: 'About', url: `${SITE_URL}/about` },
     { name: 'Contact', url: `${SITE_URL}/contact` },

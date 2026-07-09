@@ -70,6 +70,9 @@ export function MobileNav() {
             );
           })}
 
+          <Link href="/guides" onClick={close} className="flex items-center gap-2 border-t border-fog px-2 py-3 text-body font-medium text-navy">
+            <Icon name="article" size={20} className="text-muted" /> Guides
+          </Link>
           <Link href="/pricing" onClick={close} className="flex items-center gap-2 border-t border-fog px-2 py-3 text-body font-medium text-navy">
             <Icon name="sell" size={20} className="text-muted" /> Pricing
           </Link>

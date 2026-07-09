@@ -69,6 +69,9 @@ export function MegaMenu() {
           </Link>
         ),
       )}
+      <Link href="/guides" onMouseEnter={() => setOpen(null)} className="rounded-full px-3 py-1.5 text-small font-medium text-navy transition hover:text-action">
+        Guides
+      </Link>
       <Link href="/pricing" className="rounded-full px-3 py-1.5 text-small font-medium text-navy transition hover:text-action">
         Pricing
       </Link>
