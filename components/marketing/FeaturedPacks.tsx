@@ -37,11 +37,12 @@ export function FeaturedPacks({ packs }: { packs: PackRow[] }) {
       <Container>
         <div className="max-w-2xl">
           <span className="inline-flex items-center gap-1.5 rounded-full bg-paper/10 px-3 py-1 text-small font-semibold text-paper backdrop-blur">
-            <Icon name="auto_awesome" size={16} className="text-action" /> Complete website themes
+            <Icon name="auto_awesome" size={16} className="text-action" /> Examples of our work
           </span>
-          <h2 className="mt-4 text-h1 text-paper">Launch a whole site this afternoon — not next month.</h2>
+          <h2 className="mt-4 text-h1 text-paper">Complete, on-brand sites — built to convert.</h2>
           <p className="mt-3 text-lead text-paper/80">
-            Premium multi-page Divi 5 packs where every page already speaks the same language. Swap in your brand and go live.
+            A sample of the multi-page Divi 5 sites we build. Every page speaks the same language and is wired to turn visitors
+            into calls. Prefer a head start? These are available as ready-made packs too.
           </p>
         </div>
 

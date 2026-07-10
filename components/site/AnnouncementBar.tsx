@@ -5,7 +5,7 @@ import { Icon } from '@/components/ui/Icon';
 
 // Dismissible site-wide banner above the (sticky) header. Bump the version in the
 // key to re-show after dismissal when the message changes.
-const KEY = 'll_announce_dismissed_v1';
+const KEY = 'll_announce_dismissed_v2';
 
 export function AnnouncementBar() {
   const [show, setShow] = useState(false);
@@ -33,9 +33,9 @@ export function AnnouncementBar() {
     <div className="relative bg-navy text-paper">
       <div className="mx-auto flex max-w-7xl items-center justify-center gap-2 px-10 py-2 text-small">
         <Icon name="bolt" size={16} className="text-action" />
-        <span className="text-paper/90">Fresh Divi 5 sections added weekly — free to start.</span>
-        <Link href="/browse" className="font-semibold underline underline-offset-2 hover:text-action">
-          Browse now
+        <span className="text-paper/90">We build Divi 5 websites that get you more calls.</span>
+        <Link href="/contact" className="font-semibold underline underline-offset-2 hover:text-action">
+          Get a free quote
         </Link>
       </div>
       <button
