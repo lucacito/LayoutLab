@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { Icon } from '@/components/ui/Icon';
 
 const TRUST = ['Built on Divi 5', 'Live in about a week', 'Conversion-first', 'You own everything'];
@@ -23,12 +24,12 @@ export function ServicesHero() {
           quote requests. Built in days, not months.
         </p>
         <div className="mt-9 flex flex-wrap items-center justify-center gap-3">
-          <a href="/contact" className="inline-flex h-12 items-center justify-center rounded-full bg-action px-7 text-body font-semibold text-paper transition hover:brightness-110">
+          <Link href="/contact" className="inline-flex h-12 items-center justify-center rounded-full bg-action px-7 text-body font-semibold text-paper transition hover:brightness-110">
             Get a free quote
-          </a>
-          <a href="/browse" className="inline-flex h-12 items-center justify-center rounded-full border border-paper/25 bg-paper/5 px-7 text-body font-semibold text-paper backdrop-blur transition hover:bg-paper/15">
+          </Link>
+          <Link href="/browse" className="inline-flex h-12 items-center justify-center rounded-full border border-paper/25 bg-paper/5 px-7 text-body font-semibold text-paper backdrop-blur transition hover:bg-paper/15">
             See examples
-          </a>
+          </Link>
         </div>
         <div className="mt-8 flex flex-wrap justify-center gap-x-5 gap-y-2">
           {TRUST.map((t) => (
