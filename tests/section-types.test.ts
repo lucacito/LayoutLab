@@ -27,7 +27,7 @@ const EXPECTED_RECIPE_BY_TYPE: Record<string, string[]> = {
   contact: ['contact-form'],
   gallery: ['image-gallery', 'image-carousel'],
   blog: ['blog-feed'],
-  shop: ['shop-grid', 'section-intro'],
+  shop: ['shop-grid', 'section-intro', 'split-image-text', 'icon-features', 'newsletter-social'],
   full_landing: ['hero-cta', 'icon-features', 'testimonial', 'stats-counter', 'card-grid-3'],
 };
 

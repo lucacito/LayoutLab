@@ -341,7 +341,10 @@ export const SECTION_TYPES: Record<string, SectionTypeEntry> = {
   shop: {
     // Grounded on the shop-grid recipe (validator repo section-recipes.json),
     // whose markup is a heading + divi/shop (the WooCommerce products grid).
-    recipes: ['shop-grid', 'section-intro'],
+    // The extra patterns (intro/split/value-strip/newsletter) ground the ELABORATE
+    // multi-section shop page the shop directive asks for (see prompts.ts); shop
+    // uses the wider full_landing example cap so all of these reach the model.
+    recipes: ['shop-grid', 'section-intro', 'split-image-text', 'icon-features', 'newsletter-social'],
     // Documented corpus gap (like testimonials/faq): the D5 library has zero
     // divi/shop modules, so there are no BM25 exemplars to retrieve.
     libraryKinds: [],

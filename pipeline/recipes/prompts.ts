@@ -77,7 +77,7 @@ export function groundingInSystemEnabled(): boolean {
 // call sharing a type — the property that makes it cache-eligible.
 function pickExamples(target: Target, guide: Guide): string[] {
   const recipes = guide.recipes ?? [];
-  const cap = target.type === 'full_landing' ? MAX_EXAMPLES_LANDING : MAX_EXAMPLES;
+  const cap = target.type === 'full_landing' || target.type === 'shop' ? MAX_EXAMPLES_LANDING : MAX_EXAMPLES;
   if (recipes.length) {
     const wanted = RECIPE_BY_TYPE[target.type] ?? DEFAULT_RECIPES;
     const byName = new Map(recipes.map((r) => [r.name, r]));
@@ -169,6 +169,17 @@ function directives(target: Target, guide: Guide): string {
         '(7) an FAQ section: 4–6 question/answer pairs; ' +
         '(8) a final full-width CTA banner. ' +
         'Alternate section backgrounds (light → tinted → dark) for visual rhythm, keep one consistent accent color, and write specific, benefit-led copy throughout — this is a flagship, premium page, so make every section polished and cohesive.',
+    );
+  }
+  if (target.type === 'shop') {
+    lines.push(
+      'Build an ELABORATE, high-end WooCommerce shop/products page — MULTIPLE divi/section blocks, never a lone grid: ' +
+        '(1) a refined header/intro: a small eyebrow (collection or season), a large editorial headline, a one–two line subhead, a primary + a lighter secondary button, and a slim inline row of 3 trust/service points (e.g. free shipping over a threshold, easy 30-day returns, secure checkout) as small icon+label blurbs; ' +
+        "(2) the PRODUCTS GRID as the centerpiece — a divi/shop module (the WooCommerce Shop block) under a short section heading + one intro line; this divi/shop block is REQUIRED and renders the store's real products; " +
+        '(3) a "featured collection" / brand-story band — a split image + text: a relevant lifestyle photo on one side, a short editorial paragraph + a text link on the other (alternate the image side for rhythm); ' +
+        '(4) a 3-up value strip — a small icon + short heading + one line each (e.g. materials, craftsmanship, sustainability); ' +
+        '(5) a closing newsletter / promo band — a tinted or dark full-width section with a short headline, one line, and a signup or CTA button. ' +
+        'Alternate section backgrounds (light → tinted → dark) for rhythm, carry ONE elegant accent color throughout, use generous whitespace, refined typographic hierarchy, rounded corners + soft shadows, and hover polish — this must read as a sophisticated, editorial, high-end store, NOT a plain product list. Keep the divi/shop grid the clear centerpiece.',
     );
   }
   lines.push(
