@@ -8,9 +8,12 @@ import { Icon } from '@/components/ui/Icon';
 export function ServicesFreeBand() {
   const [email, setEmail] = useState('');
   const [status, setStatus] = useState<'idle' | 'done' | 'error'>('idle');
+  const [submitting, setSubmitting] = useState(false);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
+    if (submitting) return; // guard against double-submit on rapid clicks
+    setSubmitting(true);
     try {
       const res = await fetch('/api/lead', {
         method: 'POST',
@@ -20,6 +23,8 @@ export function ServicesFreeBand() {
       setStatus(res.ok ? 'done' : 'error');
     } catch {
       setStatus('error');
+    } finally {
+      setSubmitting(false);
     }
   }
 
@@ -36,7 +41,7 @@ export function ServicesFreeBand() {
           </p>
 
           {status === 'done' ? (
-            <p className="mt-6 flex items-center gap-2 text-body font-semibold text-navy">
+            <p role="status" aria-live="polite" className="mt-6 flex items-center gap-2 text-body font-semibold text-navy">
               <Icon name="mark_email_read" size={20} className="text-action" /> Check your inbox — you&apos;re on the list!
             </p>
           ) : (
@@ -50,12 +55,20 @@ export function ServicesFreeBand() {
                 aria-label="Your email"
                 className="min-w-0 flex-1 rounded-full border border-border bg-paper px-4 py-3 text-body text-navy outline-none"
               />
-              <button type="submit" className="shrink-0 rounded-full bg-action px-6 py-3 text-small font-semibold text-paper transition hover:brightness-110">
-                Send me layouts
+              <button
+                type="submit"
+                disabled={submitting}
+                className="shrink-0 rounded-full bg-action px-6 py-3 text-small font-semibold text-paper transition hover:brightness-110 disabled:opacity-60"
+              >
+                {submitting ? 'Sending…' : 'Send me layouts'}
               </button>
             </form>
           )}
-          {status === 'error' && <p className="mt-2 text-small text-red-600">Something went wrong — try again.</p>}
+          {status === 'error' && (
+            <p role="status" aria-live="polite" className="mt-2 text-small text-red-600">
+              Something went wrong — try again.
+            </p>
+          )}
 
           <Link href="/free-divi-layouts" className="mt-5 inline-flex items-center gap-1 text-small font-semibold text-action hover:underline">
             Browse the free library <Icon name="arrow_forward" size={15} />

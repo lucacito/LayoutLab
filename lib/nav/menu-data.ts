@@ -1,5 +1,7 @@
-// Shared navigation data for the desktop megamenu + the mobile menu. Pure +
-// client-safe (no DB). Icons are Material Icons (outlined) ligature names.
+// Shared navigation data. PRIMARY_NAV drives the funnel header (desktop +
+// mobile); the axis metadata (AXIS_META/NAV_MENUS) now feeds the footer and
+// catalog taxonomy pages. Pure + client-safe (no DB). Icons are Material Icons
+// (outlined) ligature names.
 
 export type NavAxis = 'type' | 'niche' | 'style';
 
