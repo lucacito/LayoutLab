@@ -242,17 +242,55 @@ const PATCHES: Record<string, Patch> = {
     return out;
   },
 
-  // Brightwell Family Dental landing: the SAME systemic generator phone drift, at
-  // its worst yet — the model ignored brandFacts' (503) 555-0184 and invented SEVEN
-  // different (503) numbers across the page (hero call button, trust strip, service
-  // card, 3-step card, team coordinator, FAQ ×3, final-CTA contact) plus two tel:
-  // hrefs. Canonicalize every (503) number + tel: href to the real placeholder.
-  // (Names/testimonials are intentionally left — they're swappable demo content.)
+  // Brightwell Family Dental landing: three visual-review fixes.
+  //   1. Phone drift (worst seen yet): the model ignored brandFacts' (503) 555-0184
+  //      and invented SEVEN different (503) numbers + two tel: hrefs. Canonicalize.
+  //      (Idempotent — the phone pass already ran once; re-matching 555-0184 is a
+  //      no-op, and the image/icon passes below carry the "did something" guard.)
+  //   2. Two photos carried a COMPETITOR'S branding: the hero staff photo had
+  //      "Jentify" on the dentist's coat, and a gallery shot showed another
+  //      practice's "De" wall logo. Swap both for verified, logo-free Pexels stock
+  //      (hero → 6812577 dentist welcoming a patient; reception → 6809668 front
+  //      desk greeting) and fix the reception alt to match the new scene.
+  //   3. Mismatched card icons — service + team cards used generic divi glyphs
+  //      (pin=Checkups, book=Fillings, monitor=Kids, phone=Invisalign, wrench=
+  //      Emergency, and the same three on the team cards). Remap to semantically
+  //      correct FA glyphs (divi→fa swap is proven by the law-firm patch above).
+  //      The e01d/e00e/e00b divi glyphs each appear TWICE (service card, then team
+  //      card) with different correct targets → ordered replacement. Whitening's
+  //      star (f005) is already fine and left as-is. (Names/testimonials stay —
+  //      they're swappable demo content.)
   'brightwell-family-dental-minimal-medical-landing-page-for-divi-5': (c) => {
     let out = c;
+    // 1. Phones.
     out = out.replace(/\(503\) \d{3}-\d{4}/g, '(503) 555-0184');
     out = out.replace(/tel:\+1503\d{7}/g, 'tel:+15035550184');
-    if (out === c) throw new Error('brightwell: no (503) phone numbers found');
+    // 2. Competitor-branded photos → clean stock (path + filename share the id).
+    out = out.replace(/37458081\/pexels-photo-37458081/g, '6812577/pexels-photo-6812577');
+    out = out.replace(/6193191\/pexels-photo-6193191/g, '6809668/pexels-photo-6809668');
+    out = out.replace(
+      'Comfortable, family-friendly waiting area with soft seating',
+      'Front desk team welcoming a patient at check-in',
+    );
+    // 3. Icons. G() builds the exact glyph value object; replaceNth swaps the n-th.
+    const G = (u: string, t = 'fa', w = '900') => `{"unicode":"&#x${u};","type":"${t}","weight":"${w}"}`;
+    const replaceNth = (s: string, find: string, repl: string): string => {
+      const i = s.indexOf(find);
+      if (i < 0) throw new Error(`brightwell: icon glyph not found: ${find}`);
+      return s.slice(0, i) + repl + s.slice(i + find.length);
+    };
+    // Unique fa glyphs (first occurrence).
+    out = out.replace(G('f518'), G('f521')); // Fillings & Crowns: book → crown
+    out = out.replace(G('f0ad'), G('f0f9')); // Emergency Care: wrench → ambulance
+    // divi collisions — occurrence #1 is the service card, then #1-of-remaining is
+    // the team card (each replaceNth consumes the current first match).
+    out = replaceNth(out, G('e01d', 'divi', '400'), G('f5c9')); // Checkups pin → tooth
+    out = replaceNth(out, G('e00e', 'divi', '400'), G('f1ae')); // Kids monitor → child
+    out = replaceNth(out, G('e00b', 'divi', '400'), G('f118')); // Invisalign phone → face-smile
+    out = replaceNth(out, G('e01d', 'divi', '400'), G('f0f0')); // Lead Dentist pin → user-md
+    out = replaceNth(out, G('e00e', 'divi', '400'), G('f5c9')); // Hygienist monitor → tooth
+    out = replaceNth(out, G('e00b', 'divi', '400'), G('f590')); // Coordinator phone → headset
+    if (out === c) throw new Error('brightwell: patch produced no change');
     return out;
   },
 
