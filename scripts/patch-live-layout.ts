@@ -230,6 +230,32 @@ const PATCHES: Record<string, Patch> = {
     return out;
   },
 
+  // Aurelia Smile Studio cosmetic landing: same generator phone drift — the model
+  // invented two different (310) numbers (hero "Call" button (310) 274-8698 and the
+  // footer contact (310) 274-8630) plus their tel: hrefs, and never used the canonical
+  // brandFacts number. Canonicalize every (310) number + tel: href to (310) 555-0172.
+  'aurelia-smile-studio-bold-medical-landing-page-for-divi-5': (c) => {
+    let out = c;
+    out = out.replace(/\(310\) \d{3}-\d{4}/g, '(310) 555-0172');
+    out = out.replace(/tel:\+1310\d{7}/g, 'tel:+13105550172');
+    if (out === c) throw new Error('aurelia: no (310) phone numbers found');
+    return out;
+  },
+
+  // Brightwell Family Dental landing: the SAME systemic generator phone drift, at
+  // its worst yet — the model ignored brandFacts' (503) 555-0184 and invented SEVEN
+  // different (503) numbers across the page (hero call button, trust strip, service
+  // card, 3-step card, team coordinator, FAQ ×3, final-CTA contact) plus two tel:
+  // hrefs. Canonicalize every (503) number + tel: href to the real placeholder.
+  // (Names/testimonials are intentionally left — they're swappable demo content.)
+  'brightwell-family-dental-minimal-medical-landing-page-for-divi-5': (c) => {
+    let out = c;
+    out = out.replace(/\(503\) \d{3}-\d{4}/g, '(503) 555-0184');
+    out = out.replace(/tel:\+1503\d{7}/g, 'tel:+15035550184');
+    if (out === c) throw new Error('brightwell: no (503) phone numbers found');
+    return out;
+  },
+
   // Idea Sprint CTA card: shipped with a MIXED alignment — headline centered but
   // eyebrow, body, button, and footer all left. Lucas asked to center the whole
   // card. centerButtons makes the single column a centered flex column (button +
