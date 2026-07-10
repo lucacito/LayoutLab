@@ -3,6 +3,7 @@ import type { Violation } from '@/pipeline/validate';
 import { getLibraryExemplars, libraryExemplarsEnabled } from '@/pipeline/library/exemplars';
 import { bannedContentProse } from '@/pipeline/content-lint';
 import { SECTION_TYPES } from '@/pipeline/recipes/section-types';
+import { buildLanguageDirective, designLanguagesEnabled, selectDesignLanguage } from '@/pipeline/compose/design-language';
 
 export interface Recipe {
   name: string;
@@ -49,10 +50,28 @@ const MAX_EXAMPLES_LANDING = 5;
 
 const SYSTEM =
   'You generate Divi 5 page sections as a single JSON document. ' +
-  'You MUST follow the provided Divi 5 schema and style guide exactly and use ONLY ' +
-  'block/module types and attribute shapes shown in the example recipes — never invent ' +
-  'block types or attributes. Keep the JSON inside every Divi block comment strictly valid. ' +
+  'You MUST follow the provided Divi 5 schema and style guide exactly: use ONLY ' +
+  'block/module types shown in the example recipes, and style them with decoration ' +
+  'attribute shapes documented in the STYLE GUIDE and recipes — never invent block ' +
+  'types or new attribute paths. Keep the JSON inside every Divi block comment strictly valid. ' +
   'Respond with ONLY the JSON document, no prose.';
+
+// Static digest of the advanced, validator-legal styling moves the STYLE GUIDE
+// documents but generations habitually ignore (rich-generator spec §5.7). Part
+// of the STABLE grounding block: pure static text, so the T1.4 cache property
+// (byte-identical system prompt per target type) is preserved.
+const STYLING_MOVES =
+  '=== STYLING MOVES (all documented in the STYLE GUIDE above — use them deliberately) ===\n' +
+  'Premium moves available to you, each with exact attribute paths in the style guide: ' +
+  'multi-stop background gradients (including gradient-over-image with overlaysImage); ' +
+  'box-shadow presets 1-5 including COLORED glow shadows; transform.translate offsets for ' +
+  'overlapping/offset elements; CSS filters (brightness/contrast/saturate/blur) including hover states; ' +
+  'glassmorphism (semi-transparent rgba surface + 1px hairline border + radius set on all four corners); ' +
+  'absolute position + z-index for layered badges and decorations; per-corner border radii; ' +
+  'any Google font with weight/letterSpacing/uppercase via the font decoration attributes; ' +
+  'divi/divider rules; hover decorations (.hover. replacing .value. on the same path). ' +
+  'Choose the moves that fit the page design system — never invent attribute paths not shown ' +
+  'in the STYLE GUIDE or recipes.';
 
 // T1.4 — CLI-compatible prompt hygiene.
 //
@@ -101,6 +120,8 @@ function stableGroundingBlock(target: Target, guide: Guide): string {
     '=== STYLE GUIDE ===',
     guide.style,
     '',
+    STYLING_MOVES,
+    '',
     '=== VALID SECTION RECIPES (copy the structure + attribute shapes; write your own copy) ===',
     recipeExamples.join('\n\n'),
   ];
@@ -140,14 +161,28 @@ function directives(target: Target, guide: Guide): string {
       'let text wrap naturally (no fixed heights that clip it, no negative margins that pull a title over an image or another block). ' +
       'For any multi-column row (features, pricing, testimonials, galleries) use equal, full-width flex columns — never fixed narrow pixel widths that squeeze text into tall one-word-per-line columns.',
   );
+  // Rich-generator spec §5.1/§5.3: the page's deterministic design system.
+  // USER prompt only (varies per target) — never the cached system grounding.
+  if (designLanguagesEnabled()) {
+    const { language, variant } = selectDesignLanguage(target);
+    lines.push(buildLanguageDirective(language, variant));
+  }
   if (target.color) lines.push(`Use a ${target.color} color palette.`);
   if (target.layout) lines.push(`Composition: ${target.layout}.`);
   if (target.type === 'cards') {
     const v = target.variant;
     const cols = v?.columns ?? 3;
-    lines.push(
-      `Build a section of ${cols} equal-width card columns. Each card IS the divi/column, styled as the wrapper: a white (or, for dark/colored sets, a tinted) background, rounded corners (decoration.border.radius ~20px), generous padding (~36px), and a soft box shadow. On hover the card lifts — set the column's hover decoration: transform translate Y about -6px plus a deeper box shadow and a smooth transition.`,
-    );
+    if (designLanguagesEnabled()) {
+      lines.push(
+        `Build a section of ${cols} equal-width card columns. Each card IS the divi/column, styled as the wrapper ` +
+          `using EXACTLY the card/panel treatment from the page design system above (surface, border/radius, shadow, ` +
+          `card padding) — plus a subtle hover lift or hover accent consistent with that system.`,
+      );
+    } else {
+      lines.push(
+        `Build a section of ${cols} equal-width card columns. Each card IS the divi/column, styled as the wrapper: a white (or, for dark/colored sets, a tinted) background, rounded corners (decoration.border.radius ~20px), generous padding (~36px), and a soft box shadow. On hover the card lifts — set the column's hover decoration: transform translate Y about -6px plus a deeper box shadow and a smooth transition.`,
+      );
+    }
     const placement = v?.icons === 'left' ? 'to the left of the heading' : 'centered above the heading';
     if (v?.iconStyle === 'number') {
       lines.push(`Put a numbered step badge (1, 2, 3 …) ${placement}: a number inside a filled circle (decoration.border.radius 50%, colored background, contrasting text). No icon glyph.`);
@@ -184,10 +219,13 @@ function directives(target: Target, guide: Guide): string {
   }
   lines.push(
     'Design bar (this is a premium marketplace — every section must look like it was crafted by a senior designer): ' +
-      'strong typographic hierarchy (large, tight headlines vs comfortable body sizes), generous section padding and whitespace, ' +
-      'one deliberate accent color carried through buttons, icons, and highlights, rounded corners + soft shadows where cards appear, ' +
-      'and hover polish on interactive elements (buttons and cards lift or deepen their shadow with a smooth transition). ' +
-      'Achieve all of this using ONLY the decoration/attribute shapes shown in the recipes — never invent attributes.',
+      'commit FULLY to one clear aesthetic direction and carry it through every module — never a generic default; ' +
+      'strong typographic hierarchy (large, tight display headlines vs comfortable body sizes), deliberate spacing, ' +
+      'one accent color carried through buttons, icons, and highlights, and hover polish on interactive elements. ' +
+      'The FIRST/HERO section sells the layout — it is the catalog thumbnail, so give it the strongest treatment on the page. ' +
+      'Design for thumbnail legibility: buyers first see this at ~400px wide, so compose one dominant contrast block ' +
+      'and a clear macro-composition that reads at that size. ' +
+      'Style everything using decoration attribute shapes documented in the STYLE GUIDE and recipes — never invent new attribute paths.',
   );
   lines.push(
     'For images, derive a SPECIFIC keyword from the business and use https://loremflickr.com/{w}/{h}/{keyword} for RELEVANT photos ' +

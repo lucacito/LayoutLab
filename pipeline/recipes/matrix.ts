@@ -11,6 +11,13 @@ export interface Target {
   layout?: string;
   /** Structured variant attributes, persisted for sibling cross-linking. */
   variant?: { group: string; columns: number; icons: 'none' | 'top' | 'left'; iconStyle: 'circle' | 'plain' | 'number' };
+  /** Design-system selection discriminator (rich-generator spec §5.3): set by
+   *  compose/index.ts to brief.businessName so every section of one composed
+   *  page shares ONE design language. Absent on vary targets — selection falls
+   *  back to variant.group, then color|layout (see designDiscriminator in
+   *  compose/design-language.ts). NOT part of targetKey (coverage identity is
+   *  unchanged). */
+  designKey?: string;
 }
 
 const ICON_PHRASE: Record<'none' | 'top' | 'left', string> = {
