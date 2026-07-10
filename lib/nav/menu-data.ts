@@ -87,3 +87,11 @@ export const NAV_MENUS: NavMenu[] = [
   { key: 'packs', label: 'Themes/Packs', href: '/packs' },
   { key: 'niche', label: 'Industries', axis: 'niche', prefix: '/niche', blurb: 'Browse by industry' },
 ];
+
+// Funnel navigation (services-first). Replaces the taxonomy mega-menu as the
+// site's front door; the taxonomy stays reachable via the footer + catalog pages.
+export const PRIMARY_NAV: NavLinkMenu[] = [
+  { key: 'work', label: 'Work with us', href: '/contact' },
+  { key: 'examples', label: 'Examples', href: '/browse' },
+  { key: 'free', label: 'Free Divi layouts', href: '/free-divi-layouts' },
+];
