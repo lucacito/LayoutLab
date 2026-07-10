@@ -1,0 +1,67 @@
+'use client';
+import { useState } from 'react';
+import Link from 'next/link';
+import { Icon } from '@/components/ui/Icon';
+
+// Lead-magnet band: DIY Divi builders swap an email for the free layout library.
+// Reuses the general lead endpoint (→ email_captures + Loops).
+export function ServicesFreeBand() {
+  const [email, setEmail] = useState('');
+  const [status, setStatus] = useState<'idle' | 'done' | 'error'>('idle');
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    try {
+      const res = await fetch('/api/lead', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ email, source: 'homepage_free_band' }),
+      });
+      setStatus(res.ok ? 'done' : 'error');
+    } catch {
+      setStatus('error');
+    }
+  }
+
+  return (
+    <section className="py-16">
+      <div className="mx-auto max-w-4xl px-4">
+        <div className="rounded-card border border-border bg-mist p-8 md:p-12">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-action/10 px-3 py-1 text-small font-semibold text-action">
+            <Icon name="download" size={16} /> Free for Divi builders
+          </span>
+          <h2 className="mt-4 text-h3 text-navy">Building it yourself? Grab free Divi 5 layouts.</h2>
+          <p className="mt-3 max-w-xl text-body text-muted">
+            Hundreds of validated, import-ready sections — free. Drop your email and we&apos;ll send new ones as they land.
+          </p>
+
+          {status === 'done' ? (
+            <p className="mt-6 flex items-center gap-2 text-body font-semibold text-navy">
+              <Icon name="mark_email_read" size={20} className="text-action" /> Check your inbox — you&apos;re on the list!
+            </p>
+          ) : (
+            <form onSubmit={submit} className="mt-6 flex max-w-md flex-col gap-3 sm:flex-row">
+              <input
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="you@email.com"
+                aria-label="Your email"
+                className="min-w-0 flex-1 rounded-full border border-border bg-paper px-4 py-3 text-body text-navy outline-none"
+              />
+              <button type="submit" className="shrink-0 rounded-full bg-action px-6 py-3 text-small font-semibold text-paper transition hover:brightness-110">
+                Send me layouts
+              </button>
+            </form>
+          )}
+          {status === 'error' && <p className="mt-2 text-small text-red-600">Something went wrong — try again.</p>}
+
+          <Link href="/free-divi-layouts" className="mt-5 inline-flex items-center gap-1 text-small font-semibold text-action hover:underline">
+            Browse the free library <Icon name="arrow_forward" size={15} />
+          </Link>
+        </div>
+      </div>
+    </section>
+  );
+}
