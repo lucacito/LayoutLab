@@ -11,7 +11,7 @@ export function RequiresWooBadge() {
     >
       <Icon name="storefront" size={18} className="mt-0.5" />
       <span>
-        <strong>Requires the WooCommerce plugin.</strong> This grid displays your store's own
+        <strong>Requires the WooCommerce plugin.</strong> This grid displays your store&apos;s own
         products — the preview shows a demo store.
       </span>
     </div>
