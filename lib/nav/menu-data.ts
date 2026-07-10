@@ -1,5 +1,7 @@
-// Shared navigation data for the desktop megamenu + the mobile menu. Pure +
-// client-safe (no DB). Icons are Material Icons (outlined) ligature names.
+// Shared navigation data. PRIMARY_NAV drives the funnel header (desktop +
+// mobile); the axis metadata (AXIS_META/NAV_MENUS) now feeds the footer and
+// catalog taxonomy pages. Pure + client-safe (no DB). Icons are Material Icons
+// (outlined) ligature names.
 
 export type NavAxis = 'type' | 'niche' | 'style';
 
@@ -86,4 +88,12 @@ export const NAV_MENUS: NavMenu[] = [
   { key: 'type', label: 'Layouts/Sections', axis: 'type', prefix: '/type', blurb: 'Browse by section type' },
   { key: 'packs', label: 'Themes/Packs', href: '/packs' },
   { key: 'niche', label: 'Industries', axis: 'niche', prefix: '/niche', blurb: 'Browse by industry' },
+];
+
+// Funnel navigation (services-first). Replaces the taxonomy mega-menu as the
+// site's front door; the taxonomy stays reachable via the footer + catalog pages.
+export const PRIMARY_NAV: NavLinkMenu[] = [
+  { key: 'work', label: 'Work with us', href: '/contact' },
+  { key: 'examples', label: 'Examples', href: '/browse' },
+  { key: 'free', label: 'Free Divi layouts', href: '/free-divi-layouts' },
 ];

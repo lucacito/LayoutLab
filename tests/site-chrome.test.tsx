@@ -9,11 +9,14 @@ import { Footer } from '@/components/site/Footer';
 import { BookmarksProvider } from '@/components/bookmarks/BookmarksProvider';
 
 describe('site chrome', () => {
-  it('Header shows the wordmark and primary nav links', () => {
+  it('Header shows the wordmark and funnel nav links', () => {
     const { container } = render(<Header />, { wrapper: BookmarksProvider });
     expect(container.querySelector('img[alt="Divi5Lab"]')).not.toBeNull();
+    // Funnel nav (services-first): Examples → /browse, Work with us + quote CTA → /contact,
+    // Free Divi layouts → /free-divi-layouts. (Pricing/taxonomy moved to the footer.)
     expect(container.querySelector('a[href="/browse"]')).not.toBeNull();
-    expect(container.querySelector('a[href="/pricing"]')).not.toBeNull();
+    expect(container.querySelector('a[href="/contact"]')).not.toBeNull();
+    expect(container.querySelector('a[href="/free-divi-layouts"]')).not.toBeNull();
     expect(container.querySelector('header')).not.toBeNull();
   });
   it('Footer renders a contentinfo landmark and the brand', () => {
