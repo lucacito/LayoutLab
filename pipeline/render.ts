@@ -183,9 +183,15 @@ export async function realRenderDeps(): Promise<{ deps: RenderDeps; close: () =>
       await writeFile(hostFile, postContent, 'utf8');
       const cp = await run('docker', ['cp', hostFile, `${container}:${inFile}`]);
       if (cp.code !== 0) throw new Error(`docker cp failed: ${cp.stderr.slice(0, 200)}`);
+      // Read post_content from the copied file via wp-cli's positional <file> arg —
+      // NOT `--post_content="$(cat file)"`. Command substitution expands the entire
+      // page onto the container's argv, and a single argument string is capped at
+      // 128 KiB (MAX_ARG_STRLEN) inside the Linux container regardless of ARG_MAX, so
+      // any large full_landing failed with "wp: Argument list too long". The positional
+      // file arg is size-unbounded.
       const create = await run('docker', [
         'exec', container, 'sh', '-c',
-        `wp post create --post_type=page --post_status=publish --post_title=${JSON.stringify(title)} --post_content="$(cat ${inFile})" --porcelain`,
+        `wp post create ${inFile} --post_type=page --post_status=publish --post_title=${JSON.stringify(title)} --porcelain`,
       ]);
       const id = create.stdout.trim();
       if (!id || create.code !== 0) throw new Error(`wp post create failed: ${create.stderr.slice(0, 200)}`);
