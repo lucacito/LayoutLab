@@ -73,7 +73,10 @@ No sales existed at pivot time, so there is nothing to migrate.
   so a divi5lab outage never disables a buyer's site.
 - `POST /api/license/deactivate` — marks activation deactivated (bookkeeping).
 - `GET /api/plugin/update-check?product&version&key` — if licensed and newer release exists,
-  returns version metadata + **short-TTL signed Blob URL** to the Pro zip.
+  returns version metadata + a `package` URL pointing at
+  `GET /api/plugin/download?product&key`, a **key-authenticated route that streams
+  the Pro zip** after re-checking the license (same gating model as existing layout
+  downloads; blob keys are never exposed directly).
 - All: zod-validated, rate-limited, same conventions as existing routes.
 
 ### 4.4 Pro release publishing
