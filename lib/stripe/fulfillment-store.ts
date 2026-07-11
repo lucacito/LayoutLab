@@ -1,11 +1,13 @@
 import { randomUUID } from 'node:crypto';
 import { and, eq, isNull, or } from 'drizzle-orm';
 import { db } from '@/db/client';
-import { users, orders, entitlements, subscriptions, stripeEvents, packs } from '@/db/schema';
+import { users, orders, entitlements, subscriptions, stripeEvents, packs, licenses } from '@/db/schema';
 import { findOrCreateUserByEmail } from '@/lib/users/find-or-create';
 import { createMagicSignInUrl, signInUrlDeps } from '@/lib/auth/sign-in-url';
 import { purchaseReceiptEmail } from '@/lib/email/receipt';
 import { sendEmail } from '@/lib/email';
+import { generateLicenseKey, PRODUCT_TITLES, type PluginProduct } from '@/lib/license-server/core';
+import { licenseKeyEmail } from '@/lib/email/license-email';
 import type { FulfillmentStore } from './fulfillment';
 
 export const dbStore: FulfillmentStore = {
@@ -72,5 +74,38 @@ export const dbStore: FulfillmentStore = {
     const { subject, html, text } = purchaseReceiptEmail({ kind: input.kind, packTitle, amountCents: input.amountCents, signInUrl });
     const { sent } = await sendEmail({ to: input.email, subject, html, text });
     if (!sent) console.log(`[receipt:dev] sign-in link for ${input.email}:\n${signInUrl}`);
+  },
+  async mintLicense(l) {
+    const licenseKey = generateLicenseKey();
+    await db.insert(licenses).values({
+      id: randomUUID(), userId: l.userId, productSlug: l.productSlug,
+      licenseKey, status: 'active',
+      stripeSubscriptionId: l.stripeSubscriptionId, currentPeriodEnd: l.currentPeriodEnd,
+    }).onConflictDoNothing({ target: licenses.stripeSubscriptionId });
+    // Idempotency: if this subscription already minted a key (webhook retry),
+    // return the existing one instead of a dangling fresh key.
+    if (l.stripeSubscriptionId) {
+      const rows = await db.select({ licenseKey: licenses.licenseKey }).from(licenses)
+        .where(eq(licenses.stripeSubscriptionId, l.stripeSubscriptionId)).limit(1);
+      if (rows[0]) return { licenseKey: rows[0].licenseKey };
+    }
+    return { licenseKey };
+  },
+  async setLicenseStatusBySubscription(s) {
+    await db.update(licenses)
+      .set({ status: s.status === 'canceled' ? 'canceled' : s.status, ...(s.currentPeriodEnd ? { currentPeriodEnd: s.currentPeriodEnd } : {}) })
+      .where(eq(licenses.stripeSubscriptionId, s.stripeSubscriptionId));
+  },
+  async grantPluginEntitlement(userId, productSlug) {
+    await db.insert(entitlements).values({
+      id: randomUUID(), userId, scope: `plugin:${productSlug}`, source: 'order',
+    }).onConflictDoNothing();
+  },
+  async notifyLicensePurchase(input) {
+    const signInUrl = await createMagicSignInUrl(input.email, '/account/licenses', signInUrlDeps);
+    const title = PRODUCT_TITLES[input.productSlug as PluginProduct] ?? input.productSlug;
+    const { subject, html, text } = licenseKeyEmail({ productTitle: title, licenseKey: input.licenseKey, signInUrl });
+    const { sent } = await sendEmail({ to: input.email, subject, html, text });
+    if (!sent) console.log(`[license:dev] key for ${input.email}: ${input.licenseKey}\n${signInUrl}`);
   },
 };

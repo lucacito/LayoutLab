@@ -20,6 +20,10 @@ function fakeStore(over: Partial<FulfillmentStore> = {}): FulfillmentStore {
     grantAllAccess: vi.fn(async () => {}),
     revokeAllAccess: vi.fn(async () => {}),
     notifyPurchase: vi.fn(async () => {}),
+    mintLicense: vi.fn(async () => ({ licenseKey: 'JHMG-AAAA-BBBB-CCCC-DDDD' })),
+    setLicenseStatusBySubscription: vi.fn(async () => {}),
+    grantPluginEntitlement: vi.fn(async () => {}),
+    notifyLicensePurchase: vi.fn(async () => {}),
     ...over,
   };
 }
@@ -131,5 +135,75 @@ describe('handleStripeEvent', () => {
     const s = fakeStore({ notifyPurchase: vi.fn(async () => { throw new Error('resend down'); }) });
     await expect(handleStripeEvent(pack as unknown as Stripe.Event, s)).resolves.toBeUndefined();
     expect(s.markEventProcessed).toHaveBeenCalled();
+  });
+});
+
+describe('plugin license fulfillment', () => {
+  it('checkout.session.completed with kind=plugin mints a license + entitlement, no all-access', async () => {
+    const store = fakeStore();
+    await handleStripeEvent({
+      id: 'evt_p1', type: 'checkout.session.completed',
+      data: { object: {
+        id: 'cs_1', customer: 'cus_1', subscription: 'sub_plugin_1',
+        customer_details: { email: 'buyer@x.com' }, amount_total: 4900,
+        metadata: { kind: 'plugin', product: 'elementor-to-divi5-pro' },
+      } },
+    } as never, store);
+    expect(store.mintLicense).toHaveBeenCalledWith({
+      userId: 'user_1', productSlug: 'elementor-to-divi5-pro',
+      stripeSubscriptionId: 'sub_plugin_1', currentPeriodEnd: null,
+    });
+    expect(store.grantPluginEntitlement).toHaveBeenCalledWith('user_1', 'elementor-to-divi5-pro');
+    expect(store.notifyLicensePurchase).toHaveBeenCalledWith(
+      expect.objectContaining({ email: 'buyer@x.com', productSlug: 'elementor-to-divi5-pro' }),
+    );
+    expect(store.grantAllAccess).not.toHaveBeenCalled();
+    expect(store.upsertSubscription).not.toHaveBeenCalled();
+  });
+
+  it('subscription.updated with plugin metadata updates the license, not membership', async () => {
+    const store = fakeStore();
+    await handleStripeEvent({
+      id: 'evt_p2', type: 'customer.subscription.updated',
+      data: { object: {
+        id: 'sub_plugin_1', customer: 'cus_1', status: 'past_due',
+        current_period_end: 1780000000,
+        metadata: { kind: 'plugin', product: 'elementor-to-divi5-pro' },
+      } },
+    } as never, store);
+    expect(store.setLicenseStatusBySubscription).toHaveBeenCalledWith({
+      stripeSubscriptionId: 'sub_plugin_1', status: 'past_due',
+      currentPeriodEnd: new Date(1780000000 * 1000),
+    });
+    expect(store.grantAllAccess).not.toHaveBeenCalled();
+    expect(store.revokeAllAccess).not.toHaveBeenCalled();
+    expect(store.upsertSubscription).not.toHaveBeenCalled();
+  });
+
+  it('subscription.deleted with plugin metadata cancels the license', async () => {
+    const store = fakeStore();
+    await handleStripeEvent({
+      id: 'evt_p3', type: 'customer.subscription.deleted',
+      data: { object: {
+        id: 'sub_plugin_1', customer: 'cus_1', status: 'canceled',
+        metadata: { kind: 'plugin', product: 'elementor-to-divi5-pro' },
+      } },
+    } as never, store);
+    expect(store.setLicenseStatusBySubscription).toHaveBeenCalledWith({
+      stripeSubscriptionId: 'sub_plugin_1', status: 'canceled', currentPeriodEnd: null,
+    });
+    expect(store.revokeAllAccess).not.toHaveBeenCalled();
+  });
+
+  it('membership subscription events still work exactly as before (no metadata)', async () => {
+    const store = fakeStore();
+    (store.findUserBySubscriptionId as any).mockResolvedValue('user_1');
+    await handleStripeEvent({
+      id: 'evt_m1', type: 'customer.subscription.updated',
+      data: { object: { id: 'sub_m', customer: 'cus_1', status: 'active', current_period_end: 1780000000 } },
+    } as never, store);
+    expect(store.upsertSubscription).toHaveBeenCalled();
+    expect(store.grantAllAccess).toHaveBeenCalled();
+    expect(store.setLicenseStatusBySubscription).not.toHaveBeenCalled();
   });
 });
