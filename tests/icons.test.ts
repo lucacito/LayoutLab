@@ -67,6 +67,23 @@ describe('iconPickList', () => {
   it('respects a custom max', () => {
     expect(iconPickList('saas', 5)).toHaveLength(5);
   });
+
+  it('every niche gets its defining glyphs, not just general fill (regression: bucketing)', () => {
+    expect(iconPickList('restaurant').map((e) => e.name)).toContain('utensils');
+    expect(iconPickList('ecommerce').map((e) => e.name)).toContain('shopping-cart');
+    expect(iconPickList('fitness').map((e) => e.name)).toEqual(expect.arrayContaining(['dumbbell', 'heartbeat', 'stopwatch']));
+    expect(iconPickList('real_estate').map((e) => e.name)).toContain('home');
+    expect(iconPickList('coaching').map((e) => e.name)).toContain('graduation-cap');
+  });
+
+  it('niche-specific entries outnumber general fill for every catalog niche', () => {
+    for (const niche of Object.keys(NICHE_TOPICS)) {
+      const topics = new Set(NICHE_TOPICS[niche]);
+      const list = iconPickList(niche);
+      const specific = list.filter((e) => e.topics.some((t) => topics.has(t)));
+      expect(specific.length, niche).toBeGreaterThanOrEqual(list.length / 2);
+    }
+  });
 });
 
 describe('formatIconForPrompt', () => {
