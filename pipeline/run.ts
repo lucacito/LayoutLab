@@ -13,6 +13,7 @@ import type { LayoutSeo } from './seo';
 import { generateLayoutArticle } from './seo-article';
 import type { GenerateArticleResult } from './seo-article';
 import { contentHash, nearestDistance, perceptualDupeMaxDistance } from './dedupe';
+import { applyButtonCentering } from './design-lint';
 import { stackLayoutJsonMobile } from './stack-mobile';
 import { lintLayoutJson } from './content-lint';
 import type { ValidationResult } from './validate';
@@ -705,6 +706,12 @@ export async function processItem(item: PipelineItem, ctx: RunContext): Promise<
           emit({ type: 'placeholder_image_miss', target });
         }
       }
+
+      // Deterministic design lint (fix-buttons port — rich-generator spec §5.10):
+      // center CTA buttons in centered contexts + center every button label.
+      // Attribute-only, idempotent, fail-open; like stack-mobile below it runs
+      // BEFORE contentHash so identical generations still dedupe identically.
+      json = applyButtonCentering(json, log);
 
       // Enforce single-column, full-width stacking on phone (deterministic; the
       // model is inconsistent about responsive column sizing). Adds phone-only
