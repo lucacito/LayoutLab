@@ -16,6 +16,7 @@ export interface FulfillmentStore {
   mintLicense(l: { userId: string; productSlug: string; stripeSubscriptionId: string | null; currentPeriodEnd: Date | null }): Promise<{ licenseKey: string }>;
   setLicenseStatusBySubscription(s: { stripeSubscriptionId: string; status: 'active' | 'past_due' | 'canceled'; currentPeriodEnd: Date | null }): Promise<{ found: boolean }>;
   grantPluginEntitlement(userId: string, productSlug: string): Promise<void>;
+  revokePluginEntitlement(stripeSubscriptionId: string): Promise<void>;
   notifyLicensePurchase(input: { email: string; productSlug: string; licenseKey: string }): Promise<void>;
 }
 
@@ -112,6 +113,7 @@ export async function handleStripeEvent(event: Stripe.Event, store: FulfillmentS
           currentPeriodEnd: null,
         });
         if (!found) throw new Error(`subscription event: license not minted yet for ${sub.id}`);
+        await store.revokePluginEntitlement(sub.id);
         break;
       }
       const customerId = typeof sub.customer === 'string' ? sub.customer : null;

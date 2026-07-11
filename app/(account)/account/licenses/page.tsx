@@ -14,6 +14,12 @@ const STATUS_LABEL: Record<string, string> = {
   expired: 'Expired', canceled: 'Canceled',
 };
 
+const RENEWING_STATUSES = new Set(['active', 'past_due']);
+
+function formatDate(d: Date): string {
+  return d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+}
+
 export default async function LicensesPage() {
   const session = await requireUser();
   const email = session.user?.email ?? '';
@@ -47,7 +53,11 @@ export default async function LicensesPage() {
                       <code className="mt-1 block text-small text-muted">{l.licenseKey}</code>
                       <div className="mt-1 text-small text-muted">
                         {STATUS_LABEL[l.status] ?? l.status}
-                        {l.currentPeriodEnd ? ` · renews ${l.currentPeriodEnd.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}` : ''}
+                        {l.currentPeriodEnd
+                          ? RENEWING_STATUSES.has(l.status)
+                            ? ` · renews ${formatDate(l.currentPeriodEnd)}`
+                            : ` · ended ${formatDate(l.currentPeriodEnd)}`
+                          : ''}
                       </div>
                       {l.activeSites.length > 0 && (
                         <div className="mt-1 text-small text-muted">Sites: {l.activeSites.join(', ')}</div>

@@ -23,6 +23,7 @@ function fakeStore(over: Partial<FulfillmentStore> = {}): FulfillmentStore {
     mintLicense: vi.fn(async () => ({ licenseKey: 'JHMG-AAAA-BBBB-CCCC-DDDD' })),
     setLicenseStatusBySubscription: vi.fn(async () => ({ found: true })),
     grantPluginEntitlement: vi.fn(async () => {}),
+    revokePluginEntitlement: vi.fn(async () => {}),
     notifyLicensePurchase: vi.fn(async () => {}),
     ...over,
   };
@@ -101,6 +102,12 @@ describe('handleStripeEvent', () => {
     await handleStripeEvent(subDeleted as unknown as Stripe.Event, s);
     expect(s.revokeAllAccess).toHaveBeenCalledWith('user_1');
     expect((s.upsertSubscription as any).mock.calls[0][0]).toMatchObject({ status: 'canceled' });
+  });
+
+  it('membership subscription.deleted does NOT revoke a plugin entitlement', async () => {
+    const s = fakeStore();
+    await handleStripeEvent(subDeleted as unknown as Stripe.Event, s);
+    expect(s.revokePluginEntitlement).not.toHaveBeenCalled();
   });
 
   it('is idempotent: a processed event writes nothing', async () => {
@@ -195,6 +202,45 @@ describe('plugin license fulfillment', () => {
     expect(store.revokeAllAccess).not.toHaveBeenCalled();
     expect(store.upsertSubscription).not.toHaveBeenCalled();
     expect(store.findUserBySubscriptionId).not.toHaveBeenCalled();
+  });
+
+  it('subscription.deleted with plugin metadata revokes the plugin entitlement by subscription id', async () => {
+    const store = fakeStore();
+    await handleStripeEvent({
+      id: 'evt_p8', type: 'customer.subscription.deleted',
+      data: { object: {
+        id: 'sub_plugin_1', customer: 'cus_1', status: 'canceled',
+        metadata: { kind: 'plugin', product: 'elementor-to-divi5-pro' },
+      } },
+    } as never, store);
+    expect(store.revokePluginEntitlement).toHaveBeenCalledWith('sub_plugin_1');
+  });
+
+  it('subscription.updated with plugin metadata (e.g. past_due) does NOT revoke the plugin entitlement', async () => {
+    const store = fakeStore();
+    await handleStripeEvent({
+      id: 'evt_p9', type: 'customer.subscription.updated',
+      data: { object: {
+        id: 'sub_plugin_1', customer: 'cus_1', status: 'past_due',
+        current_period_end: 1780000000,
+        metadata: { kind: 'plugin', product: 'elementor-to-divi5-pro' },
+      } },
+    } as never, store);
+    expect(store.revokePluginEntitlement).not.toHaveBeenCalled();
+  });
+
+  it('subscription.deleted with plugin metadata does NOT revoke the entitlement when the license is not minted yet', async () => {
+    const store = fakeStore({
+      setLicenseStatusBySubscription: vi.fn(async () => ({ found: false })),
+    });
+    await expect(handleStripeEvent({
+      id: 'evt_p10', type: 'customer.subscription.deleted',
+      data: { object: {
+        id: 'sub_plugin_1', customer: 'cus_1', status: 'canceled',
+        metadata: { kind: 'plugin', product: 'elementor-to-divi5-pro' },
+      } },
+    } as never, store)).rejects.toThrow('license not minted yet');
+    expect(store.revokePluginEntitlement).not.toHaveBeenCalled();
   });
 
   it('subscription.updated with plugin metadata throws (not marks processed) when the license is not minted yet', async () => {

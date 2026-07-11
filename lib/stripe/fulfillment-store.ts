@@ -103,6 +103,16 @@ export const dbStore: FulfillmentStore = {
       id: randomUUID(), userId, scope: `plugin:${productSlug}`, source: 'order',
     }).onConflictDoNothing();
   },
+  async revokePluginEntitlement(stripeSubscriptionId) {
+    const rows = await db.select({ userId: licenses.userId, productSlug: licenses.productSlug })
+      .from(licenses).where(eq(licenses.stripeSubscriptionId, stripeSubscriptionId)).limit(1);
+    const license = rows[0];
+    if (!license) return;
+    await db.delete(entitlements).where(and(
+      eq(entitlements.userId, license.userId),
+      eq(entitlements.scope, `plugin:${license.productSlug}`),
+    ));
+  },
   async notifyLicensePurchase(input) {
     const signInUrl = await createMagicSignInUrl(input.email, '/account/licenses', signInUrlDeps);
     const title = PRODUCT_TITLES[input.productSlug as PluginProduct] ?? input.productSlug;

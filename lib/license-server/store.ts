@@ -5,7 +5,7 @@ import { randomUUID } from 'node:crypto';
 import { and, desc, eq, isNull } from 'drizzle-orm';
 import { db } from '@/db/client';
 import { licenses, licenseActivations, pluginReleases } from '@/db/schema';
-import type { LicenseRecord, StoredLicenseStatus } from './core';
+import { effectiveStatus, type LicenseRecord, type StoredLicenseStatus } from './core';
 import type { LicenseStore } from './handlers';
 
 export const dbLicenseStore: LicenseStore = {
@@ -58,7 +58,8 @@ export async function getLicensesForUser(userId: string): Promise<Array<{
       .where(and(eq(licenseActivations.licenseId, r.id), isNull(licenseActivations.deactivatedAt)));
     out.push({
       id: r.id, productSlug: r.productSlug, licenseKey: r.licenseKey,
-      status: r.status as StoredLicenseStatus, currentPeriodEnd: r.currentPeriodEnd,
+      status: effectiveStatus({ status: r.status as StoredLicenseStatus, currentPeriodEnd: r.currentPeriodEnd }, new Date()),
+      currentPeriodEnd: r.currentPeriodEnd,
       activeSites: sites.map((s) => s.siteUrl),
     });
   }
