@@ -136,6 +136,14 @@ export async function composeLanding(target: Target, deps: ComposeDeps): Promise
       niche: target.niche,
       style: target.style,
       color: target.color,
+      // Rich-generator spec §5.3: ONE design language per composed page. Every
+      // section shares the brief's businessName as the selection discriminator,
+      // so directives() (prompts.ts) resolves the SAME language for all of them
+      // — cohesion by construction. (Contrast the FLOW-selection key above,
+      // which deliberately avoids businessName: structural determinism across
+      // re-runs matters there; surface variety tolerates a generated brief's
+      // name changing, because covered targets are never re-generated.)
+      designKey: brief.businessName,
       layout: buildSectionRolePrompt(step, brief, { index, total: flow.length, style: target.style, niche: target.niche, landingBlueprint }) + brandFacts,
     };
     try {

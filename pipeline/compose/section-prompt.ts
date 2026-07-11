@@ -51,26 +51,28 @@ export const ROLE_DESIGN: Record<string, RoleTreatment[]> = buildUniqueRecord(
   'ROLE_DESIGN (pipeline/compose/section-prompt.ts)',
 );
 
-/** Same key shape as `paletteKey` in palettes.ts (style + niche) — treatment
- *  variety should track the same "what makes two landings look different"
- *  signal the palette already uses. Role is NOT part of the key: each role's
- *  variant list is scored independently (via its own variant ids), so reusing
- *  the same (style, niche) key across every role is safe and keeps selection
- *  simple — see the append-stability rationale on `pickByRendezvous`. */
-function treatmentKey(ctx: { style?: string; niche?: string }): string {
-  return `${ctx.style ?? ''}|${ctx.niche ?? ''}`;
+/** Same base shape as `paletteKey` in palettes.ts (style + niche) PLUS the
+ *  brief's businessName as a high-entropy discriminator (rich-generator spec
+ *  §5.3): without it, every page sharing (style, niche) got the identical
+ *  treatment sequence forever. businessName is stable within one composed page
+ *  (the brief is generated once) — page cohesion holds; and covered targets
+ *  are never re-generated, so cross-run brief variance is acceptable. Role is
+ *  still NOT part of the key — each role's variant list is scored
+ *  independently via its own variant ids (see `pickByRendezvous`). */
+function treatmentKey(ctx: { style?: string; niche?: string; businessName?: string }): string {
+  return `${ctx.style ?? ''}|${ctx.niche ?? ''}|${ctx.businessName ?? ''}`;
 }
 
-function pickRoleTreatment(role: string, ctx: { style?: string; niche?: string }): RoleTreatment | undefined {
+function pickRoleTreatment(role: string, ctx: { style?: string; niche?: string; businessName?: string }): RoleTreatment | undefined {
   const variants = ROLE_DESIGN[role];
   if (!variants || variants.length === 0) return undefined;
   return pickByRendezvous(treatmentKey(ctx), variants);
 }
 
 /** Returns the stable `id` of the treatment variant that would be selected for
- *  this (role, style, niche) — exists for tests, mirroring
+ *  this (role, style, niche[, businessName]) — exists for tests, mirroring
  *  `selectPaletteVariantId` in palettes.ts. */
-export function selectRoleTreatmentId(role: string, ctx: { style?: string; niche?: string } = {}): string | undefined {
+export function selectRoleTreatmentId(role: string, ctx: { style?: string; niche?: string; businessName?: string } = {}): string | undefined {
   return pickRoleTreatment(role, ctx)?.id;
 }
 
@@ -101,13 +103,13 @@ export function buildSectionRolePrompt(step: Step, brief: Brief, ctx: SectionCon
       `On the dark background (${palette.dark}) used for final_cta/footer panels, do NOT use the ` +
       `heading/body colors above (they are for the light/tinted panels and are illegible on dark) — ` +
       `instead use the tint color ${palette.tint} for all heading and body text on that dark panel. ` +
-      `Reuse ONE corner-radius and ONE soft box-shadow for every card so the page feels systematic.`,
+      `Follow the page design system given in this prompt (typography, buttons, card surfaces, spacing) EXACTLY — the same treatments in every section — so the page reads as one crafted design.`,
   ];
   if (brief.designNotes) lines.push(`Art direction: ${brief.designNotes}.`);
   if (ctx.landingBlueprint) {
     lines.push(`Strategic blueprint for this business type (validator's conversion guide): ${ctx.landingBlueprint}`);
   }
-  const roleDesign = pickRoleTreatment(step.role, { style: ctx.style, niche: ctx.niche });
+  const roleDesign = pickRoleTreatment(step.role, { style: ctx.style, niche: ctx.niche, businessName: brief.businessName });
   if (roleDesign) lines.push(roleDesign.text);
   const tone = backgroundTone(step.role, ctx.index);
   if (tone) lines.push(tone);

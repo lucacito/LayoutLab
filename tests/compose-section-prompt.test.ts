@@ -65,7 +65,10 @@ describe('buildSectionRolePrompt', () => {
   it('gives each role a concrete design treatment matching whichever variant was selected', () => {
     const ctx = { style: 'minimal', niche: 'saas' };
     for (const role of ['hero', 'how_it_works', 'faq', 'services']) {
-      const id = selectRoleTreatmentId(role, ctx);
+      // buildSectionRolePrompt threads brief.businessName into treatment
+      // selection (rich-generator entropy) — match that here so the
+      // independently-computed `id` picks the same variant.
+      const id = selectRoleTreatmentId(role, { ...ctx, businessName: brief.businessName });
       const variant = ROLE_DESIGN[role].find((v) => v.id === id)!;
       const p = buildSectionRolePrompt({ role, sectionType: 'x', job: 'j', cta: false }, brief, ctx);
       expect(p).toContain(variant.text);
@@ -161,5 +164,37 @@ describe('buildSectionRolePrompt', () => {
     const cta = buildSectionRolePrompt({ role: 'final_cta', sectionType: 'cta', job: 'j', cta: true }, brief, { index: 5, total: 6 });
     expect(cta).toMatch(/CTA BANNER/i);
     expect(cta).toMatch(/accent.*or.*dark|strong close/i);
+  });
+});
+
+describe('rich-generator phase 1 (entropy + cohesion swap)', () => {
+  const step = { role: 'benefits', sectionType: 'cards', job: 'j', cta: false } as const;
+  const mkBrief = (businessName: string) => ({
+    businessType: 'SaaS', businessName, tagline: 't', audience: 'a',
+    conversionGoal: 'g', primaryCta: 'Start', accentColorHex: '#E4572E', voice: 'v',
+  });
+
+  it('drops the ONE-corner-radius mandate; defers to the page design system', () => {
+    const p = buildSectionRolePrompt(step, mkBrief('Acme'), { style: 'minimal', niche: 'saas' });
+    expect(p).not.toContain('Reuse ONE corner-radius');
+    expect(p).toContain('page design system');
+  });
+
+  it('role-treatment entropy: same (style,niche), different businessName -> >=2 distinct treatments across 20 briefs', () => {
+    const ids = new Set(
+      Array.from({ length: 20 }, (_, i) =>
+        selectRoleTreatmentId('benefits', { style: 'minimal', niche: 'saas', businessName: `Biz ${i}` }),
+      ),
+    );
+    expect(ids.size).toBeGreaterThanOrEqual(2);
+  });
+
+  it('treatment selection stays deterministic per businessName', () => {
+    const ctx = { style: 'minimal', niche: 'saas', businessName: 'Acme' };
+    expect(selectRoleTreatmentId('benefits', ctx)).toBe(selectRoleTreatmentId('benefits', { ...ctx }));
+  });
+
+  it('existing two-arg calls still work (backward compat)', () => {
+    expect(selectRoleTreatmentId('benefits', { style: 'minimal', niche: 'saas' })).toBeTruthy();
   });
 });
