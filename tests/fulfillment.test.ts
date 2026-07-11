@@ -257,4 +257,37 @@ describe('plugin license fulfillment', () => {
     expect(store.grantAllAccess).toHaveBeenCalled();
     expect(store.setLicenseStatusBySubscription).not.toHaveBeenCalled();
   });
+
+  it('subscription.updated with plugin metadata reads current_period_end from items when absent at top level (2025+ API versions)', async () => {
+    const store = fakeStore();
+    await handleStripeEvent({
+      id: 'evt_p7', type: 'customer.subscription.updated',
+      data: { object: {
+        id: 'sub_plugin_1', customer: 'cus_1', status: 'active',
+        items: { data: [{ current_period_end: 1780000000 }] },
+        metadata: { kind: 'plugin', product: 'elementor-to-divi5-pro' },
+      } },
+    } as never, store);
+    expect(store.setLicenseStatusBySubscription).toHaveBeenCalledWith({
+      stripeSubscriptionId: 'sub_plugin_1', status: 'active',
+      currentPeriodEnd: new Date(1780000000 * 1000),
+    });
+  });
+
+  it('membership subscription.updated reads current_period_end from items when absent at top level (2025+ API versions)', async () => {
+    const store = fakeStore();
+    (store.findUserBySubscriptionId as any).mockResolvedValue('user_1');
+    await handleStripeEvent({
+      id: 'evt_m2', type: 'customer.subscription.updated',
+      data: { object: {
+        id: 'sub_m2', customer: 'cus_1', status: 'active',
+        items: { data: [{ current_period_end: 1780000000 }] },
+      } },
+    } as never, store);
+    expect((store.upsertSubscription as any).mock.calls[0][0]).toMatchObject({
+      userId: 'user_1', stripeSubscriptionId: 'sub_m2', status: 'active',
+      currentPeriodEnd: new Date(1780000000 * 1000),
+    });
+    expect(store.grantAllAccess).toHaveBeenCalledWith('user_1', new Date(1780000000 * 1000));
+  });
 });

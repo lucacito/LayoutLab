@@ -25,6 +25,15 @@ function mapStatus(s: string): 'active' | 'past_due' | 'canceled' {
   return 'canceled';
 }
 
+// Newer Stripe API versions (2025+) moved current_period_end off the
+// subscription onto its items; read both so webhook payloads from any
+// account default API version produce a real period end.
+function subscriptionPeriodEnd(sub: Stripe.Subscription): Date | null {
+  const raw = sub.current_period_end
+    ?? (sub.items?.data?.[0] as { current_period_end?: number } | undefined)?.current_period_end;
+  return raw ? new Date(raw * 1000) : null;
+}
+
 export async function handleStripeEvent(event: Stripe.Event, store: FulfillmentStore): Promise<void> {
   if (await store.hasProcessedEvent(event.id)) return;
 
@@ -74,7 +83,7 @@ export async function handleStripeEvent(event: Stripe.Event, store: FulfillmentS
     case 'customer.subscription.updated': {
       const sub = event.data.object as Stripe.Subscription;
       if ((sub.metadata as Record<string, string> | null)?.kind === 'plugin') {
-        const periodEnd = sub.current_period_end ? new Date(sub.current_period_end * 1000) : null;
+        const periodEnd = subscriptionPeriodEnd(sub);
         const { found } = await store.setLicenseStatusBySubscription({
           stripeSubscriptionId: sub.id,
           status: mapStatus(sub.status),
@@ -88,7 +97,7 @@ export async function handleStripeEvent(event: Stripe.Event, store: FulfillmentS
       if (!userId && customerId) userId = await store.findUserByStripeCustomerId(customerId);
       if (!userId) throw new Error(`subscription event: user not resolvable yet for ${sub.id}`);
       const status = mapStatus(sub.status);
-      const periodEnd = sub.current_period_end ? new Date(sub.current_period_end * 1000) : null;
+      const periodEnd = subscriptionPeriodEnd(sub);
       await store.upsertSubscription({ userId, stripeSubscriptionId: sub.id, status, currentPeriodEnd: periodEnd });
       if (status === 'active') await store.grantAllAccess(userId, periodEnd);
       else await store.revokeAllAccess(userId);
