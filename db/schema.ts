@@ -11,6 +11,7 @@ export const userRole = pgEnum('user_role', ['user', 'admin']);
 export const subscriptionStatus = pgEnum('subscription_status', ['active', 'past_due', 'canceled']);
 export const orderStatus = pgEnum('order_status', ['pending', 'paid', 'refunded']);
 export const tagAxis = pgEnum('tag_axis', ['type', 'niche', 'style', 'feature']);
+export const licenseStatus = pgEnum('license_status', ['active', 'past_due', 'expired', 'canceled']);
 
 // ---- Accounts (Auth.js adapter shape) -----------------------------------
 export const users = pgTable('users', {
@@ -232,3 +233,42 @@ export const taxonomyPages = pgTable('taxonomy_pages', {
   metaDescription: text('meta_description').notNull(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 }, (t) => ({ pk: primaryKey({ columns: [t.axis, t.value] }) }));
+
+// ---- Plugin licensing (plugin-store pivot, spec 2026-07-11) ---------------
+export const licenses = pgTable('licenses', {
+  id: text('id').primaryKey(),
+  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  productSlug: text('product_slug').notNull(), // 'elementor-to-divi5-pro' | 'divi-to-elementor-pro'
+  licenseKey: text('license_key').notNull().unique(),
+  status: licenseStatus('status').notNull().default('active'),
+  stripeSubscriptionId: text('stripe_subscription_id'),
+  currentPeriodEnd: timestamp('current_period_end'),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+}, (t) => ({
+  stripeSubUq: uniqueIndex('licenses_stripe_sub_uq').on(t.stripeSubscriptionId),
+  userIdx: index('licenses_user_idx').on(t.userId),
+}));
+
+export const licenseActivations = pgTable('license_activations', {
+  id: text('id').primaryKey(),
+  licenseId: text('license_id').notNull().references(() => licenses.id, { onDelete: 'cascade' }),
+  siteUrl: text('site_url').notNull(), // normalized (host+path, no scheme/www/trailing slash)
+  pluginVersion: text('plugin_version'),
+  wpVersion: text('wp_version'),
+  activatedAt: timestamp('activated_at').notNull().defaultNow(),
+  deactivatedAt: timestamp('deactivated_at'),
+  lastSeenAt: timestamp('last_seen_at').notNull().defaultNow(),
+}, (t) => ({
+  licenseSiteUq: uniqueIndex('license_activations_license_site_uq').on(t.licenseId, t.siteUrl),
+}));
+
+export const pluginReleases = pgTable('plugin_releases', {
+  id: text('id').primaryKey(),
+  productSlug: text('product_slug').notNull(),
+  version: text('version').notNull(),
+  blobKey: text('blob_key').notNull(),
+  changelog: text('changelog'),
+  releasedAt: timestamp('released_at').notNull().defaultNow(),
+}, (t) => ({
+  productVersionUq: uniqueIndex('plugin_releases_product_version_uq').on(t.productSlug, t.version),
+}));
