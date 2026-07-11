@@ -14,7 +14,7 @@ export interface FulfillmentStore {
   revokeAllAccess(userId: string): Promise<void>;
   notifyPurchase(input: { email: string; kind: 'pack' | 'membership'; packId?: string; amountCents?: number }): Promise<void>;
   mintLicense(l: { userId: string; productSlug: string; stripeSubscriptionId: string | null; currentPeriodEnd: Date | null }): Promise<{ licenseKey: string }>;
-  setLicenseStatusBySubscription(s: { stripeSubscriptionId: string; status: 'active' | 'past_due' | 'canceled'; currentPeriodEnd: Date | null }): Promise<void>;
+  setLicenseStatusBySubscription(s: { stripeSubscriptionId: string; status: 'active' | 'past_due' | 'canceled'; currentPeriodEnd: Date | null }): Promise<{ found: boolean }>;
   grantPluginEntitlement(userId: string, productSlug: string): Promise<void>;
   notifyLicensePurchase(input: { email: string; productSlug: string; licenseKey: string }): Promise<void>;
 }
@@ -75,11 +75,12 @@ export async function handleStripeEvent(event: Stripe.Event, store: FulfillmentS
       const sub = event.data.object as Stripe.Subscription;
       if ((sub.metadata as Record<string, string> | null)?.kind === 'plugin') {
         const periodEnd = sub.current_period_end ? new Date(sub.current_period_end * 1000) : null;
-        await store.setLicenseStatusBySubscription({
+        const { found } = await store.setLicenseStatusBySubscription({
           stripeSubscriptionId: sub.id,
           status: mapStatus(sub.status),
           currentPeriodEnd: periodEnd,
         });
+        if (!found) throw new Error(`subscription event: license not minted yet for ${sub.id}`);
         break;
       }
       const customerId = typeof sub.customer === 'string' ? sub.customer : null;
@@ -96,11 +97,12 @@ export async function handleStripeEvent(event: Stripe.Event, store: FulfillmentS
     case 'customer.subscription.deleted': {
       const sub = event.data.object as Stripe.Subscription;
       if ((sub.metadata as Record<string, string> | null)?.kind === 'plugin') {
-        await store.setLicenseStatusBySubscription({
+        const { found } = await store.setLicenseStatusBySubscription({
           stripeSubscriptionId: sub.id,
           status: 'canceled',
           currentPeriodEnd: null,
         });
+        if (!found) throw new Error(`subscription event: license not minted yet for ${sub.id}`);
         break;
       }
       const customerId = typeof sub.customer === 'string' ? sub.customer : null;

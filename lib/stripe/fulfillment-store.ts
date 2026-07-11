@@ -92,9 +92,11 @@ export const dbStore: FulfillmentStore = {
     return { licenseKey };
   },
   async setLicenseStatusBySubscription(s) {
-    await db.update(licenses)
-      .set({ status: s.status === 'canceled' ? 'canceled' : s.status, ...(s.currentPeriodEnd ? { currentPeriodEnd: s.currentPeriodEnd } : {}) })
-      .where(eq(licenses.stripeSubscriptionId, s.stripeSubscriptionId));
+    const rows = await db.update(licenses)
+      .set({ status: s.status, ...(s.currentPeriodEnd ? { currentPeriodEnd: s.currentPeriodEnd } : {}) })
+      .where(eq(licenses.stripeSubscriptionId, s.stripeSubscriptionId))
+      .returning({ id: licenses.id });
+    return { found: rows.length > 0 };
   },
   async grantPluginEntitlement(userId, productSlug) {
     await db.insert(entitlements).values({

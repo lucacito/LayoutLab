@@ -21,7 +21,7 @@ function fakeStore(over: Partial<FulfillmentStore> = {}): FulfillmentStore {
     revokeAllAccess: vi.fn(async () => {}),
     notifyPurchase: vi.fn(async () => {}),
     mintLicense: vi.fn(async () => ({ licenseKey: 'JHMG-AAAA-BBBB-CCCC-DDDD' })),
-    setLicenseStatusBySubscription: vi.fn(async () => {}),
+    setLicenseStatusBySubscription: vi.fn(async () => ({ found: true })),
     grantPluginEntitlement: vi.fn(async () => {}),
     notifyLicensePurchase: vi.fn(async () => {}),
     ...over,
@@ -193,6 +193,57 @@ describe('plugin license fulfillment', () => {
       stripeSubscriptionId: 'sub_plugin_1', status: 'canceled', currentPeriodEnd: null,
     });
     expect(store.revokeAllAccess).not.toHaveBeenCalled();
+    expect(store.upsertSubscription).not.toHaveBeenCalled();
+    expect(store.findUserBySubscriptionId).not.toHaveBeenCalled();
+  });
+
+  it('subscription.updated with plugin metadata throws (not marks processed) when the license is not minted yet', async () => {
+    const store = fakeStore({
+      setLicenseStatusBySubscription: vi.fn(async () => ({ found: false })),
+    });
+    await expect(handleStripeEvent({
+      id: 'evt_p4', type: 'customer.subscription.updated',
+      data: { object: {
+        id: 'sub_plugin_1', customer: 'cus_1', status: 'active',
+        current_period_end: 1780000000,
+        metadata: { kind: 'plugin', product: 'elementor-to-divi5-pro' },
+      } },
+    } as never, store)).rejects.toThrow('license not minted yet');
+    expect(store.markEventProcessed).not.toHaveBeenCalled();
+  });
+
+  it('subscription.deleted with plugin metadata throws (not marks processed) when the license is not minted yet', async () => {
+    const store = fakeStore({
+      setLicenseStatusBySubscription: vi.fn(async () => ({ found: false })),
+    });
+    await expect(handleStripeEvent({
+      id: 'evt_p5', type: 'customer.subscription.deleted',
+      data: { object: {
+        id: 'sub_plugin_1', customer: 'cus_1', status: 'canceled',
+        metadata: { kind: 'plugin', product: 'elementor-to-divi5-pro' },
+      } },
+    } as never, store)).rejects.toThrow('license not minted yet');
+    expect(store.markEventProcessed).not.toHaveBeenCalled();
+  });
+
+  it('a failing notifyLicensePurchase does not fail the webhook (event still processed, license still minted)', async () => {
+    const store = fakeStore({
+      notifyLicensePurchase: vi.fn(async () => { throw new Error('resend down'); }),
+    });
+    await expect(handleStripeEvent({
+      id: 'evt_p6', type: 'checkout.session.completed',
+      data: { object: {
+        id: 'cs_6', customer: 'cus_1', subscription: 'sub_plugin_6',
+        customer_details: { email: 'buyer@x.com' }, amount_total: 4900,
+        metadata: { kind: 'plugin', product: 'elementor-to-divi5-pro' },
+      } },
+    } as never, store)).resolves.toBeUndefined();
+    expect(store.mintLicense).toHaveBeenCalledWith({
+      userId: 'user_1', productSlug: 'elementor-to-divi5-pro',
+      stripeSubscriptionId: 'sub_plugin_6', currentPeriodEnd: null,
+    });
+    expect(store.grantPluginEntitlement).toHaveBeenCalledWith('user_1', 'elementor-to-divi5-pro');
+    expect(store.markEventProcessed).toHaveBeenCalled();
   });
 
   it('membership subscription events still work exactly as before (no metadata)', async () => {
