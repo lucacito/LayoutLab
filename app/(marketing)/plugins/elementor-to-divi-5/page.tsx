@@ -15,7 +15,9 @@ const PRODUCT_DESCRIPTION =
   'Convert Elementor pages and kits into real, validated Divi 5 layouts. Free plugin handles single-page JSON imports; Pro unlocks full kit ZIP import, global headers/footers, and priority support.';
 
 export const metadata: Metadata = {
-  title: 'Elementor to Divi 5 Converter — Free plugin + Pro | Divi5Lab',
+  // No "| Divi5Lab" suffix here — the root layout's `title.template` already
+  // appends it (see app/layout.tsx), matching every other marketing page.
+  title: 'Elementor to Divi 5 Converter — Free plugin + Pro',
   description:
     'Convert your Elementor pages and kits to Divi 5 in minutes. Free WordPress plugin for single-page imports; Pro adds full kit ZIP import, global headers/footers, and priority support — $49/yr, unlimited sites.',
 };
