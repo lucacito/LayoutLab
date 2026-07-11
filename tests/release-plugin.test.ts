@@ -6,9 +6,9 @@ import JSZip from 'jszip';
 import { blobKeyFor, buildZipFromDir } from '../scripts/release-plugin';
 
 describe('blobKeyFor', () => {
-  it('namespaces zips by product and version', () => {
-    expect(blobKeyFor('elementor-to-divi5-pro', '1.2.0'))
-      .toBe('plugins/elementor-to-divi5-pro/elementor-to-divi5-pro-1.2.0.zip');
+  it('namespaces zips by product, an unguessable nonce, and version', () => {
+    expect(blobKeyFor('elementor-to-divi5-pro', '1.2.0', 'abc123'))
+      .toBe('plugins/elementor-to-divi5-pro/abc123/elementor-to-divi5-pro-1.2.0.zip');
   });
 });
 
