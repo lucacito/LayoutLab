@@ -63,7 +63,7 @@ No sales existed at pivot time, so there is nothing to migrate.
 - `checkout.session.completed` (plugin product) → subscription row → **mint license** →
   grant `plugin:<slug>` entitlement → Resend email with license key + download link.
 - `customer.subscription.updated/deleted` → license status follows, with a **7-day
-  grace period** on `past_due` before Pro features lock (covers failed-payment retries).
+  grace period** on `past_due` before the license reads as expired (covers failed-payment retries).
   Webhook remains the sole source of truth; idempotent handlers.
 
 ### 4.3 License API (new route handlers; auth = the license key)
@@ -97,7 +97,9 @@ insert `plugin_releases` row. Shipping a Pro update never requires a site deploy
 - **`JHMG_License_Client`** (shared, single-file PHP class): canonical copy lives in the
   layoutlab repo; a sync script copies it into both Pro plugins. Provides:
   - license settings screen (paste key → activate);
-  - cached validate (24h) with 72h offline grace; `is_licensed()` gate for Pro features;
+  - cached validate (24h) with 72h offline grace; **soft enforcement** (decided 2026-07-11):
+    `is_licensed()` gates update delivery and drives admin notices ONLY — Pro features
+    always work once the plugin is installed (zip is purchase-gated; ACF-Pro model);
   - WP-native updates: `update_plugins` transient filter hitting `/api/plugin/update-check`.
 - **Divi→Elementor:** port the free/Pro split (its sibling's `PremiumManager` pattern),
   trim the readme's free-feature claims, then submit the free version to wordpress.org.
@@ -126,7 +128,8 @@ insert `plugin_releases` row. Shipping a Pro update never requires a site deploy
 - Bad/expired key on activate/validate → explicit machine-readable error codes;
   plugin shows human message + renew link.
 - divi5lab unreachable → plugin serves cached license state (24h) then 72h grace;
-  after grace, Pro features lock with a notice, nothing breaks or loses data.
+  after grace, the plugin keeps the last-known license state (soft enforcement —
+  features never lock), shows a notice, and retries; nothing breaks or loses data.
 - Refund/cancel → subscription webhook flips license; next validate locks Pro features.
 - Update-check with lapsed license → returns "update exists" metadata but no package URL
   (visible nudge to renew).
