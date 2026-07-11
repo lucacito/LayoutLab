@@ -19,6 +19,11 @@ async function main() {
     console.error('Usage: --email <email> --product <slug> [--years N]');
     process.exit(1);
   }
+  const dbUrl = process.env.POSTGRES_URL ?? process.env.DATABASE_URL;
+  if (dbUrl) {
+    console.error('minting against DB host:', new URL(dbUrl).host);
+  }
+
   const userId = await findOrCreateUserByEmail(email);
   const licenseKey = generateLicenseKey();
   const end = new Date();

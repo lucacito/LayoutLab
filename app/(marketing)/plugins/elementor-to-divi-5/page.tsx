@@ -1,5 +1,4 @@
 import type { Metadata } from 'next';
-import Link from 'next/link';
 import { env } from '@/lib/env';
 import { Container } from '@/components/ui/Container';
 import { Card } from '@/components/ui/Card';
@@ -72,6 +71,7 @@ export default function PluginPage() {
           data={productJsonLd({
             name: PRODUCT_NAME,
             description: PRODUCT_DESCRIPTION,
+            image: 'https://ps.w.org/jhmg-converter-for-elementor-to-divi/assets/banner-772x250.png',
             url,
             offer: { priceCents: 4900, currency: 'USD' },
           })}
@@ -85,12 +85,14 @@ export default function PluginPage() {
         </p>
 
         <div className="mt-8 flex flex-wrap items-center gap-3">
-          <Link
+          <a
             href={WP_ORG_URL}
+            target="_blank"
+            rel="noopener noreferrer"
             className="inline-flex h-12 items-center justify-center rounded-full border border-border bg-paper px-8 text-body font-semibold text-navy transition hover:border-action hover:text-action"
           >
             Get the free plugin
-          </Link>
+          </a>
           <BuyProButton product="elementor-to-divi5-pro" label="Get Pro — $49/yr" />
         </div>
 

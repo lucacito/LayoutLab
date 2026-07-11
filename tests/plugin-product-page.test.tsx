@@ -18,6 +18,7 @@ describe('/plugins/elementor-to-divi-5', () => {
     const data = JSON.parse(ld!.textContent ?? '{}');
     expect(data['@type']).toBe('Product');
     expect(data.offers.price).toBe('49.00');
+    expect(data.image).toBeTruthy();
   });
 
   it('has SEO metadata', () => {
