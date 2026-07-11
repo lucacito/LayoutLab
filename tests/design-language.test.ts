@@ -181,4 +181,15 @@ describe('PhotoDirection (phase 2)', () => {
     const merged = { ...language.photography, ...(variant.photography ?? {}) };
     expect(merged.styleWords.length).toBeGreaterThanOrEqual(1);
   });
+
+  it('directive tags never contain spaces (URL-safety: images.ts regex is whitespace-delimited)', () => {
+    for (const l of DESIGN_LANGUAGES) {
+      for (const v of l.variants) {
+        const d = buildLanguageDirective(l, v);
+        const m = d.match(/photo search: (.+)\.$/);
+        expect(m, `${l.id}/${v.id}`).toBeTruthy();
+        for (const tag of m![1].split(', ')) expect(tag).not.toMatch(/\s/);
+      }
+    }
+  });
 });

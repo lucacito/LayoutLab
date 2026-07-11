@@ -34,7 +34,11 @@ export interface NumericScale {
  *  searches, so `styleWords` (mechanically appended to every keyword) provably
  *  reach the photo search. `framing`/`subjects` steer what the model asks for;
  *  `usage` steers how images sit in the layout. No CSS-filter field — Pexels
- *  photos are pre-graded (deliberate YAGNI deviation from spec §5.6). */
+ *  photos are pre-graded (deliberate YAGNI deviation from spec §5.6).
+ *  Multi-word styleWords are hyphenated at directive-build time: images.ts's
+ *  placeholder regex is whitespace-delimited (a literal space would truncate
+ *  the URL), while resolveImages converts hyphens back to spaces for the
+ *  Pexels query — so hyphenation is lossless. */
 export interface PhotoDirection {
   /** Lowercase words appended to every image keyword, e.g. ['candid', 'natural light']. */
   styleWords: string[];
@@ -299,6 +303,10 @@ export function selectLanguageVariantId(t: Parameters<typeof selectDesignLanguag
  *  golden snapshots and word-ownership tests have a stable shape to hold onto. */
 export function buildLanguageDirective(language: DesignLanguage, variant: LanguageVariant): string {
   const photo = { ...language.photography, ...(variant.photography ?? {}) };
+  // Hyphenate multi-word style words for URL safety: images.ts's placeholder
+  // regex stops at whitespace, and its Pexels resolution turns hyphens back
+  // into spaces — see the PhotoDirection JSDoc.
+  const tags = photo.styleWords.map((w) => w.replace(/\s+/g, '-'));
   return [
     `Page design system (${language.id}/${variant.id}) — commit to it FULLY and use it consistently in every module:`,
     `Typography: headlines in ${variant.display}; body text in ${variant.body}; eyebrows/kickers ${variant.eyebrow}. ` +
@@ -308,6 +316,6 @@ export function buildLanguageDirective(language: DesignLanguage, variant: Langua
     `Cards/panels: ${language.cardSurface}.`,
     `Spacing: section padding ${language.scale.sectionPaddingY} top/bottom; card padding ${language.scale.cardPadding}; grid gaps ${language.scale.gridGap}.`,
     `Photography: ${photo.subjects}; ${photo.framing}; use images as ${photo.usage.replace(/-/g, ' ')}. ` +
-      `APPEND these style keywords to every image keyword URL you write (they steer the real photo search): ${photo.styleWords.join(', ')}.`,
+      `APPEND these tags (comma-separated, exactly as written) to every image keyword URL you write — they steer the real photo search: ${tags.join(', ')}.`,
   ].join('\n');
 }

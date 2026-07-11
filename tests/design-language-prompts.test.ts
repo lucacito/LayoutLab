@@ -116,7 +116,7 @@ describe('photography directive (phase 2)', () => {
     process.env.USE_LIBRARY_EXEMPLARS = '0';
     const { prompt } = buildGenerationPrompt(heroTarget, guide);
     expect(prompt).toMatch(/Photography: /);
-    expect(prompt).toMatch(/APPEND these style keywords to every image keyword/i);
+    expect(prompt).toMatch(/APPEND these tags .* to every image keyword/i);
   });
 
   it('DESIGN_LANGUAGES=0 removes the photography line too', () => {
