@@ -1,13 +1,16 @@
 import type Stripe from 'stripe';
+import type { PluginProduct } from '@/lib/license-server/core';
 
 export type CheckoutInput =
   | { kind: 'pack'; packId: string }
-  | { kind: 'membership'; plan: 'monthly' | 'yearly' };
+  | { kind: 'membership'; plan: 'monthly' | 'yearly' }
+  | { kind: 'plugin'; product: PluginProduct };
 
 export interface CheckoutContext {
   siteUrl: string;
   packPriceId?: string;
   membershipPriceId?: string;
+  pluginPriceId?: string;
   email?: string;
   automaticTax: boolean;
   /**
@@ -59,6 +62,15 @@ export function buildCheckoutSessionParams(
       mode: 'payment',
       line_items: [{ price: ctx.packPriceId, quantity: 1 }],
       metadata: { kind: 'pack', packId: input.packId },
+    };
+  }
+  if (input.kind === 'plugin') {
+    return {
+      ...common,
+      mode: 'subscription',
+      line_items: [{ price: ctx.pluginPriceId, quantity: 1 }],
+      metadata: { kind: 'plugin', product: input.product },
+      subscription_data: { metadata: { kind: 'plugin', product: input.product } },
     };
   }
   return {

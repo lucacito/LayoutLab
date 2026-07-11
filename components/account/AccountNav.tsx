@@ -5,6 +5,7 @@ import { Icon } from '@/components/ui/Icon';
 
 const TABS = [
   { href: '/account', label: 'Overview', icon: 'dashboard' },
+  { href: '/account/licenses', label: 'Licenses', icon: 'key' },
   { href: '/account/downloads', label: 'Downloads', icon: 'download' },
   { href: '/account/purchases', label: 'Purchases', icon: 'receipt_long' },
   { href: '/account/billing', label: 'Billing', icon: 'credit_card' },

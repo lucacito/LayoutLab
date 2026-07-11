@@ -13,12 +13,26 @@ export interface FulfillmentStore {
   grantAllAccess(userId: string, expiresAt: Date | null): Promise<void>;
   revokeAllAccess(userId: string): Promise<void>;
   notifyPurchase(input: { email: string; kind: 'pack' | 'membership'; packId?: string; amountCents?: number }): Promise<void>;
+  mintLicense(l: { userId: string; productSlug: string; stripeSubscriptionId: string | null; currentPeriodEnd: Date | null }): Promise<{ licenseKey: string }>;
+  setLicenseStatusBySubscription(s: { stripeSubscriptionId: string; status: 'active' | 'past_due' | 'canceled'; currentPeriodEnd: Date | null }): Promise<{ found: boolean }>;
+  grantPluginEntitlement(userId: string, productSlug: string): Promise<void>;
+  revokePluginEntitlement(stripeSubscriptionId: string): Promise<void>;
+  notifyLicensePurchase(input: { email: string; productSlug: string; licenseKey: string }): Promise<void>;
 }
 
 function mapStatus(s: string): 'active' | 'past_due' | 'canceled' {
   if (s === 'active' || s === 'trialing') return 'active';
   if (s === 'past_due' || s === 'unpaid') return 'past_due';
   return 'canceled';
+}
+
+// Newer Stripe API versions (2025+) moved current_period_end off the
+// subscription onto its items; read both so webhook payloads from any
+// account default API version produce a real period end.
+function subscriptionPeriodEnd(sub: Stripe.Subscription): Date | null {
+  const raw = sub.current_period_end
+    ?? (sub.items?.data?.[0] as { current_period_end?: number } | undefined)?.current_period_end;
+  return raw ? new Date(raw * 1000) : null;
 }
 
 export async function handleStripeEvent(event: Stripe.Event, store: FulfillmentStore): Promise<void> {
@@ -41,6 +55,19 @@ export async function handleStripeEvent(event: Stripe.Event, store: FulfillmentS
         if (typeof s.subscription === 'string') {
           await store.upsertSubscription({ userId, stripeSubscriptionId: s.subscription, status: 'active', currentPeriodEnd: null });
         }
+      } else if (meta.kind === 'plugin' && meta.product) {
+        const { licenseKey } = await store.mintLicense({
+          userId,
+          productSlug: meta.product,
+          stripeSubscriptionId: typeof s.subscription === 'string' ? s.subscription : null,
+          currentPeriodEnd: null, // set by the first customer.subscription.updated event
+        });
+        await store.grantPluginEntitlement(userId, meta.product);
+        try {
+          await store.notifyLicensePurchase({ email, productSlug: meta.product, licenseKey });
+        } catch (err) {
+          console.error('[webhook] license email failed:', err);
+        }
       }
       try {
         if (meta.kind === 'pack' && meta.packId) {
@@ -56,12 +83,22 @@ export async function handleStripeEvent(event: Stripe.Event, store: FulfillmentS
     case 'customer.subscription.created':
     case 'customer.subscription.updated': {
       const sub = event.data.object as Stripe.Subscription;
+      if ((sub.metadata as Record<string, string> | null)?.kind === 'plugin') {
+        const periodEnd = subscriptionPeriodEnd(sub);
+        const { found } = await store.setLicenseStatusBySubscription({
+          stripeSubscriptionId: sub.id,
+          status: mapStatus(sub.status),
+          currentPeriodEnd: periodEnd,
+        });
+        if (!found) throw new Error(`subscription event: license not minted yet for ${sub.id}`);
+        break;
+      }
       const customerId = typeof sub.customer === 'string' ? sub.customer : null;
       let userId = await store.findUserBySubscriptionId(sub.id);
       if (!userId && customerId) userId = await store.findUserByStripeCustomerId(customerId);
       if (!userId) throw new Error(`subscription event: user not resolvable yet for ${sub.id}`);
       const status = mapStatus(sub.status);
-      const periodEnd = sub.current_period_end ? new Date(sub.current_period_end * 1000) : null;
+      const periodEnd = subscriptionPeriodEnd(sub);
       await store.upsertSubscription({ userId, stripeSubscriptionId: sub.id, status, currentPeriodEnd: periodEnd });
       if (status === 'active') await store.grantAllAccess(userId, periodEnd);
       else await store.revokeAllAccess(userId);
@@ -69,6 +106,16 @@ export async function handleStripeEvent(event: Stripe.Event, store: FulfillmentS
     }
     case 'customer.subscription.deleted': {
       const sub = event.data.object as Stripe.Subscription;
+      if ((sub.metadata as Record<string, string> | null)?.kind === 'plugin') {
+        const { found } = await store.setLicenseStatusBySubscription({
+          stripeSubscriptionId: sub.id,
+          status: 'canceled',
+          currentPeriodEnd: null,
+        });
+        if (!found) throw new Error(`subscription event: license not minted yet for ${sub.id}`);
+        await store.revokePluginEntitlement(sub.id);
+        break;
+      }
       const customerId = typeof sub.customer === 'string' ? sub.customer : null;
       let userId = await store.findUserBySubscriptionId(sub.id);
       if (!userId && customerId) userId = await store.findUserByStripeCustomerId(customerId);
