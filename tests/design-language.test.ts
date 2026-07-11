@@ -100,6 +100,23 @@ describe('selection', () => {
     const { language } = selectDesignLanguage({ style: 'nonexistent', niche: 'saas', designKey: 'k' });
     expect(language).toBeDefined();
   });
+
+  it('pins concrete selections (append-stability tripwire, like compose-palettes)', () => {
+    const picks = [
+      { style: 'minimal', niche: 'saas', designKey: 'Acme Analytics' },
+      { style: 'corporate', niche: 'real_estate', designKey: 'Harborline Group' },
+      { style: 'elegant', niche: 'coaching', designKey: 'Maison Verity' },
+      { style: 'bold', niche: 'fitness', designKey: 'PulseGrid' },
+    ].map((t) => `${selectDesignLanguageId(t)}/${selectLanguageVariantId(t)}`);
+    expect(picks).toMatchInlineSnapshot(`
+      [
+        "editorial/editorial-playfair",
+        "editorial/editorial-fraunces",
+        "luxe/luxe-marcellus",
+        "bold-vibrant/bold-vibrant-grotesk",
+      ]
+    `);
+  });
 });
 
 describe('designDiscriminator', () => {
@@ -133,24 +150,5 @@ describe('designLanguagesEnabled', () => {
     expect(designLanguagesEnabled()).toBe(false);
     if (prev === undefined) delete process.env.DESIGN_LANGUAGES;
     else process.env.DESIGN_LANGUAGES = prev;
-  });
-});
-
-describe('selection', () => {
-  it('pins concrete selections (append-stability tripwire, like compose-palettes)', () => {
-    const picks = [
-      { style: 'minimal', niche: 'saas', designKey: 'Acme Analytics' },
-      { style: 'corporate', niche: 'real_estate', designKey: 'Harborline Group' },
-      { style: 'elegant', niche: 'coaching', designKey: 'Maison Verity' },
-      { style: 'bold', niche: 'fitness', designKey: 'PulseGrid' },
-    ].map((t) => `${selectDesignLanguageId(t)}/${selectLanguageVariantId(t)}`);
-    expect(picks).toMatchInlineSnapshot(`
-      [
-        "editorial/editorial-playfair",
-        "editorial/editorial-fraunces",
-        "luxe/luxe-marcellus",
-        "bold-vibrant/bold-vibrant-grotesk",
-      ]
-    `);
   });
 });

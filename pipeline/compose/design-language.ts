@@ -121,7 +121,7 @@ export const DESIGN_LANGUAGES: DesignLanguage[] = [
     id: 'glass-dark',
     eligibleStyles: ['dark', 'elegant'],
     cardSurface:
-      'glass cards on dark panels: a semi-transparent rgba(255,255,255,0.06) background + a 1px rgba(255,255,255,0.12) hairline border + ~20px radius set on ALL FOUR corners; most sections lean dark with light text',
+      'glass cards on dark panels: a semi-transparent rgba(255,255,255,0.06) background + a 1px rgba(255,255,255,0.12) hairline border + ~20px radius set on ALL FOUR corners',
     buttons:
       'the primary a solid accent button (~12px radius); the secondary a glass button (translucent surface + 1px hairline border, light text)',
     scale: {

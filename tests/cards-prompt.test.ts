@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { afterEach, beforeEach, describe, it, expect } from 'vitest';
 import { buildGenerationPrompt, type Guide } from '@/pipeline/recipes/prompts';
 import type { Target } from '@/pipeline/recipes/matrix';
 
@@ -17,6 +17,19 @@ const base: Target = {
 };
 
 describe('cards prompt directives', () => {
+  // Pin legacy behavior: this file asserts the hardcoded cards-directive
+  // surface text. Language-aware behavior is covered by
+  // tests/design-language-prompts.test.ts.
+  beforeEach(() => {
+    process.env.DESIGN_LANGUAGES = '0';
+    process.env.USE_LIBRARY_EXEMPLARS = '0';
+  });
+
+  afterEach(() => {
+    delete process.env.DESIGN_LANGUAGES;
+    delete process.env.USE_LIBRARY_EXEMPLARS;
+  });
+
   it('describes the animated card wrapper and circular icon badge', () => {
     const { prompt } = buildGenerationPrompt(base, guide);
     const p = prompt.toLowerCase();
