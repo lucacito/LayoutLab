@@ -4,6 +4,7 @@ import { getLibraryExemplars, libraryExemplarsEnabled } from '@/pipeline/library
 import { bannedContentProse } from '@/pipeline/content-lint';
 import { SECTION_TYPES } from '@/pipeline/recipes/section-types';
 import { buildLanguageDirective, designLanguagesEnabled, selectDesignLanguage } from '@/pipeline/compose/design-language';
+import { formatIconForPrompt, iconCatalogEnabled, iconPickList } from '@/pipeline/recipes/icons';
 
 export interface Recipe {
   name: string;
@@ -146,6 +147,16 @@ function buildSystemPrompt(target: Target, guide: Guide): string {
   return [SYSTEM, '', stableGroundingBlock(target, guide)].join('\n');
 }
 
+// Rich-generator spec §5.4: the niche-relevant, CI-verified icon pick-list.
+// USER prompt only (varies per niche) — never the cached system grounding.
+function verifiedIconsLine(niche: string): string {
+  const list = iconPickList(niche).map(formatIconForPrompt).join('; ');
+  return (
+    `VERIFIED ICONS for this niche — choose icon glyphs ONLY from this list, copying the exact ` +
+    `type/weight/unicode values into the divi/blurb (or divi/icon) icon attributes; never invent icon codes: ${list}.`
+  );
+}
+
 function directives(target: Target, guide: Guide): string {
   const lines = ['Write realistic, specific copy for this niche — real headlines and benefits, no lorem ipsum.'];
   // Hard content bans (a deterministic lint enforces these post-generation and will
@@ -188,9 +199,24 @@ function directives(target: Target, guide: Guide): string {
       lines.push(`Put a numbered step badge (1, 2, 3 …) ${placement}: a number inside a filled circle (decoration.border.radius 50%, colored background, contrasting text). No icon glyph.`);
     } else {
       const badge = v?.iconStyle === 'circle' ? 'inside a filled circular badge (colored background, border.radius 50%)' : 'as a bare icon with no background';
-      lines.push(`Give each card a Divi icon ${placement}, ${badge}. Use a divi/blurb (or divi/icon) with type:"divi" or type:"fa" and a real glyph matching the card topic — choose glyph unicodes ONLY from the grounding recipes (icon-features, blurb-grid, icon-values); never invent icon codes.`);
+      if (iconCatalogEnabled()) {
+        lines.push(
+          `Give each card a Divi icon ${placement}, ${badge}. Use a divi/blurb (or divi/icon) with a real glyph matching the card topic.`,
+        );
+        lines.push(verifiedIconsLine(target.niche));
+      } else {
+        lines.push(
+          `Give each card a Divi icon ${placement}, ${badge}. Use a divi/blurb (or divi/icon) with type:"divi" or type:"fa" and a real glyph matching the card topic — choose glyph unicodes ONLY from the grounding recipes (icon-features, blurb-grid, icon-values); never invent icon codes.`,
+        );
+      }
     }
     lines.push('Each card: the icon/badge + a short heading + 1–2 specific sentences; optionally a small text link or button. Real copy, no lorem ipsum.');
+  }
+  if (target.type === 'features' && iconCatalogEnabled()) {
+    lines.push(
+      'Where this section uses icons (icon-features rows/grids), pick topical glyphs. ' +
+        verifiedIconsLine(target.niche),
+    );
   }
   if (target.type === 'full_landing') {
     lines.push(
