@@ -110,3 +110,19 @@ describe('cards directive surface swap', () => {
     expect(prompt).toContain('rounded corners (decoration.border.radius ~20px)');
   });
 });
+
+describe('photography directive (phase 2)', () => {
+  it('the language directive carries the photography line with append-keywords instruction', () => {
+    process.env.USE_LIBRARY_EXEMPLARS = '0';
+    const { prompt } = buildGenerationPrompt(heroTarget, guide);
+    expect(prompt).toMatch(/Photography: /);
+    expect(prompt).toMatch(/APPEND these style keywords to every image keyword/i);
+  });
+
+  it('DESIGN_LANGUAGES=0 removes the photography line too', () => {
+    process.env.DESIGN_LANGUAGES = '0';
+    process.env.USE_LIBRARY_EXEMPLARS = '0';
+    const { prompt } = buildGenerationPrompt(heroTarget, guide);
+    expect(prompt).not.toMatch(/Photography: /);
+  });
+});

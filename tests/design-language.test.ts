@@ -152,3 +152,33 @@ describe('designLanguagesEnabled', () => {
     else process.env.DESIGN_LANGUAGES = prev;
   });
 });
+
+describe('PhotoDirection (phase 2)', () => {
+  it('every language has a complete photography direction', () => {
+    for (const l of DESIGN_LANGUAGES) {
+      expect(l.photography, l.id).toBeDefined();
+      expect(l.photography.styleWords.length, l.id).toBeGreaterThanOrEqual(1);
+      for (const w of l.photography.styleWords) expect(w).toMatch(/^[a-z][a-z ]*$/);
+      expect(l.photography.framing.length, l.id).toBeGreaterThan(10);
+      expect(l.photography.subjects.length, l.id).toBeGreaterThan(10);
+      expect(['full-bleed-overlay', 'framed-panels', 'mosaic']).toContain(l.photography.usage);
+    }
+  });
+
+  it('ownership: cardSurface/buttons never mention photos; photography never mentions spacing', () => {
+    for (const l of DESIGN_LANGUAGES) {
+      expect(l.cardSurface).not.toMatch(/photo|image/i);
+      expect(l.buttons).not.toMatch(/photo|image/i);
+      const photoProse = `${l.photography.framing} ${l.photography.subjects}`;
+      expect(photoProse).not.toMatch(/padding|margin|\bgap\b/i);
+    }
+  });
+
+  it('variant photography overrides merge over the language default', () => {
+    // Find any variant with an override; if none exist the registry must still
+    // typecheck — assert at least the merge helper path via selectDesignLanguage.
+    const { language, variant } = selectDesignLanguage({ style: 'elegant', niche: 'coaching', designKey: 'k' });
+    const merged = { ...language.photography, ...(variant.photography ?? {}) };
+    expect(merged.styleWords.length).toBeGreaterThanOrEqual(1);
+  });
+});

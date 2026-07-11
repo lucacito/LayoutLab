@@ -29,6 +29,20 @@ export interface NumericScale {
   gridGap: string;
 }
 
+/** Photography art direction (rich-generator spec §5.6). The REAL lever:
+ *  pipeline/images.ts resolves the model's image keywords into live Pexels
+ *  searches, so `styleWords` (mechanically appended to every keyword) provably
+ *  reach the photo search. `framing`/`subjects` steer what the model asks for;
+ *  `usage` steers how images sit in the layout. No CSS-filter field — Pexels
+ *  photos are pre-graded (deliberate YAGNI deviation from spec §5.6). */
+export interface PhotoDirection {
+  /** Lowercase words appended to every image keyword, e.g. ['candid', 'natural light']. */
+  styleWords: string[];
+  framing: string;
+  subjects: string;
+  usage: 'full-bleed-overlay' | 'framed-panels' | 'mosaic';
+}
+
 /** A typography variant within a language. `id` is the append-stability anchor
  *  for pickByRendezvous — hand-assigned, never derived from array position. */
 export interface LanguageVariant {
@@ -39,6 +53,8 @@ export interface LanguageVariant {
   body: string;
   /** Eyebrow/kicker treatment. */
   eyebrow: string;
+  /** Optional per-variant photography override, merged over the language default. */
+  photography?: Partial<PhotoDirection>;
 }
 
 export interface DesignLanguage {
@@ -50,6 +66,7 @@ export interface DesignLanguage {
   /** Primary/secondary button system prose. */
   buttons: string;
   scale: NumericScale;
+  photography: PhotoDirection;
   variants: LanguageVariant[];
 }
 
@@ -69,6 +86,12 @@ export const DESIGN_LANGUAGES: DesignLanguage[] = [
       body: '16-17px, line-height ~1.6',
       cardPadding: '32-36px',
       gridGap: '28-32px',
+    },
+    photography: {
+      styleWords: ['bright', 'clean'],
+      framing: 'wide, airy compositions with room around the subject',
+      subjects: 'real people using products and clean workspace scenes, not posed stock',
+      usage: 'framed-panels',
     },
     variants: [
       { id: 'soft-saas-inter', display: 'Inter (clean geometric sans)', body: 'Inter', eyebrow: 'accent-colored, sentence case' },
@@ -91,6 +114,12 @@ export const DESIGN_LANGUAGES: DesignLanguage[] = [
       cardPadding: '28-36px',
       gridGap: '32-40px',
     },
+    photography: {
+      styleWords: ['documentary', 'natural light'],
+      framing: 'environmental wide shots with negative space suitable for text',
+      subjects: 'people mid-task in real settings, reportage feel',
+      usage: 'framed-panels',
+    },
     variants: [
       { id: 'editorial-fraunces', display: 'Fraunces (a modern display serif)', body: 'Inter', eyebrow: 'uppercase, letterspaced 3px, muted neutral color' },
       { id: 'editorial-playfair', display: 'Playfair Display (high-contrast serif)', body: 'Source Sans 3', eyebrow: 'uppercase, letterspaced 2px, accent-colored' },
@@ -111,6 +140,12 @@ export const DESIGN_LANGUAGES: DesignLanguage[] = [
       body: '16-17px, line-height ~1.6',
       cardPadding: '32-40px',
       gridGap: '24-32px',
+    },
+    photography: {
+      styleWords: ['vibrant', 'high contrast'],
+      framing: 'tight dynamic crops with strong diagonals and energy',
+      subjects: 'action moments and bold product shots with saturated color',
+      usage: 'full-bleed-overlay',
     },
     variants: [
       { id: 'bold-vibrant-grotesk', display: 'Space Grotesk (techy display sans)', body: 'Inter', eyebrow: 'uppercase, letterspaced 2px, accent-colored' },
@@ -133,6 +168,12 @@ export const DESIGN_LANGUAGES: DesignLanguage[] = [
       cardPadding: '32-40px',
       gridGap: '28-36px',
     },
+    photography: {
+      styleWords: ['moody', 'dark'],
+      framing: 'low-key compositions with deep shadows and a single light source',
+      subjects: 'dramatic product and atmosphere shots that stay legible under overlays',
+      usage: 'full-bleed-overlay',
+    },
     variants: [
       { id: 'glass-dark-outfit', display: 'Outfit (rounded geometric sans)', body: 'Inter', eyebrow: 'uppercase, letterspaced 2px, accent-colored' },
       { id: 'glass-dark-sora', display: 'Sora (sharp technical sans)', body: 'Inter', eyebrow: 'sentence case, accent-colored, weight 600' },
@@ -154,6 +195,12 @@ export const DESIGN_LANGUAGES: DesignLanguage[] = [
       cardPadding: '24-32px',
       gridGap: '16-24px',
     },
+    photography: {
+      styleWords: ['high contrast', 'graphic'],
+      framing: 'frontal, flat-on compositions with hard edges and strong geometry',
+      subjects: 'stark objects and unposed people, no soft lifestyle gloss',
+      usage: 'framed-panels',
+    },
     variants: [
       { id: 'brutalist-archivo-black', display: 'Archivo Black (ultra-heavy)', body: 'IBM Plex Sans', eyebrow: 'uppercase, letterspaced 3px, on a small solid accent block' },
       { id: 'brutalist-grotesk-mono', display: 'Space Grotesk (heavy weights)', body: 'IBM Plex Sans', eyebrow: 'IBM Plex Mono, uppercase, letterspaced 2px' },
@@ -174,6 +221,12 @@ export const DESIGN_LANGUAGES: DesignLanguage[] = [
       body: '17-18px, line-height ~1.7',
       cardPadding: '36-48px',
       gridGap: '36-48px',
+    },
+    photography: {
+      styleWords: ['moody', 'low key'],
+      framing: 'close-up textures and details with generous negative space',
+      subjects: 'materials, craftsmanship, and quiet interiors that read as premium',
+      usage: 'mosaic',
     },
     variants: [
       { id: 'luxe-cormorant', display: 'Cormorant Garamond (refined serif)', body: 'Outfit', eyebrow: 'uppercase, letterspaced 3px, muted gold/neutral tone' },
@@ -245,6 +298,7 @@ export function selectLanguageVariantId(t: Parameters<typeof selectDesignLanguag
  *  never the cached system grounding (T1.4). One block, fixed field order, so
  *  golden snapshots and word-ownership tests have a stable shape to hold onto. */
 export function buildLanguageDirective(language: DesignLanguage, variant: LanguageVariant): string {
+  const photo = { ...language.photography, ...(variant.photography ?? {}) };
   return [
     `Page design system (${language.id}/${variant.id}) — commit to it FULLY and use it consistently in every module:`,
     `Typography: headlines in ${variant.display}; body text in ${variant.body}; eyebrows/kickers ${variant.eyebrow}. ` +
@@ -253,5 +307,7 @@ export function buildLanguageDirective(language: DesignLanguage, variant: Langua
     `Buttons: ${language.buttons}.`,
     `Cards/panels: ${language.cardSurface}.`,
     `Spacing: section padding ${language.scale.sectionPaddingY} top/bottom; card padding ${language.scale.cardPadding}; grid gaps ${language.scale.gridGap}.`,
+    `Photography: ${photo.subjects}; ${photo.framing}; use images as ${photo.usage.replace(/-/g, ' ')}. ` +
+      `APPEND these style keywords to every image keyword URL you write (they steer the real photo search): ${photo.styleWords.join(', ')}.`,
   ].join('\n');
 }
