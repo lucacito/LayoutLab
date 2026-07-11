@@ -49,6 +49,23 @@ describe('buildCheckoutSessionParams', () => {
   });
 });
 
+describe('plugin license checkout', () => {
+  const ctx = {
+    siteUrl: 'https://divi5lab.com',
+    pluginPriceId: 'price_pro_yearly',
+    automaticTax: true,
+  };
+  it('builds a subscription session with plugin metadata on session AND subscription', () => {
+    const params = buildCheckoutSessionParams(
+      { kind: 'plugin', product: 'elementor-to-divi5-pro' }, ctx,
+    );
+    expect(params.mode).toBe('subscription');
+    expect(params.line_items).toEqual([{ price: 'price_pro_yearly', quantity: 1 }]);
+    expect(params.metadata).toEqual({ kind: 'plugin', product: 'elementor-to-divi5-pro' });
+    expect(params.subscription_data).toEqual({ metadata: { kind: 'plugin', product: 'elementor-to-divi5-pro' } });
+  });
+});
+
 function post(body: unknown) {
   return new Request('http://test/api/checkout', {
     method: 'POST', headers: { 'content-type': 'application/json' },

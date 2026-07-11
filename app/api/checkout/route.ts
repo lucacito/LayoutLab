@@ -11,6 +11,7 @@ import { buildCheckoutSessionParams, type CheckoutInput, type CheckoutContext } 
 const bodySchema = z.union([
   z.object({ kind: z.literal('pack'), packId: z.string().min(1) }),
   z.object({ kind: z.literal('membership'), plan: z.enum(['monthly', 'yearly']) }),
+  z.object({ kind: z.literal('plugin'), product: z.enum(['elementor-to-divi5-pro', 'divi-to-elementor-pro']) }),
 ]);
 
 // TODO(§16): add rate limiting to this route.
@@ -25,6 +26,7 @@ export async function POST(req: Request): Promise<Response> {
 
   let packPriceId: string | undefined;
   let membershipPriceId: string | undefined;
+  let pluginPriceId: string | undefined;
   if (input.kind === 'pack') {
     const rows = await db
       .select({ priceId: packs.stripePriceId, status: packs.status, kind: packs.kind })
@@ -34,16 +36,21 @@ export async function POST(req: Request): Promise<Response> {
       return NextResponse.json({ error: 'pack_unavailable' }, { status: 400 });
     }
     packPriceId = pack.priceId;
-  } else {
+  } else if (input.kind === 'membership') {
     membershipPriceId = input.plan === 'yearly'
       ? env.STRIPE_PRICE_MEMBERSHIP_YEARLY
       : env.STRIPE_PRICE_MEMBERSHIP_MONTHLY;
     if (!membershipPriceId) return NextResponse.json({ error: 'membership_unavailable' }, { status: 400 });
+  } else {
+    pluginPriceId = input.product === 'elementor-to-divi5-pro'
+      ? env.STRIPE_PRICE_ELEM2DIVI_PRO
+      : env.STRIPE_PRICE_DIVI2ELEM_PRO;
+    if (!pluginPriceId) return NextResponse.json({ error: 'plugin_unavailable' }, { status: 400 });
   }
 
   const requireTermsConsent = env.STRIPE_TERMS_CONSENT === '1' || env.STRIPE_TERMS_CONSENT === 'true';
   const makeCtx = (automaticTax: boolean): CheckoutContext => ({
-    siteUrl: env.NEXT_PUBLIC_SITE_URL, packPriceId, membershipPriceId, automaticTax, requireTermsConsent,
+    siteUrl: env.NEXT_PUBLIC_SITE_URL, packPriceId, membershipPriceId, pluginPriceId, automaticTax, requireTermsConsent,
   });
 
   const urlOr500 = (session: Stripe.Checkout.Session) => {
