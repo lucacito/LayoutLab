@@ -14,6 +14,7 @@ const schema = z.object({
   STRIPE_PRICE_MEMBERSHIP_YEARLY: z.string().optional(),
   STRIPE_PRICE_ELEM2DIVI_PRO: z.string().optional(),
   STRIPE_PRICE_DIVI2ELEM_PRO: z.string().optional(),
+  STRIPE_PRICE_AI_EDITOR_PRO: z.string().optional(),
   // Set to '1'/'true' to require an express withdrawal-waiver checkbox at
   // Checkout (needed to lawfully deny refunds to EU/UK consumers). Requires a
   // Terms of Service URL configured in the Stripe Dashboard → pointing at /license.

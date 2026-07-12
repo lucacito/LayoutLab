@@ -37,7 +37,7 @@ const PRODUCTS: Product[] = [
   },
   {
     name: 'Divi 5 AI Editor',
-    chip: { label: 'Coming soon', tone: 'slate' },
+    chip: { label: 'Free download · Pro $79/yr', tone: 'green' },
     blurb: 'Edit and generate Divi 5 pages with AI — every change is checked by a deterministic validator, so output always imports cleanly.',
     href: '/plugins/divi-5-ai-editor',
   },

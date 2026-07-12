@@ -50,6 +50,15 @@ describe('effectiveStatus / isLicenseUsable', () => {
     expect(isLicenseUsable({ status: 'canceled', currentPeriodEnd: null }, now)).toBe(false);
     expect(isLicenseUsable({ status: 'expired', currentPeriodEnd: null }, now)).toBe(false);
   });
+  it('effectiveStatus keeps revoked terminal even with a future period end', () => {
+    const now = new Date('2026-07-12T00:00:00Z');
+    expect(effectiveStatus({ status: 'revoked', currentPeriodEnd: new Date('2027-01-01') }, now)).toBe('revoked');
+    expect(effectiveStatus({ status: 'revoked', currentPeriodEnd: null }, now)).toBe('revoked');
+  });
+  it('isLicenseUsable is false for revoked', () => {
+    const now = new Date('2026-07-12T00:00:00Z');
+    expect(isLicenseUsable({ status: 'revoked', currentPeriodEnd: new Date('2027-01-01') }, now)).toBe(false);
+  });
 });
 
 describe('isNewerVersion', () => {
@@ -63,7 +72,11 @@ describe('isNewerVersion', () => {
 });
 
 describe('PLUGIN_PRODUCTS', () => {
-  it('lists exactly the two converter Pro slugs', () => {
-    expect([...PLUGIN_PRODUCTS]).toEqual(['elementor-to-divi5-pro', 'divi-to-elementor-pro']);
+  it('lists the two converter Pro slugs plus the AI Editor Pro slug', () => {
+    expect([...PLUGIN_PRODUCTS]).toEqual([
+      'elementor-to-divi5-pro',
+      'divi-to-elementor-pro',
+      'ai-editor-divi5-pro',
+    ]);
   });
 });

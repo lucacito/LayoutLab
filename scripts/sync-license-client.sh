@@ -24,3 +24,17 @@ sed \
   -e 's/jhmg-converter-for-elementor-to-divi-pro/jhmg-converter-divi-to-elementor-pro/g' \
   "$SRC" > "$DEST_D2E"
 echo "synced -> $DEST_D2E (transformed: namespace + text domain)"
+
+# AI Editor destination: single plugin (not a Pro companion). Rewrites namespace,
+# text domain, user-facing product name in notices, and the admin link shape
+# (top-level admin.php page, license UI lives on the "upgrade" tab).
+DEST_AIED="/Users/Lucas/Documents/JHMG-Local/Divi 5 Deterministic Validator/wp-plugin/src/Licensing/LicenseClient.php"
+mkdir -p "$(dirname "$DEST_AIED")"
+sed \
+  -e 's/ElementorDivi5Converter\\Pro\\Licensing/AiEditorDivi5\\Licensing/g' \
+  -e 's/jhmg-converter-for-elementor-to-divi-pro/ai-editor-divi5/g' \
+  -e 's/JHMG Converter Pro/AI Editor for Divi 5/g' \
+  -e 's/tools\.php/admin.php/g' \
+  -e 's/tab=license/tab=upgrade/g' \
+  "$SRC" > "$DEST_AIED"
+echo "synced -> $DEST_AIED (transformed: namespace + text domain + product name + admin links)"

@@ -2,12 +2,13 @@
 // and shared by the fulfillment webhook, the license API, and account queries.
 import { randomBytes } from 'node:crypto';
 
-export const PLUGIN_PRODUCTS = ['elementor-to-divi5-pro', 'divi-to-elementor-pro'] as const;
+export const PLUGIN_PRODUCTS = ['elementor-to-divi5-pro', 'divi-to-elementor-pro', 'ai-editor-divi5-pro'] as const;
 export type PluginProduct = (typeof PLUGIN_PRODUCTS)[number];
 
 export const PRODUCT_TITLES: Record<PluginProduct, string> = {
   'elementor-to-divi5-pro': 'JHMG Converter For Elementor to Divi 5 — Pro',
   'divi-to-elementor-pro': 'JHMG Converter For Divi to Elementor — Pro',
+  'ai-editor-divi5-pro': 'AI Editor for Divi 5 — Pro',
 };
 
 // No 0/O/1/I/L so keys survive being read aloud or retyped from a receipt.
@@ -38,7 +39,7 @@ export function normalizeSiteUrl(raw: string): string | null {
 
 export const PAST_DUE_GRACE_MS = 7 * 24 * 60 * 60 * 1000;
 
-export type StoredLicenseStatus = 'active' | 'past_due' | 'expired' | 'canceled';
+export type StoredLicenseStatus = 'active' | 'past_due' | 'expired' | 'canceled' | 'revoked';
 
 export interface LicenseRecord {
   id: string;
@@ -51,6 +52,8 @@ export interface LicenseRecord {
 
 // past_due keeps Pro working for 7 days after the period lapses (covers Stripe
 // payment retries); after that it reads as expired without waiting on a webhook.
+// 'revoked' is terminal (refund/chargeback/manual): set only by ops, never by
+// Stripe status mapping, and never clears on its own.
 export function effectiveStatus(
   l: Pick<LicenseRecord, 'status' | 'currentPeriodEnd'>,
   now: Date,

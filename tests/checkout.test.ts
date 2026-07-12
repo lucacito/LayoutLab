@@ -1,6 +1,24 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { buildCheckoutSessionParams } from '@/lib/stripe/checkout';
+
+// Real `stripe` client requires a live SDK call — mock it so the ai-editor
+// price-selection tests below can assert on what checkout.sessions.create was
+// called with, without hitting the network.
+vi.mock('@/lib/stripe/client', () => ({
+  stripe: { checkout: { sessions: { create: vi.fn() } } },
+}));
+
+// `env` is an eagerly-parsed module-level singleton (see lib/env.ts); mock it
+// as a mutable copy of the real (test-config) values so individual tests can
+// flip STRIPE_PRICE_AI_EDITOR_PRO on/off without touching process.env.
+vi.mock('@/lib/env', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/lib/env')>();
+  return { ...actual, env: { ...actual.env } };
+});
+
 import { POST } from '@/app/api/checkout/route';
+import { stripe } from '@/lib/stripe/client';
+import { env as mockEnv } from '@/lib/env';
 
 const ctx = { siteUrl: 'https://divi5lab.com', automaticTax: true };
 
@@ -64,6 +82,15 @@ describe('plugin license checkout', () => {
     expect(params.metadata).toEqual({ kind: 'plugin', product: 'elementor-to-divi5-pro' });
     expect(params.subscription_data).toEqual({ metadata: { kind: 'plugin', product: 'elementor-to-divi5-pro' } });
   });
+
+  it('plugin checkout sessions allow promotion codes', () => {
+    const params = buildCheckoutSessionParams(
+      { kind: 'plugin', product: 'ai-editor-divi5-pro' },
+      { siteUrl: 'https://divi5lab.com', pluginPriceId: 'price_x', automaticTax: true },
+    );
+    expect(params.allow_promotion_codes).toBe(true);
+    expect(params.mode).toBe('subscription');
+  });
 });
 
 function post(body: unknown) {
@@ -92,5 +119,33 @@ describe('POST /api/checkout — validation (no Stripe/DB)', () => {
     const res = await POST(post({ kind: 'membership', plan: 'monthly' }));
     expect(res.status).toBe(400);
     expect(await res.json()).toEqual({ error: 'invalid_request' });
+  });
+});
+
+describe('POST /api/checkout — ai-editor-divi5-pro (plugin, subscription)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    delete (mockEnv as Record<string, unknown>).STRIPE_PRICE_AI_EDITOR_PRO;
+  });
+
+  it('accepts kind=plugin product=ai-editor-divi5-pro and uses STRIPE_PRICE_AI_EDITOR_PRO', async () => {
+    mockEnv.STRIPE_PRICE_AI_EDITOR_PRO = 'price_aied_test';
+    vi.mocked(stripe.checkout.sessions.create).mockResolvedValue({
+      id: 'cs_test', url: 'https://checkout.stripe.com/pay/cs_test',
+    } as never);
+
+    const res = await POST(post({ kind: 'plugin', product: 'ai-editor-divi5-pro' }));
+
+    expect(res.status).toBe(200);
+    expect(stripe.checkout.sessions.create).toHaveBeenCalledTimes(1);
+    const params = vi.mocked(stripe.checkout.sessions.create).mock.calls[0]![0] as { line_items: Array<{ price: string }> };
+    expect(params.line_items[0]!.price).toBe('price_aied_test');
+  });
+
+  it('returns plugin_unavailable when STRIPE_PRICE_AI_EDITOR_PRO is unset', async () => {
+    const res = await POST(post({ kind: 'plugin', product: 'ai-editor-divi5-pro' }));
+    expect(res.status).toBe(400);
+    expect(await res.json()).toEqual({ error: 'plugin_unavailable' });
+    expect(stripe.checkout.sessions.create).not.toHaveBeenCalled();
   });
 });

@@ -58,7 +58,7 @@ export default async function PricingPage() {
     <main className="py-16">
       <Container>
         <SectionTitle eyebrow="Pricing" title="Simple pricing">
-          Free plugins on wordpress.org. Pro unlocks the full migration toolkit — $49/yr, unlimited sites.
+          Free plugins to start. Pro unlocks the full toolkit — from $49/yr, unlimited sites.
         </SectionTitle>
 
         <div className="mt-12 grid items-stretch gap-6 lg:grid-cols-2">
@@ -106,19 +106,24 @@ export default async function PricingPage() {
         </div>
 
         <section className="mt-16">
-          <Card className="flex flex-col gap-3 p-8 sm:flex-row sm:items-center sm:justify-between">
+          <Card className="flex flex-col gap-6 p-8 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h2 className="text-section text-navy">Divi 5 AI Editor</h2>
+              <h2 className="text-section text-navy">AI Editor for Divi 5 — Pro</h2>
+              <div className="mt-3 flex items-baseline gap-1.5">
+                <span className="text-h2 text-navy">$79</span>
+                <span className="text-small text-muted">/yr</span>
+              </div>
               <p className="mt-2 max-w-xl text-body text-muted">
-                Edit and generate Divi 5 pages with AI, validated before it ever touches your site. Coming soon.
+                Let your AI assistant build whole pages, menus and site-wide styling — every change validated before it
+                lands. Free tier edits existing pages.
               </p>
             </div>
-            <Link
-              href="/plugins/divi-5-ai-editor"
-              className="flex h-12 shrink-0 items-center justify-center rounded-full border border-border bg-paper px-8 text-body font-semibold text-navy transition hover:border-action hover:text-action"
-            >
-              Learn more
-            </Link>
+            <div className="flex shrink-0 flex-col gap-2">
+              <BuyProButton product="ai-editor-divi5-pro" label="Get Pro — $79/yr" />
+              <Link href="/plugins/divi-5-ai-editor" className="text-center text-small font-semibold text-action hover:underline">
+                Learn more
+              </Link>
+            </div>
           </Card>
         </section>
 
