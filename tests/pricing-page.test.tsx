@@ -1,25 +1,38 @@
+// @vitest-environment jsdom
 import { describe, it, expect, vi } from 'vitest';
-import { render } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 
-vi.mock('@/lib/catalog/queries', () => ({
-  listPacks: vi.fn(async () => [
-    { id: 'f1', slug: 'free-heroes', title: 'Free Heroes', kind: 'free', priceCents: null, description: 'Lead magnet' },
-    { id: 'p1', slug: 'pro-landers', title: 'Pro Landers', kind: 'paid', priceCents: 4900, description: 'Paid' },
-  ]),
+vi.mock('@/components/plugins/BuyProButton', () => ({
+  BuyProButton: ({ product }: { product: string }) => <div data-testid={`buy-${product}`} />,
 }));
-vi.mock('@/components/BuyButton', () => ({ BuyButton: () => null }));
 
-import PricingPage from '@/app/(catalog)/pricing/page';
+import PricingPage, { metadata } from '@/app/(catalog)/pricing/page';
 
-describe('PricingPage', () => {
-  it('shows free packs linking to their pack page, and an FAQ', async () => {
-    const ui = await PricingPage();
-    const { container, getByText } = render(ui);
-    expect(getByText('Free Heroes')).toBeTruthy();
-    expect(container.querySelector('a[href="/packs/free-heroes"]')).not.toBeNull();
-    // FAQ present
-    expect(getByText(/frequently asked|FAQ/i)).toBeTruthy();
-    const ld = Array.from(container.querySelectorAll('script[type="application/ld+json"]')).map((s) => s.textContent ?? '');
-    expect(ld.some((t) => t.includes('"FAQPage"'))).toBe(true);
+describe('/pricing (plugin licenses)', () => {
+  it('shows the Elementor→Divi5 Pro card with a live buy button', async () => {
+    render(await PricingPage());
+    expect(screen.getByText(/Elementor → Divi 5 Pro/i)).toBeTruthy();
+    expect(screen.getAllByText(/\$49/).length).toBeGreaterThan(0);
+    expect(screen.getByTestId('buy-elementor-to-divi5-pro')).toBeTruthy();
+  });
+  it('shows Divi→Elementor Pro as coming soon (no buy button)', async () => {
+    render(await PricingPage());
+    expect(screen.getByText(/Divi → Elementor Pro/i)).toBeTruthy();
+    expect(screen.queryByTestId('buy-divi-to-elementor-pro')).toBeNull();
+    expect(screen.getAllByText(/coming soon/i).length).toBeGreaterThan(0);
+  });
+  it('mentions free layouts but sells no packs or membership', async () => {
+    render(await PricingPage());
+    expect(screen.getByText(/free divi 5 layouts/i)).toBeTruthy();
+    expect(screen.queryByText(/all-access|membership/i)).toBeNull();
+  });
+  it('keeps FAQ JSON-LD', async () => {
+    const { container } = render(await PricingPage());
+    const scripts = Array.from(container.querySelectorAll('script[type="application/ld+json"]'));
+    expect(scripts.some((s) => (s.textContent ?? '').includes('FAQPage'))).toBe(true);
+  });
+  it('has plugin-focused metadata', () => {
+    expect(String(metadata.title)).toMatch(/pricing/i);
+    expect(String(metadata.description)).toMatch(/plugin|converter/i);
   });
 });
