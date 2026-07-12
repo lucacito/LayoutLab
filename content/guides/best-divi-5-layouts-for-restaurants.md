@@ -34,7 +34,7 @@ A [CTA section](/type/cta) with a single button — "Reserve a table" — should
 
 ## Or start from a complete page
 
-The [full landing pages](/divi-landing-pages) tagged *restaurant* sequence this whole argument — appetite hero, menu highlights, gallery, proof, reservation CTA, info-rich footer — in one coherent import. One real example from our own pipeline: the Bella Nota trattoria pages were generated, validated and screenshotted exactly like every other layout in [the catalog](/browse), so the design you see on the layout page is what arrives in the builder. Multi-page restaurant packs (home, menu, contact) on [pricing](/pricing) keep a whole site in one visual voice.
+The [full landing pages](/divi-landing-pages) tagged *restaurant* sequence this whole argument — appetite hero, menu highlights, gallery, proof, reservation CTA, info-rich footer — in one coherent import. One real example from our own pipeline: the Bella Nota trattoria pages were generated, validated and screenshotted exactly like every other layout in [the catalog](/browse), so the design you see on the layout page is what arrives in the builder. Every page in that set is a free download, so building out home, menu, and contact from the same restaurant-tagged pages costs nothing but email addresses, and keeps a whole site in one visual voice.
 
 ## Mobile is the whole game
 
