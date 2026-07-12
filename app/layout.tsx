@@ -13,8 +13,6 @@ import { Footer } from '@/components/site/Footer';
 import { InternalLinksBand } from '@/components/site/InternalLinksBand';
 import { AnnouncementBar } from '@/components/site/AnnouncementBar';
 import { BookmarksProvider } from '@/components/bookmarks/BookmarksProvider';
-import { ExitIntentPopup } from '@/components/ExitIntentPopup';
-import { ScrollOffer } from '@/components/ScrollOffer';
 import { env } from '@/lib/env';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-sans', display: 'swap' });
@@ -84,8 +82,6 @@ export default function RootLayout({ children }: { children: ReactNode }) {
             <Footer />
           </BookmarksProvider>
         </SessionProvider>
-        <ExitIntentPopup />
-        <ScrollOffer />
         <Analytics />
         {GA_ID ? <GoogleAnalytics gaId={GA_ID} /> : null}
       </body>

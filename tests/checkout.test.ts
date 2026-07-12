@@ -80,8 +80,17 @@ describe('POST /api/checkout — validation (no Stripe/DB)', () => {
   it('400 on an invalid body shape', async () => {
     expect((await POST(post({ kind: 'bogus' }))).status).toBe(400);
   });
-  it('400 when a membership plan has no configured price', async () => {
-    // STRIPE_PRICE_MEMBERSHIP_* are 'price_test_*' in test.env, so use an out-of-range plan shape:
-    expect((await POST(post({ kind: 'membership' }))).status).toBe(400); // missing plan
+  // Marketplace demotion (Task 6): the store is plugin-checkout-only now. `pack`
+  // and `membership` are no longer accepted shapes — they 400 as `invalid_request`
+  // just like any other malformed body, never as a domain-specific error.
+  it('400 invalid_request on {kind:"pack",packId} — packs are no longer purchasable', async () => {
+    const res = await POST(post({ kind: 'pack', packId: 'pk1' }));
+    expect(res.status).toBe(400);
+    expect(await res.json()).toEqual({ error: 'invalid_request' });
+  });
+  it('400 invalid_request on {kind:"membership",plan} — membership is no longer purchasable', async () => {
+    const res = await POST(post({ kind: 'membership', plan: 'monthly' }));
+    expect(res.status).toBe(400);
+    expect(await res.json()).toEqual({ error: 'invalid_request' });
   });
 });

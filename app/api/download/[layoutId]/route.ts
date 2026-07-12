@@ -1,15 +1,11 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { readCaptureEmail } from '@/lib/capture/cookie';
-import { readTaster } from '@/lib/capture/taster';
 import {
   getLayoutForDownload,
-  getLayoutPackContext,
-  getEntitlementsForUser,
   getUserIdByEmail,
   recordDownload,
 } from '@/lib/account/queries';
-import { canDownloadLayout, isPaidOnlyLayout } from '@/lib/stripe/entitlements';
 import { fetchAsset } from '@/lib/blob';
 import { buildLayoutZip } from '@/lib/download/zip';
 import { readLicense } from '@/lib/license';
@@ -33,22 +29,11 @@ export async function GET(req: Request, { params }: { params: Promise<{ layoutId
   const sessionEmail = session?.user?.email ?? null;
   const userId = sessionEmail ? await getUserIdByEmail(sessionEmail) : null;
 
-  // A layout that lives only inside paid pack(s) is NOT a free lead magnet: a
-  // captured email is not enough. It requires a real entitlement — ownership of a
-  // pack it belongs to, or active all-access. Free layouts (standalone lead magnets
-  // or those in a free pack) stay gated only by a captured email or a session.
-  const { packIds, packKindById } = await getLayoutPackContext(layout.id);
-  if (isPaidOnlyLayout({ packIds, packKindById })) {
-    const userEntitlements = userId ? await getEntitlementsForUser(userId) : [];
-    // The "taster" cookie authorizes a free download of one specific paid page
-    // (granted after an exit/scroll lead capture). It unlocks only that page.
-    const taster = await readTaster();
-    const tasterOk = taster != null && taster === layout.slug;
-    if (!tasterOk && !canDownloadLayout({ layoutPackIds: packIds, packKindById, userEntitlements })) {
-      return NextResponse.json({ error: 'forbidden' }, { status: 403 });
-    }
-  } else if (!capturedEmail && !sessionEmail) {
-    return NextResponse.json({ error: 'email_required' }, { status: 403 });
+  // Marketplace demotion (Task 6): every layout is a free lead magnet now — no more
+  // paid-only gate. A captured email or a session is all that's required.
+  const email = sessionEmail ?? capturedEmail;
+  if (!email) {
+    return NextResponse.json({ error: 'capture_required' }, { status: 403 });
   }
 
   const bytes = await fetchAsset(layout.diviJsonBlobKey);

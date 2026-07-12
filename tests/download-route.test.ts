@@ -3,11 +3,8 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 const h = vi.hoisted(() => ({
   readCaptureEmail: vi.fn(async () => null as string | null),
-  readTaster: vi.fn(async () => null as string | null),
   auth: vi.fn(async () => null as { user?: { email?: string } } | null),
   getLayoutForDownload: vi.fn(async () => ({ id: 'l1', slug: 'bold-saas-hero', diviJsonBlobKey: 'pipeline/out/x.json' })),
-  getLayoutPackContext: vi.fn(async () => ({ packIds: [] as string[], packKindById: {} as Record<string, 'free' | 'paid'> })),
-  getEntitlementsForUser: vi.fn(async () => [] as { scope: string; source: string; expiresAt: Date | null }[]),
   getUserIdByEmail: vi.fn(async () => 'u1'),
   recordDownload: vi.fn(async () => {}),
   fetchAsset: vi.fn(async (): Promise<Buffer | null> => Buffer.from('{"content":[]}')),
@@ -15,12 +12,9 @@ const h = vi.hoisted(() => ({
 }));
 
 vi.mock('@/lib/capture/cookie', () => ({ readCaptureEmail: h.readCaptureEmail }));
-vi.mock('@/lib/capture/taster', () => ({ readTaster: h.readTaster }));
 vi.mock('@/lib/auth', () => ({ auth: h.auth }));
 vi.mock('@/lib/account/queries', () => ({
   getLayoutForDownload: h.getLayoutForDownload,
-  getLayoutPackContext: h.getLayoutPackContext,
-  getEntitlementsForUser: h.getEntitlementsForUser,
   getUserIdByEmail: h.getUserIdByEmail,
   recordDownload: h.recordDownload,
 }));
@@ -33,22 +27,19 @@ const req = () => new Request('http://test/api/download/l1');
 
 beforeEach(() => {
   h.readCaptureEmail.mockResolvedValue(null);
-  h.readTaster.mockResolvedValue(null);
   h.auth.mockResolvedValue(null);
-  h.getLayoutPackContext.mockResolvedValue({ packIds: [], packKindById: {} });
-  h.getEntitlementsForUser.mockResolvedValue([]);
   h.fetchAsset.mockResolvedValue(Buffer.from('{"content":[]}'));
   h.rateLimit.mockReturnValue({ ok: true, remaining: 39 });
   h.recordDownload.mockClear();
 });
 
-// A layout that belongs only to a paid pack — NOT a free lead magnet.
-const paidOnly = () => h.getLayoutPackContext.mockResolvedValue({ packIds: ['p1'], packKindById: { p1: 'paid' } });
-
+// Marketplace demotion (Task 6): every layout is a free lead magnet now — there is
+// no more "paid-only" gate. The only requirement is a captured email or a session.
 describe('GET /api/download/[layoutId]', () => {
-  it('403 email_required when neither a capture cookie nor a session', async () => {
+  it('403 capture_required when neither a capture cookie nor a session', async () => {
     const res = await GET(req(), ctx('l1'));
     expect(res.status).toBe(403);
+    expect(await res.json()).toEqual({ error: 'capture_required' });
     expect(h.recordDownload).not.toHaveBeenCalled();
   });
 
@@ -81,54 +72,14 @@ describe('GET /api/download/[layoutId]', () => {
     expect(res.status).toBe(404);
   });
 
-  it('403 forbidden for a paid-only layout with only a capture cookie (no purchase)', async () => {
-    paidOnly();
-    h.readCaptureEmail.mockResolvedValue('a@b.com'); // an email alone must NOT unlock a paid layout
-    const res = await GET(req(), ctx('l1'));
-    expect(res.status).toBe(403);
-    expect(await res.json()).toEqual({ error: 'forbidden' });
-    expect(h.recordDownload).not.toHaveBeenCalled();
-  });
-
-  it('403 forbidden for a paid-only layout when signed in without the entitlement', async () => {
-    paidOnly();
-    h.auth.mockResolvedValue({ user: { email: 'u@x.com' } });
-    h.getEntitlementsForUser.mockResolvedValue([]);
-    const res = await GET(req(), ctx('l1'));
-    expect(res.status).toBe(403);
-  });
-
-  it('200 zip for a paid-only layout when the user owns the pack', async () => {
-    paidOnly();
-    h.auth.mockResolvedValue({ user: { email: 'u@x.com' } });
-    h.getEntitlementsForUser.mockResolvedValue([{ scope: 'pack:p1', source: 'order', expiresAt: null }]);
+  // Was previously "403 forbidden for a paid-only layout with only a capture cookie" —
+  // paid-only layouts no longer exist post-demotion; a captured email is now sufficient
+  // for every layout, regardless of what packs it belongs to.
+  it('200 zip for a layout that formerly required a pack purchase, with just a captured email', async () => {
+    h.readCaptureEmail.mockResolvedValue('a@b.com');
     const res = await GET(req(), ctx('l1'));
     expect(res.status).toBe(200);
     expect(res.headers.get('content-type')).toBe('application/zip');
-  });
-
-  it('200 zip for a paid-only layout when the taster cookie authorizes THIS page', async () => {
-    paidOnly();
-    // layout slug from the getLayoutForDownload mock is 'bold-saas-hero'
-    h.readTaster.mockResolvedValue('bold-saas-hero');
-    const res = await GET(req(), ctx('l1'));
-    expect(res.status).toBe(200);
-    expect(res.headers.get('content-type')).toBe('application/zip');
-  });
-
-  it('403 for a paid-only layout when the taster cookie is for a DIFFERENT page', async () => {
-    paidOnly();
-    h.readTaster.mockResolvedValue('some-other-page');
-    const res = await GET(req(), ctx('l1'));
-    expect(res.status).toBe(403);
-  });
-
-  it('200 zip for a paid-only layout with active all-access', async () => {
-    paidOnly();
-    h.auth.mockResolvedValue({ user: { email: 'u@x.com' } });
-    h.getEntitlementsForUser.mockResolvedValue([{ scope: 'all_access', source: 'subscription', expiresAt: null }]);
-    const res = await GET(req(), ctx('l1'));
-    expect(res.status).toBe(200);
   });
 
   it('still delivers the zip (200) when the download-audit write fails — logging is best-effort', async () => {

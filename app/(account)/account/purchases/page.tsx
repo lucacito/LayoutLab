@@ -26,7 +26,7 @@ export default async function PurchasesPage() {
       <Container>
         <AccountNav />
         <h1 className="text-h2 text-navy">Your purchases</h1>
-        <p className="mt-2 text-body text-muted">Your packs and order history, all in one place.</p>
+        <p className="mt-2 text-body text-muted">Your free packs and order history, all in one place.</p>
 
         <h2 className="mt-8 text-section text-navy">Your packs</h2>
         {allAccess && (
@@ -38,10 +38,10 @@ export default async function PurchasesPage() {
           <Card className="mt-3 flex flex-col items-start gap-3 p-6 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <p className="text-body font-semibold text-navy">No packs yet</p>
-              <p className="text-small text-muted">Grab a curated collection, or unlock them all with all-access.</p>
+              <p className="text-small text-muted">Grab a free curated collection — just an email.</p>
             </div>
-            <Link href="/pricing" className="inline-flex h-10 shrink-0 items-center justify-center rounded-full bg-action px-5 text-small font-semibold text-paper transition hover:brightness-110">
-              See packs &amp; plans
+            <Link href="/packs" className="inline-flex h-10 shrink-0 items-center justify-center rounded-full bg-action px-5 text-small font-semibold text-paper transition hover:brightness-110">
+              See free packs
             </Link>
           </Card>
         ) : (

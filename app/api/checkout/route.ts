@@ -1,18 +1,19 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { eq } from 'drizzle-orm';
 import type Stripe from 'stripe';
 import { env } from '@/lib/env';
-import { db } from '@/db/client';
-import { packs } from '@/db/schema';
 import { stripe } from '@/lib/stripe/client';
 import { buildCheckoutSessionParams, type CheckoutInput, type CheckoutContext } from '@/lib/stripe/checkout';
 
-const bodySchema = z.union([
-  z.object({ kind: z.literal('pack'), packId: z.string().min(1) }),
-  z.object({ kind: z.literal('membership'), plan: z.enum(['monthly', 'yearly']) }),
-  z.object({ kind: z.literal('plugin'), product: z.enum(['elementor-to-divi5-pro', 'divi-to-elementor-pro']) }),
-]);
+// Marketplace demotion (Task 6): layouts/packs are free-with-capture now — only the
+// shipped WordPress plugin is still sold through this route. `pack` and `membership`
+// are deliberately absent from this union (not just unreachable branches) so any
+// caller still POSTing them gets a clean 400 `invalid_request`, exactly like any
+// other malformed body.
+const bodySchema = z.object({
+  kind: z.literal('plugin'),
+  product: z.enum(['elementor-to-divi5-pro', 'divi-to-elementor-pro']),
+});
 
 // TODO(§16): add rate limiting to this route.
 export async function POST(req: Request): Promise<Response> {
@@ -22,35 +23,16 @@ export async function POST(req: Request): Promise<Response> {
   try { body = await req.json(); } catch { return NextResponse.json({ error: 'invalid_json' }, { status: 400 }); }
   const parsed = bodySchema.safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: 'invalid_request' }, { status: 400 });
-  const input = parsed.data as CheckoutInput;
+  const input: Extract<CheckoutInput, { kind: 'plugin' }> = parsed.data;
 
-  let packPriceId: string | undefined;
-  let membershipPriceId: string | undefined;
-  let pluginPriceId: string | undefined;
-  if (input.kind === 'pack') {
-    const rows = await db
-      .select({ priceId: packs.stripePriceId, status: packs.status, kind: packs.kind })
-      .from(packs).where(eq(packs.id, input.packId)).limit(1);
-    const pack = rows[0];
-    if (!pack || pack.status !== 'published' || pack.kind !== 'paid' || !pack.priceId) {
-      return NextResponse.json({ error: 'pack_unavailable' }, { status: 400 });
-    }
-    packPriceId = pack.priceId;
-  } else if (input.kind === 'membership') {
-    membershipPriceId = input.plan === 'yearly'
-      ? env.STRIPE_PRICE_MEMBERSHIP_YEARLY
-      : env.STRIPE_PRICE_MEMBERSHIP_MONTHLY;
-    if (!membershipPriceId) return NextResponse.json({ error: 'membership_unavailable' }, { status: 400 });
-  } else {
-    pluginPriceId = input.product === 'elementor-to-divi5-pro'
-      ? env.STRIPE_PRICE_ELEM2DIVI_PRO
-      : env.STRIPE_PRICE_DIVI2ELEM_PRO;
-    if (!pluginPriceId) return NextResponse.json({ error: 'plugin_unavailable' }, { status: 400 });
-  }
+  const pluginPriceId = input.product === 'elementor-to-divi5-pro'
+    ? env.STRIPE_PRICE_ELEM2DIVI_PRO
+    : env.STRIPE_PRICE_DIVI2ELEM_PRO;
+  if (!pluginPriceId) return NextResponse.json({ error: 'plugin_unavailable' }, { status: 400 });
 
   const requireTermsConsent = env.STRIPE_TERMS_CONSENT === '1' || env.STRIPE_TERMS_CONSENT === 'true';
   const makeCtx = (automaticTax: boolean): CheckoutContext => ({
-    siteUrl: env.NEXT_PUBLIC_SITE_URL, packPriceId, membershipPriceId, pluginPriceId, automaticTax, requireTermsConsent,
+    siteUrl: env.NEXT_PUBLIC_SITE_URL, pluginPriceId, automaticTax, requireTermsConsent,
   });
 
   const urlOr500 = (session: Stripe.Checkout.Session) => {

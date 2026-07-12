@@ -1,6 +1,8 @@
-import { BuyButton } from '@/components/BuyButton';
 import { FreePackForm } from '@/components/FreePackForm';
 
+// Marketplace demotion (Task 6): every pack is free-with-capture now — the paid
+// (BuyButton) branch is gone. `pack.kind` stays on the prop shape for callers that
+// still pass the DB row through, but this component no longer branches on it.
 export function PackCta({ pack, entitled }: { pack: { id: string; slug: string; kind: 'free' | 'paid' }; entitled: boolean }) {
   if (entitled) {
     return (
@@ -9,7 +11,5 @@ export function PackCta({ pack, entitled }: { pack: { id: string; slug: string; 
       </a>
     );
   }
-  return pack.kind === 'paid'
-    ? <BuyButton kind="pack" packId={pack.id} label="Buy this pack" />
-    : <FreePackForm packId={pack.id} />;
+  return <FreePackForm packId={pack.id} />;
 }
