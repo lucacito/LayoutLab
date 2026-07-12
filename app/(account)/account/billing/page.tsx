@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { requireUser } from '@/lib/auth/admin';
-import { getUserIdByEmail, getActiveSubscription } from '@/lib/account/queries';
+import { getUserIdByEmail, getActiveSubscription, getStripeCustomerIdByEmail } from '@/lib/account/queries';
 import { getLicensesForUser } from '@/lib/license-server/store';
 import { Container } from '@/components/ui/Container';
 import { Card } from '@/components/ui/Card';
@@ -14,13 +14,17 @@ export default async function BillingPage() {
   const session = await requireUser();
   const email = session.user?.email ?? '';
   const userId = email ? await getUserIdByEmail(email) : null;
-  const [sub, licenses] = userId
-    ? await Promise.all([getActiveSubscription(userId), getLicensesForUser(userId)])
-    : [null, []];
+  const [sub, licenses, stripeCustomerId] = userId
+    ? await Promise.all([getActiveSubscription(userId), getLicensesForUser(userId), getStripeCustomerIdByEmail(email)])
+    : [null, [], null];
   // "Active" covers both the legacy all-access subscription and any current
   // plugin Pro license — the Stripe portal handles renewals for either.
   const hasActiveLicense = licenses.some((l) => l.status === 'active' || l.status === 'past_due');
   const active = sub?.status === 'active' || hasActiveLicense;
+  // The portal can only resolve users whose account is linked to a Stripe
+  // customer (checkout does this; comped/manually-minted licenses don't) —
+  // without it the portal route 400s, so don't render a dead button.
+  const canOpenPortal = active && Boolean(stripeCustomerId);
 
   return (
     <main className="py-12">
@@ -43,11 +47,19 @@ export default async function BillingPage() {
               </p>
             </div>
           </div>
-          <div className="mt-6">{active ? <BillingButton /> : (
-            <Link href="/pricing" className="inline-flex h-10 items-center justify-center rounded-full bg-action px-5 text-small font-semibold text-paper transition hover:brightness-110">
-              See plugin pricing
-            </Link>
-          )}</div>
+          <div className="mt-6">
+            {canOpenPortal ? (
+              <BillingButton />
+            ) : active ? (
+              <p className="text-small text-muted">
+                Your license was issued manually — contact support@divi5lab.com for billing questions.
+              </p>
+            ) : (
+              <Link href="/pricing" className="inline-flex h-10 items-center justify-center rounded-full bg-action px-5 text-small font-semibold text-paper transition hover:brightness-110">
+                See plugin pricing
+              </Link>
+            )}
+          </div>
         </Card>
 
         <p className="mt-4 max-w-xl text-small text-muted">Payments are handled securely by Stripe — we never see your card details.</p>
