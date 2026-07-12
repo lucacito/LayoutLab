@@ -10,7 +10,6 @@ import { JsonLd } from '@/components/JsonLd';
 import { organizationJsonLd, websiteJsonLd, siteNavigationJsonLd, organizationId } from '@/lib/seo';
 import { Header } from '@/components/site/Header';
 import { Footer } from '@/components/site/Footer';
-import { InternalLinksBand } from '@/components/site/InternalLinksBand';
 import { AnnouncementBar } from '@/components/site/AnnouncementBar';
 import { BookmarksProvider } from '@/components/bookmarks/BookmarksProvider';
 import { env } from '@/lib/env';
@@ -78,7 +77,6 @@ export default function RootLayout({ children }: { children: ReactNode }) {
             <AnnouncementBar />
             <Header />
             {children}
-            <InternalLinksBand />
             <Footer />
           </BookmarksProvider>
         </SessionProvider>
