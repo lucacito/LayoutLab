@@ -185,7 +185,7 @@ export default function PluginPage() {
       <section className="py-20">
         <Container>
           <div className="grid items-start gap-10 lg:grid-cols-2">
-            <div>
+            <div className="min-w-0">
               <h2 className="text-h2 text-navy">Real modules, mapped one to one</h2>
               <p className="mt-4 max-w-xl text-lead text-muted">
                 Each Elementor widget has a dedicated converter that produces the equivalent Divi 5 module —
@@ -193,7 +193,7 @@ export default function PluginPage() {
               </p>
               <MappingPanel className="mt-8" fromLabel="Elementor" toLabel="Divi 5" pairs={MAPPING_PAIRS} />
             </div>
-            <div>
+            <div className="min-w-0">
               <h2 className="text-h2 text-navy">A report for every run</h2>
               <p className="mt-4 max-w-xl text-lead text-muted">
                 The conversion report tells you exactly what happened to every widget — including the rare one

@@ -14,7 +14,7 @@ export function ComparisonTable({
   className?: string;
 }) {
   return (
-    <div className={`overflow-x-auto rounded-card border border-border bg-paper shadow-soft ${className}`}>
+    <div className={`relative overflow-x-auto rounded-card border border-border bg-paper shadow-soft ${className}`}>
       <table className="w-full min-w-[480px] border-collapse text-left">
         <caption className="sr-only">{caption}</caption>
         <thead>
