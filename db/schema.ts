@@ -11,7 +11,7 @@ export const userRole = pgEnum('user_role', ['user', 'admin']);
 export const subscriptionStatus = pgEnum('subscription_status', ['active', 'past_due', 'canceled']);
 export const orderStatus = pgEnum('order_status', ['pending', 'paid', 'refunded']);
 export const tagAxis = pgEnum('tag_axis', ['type', 'niche', 'style', 'feature']);
-export const licenseStatus = pgEnum('license_status', ['active', 'past_due', 'expired', 'canceled']);
+export const licenseStatus = pgEnum('license_status', ['active', 'past_due', 'expired', 'canceled', 'revoked']);
 
 // ---- Accounts (Auth.js adapter shape) -----------------------------------
 export const users = pgTable('users', {

@@ -71,6 +71,13 @@
       "when": 1783778524659,
       "tag": "0009_mature_silver_surfer",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1783879041530,
+      "tag": "0010_flashy_salo",
+      "breakpoints": true
     }
   ]
 }

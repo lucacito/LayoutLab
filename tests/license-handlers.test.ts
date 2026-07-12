@@ -80,6 +80,13 @@ describe('handleValidate', () => {
     expect(res.status).toBe(200);
     expect(res.body).toMatchObject({ status: 'past_due' });
   });
+  it('validate answers license_not_usable with status revoked', async () => {
+    const revoked = { ...LICENSE, status: 'revoked' as const };
+    const { store } = makeStore(revoked);
+    const res = await handleValidate({ key: KEY, siteUrl: 'client-site.com', product: 'elementor-to-divi5-pro' }, store, NOW);
+    expect(res.status).toBe(403);
+    expect(res.body).toEqual({ error: 'license_not_usable', status: 'revoked' });
+  });
 });
 
 describe('handleDeactivate', () => {
