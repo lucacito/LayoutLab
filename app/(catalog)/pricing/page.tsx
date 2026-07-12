@@ -41,7 +41,8 @@ const FAQ = [
   },
   {
     question: 'Is there a refund policy?',
-    answer: 'If a Pro plugin does not work for your project and support cannot fix it, contact us within 14 days of purchase for a refund.',
+    answer:
+      "Digital goods are final-sale, but we make things right: if a Pro plugin is genuinely broken for your project and support cannot fix it within 14 days of purchase, we'll sort it out. Subscriptions cancel anytime. Full policy on the license page.",
   },
   {
     question: 'How is payment handled?',

@@ -118,7 +118,8 @@ const FAQ = [
   },
   {
     question: 'Is there a refund policy?',
-    answer: 'If Pro does not work for your migration and support cannot fix it, contact us within 14 days of purchase for a refund.',
+    answer:
+      "Digital goods are final-sale, but if the converter is genuinely broken for your migration and support cannot fix it within 14 days of purchase, we'll make it right. The full policy lives on the license page.",
   },
 ];
 
