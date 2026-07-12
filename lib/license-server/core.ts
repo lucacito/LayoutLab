@@ -2,12 +2,13 @@
 // and shared by the fulfillment webhook, the license API, and account queries.
 import { randomBytes } from 'node:crypto';
 
-export const PLUGIN_PRODUCTS = ['elementor-to-divi5-pro', 'divi-to-elementor-pro'] as const;
+export const PLUGIN_PRODUCTS = ['elementor-to-divi5-pro', 'divi-to-elementor-pro', 'ai-editor-divi5-pro'] as const;
 export type PluginProduct = (typeof PLUGIN_PRODUCTS)[number];
 
 export const PRODUCT_TITLES: Record<PluginProduct, string> = {
   'elementor-to-divi5-pro': 'JHMG Converter For Elementor to Divi 5 — Pro',
   'divi-to-elementor-pro': 'JHMG Converter For Divi to Elementor — Pro',
+  'ai-editor-divi5-pro': 'AI Editor for Divi 5 — Pro',
 };
 
 // No 0/O/1/I/L so keys survive being read aloud or retyped from a receipt.

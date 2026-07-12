@@ -4,6 +4,7 @@ import type Stripe from 'stripe';
 import { env } from '@/lib/env';
 import { stripe } from '@/lib/stripe/client';
 import { buildCheckoutSessionParams, type CheckoutInput, type CheckoutContext } from '@/lib/stripe/checkout';
+import { PLUGIN_PRODUCTS, type PluginProduct } from '@/lib/license-server/core';
 
 // Marketplace demotion (Task 6): layouts/packs are free-with-capture now — only the
 // shipped WordPress plugin is still sold through this route. `pack` and `membership`
@@ -12,7 +13,7 @@ import { buildCheckoutSessionParams, type CheckoutInput, type CheckoutContext } 
 // other malformed body.
 const bodySchema = z.object({
   kind: z.literal('plugin'),
-  product: z.enum(['elementor-to-divi5-pro', 'divi-to-elementor-pro']),
+  product: z.enum(PLUGIN_PRODUCTS),
 });
 
 // TODO(§16): add rate limiting to this route.
@@ -25,9 +26,14 @@ export async function POST(req: Request): Promise<Response> {
   if (!parsed.success) return NextResponse.json({ error: 'invalid_request' }, { status: 400 });
   const input: Extract<CheckoutInput, { kind: 'plugin' }> = parsed.data;
 
-  const pluginPriceId = input.product === 'elementor-to-divi5-pro'
-    ? env.STRIPE_PRICE_ELEM2DIVI_PRO
-    : env.STRIPE_PRICE_DIVI2ELEM_PRO;
+  // Built per-request (not module-level) so it always reflects the live `env`
+  // singleton — keeps the next product a one-line addition.
+  const PRICE_ENV: Record<PluginProduct, string | undefined> = {
+    'elementor-to-divi5-pro': env.STRIPE_PRICE_ELEM2DIVI_PRO,
+    'divi-to-elementor-pro': env.STRIPE_PRICE_DIVI2ELEM_PRO,
+    'ai-editor-divi5-pro': env.STRIPE_PRICE_AI_EDITOR_PRO,
+  };
+  const pluginPriceId = PRICE_ENV[input.product];
   if (!pluginPriceId) return NextResponse.json({ error: 'plugin_unavailable' }, { status: 400 });
 
   const requireTermsConsent = env.STRIPE_TERMS_CONSENT === '1' || env.STRIPE_TERMS_CONSENT === 'true';
