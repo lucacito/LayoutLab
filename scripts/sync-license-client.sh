@@ -6,3 +6,8 @@ DEST_E2D5="/Users/Lucas/Documents/JHMG-Local/jhmg-elementor-to-divi5/plugin/jhmg
 mkdir -p "$(dirname "$DEST_E2D5")"
 cp "$SRC" "$DEST_E2D5"
 echo "synced -> $DEST_E2D5"
+
+DEST_D2E="/Users/Lucas/Documents/JHMG-Local/jhmg-divi-to-elementor/plugin/jhmg-converter-divi-to-elementor-pro/includes/licensing/class-license-client.php"
+mkdir -p "$(dirname "$DEST_D2E")"
+cp "$SRC" "$DEST_D2E"
+echo "synced -> $DEST_D2E"
