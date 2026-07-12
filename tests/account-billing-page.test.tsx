@@ -34,6 +34,14 @@ describe('/account/billing', () => {
     expect(screen.getByRole('button', { name: /manage billing/i })).toBeTruthy();
   });
 
+  it('licensed user sees the plugin-license label, not the legacy-subscription label', async () => {
+    getLicensesForUser.mockResolvedValueOnce([activeLicense]);
+    getStripeCustomerIdByEmail.mockResolvedValueOnce('cus_123');
+    render(await BillingPage());
+    expect(screen.getByText('Plugin license · active')).toBeTruthy();
+    expect(screen.queryByText(/Legacy subscription/i)).toBeNull();
+  });
+
   it('comped license (no Stripe customer): no portal button, passive support line instead', async () => {
     getLicensesForUser.mockResolvedValueOnce([activeLicense]);
     getStripeCustomerIdByEmail.mockResolvedValueOnce(null);

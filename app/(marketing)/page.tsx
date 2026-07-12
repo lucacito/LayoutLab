@@ -17,7 +17,7 @@ export default async function HomePage() {
           <h2 className="mx-auto max-w-2xl text-h2 text-paper">Ship your migration this week</h2>
           <p className="mx-auto mt-4 max-w-xl text-lead text-paper/85">
             Get the Pro converter and move a whole site — headers, footers, global styles, and all — into real,
-            validated Divi 5 or Elementor markup.
+            validated Divi 5 markup.
           </p>
           <Link href="/pricing" className="mt-8 inline-flex h-12 items-center justify-center rounded-full bg-action px-8 text-body font-semibold text-paper transition hover:brightness-110">
             See pricing

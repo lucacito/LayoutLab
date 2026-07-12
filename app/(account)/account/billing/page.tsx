@@ -39,7 +39,9 @@ export default async function BillingPage() {
               <Icon name={active ? 'workspace_premium' : 'credit_card'} size={22} />
             </span>
             <div>
-              <p className="text-body font-semibold text-navy">{active ? 'Legacy subscription · active' : 'No active subscription'}</p>
+              <p className="text-body font-semibold text-navy">
+                {hasActiveLicense ? 'Plugin license · active' : sub?.status === 'active' ? 'Legacy subscription · active' : 'No active subscription'}
+              </p>
               <p className="text-small text-muted">
                 {active
                   ? 'Update your payment method, download invoices, or cancel anytime in the secure portal — the same portal handles Pro plugin license renewals.'

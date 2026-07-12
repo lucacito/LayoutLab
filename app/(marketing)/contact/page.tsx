@@ -5,7 +5,7 @@ import { SUPPORT_EMAIL, SALES_EMAIL } from '@/lib/site/contact';
 
 export const metadata: Metadata = {
   title: 'Contact',
-  description: 'Questions about Divi5Lab layouts, packs, membership, or a custom build? Get in touch.',
+  description: 'Questions about Divi5Lab plugins, layouts, or licensing? Get in touch.',
   alternates: { canonical: '/contact' },
 };
 
@@ -15,7 +15,7 @@ export default function ContactPage() {
       <Container className="max-w-2xl">
         <h1 className="text-h2 font-semibold text-navy">Get in touch</h1>
         <p className="mt-3 text-body text-muted">
-          Questions about a layout, a pack, membership, or a custom build? Send us a message and we&apos;ll
+          Questions about a plugin, a layout, or licensing? Send us a message and we&apos;ll
           reply by email. For support you can also reach us at{' '}
           <a href={`mailto:${SUPPORT_EMAIL}`} className="text-action hover:underline">{SUPPORT_EMAIL}</a>,
           or for sales at{' '}
