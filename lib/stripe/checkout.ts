@@ -68,6 +68,7 @@ export function buildCheckoutSessionParams(
     return {
       ...common,
       mode: 'subscription',
+      allow_promotion_codes: true,
       line_items: [{ price: ctx.pluginPriceId, quantity: 1 }],
       metadata: { kind: 'plugin', product: input.product },
       subscription_data: { metadata: { kind: 'plugin', product: input.product } },

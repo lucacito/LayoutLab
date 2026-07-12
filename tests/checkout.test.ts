@@ -82,6 +82,15 @@ describe('plugin license checkout', () => {
     expect(params.metadata).toEqual({ kind: 'plugin', product: 'elementor-to-divi5-pro' });
     expect(params.subscription_data).toEqual({ metadata: { kind: 'plugin', product: 'elementor-to-divi5-pro' } });
   });
+
+  it('plugin checkout sessions allow promotion codes', () => {
+    const params = buildCheckoutSessionParams(
+      { kind: 'plugin', product: 'ai-editor-divi5-pro' },
+      { siteUrl: 'https://divi5lab.com', pluginPriceId: 'price_x', automaticTax: true },
+    );
+    expect(params.allow_promotion_codes).toBe(true);
+    expect(params.mode).toBe('subscription');
+  });
 });
 
 function post(body: unknown) {
