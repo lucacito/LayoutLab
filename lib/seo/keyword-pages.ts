@@ -48,7 +48,7 @@ export const KEYWORD_PAGES: Record<string, KeywordPage> = {
   'divi-layouts': {
     slug: 'divi-layouts',
     h1: 'Divi Layouts — Ready-to-Import Sections & Pages',
-    metaTitle: 'Divi Layouts — Free & Premium Divi 5 Sections and Pages',
+    metaTitle: 'Divi Layouts — Free Divi 5 Sections and Pages',
     metaDescription:
       'Browse hundreds of Divi layouts built for Divi 5. Free downloads, validated JSON imports, responsive on every device, commercial license included.',
     intro: `Every Divi layout in this library is built the way you would build it yourself — with real Divi modules, sensible section structure, and global-preset-friendly styling — then run through a deterministic validator that checks the JSON against Divi 5's actual module schema before it is allowed anywhere near the catalog. No screenshots of hand-wavy mockups, no "compatible with page builders" ambiguity: what you download is a Divi JSON file that imports cleanly into the builder in seconds.
