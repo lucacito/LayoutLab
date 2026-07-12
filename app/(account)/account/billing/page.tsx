@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { requireUser } from '@/lib/auth/admin';
 import { getUserIdByEmail, getActiveSubscription } from '@/lib/account/queries';
+import { getLicensesForUser } from '@/lib/license-server/store';
 import { Container } from '@/components/ui/Container';
 import { Card } from '@/components/ui/Card';
 import { Icon } from '@/components/ui/Icon';
@@ -13,15 +14,20 @@ export default async function BillingPage() {
   const session = await requireUser();
   const email = session.user?.email ?? '';
   const userId = email ? await getUserIdByEmail(email) : null;
-  const sub = userId ? await getActiveSubscription(userId) : null;
-  const active = sub?.status === 'active';
+  const [sub, licenses] = userId
+    ? await Promise.all([getActiveSubscription(userId), getLicensesForUser(userId)])
+    : [null, []];
+  // "Active" covers both the legacy all-access subscription and any current
+  // plugin Pro license — the Stripe portal handles renewals for either.
+  const hasActiveLicense = licenses.some((l) => l.status === 'active' || l.status === 'past_due');
+  const active = sub?.status === 'active' || hasActiveLicense;
 
   return (
     <main className="py-12">
       <Container>
         <AccountNav />
         <h1 className="text-h2 text-navy">Billing</h1>
-        <p className="mt-2 text-body text-muted">Your membership and payment details.</p>
+        <p className="mt-2 text-body text-muted">Manage your plugin license billing.</p>
 
         <Card className="mt-8 max-w-xl p-6">
           <div className="flex items-center gap-3">
@@ -29,17 +35,17 @@ export default async function BillingPage() {
               <Icon name={active ? 'workspace_premium' : 'credit_card'} size={22} />
             </span>
             <div>
-              <p className="text-body font-semibold text-navy">{active ? 'All-access · active' : 'No active membership'}</p>
+              <p className="text-body font-semibold text-navy">{active ? 'Legacy subscription · active' : 'No active subscription'}</p>
               <p className="text-small text-muted">
                 {active
-                  ? 'Update your payment method, download invoices, or cancel anytime in the secure portal.'
-                  : 'Start an all-access membership to unlock the whole library.'}
+                  ? 'Update your payment method, download invoices, or cancel anytime in the secure portal — the same portal handles Pro plugin license renewals.'
+                  : 'Plugin license renewals are managed in the secure Stripe portal. See Pro plugin pricing below.'}
               </p>
             </div>
           </div>
           <div className="mt-6">{active ? <BillingButton /> : (
             <Link href="/pricing" className="inline-flex h-10 items-center justify-center rounded-full bg-action px-5 text-small font-semibold text-paper transition hover:brightness-110">
-              See plans
+              See plugin pricing
             </Link>
           )}</div>
         </Card>
