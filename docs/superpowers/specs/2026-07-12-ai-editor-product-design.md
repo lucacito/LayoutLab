@@ -17,9 +17,11 @@
    licensing with the canonical `JHMG_License_Client`. Annual auto-renew Stripe
    subscription, activation/validation API, WP-native updates, /account/licenses.
 4. **Free tier: keep the current boundary, capture-gated download.**
-   Free = edit/validate existing pages + all guides. Premium = `create_page`,
-   `set_front_page`, `set_primary_menu`. Free zip downloads behind email capture
-   (Loops source `ai_editor_free`).
+   Free = edit/validate existing pages + all guides. Premium = the five
+   site-building tools: `create_page`, `set_front_page`, `set_primary_menu`,
+   `set_custom_css`, `propose_php_snippet` (verified against the current 402
+   gates in RestController + McpHandler). Free zip downloads behind email
+   capture (Loops source `ai_editor_free`).
 5. **Price: $79/yr** (annual auto-renew, unlimited sites) — flagship pricing
    above the converters' $49.
 6. **Enforcement on lapse: keep features, gate updates.** Once activated on a
@@ -88,11 +90,13 @@ Sell the **AI Editor for Divi 5** from divi5lab.com only, as a single plugin:
 ## 3. Site backend changes (layoutlab)
 
 - **`revoked` status**: add to `StoredLicenseStatus` and `effectiveStatus`
-  (terminal, never auto-clears). Setters: a webhook branch on
-  `charge.refunded` / `charge.dispute.created` for plugin-license purchases, and
-  a manual `scripts/revoke-license.ts`. Wire contract: frozen error codes
-  unchanged; `license_not_usable` responses already carry `status`, we only add
-  a new value — additive, safe for deployed converter clients.
+  (terminal, never auto-clears). Set manually via `scripts/revoke-license.ts`
+  (plan decision: no webhook auto-revocation — checkout is all-sales-final so
+  refunds/chargebacks are exceptional and hand-processed; resolving
+  charge→invoice→subscription in the webhook would add Stripe API calls for a
+  path that may never fire). Wire contract: frozen error codes unchanged;
+  `license_not_usable` responses already carry `status`, we only add a new
+  value — additive, safe for deployed converter clients.
 - **Product wiring**: add `ai-editor-divi5-pro` to `PLUGIN_PRODUCTS` +
   product-name map; extend `stripe-plugin-products.ts` with per-product pricing
   (refactor away the shared `YEARLY_USD_CENTS`; new entry $79/yr, env
