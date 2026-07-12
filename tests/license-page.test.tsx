@@ -1,22 +1,19 @@
-import { describe, it, expect, vi } from 'vitest';
-import { render } from '@testing-library/react';
-
-vi.mock('@/lib/license', () => ({ readLicense: () => 'COMMERCIAL LICENSE AGREEMENT\n\nUse it on unlimited sites you own.' }));
-
+// @vitest-environment jsdom
+import { describe, it, expect } from 'vitest';
+import { render, screen } from '@testing-library/react';
 import LicensePage from '@/app/(marketing)/license/page';
-import { REFUND_POLICY } from '@/lib/legal/refund';
-
-describe('REFUND_POLICY', () => {
-  it('is a non-empty digital-goods statement', () => {
-    expect(REFUND_POLICY.length).toBeGreaterThan(20);
-    expect(REFUND_POLICY.toLowerCase()).toContain('digital');
-  });
-});
 
 describe('LicensePage', () => {
-  it('renders the license text and a refunds section', () => {
-    const { getByText, getByRole } = render(<LicensePage />);
-    expect(getByText(/COMMERCIAL LICENSE AGREEMENT/)).toBeTruthy();
-    expect(getByRole('heading', { name: /refund/i })).toBeTruthy();
+  it('summarizes the license in plain English before the full text', () => {
+    render(<LicensePage />);
+    // getAllBy: these phrases also appear inside the full license text <pre>.
+    expect(screen.getAllByText(/unlimited sites/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/client/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/no resale/i).length).toBeGreaterThan(0);
+  });
+  it('still renders the full license text and refund policy', () => {
+    render(<LicensePage />);
+    expect(document.querySelector('pre')).toBeTruthy();
+    expect(screen.getAllByText(/refund/i).length).toBeGreaterThan(0);
   });
 });

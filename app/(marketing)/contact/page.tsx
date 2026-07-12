@@ -15,11 +15,11 @@ export default function ContactPage() {
       <Container className="max-w-2xl">
         <h1 className="text-h2 font-semibold text-navy">Get in touch</h1>
         <p className="mt-3 text-body text-muted">
-          Questions about a plugin, a layout, or licensing? Send us a message and we&apos;ll
-          reply by email. For support you can also reach us at{' '}
-          <a href={`mailto:${SUPPORT_EMAIL}`} className="text-action hover:underline">{SUPPORT_EMAIL}</a>,
-          or for sales at{' '}
-          <a href={`mailto:${SALES_EMAIL}`} className="text-action hover:underline">{SALES_EMAIL}</a>.
+          A human reads every message — usually within one business day. For support, include your site&apos;s
+          WordPress and plugin versions and (for conversions) the export file that misbehaved; you&apos;ll skip a
+          round-trip. Email works too:{' '}
+          <a href={`mailto:${SUPPORT_EMAIL}`} className="text-action hover:underline">{SUPPORT_EMAIL}</a> for support,{' '}
+          <a href={`mailto:${SALES_EMAIL}`} className="text-action hover:underline">{SALES_EMAIL}</a> for sales and licensing.
         </p>
         <div className="mt-8">
           <ContactForm />
