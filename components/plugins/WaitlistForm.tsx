@@ -21,7 +21,7 @@ export function WaitlistForm({ source, cta }: { source: string; cta: string }) {
   };
 
   if (state === 'done') {
-    return <p className="text-body font-medium text-navy">You're on the list — we'll email you at launch.</p>;
+    return <p className="text-body font-medium text-navy">You&rsquo;re on the list — we&rsquo;ll email you at launch.</p>;
   }
   return (
     <form onSubmit={submit} className="flex w-full max-w-md flex-wrap gap-2">
