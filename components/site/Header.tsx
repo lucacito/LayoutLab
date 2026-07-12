@@ -16,7 +16,7 @@ export function Header() {
         </div>
         <div className="hidden items-center gap-4 md:flex">
           <AccountNav />
-          <Button href="/contact">Get a free quote</Button>
+          <Button href="/pricing">Get Pro</Button>
         </div>
         <MobileNav />
       </Container>
