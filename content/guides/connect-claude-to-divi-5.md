@@ -45,8 +45,6 @@ Either way, the result should have exactly one top-level `mcpServers` key in the
 
 Quit Claude Desktop fully and relaunch it (not just close the window). On a successful connection, you'll see the Divi tools available when you start a new chat — Claude will mention it can see your site, or you can ask it directly.
 
-Quit Claude Desktop fully and relaunch it (not just close the window). On a successful connection, you'll see the Divi tools available when you start a new chat — Claude will mention it can see your site, or you can ask it directly.
-
 ## Step 4: Try your first prompts
 
 Start small so you can see the tools in action before trusting Claude with anything real:

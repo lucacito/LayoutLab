@@ -24,7 +24,7 @@ export const metadata: Metadata = {
 const STEPS = [
   {
     title: 'Connect',
-    body: "Paste the API key from Settings → AI Editor into your assistant's MCP config.",
+    body: "Paste the API key from the AI Editor menu in wp-admin into your assistant's MCP config.",
   },
   {
     title: 'Instruct',
