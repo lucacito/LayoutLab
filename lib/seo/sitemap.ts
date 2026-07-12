@@ -17,6 +17,13 @@ export function sitemapEntries(i: {
     // omitted from the sitemap, hiding a top-level section from Google.
     { url: `${base}/packs`, changeFrequency: 'daily', priority: 0.9 },
     { url: `${base}/pricing`, changeFrequency: 'weekly', priority: 0.8 },
+    // WordPress plugins section — hub + the E2D5 converter are the money
+    // pages here; D2E is pre-launch (pending wordpress.org review) and the
+    // AI Editor is coming-soon, so they rank lower.
+    { url: `${base}/plugins`, changeFrequency: 'weekly', priority: 0.9 },
+    { url: `${base}/plugins/elementor-to-divi-5`, changeFrequency: 'weekly', priority: 0.9 },
+    { url: `${base}/plugins/divi-to-elementor`, changeFrequency: 'weekly', priority: 0.8 },
+    { url: `${base}/plugins/divi-5-ai-editor`, changeFrequency: 'weekly', priority: 0.6 },
     { url: `${base}/about`, changeFrequency: 'yearly', priority: 0.3 },
     { url: `${base}/contact`, changeFrequency: 'yearly', priority: 0.3 },
     { url: `${base}/license`, changeFrequency: 'yearly', priority: 0.3 },
