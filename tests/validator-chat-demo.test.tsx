@@ -36,7 +36,9 @@ describe('ValidatorChatDemo', () => {
     render(<ValidatorChatDemo steps={STEPS} />);
     expect(screen.getByText(/center the hero button/i)).toBeTruthy();
     expect(screen.queryByText(/saved to/i)).toBeNull();
-    act(() => { vi.advanceTimersByTime(4000); });
+    // Each timeout schedules the next only after a re-render, so advance per step.
+    act(() => { vi.advanceTimersByTime(1300); });
+    act(() => { vi.advanceTimersByTime(1300); });
     expect(screen.getByText(/saved to/i)).toBeTruthy();
   });
 });
