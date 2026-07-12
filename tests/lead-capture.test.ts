@@ -28,4 +28,14 @@ describe('recordLeadCapture', () => {
     const { recordLeadCapture } = await import('@/lib/capture/lead');
     await expect(recordLeadCapture('a@b.com')).resolves.toBeUndefined();
   });
+  it('forwards a custom source to loops sync', async () => {
+    const { recordLeadCapture } = await import('@/lib/capture/lead');
+    await recordLeadCapture('x@y.com', 'ai_editor_waitlist');
+    expect(syncContact).toHaveBeenCalledWith(expect.objectContaining({ source: 'ai_editor_waitlist' }));
+  });
+  it('defaults source to free_download', async () => {
+    const { recordLeadCapture } = await import('@/lib/capture/lead');
+    await recordLeadCapture('x@y.com');
+    expect(syncContact).toHaveBeenCalledWith(expect.objectContaining({ source: 'free_download' }));
+  });
 });

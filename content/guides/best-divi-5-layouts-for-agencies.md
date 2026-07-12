@@ -34,7 +34,7 @@ Agency contact pages routinely ask for budget, timeline, company size, and a pro
 
 ## Or import the whole thing
 
-If you'd rather start from a coherent page than compose sections, the [full landing pages](/divi-landing-pages) tagged *agency* sequence all of the above — hero, proof, services, engagement CTA — with one palette and typography scale. Import, replace the copy, wire the buttons. The multi-page agency packs on [pricing](/pricing) extend the same design system across home, services, and contact pages, which is what keeps a five-page site from feeling like five templates.
+If you'd rather start from a coherent page than compose sections, the [full landing pages](/divi-landing-pages) tagged *agency* sequence all of the above — hero, proof, services, engagement CTA — with one palette and typography scale. Import, replace the copy, wire the buttons. Because every layout in [the catalog](/browse) is free, there's no reason not to pull the home, services, and contact pages from the same agency-tagged set and keep the design system consistent across all of them — which is what keeps a five-page site from feeling like five templates.
 
 ## What "good" looks like structurally
 

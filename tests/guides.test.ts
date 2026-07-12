@@ -29,7 +29,7 @@ Body text here.`;
 describe('guides content', () => {
   it('lists guides sorted newest first with complete frontmatter', () => {
     const guides = listGuides();
-    expect(guides.length).toBeGreaterThanOrEqual(8);
+    expect(guides.length).toBeGreaterThanOrEqual(11);
     for (const g of guides) {
       expect(g.slug).toMatch(/^[a-z0-9]+(-[a-z0-9]+)*$/);
       expect(g.title.length).toBeGreaterThan(10);
@@ -47,6 +47,7 @@ describe('guides content', () => {
     const okPrefixes = [
       '/browse', '/layouts/', '/packs', '/pricing', '/license', '/about', '/contact', '/free',
       '/type/', '/niche/', '/style/', '/color/', '/guides', '/divi-', '/free-divi-', '/elegant-themes-layouts',
+      '/plugins',
     ];
     for (const g of listGuides()) {
       const links = [...g.body.matchAll(/\]\((\/[^)#\s]*)/g)].map((m) => m[1]);

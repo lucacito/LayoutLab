@@ -1,31 +1,49 @@
 // app/(catalog)/pricing/page.tsx
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { listPacks } from '@/lib/catalog/queries';
 import { Container } from '@/components/ui/Container';
 import { Card } from '@/components/ui/Card';
 import { SectionTitle } from '@/components/ui/SectionTitle';
 import { Icon } from '@/components/ui/Icon';
-import { CtaNote } from '@/components/ui/CtaNote';
-import { BuyButton } from '@/components/BuyButton';
 import { JsonLd } from '@/components/JsonLd';
 import { faqJsonLd } from '@/lib/seo/jsonld';
+import { BuyProButton } from '@/components/plugins/BuyProButton';
 
-export const dynamic = 'force-dynamic';
-export const metadata: Metadata = { title: 'Pricing — Free Sections, Packs & All-Access', description: 'Start free with individual Divi 5 sections. Buy curated packs once, or unlock everything with an all-access membership.' };
+export const metadata: Metadata = {
+  title: 'Pricing — Pro plugin licenses',
+  description:
+    'Simple pricing for the Divi 5 plugin toolkit. Free plugins on wordpress.org; Pro unlocks the full migration toolkit for $49/yr on unlimited sites.',
+};
 
 const FAQ = [
-  { question: 'What do I actually download?', answer: 'A Divi 5 layout as a JSON file, plus the commercial license. Import the JSON straight into the Divi builder.' },
-  { question: 'What license do I get?', answer: 'One simple commercial license: use your purchases on unlimited sites you own or build for clients. Reselling or redistributing the files is not allowed.' },
-  { question: 'Do you offer refunds?', answer: 'No. Layouts are digital goods delivered instantly, so all sales are final and we do not offer refunds. If a file is genuinely broken or you were charged in error, email support@divi5lab.com within 14 days and we will make it right with a fix or a replacement — not a cash refund. See the License & Refunds page.' },
-  { question: 'How does the all-access membership work?', answer: 'While your membership is active you can download every layout in the library. Cancel anytime from your billing portal; access continues until the end of the period.' },
+  {
+    question: 'What does Pro include?',
+    answer:
+      'Full kit ZIP import, global headers/footers mapped to the Divi Theme Builder, global colors & typography, a year of updates, and priority support.',
+  },
+  {
+    question: 'Do licenses cover client sites?',
+    answer: 'Yes — a Pro license activates on unlimited sites, whether they are yours or built for clients.',
+  },
+  {
+    question: "What happens if I don't renew?",
+    answer: 'Pro keeps working on every site where it is already activated. You just stop receiving new updates and support until you renew.',
+  },
+  {
+    question: 'Are the layouts really free?',
+    answer: 'Yes — every layout in our catalog is free to download. Drop your email and grab as many as you like.',
+  },
 ];
 
-const TIER_FEATURES = {
-  free: ['All individual sections — unlimited', 'Validated Divi 5 JSON, import-ready', 'Commercial license included', 'No account needed — just an email'],
-  packs: ['Hand-picked sets for a whole site type', 'Every section in the pack', 'Lifetime access + updates', 'Commercial license included'],
-  access: ['Every section and every pack', 'New drops added every week', 'All future content included', 'Cancel anytime'],
-};
+const E2D5_FEATURES = [
+  'Full kit ZIP import',
+  'Global headers/footers → Divi Theme Builder',
+  'Global colors & typography',
+  '1 year of updates + priority support',
+  'Unlimited sites',
+];
+
+const D2E_FEATURES = ['Divi Theme Builder templates', 'WooCommerce module/widget mapping', 'Batch conversion tooling', 'Unlimited sites'];
 
 function Feature({ children }: { children: React.ReactNode }) {
   return (
@@ -36,89 +54,96 @@ function Feature({ children }: { children: React.ReactNode }) {
 }
 
 export default async function PricingPage() {
-  let packs: Awaited<ReturnType<typeof listPacks>> = [];
-  try { packs = await listPacks(); } catch { packs = []; }
-  const freePacks = packs.filter((p) => p.kind === 'free');
-  const paidPacks = packs.filter((p) => p.kind === 'paid');
-  const minPaid = paidPacks.reduce<number | null>((m, p) => (p.priceCents != null ? Math.min(m ?? Infinity, p.priceCents) : m), null);
-  const packsFrom = minPaid != null ? `from $${(minPaid / 100).toFixed(0)}` : 'one-time';
-
   return (
     <main className="py-16">
       <Container>
-        <SectionTitle eyebrow="Pricing" title="Start free. Upgrade when you scale.">
-          Individual sections are always free. Buy a pack once, or unlock everything with all-access.
+        <SectionTitle eyebrow="Pricing" title="Simple pricing">
+          Free plugins on wordpress.org. Pro unlocks the full migration toolkit — $49/yr, unlimited sites.
         </SectionTitle>
 
-        {/* Clear 3-tier overview */}
-        <div className="mt-12 grid items-stretch gap-6 lg:grid-cols-3">
-          <Card className="flex flex-col p-8">
-            <h3 className="text-section text-navy">Free</h3>
-            <div className="mt-3 text-h2 text-navy">$0</div>
-            <p className="mt-2 text-body text-muted">Every individual section, free to download.</p>
-            <ul className="mt-6 flex-1 space-y-3">{TIER_FEATURES.free.map((f) => <Feature key={f}>{f}</Feature>)}</ul>
-            <Link href="/browse" className="mt-8 flex h-10 items-center justify-center rounded-full border border-border bg-paper px-4 text-small font-semibold text-navy transition hover:border-action hover:text-action">
-              Browse free sections
-            </Link>
-          </Card>
-
-          <Card className="flex flex-col p-8">
-            <h3 className="text-section text-navy">Packs</h3>
-            <div className="mt-3 flex items-baseline gap-1.5"><span className="text-h2 text-navy">{packsFrom}</span><span className="text-small text-muted">one-time</span></div>
-            <p className="mt-2 text-body text-muted">Curated collections for a whole site type.</p>
-            <ul className="mt-6 flex-1 space-y-3">{TIER_FEATURES.packs.map((f) => <Feature key={f}>{f}</Feature>)}</ul>
-            <Link href="#packs" className="mt-8 flex h-10 items-center justify-center rounded-full border border-border bg-paper px-4 text-small font-semibold text-navy transition hover:border-action hover:text-action">
-              See packs
-            </Link>
-          </Card>
-
+        <div className="mt-12 grid items-stretch gap-6 lg:grid-cols-2">
           <Card className="relative flex flex-col border-action p-8 shadow-lg ring-1 ring-action">
-            <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-action px-3 py-1 text-small font-semibold text-paper">Most popular</span>
-            <h3 className="text-section text-navy">All-Access</h3>
-            <div className="mt-3 flex items-baseline gap-1.5"><span className="text-h2 text-navy">$12</span><span className="text-small text-muted">per month</span></div>
-            <p className="mt-2 text-body text-muted">The entire library — and everything new.</p>
-            <ul className="mt-6 flex-1 space-y-3">{TIER_FEATURES.access.map((f) => <Feature key={f}>{f}</Feature>)}</ul>
+            <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-action px-3 py-1 text-small font-semibold text-paper">
+              Available now
+            </span>
+            <h2 className="text-section text-navy">Elementor → Divi 5 Pro</h2>
+            <div className="mt-3 flex items-baseline gap-1.5">
+              <span className="text-h2 text-navy">$49</span>
+              <span className="text-small text-muted">/yr</span>
+            </div>
+            <p className="mt-2 text-body text-muted">The full migration toolkit for moving Elementor sites to Divi 5.</p>
+            <ul className="mt-6 flex-1 space-y-3">
+              {E2D5_FEATURES.map((f) => (
+                <Feature key={f}>{f}</Feature>
+              ))}
+            </ul>
             <div className="mt-8 flex flex-col gap-2">
-              <BuyButton kind="membership" plan="monthly" label="Get all-access" />
-              <BuyButton kind="membership" plan="yearly" label="Or pay yearly & save" />
+              <BuyProButton product="elementor-to-divi5-pro" label="Get Pro — $49/yr" />
+              <Link href="/plugins/elementor-to-divi-5" className="text-center text-small font-semibold text-action hover:underline">
+                Learn more
+              </Link>
+            </div>
+          </Card>
+
+          <Card className="flex flex-col p-8">
+            <h2 className="text-section text-navy">Divi → Elementor Pro</h2>
+            <div className="mt-3 text-h3 text-navy">Coming soon</div>
+            <p className="mt-2 text-body text-muted">Free plugin pending wordpress.org review — Pro launches once it&apos;s live.</p>
+            <ul className="mt-6 flex-1 space-y-3">
+              {D2E_FEATURES.map((f) => (
+                <Feature key={f}>{f}</Feature>
+              ))}
+            </ul>
+            <div className="mt-8">
+              <Link
+                href="/plugins/divi-to-elementor"
+                className="flex h-12 items-center justify-center rounded-full border border-border bg-paper px-8 text-body font-semibold text-navy transition hover:border-action hover:text-action"
+              >
+                Get notified
+              </Link>
             </div>
           </Card>
         </div>
 
-        <div className="mt-6"><CtaNote text="Free to start · No account needed · Cancel anytime" /></div>
-
-        {/* Real pack listings */}
-        {freePacks.length > 0 && (
-          <section id="packs" className="mt-20 scroll-mt-24">
-            <h2 className="text-section text-navy">Free packs</h2>
-            <div className="mt-6 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {freePacks.map((p) => (
-                <Card key={p.id} className="flex flex-col p-6">
-                  <h3 className="text-body font-semibold text-navy">{p.title}</h3>
-                  {p.description && <p className="mt-2 flex-1 text-small text-muted">{p.description}</p>}
-                  <div className="mt-4 text-h3 text-action">Free</div>
-                  <Link href={`/packs/${p.slug}`} className="mt-4 inline-flex h-10 items-center justify-center rounded-button bg-action px-4 text-small font-semibold text-paper hover:brightness-110">Get it free</Link>
-                </Card>
-              ))}
+        <section className="mt-16">
+          <Card className="flex flex-col gap-3 p-8 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h2 className="text-section text-navy">Divi 5 AI Editor</h2>
+              <p className="mt-2 max-w-xl text-body text-muted">
+                Edit and generate Divi 5 pages with AI, validated before it ever touches your site. Coming soon.
+              </p>
             </div>
-          </section>
-        )}
+            <Link
+              href="/plugins/divi-5-ai-editor"
+              className="flex h-12 shrink-0 items-center justify-center rounded-full border border-border bg-paper px-8 text-body font-semibold text-navy transition hover:border-action hover:text-action"
+            >
+              Learn more
+            </Link>
+          </Card>
+        </section>
 
-        {paidPacks.length > 0 && (
-          <section id={freePacks.length > 0 ? undefined : 'packs'} className={freePacks.length > 0 ? 'mt-16' : 'mt-20 scroll-mt-24'}>
-            <h2 className="text-section text-navy">Packs</h2>
-            <div className="mt-6 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {paidPacks.map((p) => (
-                <Card key={p.id} className="flex flex-col p-6">
-                  <h3 className="text-body font-semibold text-navy">{p.title}</h3>
-                  {p.description && <p className="mt-2 flex-1 text-small text-muted">{p.description}</p>}
-                  <div className="mt-4 text-h3 text-action">{p.priceCents != null ? `$${(p.priceCents / 100).toFixed(0)}` : ''}</div>
-                  <div className="mt-4"><BuyButton kind="pack" packId={p.id} label="Buy this pack" /></div>
-                </Card>
-              ))}
+        <section className="mt-8">
+          <Card className="flex flex-col gap-3 p-8 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h2 className="text-section text-navy">Free Divi 5 layouts</h2>
+              <p className="mt-2 max-w-xl text-body text-muted">Every layout in our catalog is free — grab as many as you like.</p>
             </div>
-          </section>
-        )}
+            <div className="flex shrink-0 flex-wrap gap-3">
+              <Link
+                href="/free-divi-layouts"
+                className="flex h-12 items-center justify-center rounded-full bg-action px-8 text-body font-semibold text-paper transition hover:brightness-110"
+              >
+                Get free layouts
+              </Link>
+              <Link
+                href="/browse"
+                className="flex h-12 items-center justify-center rounded-full border border-border bg-paper px-8 text-body font-semibold text-navy transition hover:border-action hover:text-action"
+              >
+                Browse the catalog
+              </Link>
+            </div>
+          </Card>
+        </section>
 
         <section className="mt-20">
           <h2 className="text-section text-navy">Frequently asked questions</h2>

@@ -3,7 +3,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { env } from '@/lib/env';
-import { getLayoutBySlug, getPacksForLayout, getLayoutsForPack, listRelatedLayouts, listVariantSiblings } from '@/lib/catalog/queries';
+import { getLayoutBySlug, getPacksForLayout, listRelatedLayouts, listVariantSiblings } from '@/lib/catalog/queries';
 import { assetUrl } from '@/lib/blob';
 import { buildLayoutMetadata, productJsonLd, breadcrumbJsonLd, faqJsonLd } from '@/lib/seo';
 import { LayoutArticle, SHARED_LAYOUT_FAQ } from '@/components/LayoutArticle';
@@ -18,11 +18,7 @@ import { Card } from '@/components/ui/Card';
 import { Icon } from '@/components/ui/Icon';
 import { readCaptureEmail } from '@/lib/capture/cookie';
 import { auth } from '@/lib/auth';
-import { getUserIdByEmail, getEntitlementsForUser } from '@/lib/account/queries';
-import { canDownloadLayout, isPaidOnlyLayout } from '@/lib/stripe/entitlements';
 import { FreeDownloadGate } from '@/components/FreeDownloadGate';
-import { PaidLayoutCta } from '@/components/PaidLayoutCta';
-import { DownloadButton } from '@/components/DownloadButton';
 import { BookmarkButton } from '@/components/bookmarks/BookmarkButton';
 import { RelatedElements } from '@/components/RelatedElements';
 import { RequiresWooBadge } from '@/components/RequiresWooBadge';
@@ -57,24 +53,6 @@ export default async function LayoutPage({ params }: { params: Promise<{ slug: s
   const siblings = layout.variant?.group ? await listVariantSiblings(layout.variant.group) : [];
   const [captureEmail, session] = await Promise.all([readCaptureEmail(), auth()]);
   const captured = Boolean(captureEmail || session?.user);
-
-  // Paid-only layouts (every pack they belong to is paid) are not free downloads:
-  // the page stays public for preview/SEO, but the JSON is sold via the pack.
-  const packKindById = Object.fromEntries(packs.map((p) => [p.id, p.kind])) as Record<string, 'free' | 'paid'>;
-  const paidOnly = isPaidOnlyLayout({ packIds: packs.map((p) => p.id), packKindById });
-  let entitled = false;
-  if (paidOnly && session?.user?.email) {
-    const uid = await getUserIdByEmail(session.user.email);
-    const ents = uid ? await getEntitlementsForUser(uid) : [];
-    entitled = canDownloadLayout({ layoutPackIds: packs.map((p) => p.id), packKindById, userEntitlements: ents });
-  }
-  // Cheapest paid pack is the one we upsell on this page.
-  const upsellPack = paidOnly
-    ? [...packs]
-        .filter((p) => p.kind === 'paid')
-        .sort((a, b) => (a.priceCents ?? 0) - (b.priceCents ?? 0))[0]
-    : undefined;
-  const upsellPageCount = upsellPack && !entitled ? (await getLayoutsForPack(upsellPack.id)).length : 0;
   const site = env.NEXT_PUBLIC_SITE_URL;
   const url = `${site}/layouts/${layout.slug}`;
   const cover = layout.previewImageKeys[0] ? assetUrl(layout.previewImageKeys[0]) : undefined;
@@ -136,14 +114,9 @@ export default async function LayoutPage({ params }: { params: Promise<{ slug: s
 
         <Card className="mt-6 flex flex-col gap-5 p-6 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h2 className="text-section text-navy">
-              {paidOnly && !entitled ? 'Part of a premium pack' : 'Download this section — free'}
-            </h2>
+            <h2 className="text-section text-navy">Download this section — free</h2>
             <ul className="mt-3 space-y-1.5 text-small text-muted">
-              {(paidOnly && !entitled
-                ? ['Validated Divi 5 JSON — import in seconds', 'Commercial license — unlimited client sites', 'Buy the pack once, own it forever']
-                : ['Divi 5 JSON — import in seconds', 'Commercial license included', 'No account needed']
-              ).map((t) => (
+              {['Divi 5 JSON — import in seconds', 'Commercial license included', 'No account needed'].map((t) => (
                 <li key={t} className="flex items-center gap-2">
                   <Icon name="check_circle" size={18} className="text-action" /> {t}
                 </li>
@@ -152,13 +125,7 @@ export default async function LayoutPage({ params }: { params: Promise<{ slug: s
           </div>
           <div className="flex shrink-0 items-center gap-3">
             <BookmarkButton slug={layout.slug} />
-            {paidOnly && !entitled && upsellPack ? (
-              <PaidLayoutCta pack={{ id: upsellPack.id, slug: upsellPack.slug, title: upsellPack.title, priceCents: upsellPack.priceCents ?? 0 }} pageCount={upsellPageCount} />
-            ) : paidOnly && entitled ? (
-              <DownloadButton layoutId={layout.id} slug={layout.slug} />
-            ) : (
-              <FreeDownloadGate layoutId={layout.id} slug={layout.slug} captured={captured} />
-            )}
+            <FreeDownloadGate layoutId={layout.id} slug={layout.slug} captured={captured} />
           </div>
         </Card>
 

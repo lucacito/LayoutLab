@@ -3,9 +3,9 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { Icon } from '@/components/ui/Icon';
 
-// Lead-magnet band: DIY Divi builders swap an email for the free layout library.
-// Reuses the general lead endpoint (→ email_captures + Loops).
-export function ServicesFreeBand() {
+// Lead-magnet band ported from the (deleted) services homepage's ServicesFreeBand.
+// Same lead endpoint (→ email_captures + Loops), reworded for the plugin-store pivot.
+export function FreeLayoutsBand() {
   const [email, setEmail] = useState('');
   const [status, setStatus] = useState<'idle' | 'done' | 'error'>('idle');
   const [submitting, setSubmitting] = useState(false);
@@ -35,9 +35,10 @@ export function ServicesFreeBand() {
           <span className="inline-flex items-center gap-1.5 rounded-full bg-action/10 px-3 py-1 text-small font-semibold text-action">
             <Icon name="download" size={16} /> Free for Divi builders
           </span>
-          <h2 className="mt-4 text-h3 text-navy">Building it yourself? Grab free Divi 5 layouts.</h2>
+          <h2 className="mt-4 text-h3 text-navy">Free Divi 5 layouts — the whole catalog, free.</h2>
           <p className="mt-3 max-w-xl text-body text-muted">
-            Hundreds of validated, import-ready sections — free. Drop your email and we&apos;ll send new ones as they land.
+            Hundreds of validated, import-ready sections — free. Drop your email and we&apos;ll send new ones as
+            they land.
           </p>
 
           {status === 'done' ? (
@@ -70,7 +71,7 @@ export function ServicesFreeBand() {
             </p>
           )}
 
-          <Link href="/free-divi-layouts" className="mt-5 inline-flex items-center gap-1 text-small font-semibold text-action hover:underline">
+          <Link href="/browse" className="mt-5 inline-flex items-center gap-1 text-small font-semibold text-action hover:underline">
             Browse the free library <Icon name="arrow_forward" size={15} />
           </Link>
         </div>

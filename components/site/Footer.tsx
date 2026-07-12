@@ -9,6 +9,15 @@ const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
 const COLUMNS: { title: string; links: { href: string; label: string }[] }[] = [
   {
+    title: 'Plugins',
+    links: [
+      { href: '/plugins', label: 'All plugins' },
+      { href: '/plugins/divi-5-ai-editor', label: 'Divi 5 AI Editor' },
+      { href: '/plugins/elementor-to-divi-5', label: 'Elementor to Divi 5' },
+      { href: '/plugins/divi-to-elementor', label: 'Divi to Elementor' },
+    ],
+  },
+  {
     title: 'Layouts/Sections',
     links: AXIS_VALUES.type.slice(0, 7).map((v) => ({ href: `/type/${v}`, label: TYPE_LABELS[v] ?? cap(v) })),
   },
@@ -16,7 +25,7 @@ const COLUMNS: { title: string; links: { href: string; label: string }[] }[] = [
     title: 'Themes/Packs',
     links: [
       { href: '/packs', label: 'All themes & packs' },
-      { href: '/pricing', label: 'Pricing & all-access' },
+      { href: '/pricing', label: 'Pricing' },
     ],
   },
   {
@@ -41,12 +50,12 @@ const TRUST = ['Validated Divi 5', 'Commercial license', 'Instant download'];
 export function Footer() {
   return (
     <footer className="mt-24 border-t border-border bg-paper">
-      <Container className="grid grid-cols-2 gap-x-8 gap-y-10 py-16 md:grid-cols-6">
+      <Container className="grid grid-cols-2 gap-x-8 gap-y-10 py-16 md:grid-cols-7">
         {/* Brand */}
         <div className="col-span-2">
           <Wordmark />
           <p className="mt-3 max-w-xs text-small text-muted">
-            Validated, import-ready Divi 5 sections &amp; layouts — free to start, premium packs when you scale.
+            Free, validated Divi 5 layouts and migration plugins for WordPress builders.
           </p>
           <ul className="mt-5 space-y-1.5">
             {TRUST.map((t) => (

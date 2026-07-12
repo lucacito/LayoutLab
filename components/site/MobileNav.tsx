@@ -6,7 +6,12 @@ import { Icon } from '@/components/ui/Icon';
 import { Button } from '@/components/ui/Button';
 import { PRIMARY_NAV } from '@/lib/nav/menu-data';
 
-const ICONS: Record<string, string> = { work: 'handshake', examples: 'grid_view', free: 'download' };
+const ICONS: Record<string, string> = {
+  plugins: 'extension',
+  layouts: 'dashboard_customize',
+  browse: 'grid_view',
+  guides: 'menu_book',
+};
 
 export function MobileNav() {
   const [open, setOpen] = useState(false);
@@ -37,7 +42,7 @@ export function MobileNav() {
             <Icon name={user ? 'account_circle' : 'login'} size={20} className="text-muted" /> {user ? 'Account' : 'Sign in'}
           </Link>
           <div className="mt-3">
-            <Button href="/contact" className="w-full" onClick={close}>Get a free quote</Button>
+            <Button href="/pricing" className="w-full" onClick={close}>Get Pro</Button>
           </div>
         </div>
       )}

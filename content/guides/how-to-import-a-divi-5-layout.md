@@ -56,7 +56,7 @@ Work in this order and you'll avoid redoing things:
 
 ## Building pages from multiple imports
 
-The section-first workflow — import a hero from one layout, pricing from another, an FAQ from a third — is the fastest way to build a page that doesn't look like a template. It works best when the sections share structural standards, which is the point of a validated library: every section in [the catalog](/browse) passes the same deterministic checks, so combining them is a palette-matching exercise, not a repair job. If you'd rather skip the assembly entirely, [full landing pages](/divi-landing-pages) and multi-page packs on [pricing](/pricing) come pre-composed.
+The section-first workflow — import a hero from one layout, pricing from another, an FAQ from a third — is the fastest way to build a page that doesn't look like a template. It works best when the sections share structural standards, which is the point of a validated library: every section in [the catalog](/browse) passes the same deterministic checks, so combining them is a palette-matching exercise, not a repair job. If you'd rather skip the assembly entirely, [full landing pages](/divi-landing-pages) come pre-composed — and like every layout on the site, they're free to download.
 
 ## FAQ
 

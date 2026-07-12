@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { requireUser } from '@/lib/auth/admin';
-import { getUserIdByEmail, getActiveSubscription, getOwnedPacks, getDownloadableLayouts } from '@/lib/account/queries';
+import { getUserIdByEmail, getOwnedPacks, getDownloadableLayouts } from '@/lib/account/queries';
+import { getLicensesForUser } from '@/lib/license-server/store';
 import { Container } from '@/components/ui/Container';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -21,10 +22,10 @@ export default async function AccountPage() {
   const email = session.user?.email ?? '';
   const userId = email ? await getUserIdByEmail(email) : null;
 
-  const [sub, packs, downloads] = userId
-    ? await Promise.all([getActiveSubscription(userId), getOwnedPacks(userId), getDownloadableLayouts(userId)])
-    : [null, [], []];
-  const active = sub?.status === 'active';
+  const [packs, downloads, licenses] = userId
+    ? await Promise.all([getOwnedPacks(userId), getDownloadableLayouts(userId), getLicensesForUser(userId)])
+    : [[], [], []];
+  const activeLicenseCount = licenses.filter((l) => l.status === 'active' || l.status === 'past_due').length;
 
   const stats = [
     { icon: 'download', label: 'Downloads', value: downloads.length as React.ReactNode, href: '/account/downloads', hint: 'Re-download anytime' },
@@ -47,25 +48,27 @@ export default async function AccountPage() {
           </div>
         </div>
 
-        {/* Membership */}
-        {active ? (
+        {/* Licenses */}
+        {activeLicenseCount > 0 ? (
           <div className="mt-8 flex flex-col items-start justify-between gap-4 rounded-card border border-action bg-action/5 p-6 shadow-soft ring-1 ring-action sm:flex-row sm:items-center">
             <div className="flex items-center gap-3">
-              <Icon name="auto_awesome" size={24} className="text-action" />
+              <Icon name="workspace_premium" size={24} className="text-action" />
               <div>
-                <p className="text-body font-semibold text-navy">You’re all-access ✨</p>
-                <p className="text-small text-muted">Every section and every pack is yours while your membership is active.</p>
+                <p className="text-body font-semibold text-navy">
+                  {activeLicenseCount} active plugin license{activeLicenseCount === 1 ? '' : 's'}
+                </p>
+                <p className="text-small text-muted">Manage your Pro plugin license keys, activated sites, and downloads.</p>
               </div>
             </div>
-            <Link href="/account/billing" className="shrink-0 text-small font-semibold text-action hover:underline">Manage billing →</Link>
+            <Link href="/account/licenses" className="shrink-0 text-small font-semibold text-action hover:underline">View licenses →</Link>
           </div>
         ) : (
           <div className="mt-8 flex flex-col items-start justify-between gap-4 rounded-card bg-navy p-6 text-paper shadow-soft sm:flex-row sm:items-center">
             <div>
-              <p className="text-body font-semibold text-paper">Unlock the whole library</p>
-              <p className="text-small text-paper/80">Get every section and pack — plus everything new — with all-access.</p>
+              <p className="text-body font-semibold text-paper">No plugin licenses yet</p>
+              <p className="text-small text-paper/80">Pro unlocks the full WordPress migration toolkit — license keys, activated sites, and downloads all live in one place.</p>
             </div>
-            <Button href="/pricing" variant="secondary" className="shrink-0">See plans</Button>
+            <Button href="/account/licenses" variant="secondary" className="shrink-0">View licenses</Button>
           </div>
         )}
 
@@ -109,8 +112,8 @@ export default async function AccountPage() {
             </p>
             <div className="mt-6 flex flex-wrap justify-center gap-3">
               <Button href="/browse">Browse free sections</Button>
-              <Link href="/pricing" className="flex h-10 items-center justify-center rounded-full border border-border bg-paper px-5 text-small font-semibold text-navy transition hover:border-action hover:text-action">
-                See packs &amp; all-access
+              <Link href="/plugins" className="flex h-10 items-center justify-center rounded-full border border-border bg-paper px-5 text-small font-semibold text-navy transition hover:border-action hover:text-action">
+                Browse plugins
               </Link>
             </div>
           </Card>

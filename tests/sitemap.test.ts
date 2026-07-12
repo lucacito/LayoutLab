@@ -24,6 +24,14 @@ describe('sitemapEntries', () => {
     expect(urls).toContain(`${SITE}/contact`);
   });
 
+  it('includes the /plugins hub and all three product pages', () => {
+    const urls = out.map((e) => e.url);
+    expect(urls).toContain(`${SITE}/plugins`);
+    expect(urls).toContain(`${SITE}/plugins/elementor-to-divi-5`);
+    expect(urls).toContain(`${SITE}/plugins/divi-to-elementor`);
+    expect(urls).toContain(`${SITE}/plugins/divi-5-ai-editor`);
+  });
+
   it('includes every layout and pack url', () => {
     const urls = out.map((e) => e.url);
     expect(urls).toContain(`${SITE}/layouts/a`);

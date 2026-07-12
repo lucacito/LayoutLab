@@ -48,14 +48,14 @@ export const KEYWORD_PAGES: Record<string, KeywordPage> = {
   'divi-layouts': {
     slug: 'divi-layouts',
     h1: 'Divi Layouts — Ready-to-Import Sections & Pages',
-    metaTitle: 'Divi Layouts — Free & Premium Divi 5 Sections and Pages',
+    metaTitle: 'Divi Layouts — Free Divi 5 Sections and Pages',
     metaDescription:
       'Browse hundreds of Divi layouts built for Divi 5. Free downloads, validated JSON imports, responsive on every device, commercial license included.',
     intro: `Every Divi layout in this library is built the way you would build it yourself — with real Divi modules, sensible section structure, and global-preset-friendly styling — then run through a deterministic validator that checks the JSON against Divi 5's actual module schema before it is allowed anywhere near the catalog. No screenshots of hand-wavy mockups, no "compatible with page builders" ambiguity: what you download is a Divi JSON file that imports cleanly into the builder in seconds.
 
 The library covers the sections you actually ship: hero sections, pricing tables, testimonials, feature grids, FAQs, contact sections, galleries, footers, and complete landing pages. Layouts are organized across four axes — section type, industry, visual style, and color — so you can go from "I need a dark SaaS hero" to a working section in under a minute. Every layout page shows full desktop and mobile screenshots so you can judge the design honestly before downloading.
 
-Individual sections are free: drop your email and the JSON is yours, with a commercial license that covers unlimited client work. Curated packs and the all-access membership are there when you want a whole site's worth of coherent design in one download instead of assembling it piecemeal.
+Every layout here is free — single sections and curated multi-page packs alike. Drop your email and the JSON is yours, with a commercial license that covers unlimited client work, no upsell hidden inside the file. If you're migrating an existing site into Divi 5 rather than building fresh, our Elementor → Divi 5 converter plugin moves the whole site over for you.
 
 Because layouts are generated and validated as a pipeline rather than hand-assembled once and forgotten, the catalog grows continuously and every new layout meets the same structural bar. If a layout is listed here, it imports — that is the contract. Start with the newest additions below, or jump into a specific section type or industry using the category links further down the page.`,
     filters: {},
@@ -66,7 +66,7 @@ Because layouts are generated and validated as a pipeline rather than hand-assem
       {
         question: 'Are these layouts really free?',
         answer:
-          'Individual sections are free — you trade an email address for the download. Curated multi-page packs and the all-access membership are paid. There is no trial-window trick: a free download is yours permanently.',
+          'Yes, all of them. Individual sections and curated multi-page packs are both free — you trade an email address for the download. There is no trial-window trick and nothing paywalled behind a subscription: a free download is yours permanently.',
       },
     ],
     related: ['divi-templates', 'divi-sections', 'free-divi-layouts', 'divi-landing-pages'],
@@ -82,7 +82,7 @@ Because layouts are generated and validated as a pipeline rather than hand-assem
 
 Templates here span single sections (heroes, pricing tables, testimonial walls, feature grids, FAQ accordions, contact blocks, footers) and full pages composed from those sections with a consistent palette, typography scale, and spacing rhythm. Each template is tagged by industry — SaaS, agency, restaurant, real estate, fitness, coaching, e-commerce, nonprofit and more — and by visual style, from minimal and corporate to bold and dark. That taxonomy is browsable, so "elegant real-estate landing" or "playful pricing section" is a two-click search rather than twenty minutes of scrolling.
 
-Downloading is deliberately boring: pick a template, look at the real desktop and mobile screenshots, download the JSON, import it through Divi's portability panel, and start swapping in your content. Sections are free with an email; multi-page packs and the all-access membership unlock the full library at once.
+Downloading is deliberately boring: pick a template, look at the real desktop and mobile screenshots, download the JSON, import it through Divi's portability panel, and start swapping in your content. Sections and multi-page packs are both free with an email address — the whole library, no subscription wall in front of any of it.
 
 Everything ships with the same commercial license — build for yourself or for clients on as many sites as you like. And because the pipeline keeps generating and validating new designs weekly, the template you need next month will probably be here before you go looking for it.`,
     filters: {},
@@ -111,7 +111,7 @@ That "validated" word is doing real work. Our generation pipeline runs every lay
 
 The catalog covers single sections — heroes, pricing, testimonials, features, FAQs, contact, galleries, footers — and complete landing pages composed with coherent palettes and typography. Filter by industry or style, preview real desktop and mobile screenshots, then download the JSON and import through the portability panel.
 
-Individual sections are free with an email address; packs and the all-access membership cover bigger projects. Every file includes a commercial license for unlimited sites, including client work. If you're moving to Divi 5 and want your library to be native rather than converted, this is the shelf to start on.`,
+Individual sections and multi-page packs are both free with an email address — no subscription required for bigger projects. Every file includes a commercial license for unlimited sites, including client work. If you're moving an existing Elementor site to Divi 5 rather than building native from scratch, our Elementor → Divi 5 converter plugin handles that migration; if you're starting native, this is the shelf to start on.`,
     filters: {},
     faq: [
       {
@@ -272,13 +272,13 @@ Every template is native Divi 5 and validated against the builder's real module 
 
 Industries covered include SaaS, agencies, restaurants, real estate, fitness, coaching, e-commerce, nonprofits and events, in styles from minimal and corporate to elegant and dark. Real desktop and mobile screenshots on every template page show the complete scroll before you commit.
 
-Single-page templates follow the library's standard free-download model; multi-page themed packs are paid, and the all-access membership unlocks everything. All of it carries the same commercial license: unlimited sites, client work included. If you're starting a site rather than patching one, start here rather than with individual sections.`,
+Single-page templates and multi-page themed packs both follow the library's standard free-download model — no paid tier, no subscription wall. All of it carries the same commercial license: unlimited sites, client work included. If you're migrating an existing site instead of building fresh, pair a template with our Elementor → Divi 5 converter plugin; if you're starting new, start here rather than with individual sections.`,
     filters: { type: ['full_landing'] },
     faq: [
       {
         question: 'What is the difference between a template and a pack?',
         answer:
-          'A template here is one complete page in a single JSON file. A pack is a set of pages (and sometimes extra sections) designed on one shared brand direction, sold together so a whole site stays coherent.',
+          'A template here is one complete page in a single JSON file. A pack is a set of pages (and sometimes extra sections) designed on one shared brand direction, bundled together — free, like everything else in the catalog — so a whole site stays coherent.',
       },
       IMPORT_FAQ,
       LICENSE_FAQ,
@@ -323,7 +323,7 @@ Import, replace the copy and imagery, wire the buttons to your pages, and the ha
 
 To be clear about the relationship: we're not affiliated with Elegant Themes. We build *for* their builder — every layout here is native Divi 5 JSON that imports through the standard portability panel, exactly like an export from the official library. What's different is the catalog: section-first organization (heroes, pricing, testimonials, features, FAQs, contact, galleries, footers), four-axis filtering by type, industry, style and color, full-scroll desktop and mobile screenshots for honest evaluation, and a pipeline that adds validated new designs continuously rather than in occasional pack drops.
 
-The economics are different too. Individual sections are free — an email address gets you the JSON with a commercial license covering unlimited client sites. Curated packs and an all-access membership exist for bigger projects, but there's no subscription wall in front of the basics.
+The economics are different too. Every layout here is free — individual sections and curated multi-page packs alike. An email address gets you the JSON, with a commercial license covering unlimited client sites and no subscription wall anywhere in the catalog. The only thing we sell is the WordPress migration plugins — the Elementor → Divi 5 converter, for instance — for teams moving an existing site into this builder rather than starting fresh.
 
 If Divi is your builder and the official library is starting to feel like a uniform, this is the second wardrobe. Browse the newest layouts below or jump into a category that matches today's project.`,
     filters: {},
@@ -349,7 +349,7 @@ If Divi is your builder and the official library is starting to feel like a unif
 
 The quality bar doesn't drop because the price is zero. Free sections come off the same pipeline as everything else: generated natively for Divi 5, checked by a deterministic validator against the builder's real module schema, screenshotted at desktop and mobile widths so you can see exactly what you're getting. If it's listed, it imports cleanly — that rule has no free-tier exception.
 
-What stays paid is curation at scale: multi-page themed packs where every page shares one brand direction, and the all-access membership that unlocks the whole catalog at once. That's the honest trade — sections fund themselves through the mailing list, packs fund the pipeline.
+Curation at scale is free too: multi-page themed packs, where every page shares one brand direction, cost nothing more than the same email address. There's no subscription wall anywhere in the catalog. The only thing we actually sell is the WordPress migration plugins — the Elementor → Divi 5 converter, for one — for teams moving an existing site into Divi 5 rather than building fresh.
 
 Start below with the newest free layouts, or narrow by section type, industry, or style. Import through Divi's portability panel, swap in your content, and ship. No watermark, no expiring license, no "pro version" of the same file.`,
     filters: {},
@@ -363,9 +363,9 @@ Start below with the newest free layouts, or narrow by section type, industry, o
       LICENSE_FAQ,
       IMPORT_FAQ,
       {
-        question: 'Which layouts are free and which are paid?',
+        question: 'Are any layouts in the catalog paid?',
         answer:
-          'Individual sections are free. Multi-page themed packs and the all-access membership are paid. A layout page always shows which category it belongs to before you download.',
+          'No — every layout is free, whether it is a single section or a multi-page themed pack. The only paid products on the site are our WordPress migration plugins (like the Elementor → Divi 5 converter), which are a separate thing entirely from the layout catalog.',
       },
     ],
     related: ['free-divi-templates', 'divi-layouts', 'divi-sections'],
@@ -383,14 +383,14 @@ The free tier here isn't a demo shelf. It includes the section templates that do
 
 Import is standard Divi: portability panel, upload JSON, done. The commercial license included with every download covers unlimited sites, including client projects — the only prohibition is reselling or redistributing the files themselves.
 
-When a project outgrows single templates, the paid side of the library — coherent multi-page packs and the all-access membership — continues the same design systems. But there's no pressure baked into the free files: they're complete, current, and yours. Browse the newest templates below or filter to the section type you need today.`,
+When a project outgrows single templates, coherent multi-page packs continue the same design systems — still free, still just an email address, no subscription wall. There's no pressure baked into any of the files: they're complete, current, and yours. If you're migrating an existing Elementor site rather than building fresh, our Elementor → Divi 5 converter plugin is the tool for that job. Browse the newest templates below or filter to the section type you need today.`,
     filters: {},
     freeOnly: true,
     faq: [
       {
-        question: 'Are free templates lower quality than paid ones?',
+        question: 'Are free templates lower quality than premium tools?',
         answer:
-          'No — they come off the same generation pipeline and pass the same deterministic validation. The paid tier sells curation (multi-page coherent packs), not a higher structural quality bar.',
+          'No — every template comes off the same generation pipeline and passes the same deterministic validation, whether it is a single section or a multi-page pack. The only paid products on the site are the WordPress migration plugins, an entirely separate category from the layout catalog.',
       },
       IMPORT_FAQ,
       LICENSE_FAQ,

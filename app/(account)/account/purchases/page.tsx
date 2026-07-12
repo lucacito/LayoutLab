@@ -25,8 +25,11 @@ export default async function PurchasesPage() {
     <main className="py-12">
       <Container>
         <AccountNav />
-        <h1 className="text-h2 text-navy">Your purchases</h1>
-        <p className="mt-2 text-body text-muted">Your packs and order history, all in one place.</p>
+        <h1 className="text-h2 text-navy">Legacy purchases</h1>
+        <p className="mt-2 text-body text-muted">
+          Packs you&apos;ve claimed, plus order history from before the catalog went fully free. Looking for plugin
+          licenses? Head to <Link href="/account/licenses" className="font-semibold text-action hover:underline">Licenses</Link>.
+        </p>
 
         <h2 className="mt-8 text-section text-navy">Your packs</h2>
         {allAccess && (
@@ -38,10 +41,10 @@ export default async function PurchasesPage() {
           <Card className="mt-3 flex flex-col items-start gap-3 p-6 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <p className="text-body font-semibold text-navy">No packs yet</p>
-              <p className="text-small text-muted">Grab a curated collection, or unlock them all with all-access.</p>
+              <p className="text-small text-muted">Every layout in the catalog is free — grab one from Browse, or check out the migration plugins.</p>
             </div>
-            <Link href="/pricing" className="inline-flex h-10 shrink-0 items-center justify-center rounded-full bg-action px-5 text-small font-semibold text-paper transition hover:brightness-110">
-              See packs &amp; plans
+            <Link href="/plugins" className="inline-flex h-10 shrink-0 items-center justify-center rounded-full bg-action px-5 text-small font-semibold text-paper transition hover:brightness-110">
+              Browse plugins
             </Link>
           </Card>
         ) : (

@@ -26,6 +26,6 @@ export async function POST(req: Request): Promise<Response> {
   const parsed = Body.safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: 'invalid' }, { status: 400 });
 
-  await recordLeadCapture(parsed.data.email);
+  await recordLeadCapture(parsed.data.email, parsed.data.source ?? undefined);
   return NextResponse.json({ ok: true });
 }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { KEYWORD_PAGES, getKeywordPage } from '@/lib/seo/keyword-pages';
+import { KEYWORD_PAGES, getKeywordPage, listKeywordPages } from '@/lib/seo/keyword-pages';
 import { AXIS_VALUES } from '@/lib/catalog/filters';
 
 // Top-level path segments already owned by real routes. A keyword slug that
@@ -69,5 +69,12 @@ describe('keyword page registry', () => {
 
   it('getKeywordPage returns undefined for unknown slugs', () => {
     expect(getKeywordPage('definitely-not-a-page')).toBeUndefined();
+  });
+
+  it('no keyword page sells packs or membership anymore', () => {
+    for (const page of listKeywordPages()) {
+      const text = JSON.stringify(page).toLowerCase();
+      expect(text).not.toMatch(/all-access|membership/);
+    }
   });
 });

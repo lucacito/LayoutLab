@@ -1,6 +1,6 @@
-// Shared navigation data. PRIMARY_NAV drives the funnel header (desktop +
-// mobile); the axis metadata (AXIS_META/NAV_MENUS) now feeds the footer and
-// catalog taxonomy pages. Pure + client-safe (no DB). Icons are Material Icons
+// Shared navigation data. PRIMARY_NAV drives the plugins-first header (desktop
+// + mobile); the axis metadata (AXIS_META) feeds the footer and catalog
+// taxonomy pages. Pure + client-safe (no DB). Icons are Material Icons
 // (outlined) ligature names.
 
 export type NavAxis = 'type' | 'niche' | 'style';
@@ -74,26 +74,14 @@ export const NICHE_LABELS: Record<string, string> = {
   events: 'Events',
 };
 
-// A megamenu entry is either an axis dropdown (opens a panel of taxonomy values)
-// or a plain link (e.g. Themes/Packs → the packs catalog).
-export type NavAxisMenu = { key: string; label: string; axis: NavAxis; prefix: string; blurb: string };
+// A plain nav link (e.g. the primary header nav).
 export type NavLinkMenu = { key: string; label: string; href: string };
-export type NavMenu = NavAxisMenu | NavLinkMenu;
 
-export function isAxisMenu(m: NavMenu): m is NavAxisMenu {
-  return 'axis' in m;
-}
-
-export const NAV_MENUS: NavMenu[] = [
-  { key: 'type', label: 'Layouts/Sections', axis: 'type', prefix: '/type', blurb: 'Browse by section type' },
-  { key: 'packs', label: 'Themes/Packs', href: '/packs' },
-  { key: 'niche', label: 'Industries', axis: 'niche', prefix: '/niche', blurb: 'Browse by industry' },
-];
-
-// Funnel navigation (services-first). Replaces the taxonomy mega-menu as the
-// site's front door; the taxonomy stays reachable via the footer + catalog pages.
+// Primary navigation (plugins-first). This is the site's front door; the
+// taxonomy stays reachable via the footer + catalog pages.
 export const PRIMARY_NAV: NavLinkMenu[] = [
-  { key: 'work', label: 'Work with us', href: '/contact' },
-  { key: 'examples', label: 'Examples', href: '/browse' },
-  { key: 'free', label: 'Free Divi layouts', href: '/free-divi-layouts' },
+  { key: 'plugins', label: 'Plugins', href: '/plugins' },
+  { key: 'layouts', label: 'Free layouts', href: '/free-divi-layouts' },
+  { key: 'browse', label: 'Browse', href: '/browse' },
+  { key: 'guides', label: 'Guides', href: '/guides' },
 ];
