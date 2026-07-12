@@ -2,8 +2,9 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Container } from '@/components/ui/Container';
 import { Card } from '@/components/ui/Card';
-
-const WP_ORG_URL = 'https://wordpress.org/plugins/jhmg-converter-for-elementor-to-divi/';
+import { Icon } from '@/components/ui/Icon';
+import { ProductDoors } from '@/components/marketing/ProductDoors';
+import { CtaBand } from '@/components/marketing/CtaBand';
 
 export const metadata: Metadata = {
   title: 'WordPress Plugins by Divi5Lab — converters & AI tools',
@@ -11,87 +12,71 @@ export const metadata: Metadata = {
     'WordPress plugins for Divi 5: convert Elementor pages to Divi 5, convert Divi to Elementor, and edit Divi 5 pages with a validated AI editor.',
 };
 
-type Product = {
-  name: string;
-  chip: { label: string; tone: 'green' | 'amber' | 'slate' };
-  blurb: string;
-  href: string;
-  secondaryLink?: { label: string; href: string };
-  footnote?: string;
-};
-
-const PRODUCTS: Product[] = [
+const DECISIONS = [
   {
-    name: 'Elementor → Divi 5 Converter',
-    chip: { label: 'Free on wordpress.org · Pro $49/yr', tone: 'green' },
-    blurb: 'Migrate Elementor pages and full kits — global headers, footers, and styles — into real, validated Divi 5 layouts.',
+    icon: 'sync_alt',
+    situation: 'I have an Elementor site and want Divi 5.',
+    answer: 'Elementor → Divi 5 Converter',
     href: '/plugins/elementor-to-divi-5',
-    secondaryLink: { label: 'View on wordpress.org', href: WP_ORG_URL },
   },
   {
-    name: 'Divi → Elementor Converter',
-    chip: { label: 'Free plugin pending wordpress.org review', tone: 'amber' },
-    blurb: 'Batch-convert Divi pages into Elementor, with 35+ modules mapped and support for all three Divi export formats.',
+    icon: 'u_turn_left',
+    situation: 'I have a Divi site and need Elementor.',
+    answer: 'Divi → Elementor Converter',
     href: '/plugins/divi-to-elementor',
-    footnote: 'Pro coming after approval — $49/yr',
   },
   {
-    name: 'Divi 5 AI Editor',
-    chip: { label: 'Free download · Pro $79/yr', tone: 'green' },
-    blurb: 'Edit and generate Divi 5 pages with AI — every change is checked by a deterministic validator, so output always imports cleanly.',
+    icon: 'smart_toy',
+    situation: 'I already run Divi 5 and want AI to edit it safely.',
+    answer: 'AI Editor for Divi 5',
     href: '/plugins/divi-5-ai-editor',
   },
 ];
 
-const CHIP_CLASSES: Record<Product['chip']['tone'], string> = {
-  green: 'bg-green-50 text-green-700 border-green-200',
-  amber: 'bg-amber-50 text-amber-700 border-amber-200',
-  slate: 'bg-fog text-muted border-border',
-};
-
 export default function PluginsHub() {
   return (
-    <main className="py-16">
-      <Container>
-        <h1 className="text-h1 text-navy">Plugins</h1>
-        <p className="mt-4 max-w-2xl text-lead text-muted">
-          WordPress plugins from Divi5Lab: convert between page builders and edit Divi 5 with AI — all output is real,
-          validated Divi 5 markup.
-        </p>
+    <main>
+      <section className="border-b border-border bg-mist py-16">
+        <Container>
+          <h1 className="text-h1 text-navy">Plugins</h1>
+          <p className="mt-4 max-w-2xl text-lead text-muted">
+            Migration converters and an AI editor for Divi 5 — every one built on the same deterministic
+            validator, so the output is real, importable markup. Never a guess.
+          </p>
+        </Container>
+      </section>
 
-        <div className="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-3">
-          {PRODUCTS.map((p) => (
-            <Card key={p.name} className="flex flex-col p-8">
-              <span
-                className={`inline-flex w-fit items-center rounded-full border px-3 py-1 text-small font-semibold ${CHIP_CLASSES[p.chip.tone]}`}
-              >
-                {p.chip.label}
-              </span>
-              <h2 className="mt-4 text-section text-navy">{p.name}</h2>
-              <p className="mt-2 flex-1 text-body text-muted">{p.blurb}</p>
-              {p.footnote && <p className="mt-3 text-small font-semibold text-navy">{p.footnote}</p>}
-              <div className="mt-6 flex flex-wrap items-center gap-3">
-                <Link
-                  href={p.href}
-                  className="inline-flex h-11 items-center justify-center rounded-full bg-action px-6 text-small font-semibold text-paper transition hover:brightness-110"
-                >
-                  Learn more
-                </Link>
-                {p.secondaryLink && (
-                  <a
-                    href={p.secondaryLink.href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex h-11 items-center justify-center rounded-full border border-border bg-paper px-6 text-small font-semibold text-navy transition hover:border-action hover:text-action"
-                  >
-                    {p.secondaryLink.label}
-                  </a>
-                )}
-              </div>
-            </Card>
-          ))}
-        </div>
-      </Container>
+      <section className="py-16">
+        <Container>
+          <ProductDoors />
+        </Container>
+      </section>
+
+      <section className="pb-20">
+        <Container>
+          <Card className="p-8">
+            <h2 className="text-section text-navy">Which tool do I need?</h2>
+            <ul className="mt-6 divide-y divide-border">
+              {DECISIONS.map((d) => (
+                <li key={d.href} className="flex flex-wrap items-center justify-between gap-3 py-4">
+                  <span className="flex items-center gap-3 text-body text-navy">
+                    <Icon name={d.icon} size={20} className="text-action" /> {d.situation}
+                  </span>
+                  <Link href={d.href} className="inline-flex items-center gap-1 text-body font-semibold text-action hover:underline">
+                    {d.answer} <Icon name="arrow_forward" size={16} />
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </Card>
+        </Container>
+      </section>
+
+      <CtaBand
+        title="One validator. Three ways to use it."
+        body="Free tiers on everything — try a conversion or an AI edit before you spend a cent."
+        cta={{ label: 'See pricing', href: '/pricing' }}
+      />
     </main>
   );
 }
