@@ -35,4 +35,14 @@ describe('/pricing (plugin licenses)', () => {
     expect(String(metadata.title)).toMatch(/pricing/i);
     expect(String(metadata.description)).toMatch(/plugin|converter/i);
   });
+  it('tells the license philosophy once', async () => {
+    render(await PricingPage());
+    expect(screen.getByText(/licenses that respect you/i)).toBeTruthy();
+    expect(screen.getByText(/nothing breaks/i)).toBeTruthy();
+  });
+  it('shows the AI Editor at $79', async () => {
+    render(await PricingPage());
+    expect(screen.getAllByText(/\$79/).length).toBeGreaterThan(0);
+    expect(screen.getByTestId('buy-ai-editor-divi5-pro')).toBeTruthy();
+  });
 });
