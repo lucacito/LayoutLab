@@ -17,7 +17,7 @@ This guide walks through connecting Claude Desktop to a Divi 5 site in about fiv
 
 ## Step 1: Get your connection details from WordPress
 
-In your WP admin sidebar, open the **AI Editor** menu. The connection panel shows three things you'll need:
+In your WP admin sidebar, open the **AI Editor** menu, then click the **Settings** tab (the page opens on the Dashboard tab by default — the connection panel lives under Settings). The connection panel shows three things you'll need:
 
 1. Your site's **MCP URL** — something like `https://yoursite.com/wp-json/ai-editor-divi5/v1/mcp`.
 2. An **API key** (used as a Bearer token) — this is what proves the request came from you, so treat it like a password.
@@ -36,7 +36,14 @@ If the file doesn't exist yet, create it — Claude Desktop will pick it up on n
 
 ## Step 3: Paste the snippet and restart
 
-Open the config file in any text editor, paste the snippet from the plugin's connection panel into the `mcpServers` object, and save. It'll look roughly like a named entry with the MCP URL and an `Authorization: Bearer <your key>` header — the plugin fills in the specifics so you don't need to remember the exact shape.
+The plugin's snippet is a **full config file**, not a fragment — it looks like `{"mcpServers":{"ai-editor-divi5":{...}}}`, complete with the outer braces. How you use it depends on what's already in your config file:
+
+- **No config file yet (or it's empty):** paste the snippet exactly as given — the whole thing, outer braces included — as the entire contents of `claude_desktop_config.json`. Save.
+- **You already have a config file with other MCP servers in it:** don't paste the whole snippet, or you'll end up with an `mcpServers` object nested inside your existing `mcpServers` object, which Claude Desktop won't read correctly. Instead, copy just the inner entry — the `"ai-editor-divi5": { ... }` part — and add it as a new sibling key inside your existing `mcpServers` object, alongside your other servers, separated by a comma. Save.
+
+Either way, the result should have exactly one top-level `mcpServers` key in the file, with `ai-editor-divi5` as one of its entries.
+
+Quit Claude Desktop fully and relaunch it (not just close the window). On a successful connection, you'll see the Divi tools available when you start a new chat — Claude will mention it can see your site, or you can ask it directly.
 
 Quit Claude Desktop fully and relaunch it (not just close the window). On a successful connection, you'll see the Divi tools available when you start a new chat — Claude will mention it can see your site, or you can ask it directly.
 

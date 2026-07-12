@@ -17,7 +17,7 @@ This guide covers both editors, since they share the same underlying idea and mo
 
 ## Step 1: Get the connection details
 
-In WP admin, open the **AI Editor** menu. The connection panel gives you your site's MCP URL (`https://yoursite.com/wp-json/ai-editor-divi5/v1/mcp`), an API key to use as a Bearer token, and a config snippet you can paste directly — you don't need to hand-assemble the JSON yourself.
+In WP admin, open the **AI Editor** menu, then click the **Settings** tab (the page opens on the Dashboard tab by default — the connection panel lives under Settings). The connection panel gives you your site's MCP URL (`https://yoursite.com/wp-json/ai-editor-divi5/v1/mcp`), an API key to use as a Bearer token, and a config snippet you can paste directly — you don't need to hand-assemble the JSON yourself.
 
 ## Step 2: Add the server in Cursor
 
@@ -47,7 +47,7 @@ Whichever tool proposes the edit, the request lands on the same plugin backend, 
 
 ## Free vs. Pro
 
-Free covers reading pages, updating existing ones, dry-run validation, and the plugin's bundled guides — plenty for iterating on a site that already exists, which is most of what developers use an editor-based workflow for anyway.
+Free covers listing pages, reading pages, updating existing ones, dry-run validation, and the plugin's bundled guides — plenty for iterating on a site that already exists, which is most of what developers use an editor-based workflow for anyway.
 
 **Pro** ($79/yr, unlimited sites on one license) adds the tools that build rather than edit: creating new pages, setting the front page, assembling the primary menu, site-wide custom CSS, and reviewed PHP snippet proposals. If you're scaffolding a new site section entirely from an agent prompt, that's Pro territory — full comparison on the [plugin page](/plugins/divi-5-ai-editor).
 

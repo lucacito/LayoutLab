@@ -16,7 +16,7 @@ Claude Desktop and Cursor connect to the [AI Editor for Divi 5](/plugins/divi-5-
 
 ## Step 1: Get the OpenAPI spec URL and API key
 
-In WP admin, open the **AI Editor** menu — the same connection panel used for the MCP setup also shows an **OpenAPI spec endpoint** for exactly this use case, plus your **API key**. Copy both; you'll need the spec URL to configure the Action and the key for its authentication.
+In WP admin, open the **AI Editor** menu, then click the **Settings** tab (the page opens on the Dashboard tab by default — the connection panel lives under Settings). The same connection panel used for the MCP setup also shows an **OpenAPI spec endpoint** for exactly this use case, plus your **API key**. Copy both; you'll need the spec URL to configure the Action and the key for its authentication.
 
 ## Step 2: Create a Custom GPT
 
