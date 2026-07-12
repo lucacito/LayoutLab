@@ -18,6 +18,7 @@ export const metadata: Metadata = {
   title: 'AI Editor for Divi 5 — edit Divi with AI, validated',
   description:
     'Connect Claude, Cursor, or ChatGPT to your Divi 5 site and edit pages in plain English. Every change passes a deterministic validator before it touches your database — broken layouts are impossible.',
+  alternates: { canonical: `${env.NEXT_PUBLIC_SITE_URL}/plugins/divi-5-ai-editor` },
 };
 
 const STEPS = [

@@ -11,8 +11,9 @@ describe('/plugins hub', () => {
     expect(links).toContain('/plugins/divi-to-elementor');
     expect(links).toContain('/plugins/divi-5-ai-editor');
     expect(screen.getByText(/pending wordpress\.org review/i)).toBeTruthy();
-    expect(screen.getByText(/coming soon/i)).toBeTruthy();
+    expect(screen.queryByText(/coming soon/i)).toBeNull();
     expect(screen.getAllByText(/\$49\/yr/i).length).toBeGreaterThan(0);
+    expect(screen.getByText(/\$79\/yr/i)).toBeTruthy();
   });
   it('has metadata', () => { expect(String(metadata.title)).toMatch(/plugins/i); });
 });
