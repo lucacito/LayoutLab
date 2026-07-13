@@ -36,6 +36,16 @@
   .prose-divi strong { @apply text-navy; font-weight: 600; }
   .prose-divi blockquote { @apply border-l-4 border-fog pl-4 text-muted; }
   .prose-divi code { @apply rounded bg-fog px-1.5 py-0.5; font-size: 0.9em; }
+
+  /* Stagger-rise entrance for marketing panels. Rows set --rise-i. */
+  @keyframes rise-in {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: none; }
+  }
+  .anim-rise { animation: rise-in 0.5s ease-out both; animation-delay: calc(var(--rise-i, 0) * 120ms); }
+  @media (prefers-reduced-motion: reduce) {
+    .anim-rise { animation: none; }
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

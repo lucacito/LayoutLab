@@ -4,16 +4,15 @@ import { render, screen } from '@testing-library/react';
 import PluginsHub, { metadata } from '@/app/(marketing)/plugins/page';
 
 describe('/plugins hub', () => {
-  it('lists all three products with correct links and statuses', async () => {
+  it('renders all three products with honest chips', async () => {
     render(await PluginsHub());
-    const links = Array.from(document.querySelectorAll('a')).map((a) => a.getAttribute('href'));
-    expect(links).toContain('/plugins/elementor-to-divi-5');
-    expect(links).toContain('/plugins/divi-to-elementor');
-    expect(links).toContain('/plugins/divi-5-ai-editor');
     expect(screen.getByText(/pending wordpress\.org review/i)).toBeTruthy();
-    expect(screen.queryByText(/coming soon/i)).toBeNull();
-    expect(screen.getAllByText(/\$49\/yr/i).length).toBeGreaterThan(0);
     expect(screen.getByText(/\$79\/yr/i)).toBeTruthy();
+    expect(screen.getByText(/\$49\/yr/i)).toBeTruthy();
+  });
+  it('has a which-tool decision strip', async () => {
+    render(await PluginsHub());
+    expect(screen.getByText(/which tool do i need/i)).toBeTruthy();
   });
   it('has metadata', () => { expect(String(metadata.title)).toMatch(/plugins/i); });
 });

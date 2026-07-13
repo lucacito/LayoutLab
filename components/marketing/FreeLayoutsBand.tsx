@@ -35,10 +35,10 @@ export function FreeLayoutsBand() {
           <span className="inline-flex items-center gap-1.5 rounded-full bg-action/10 px-3 py-1 text-small font-semibold text-action">
             <Icon name="download" size={16} /> Free for Divi builders
           </span>
-          <h2 className="mt-4 text-h3 text-navy">Free Divi 5 layouts — the whole catalog, free.</h2>
+          <h2 className="mt-4 text-h3 text-navy">Free Divi 5 layouts, straight from the lab.</h2>
           <p className="mt-3 max-w-xl text-body text-muted">
-            Hundreds of validated, import-ready sections — free. Drop your email and we&apos;ll send new ones as
-            they land.
+            The catalog is the validator&apos;s proving ground: 190+ sections and pages generated, validated,
+            rendered, and shipped — every one free. Drop your email and new ones land in your inbox.
           </p>
 
           {status === 'done' ? (

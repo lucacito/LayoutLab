@@ -8,130 +8,151 @@ import { Icon } from '@/components/ui/Icon';
 import { JsonLd } from '@/components/JsonLd';
 import { faqJsonLd } from '@/lib/seo/jsonld';
 import { BuyProButton } from '@/components/plugins/BuyProButton';
+import { STATS } from '@/lib/site/stats';
+import { CtaBand } from '@/components/marketing/CtaBand';
 
 export const metadata: Metadata = {
   title: 'Pricing — Pro plugin licenses',
   description:
-    'Simple pricing for the Divi 5 plugin toolkit. Free plugins on wordpress.org; Pro unlocks the full migration toolkit for $49/yr on unlimited sites.',
+    'Simple pricing for the Divi 5 plugin toolkit. Free plugins and free layouts to start; Pro licenses from $49/yr on unlimited sites — and nothing breaks if you stop paying.',
 };
 
 const FAQ = [
   {
     question: 'What does Pro include?',
     answer:
-      'Full kit ZIP import, global headers/footers mapped to the Divi Theme Builder, global colors & typography, a year of updates, and priority support.',
+      'Each plugin has its own Pro: the Elementor→Divi 5 converter adds full kit ZIP import, Theme Builder headers/footers, and global styles; the AI Editor adds page creation, menus, and site-wide styling. Both include a year of updates and priority support.',
   },
   {
     question: 'Do licenses cover client sites?',
-    answer: 'Yes — a Pro license activates on unlimited sites, whether they are yours or built for clients.',
+    answer: 'Yes — every Pro license activates on unlimited sites, whether they are yours or built for clients.',
   },
   {
     question: "What happens if I don't renew?",
-    answer: 'Pro keeps working on every site where it is already activated. You just stop receiving new updates and support until you renew.',
+    answer: 'Pro keeps working on every site where it is already activated. You just stop receiving new updates and support until you renew. No hostage access.',
   },
   {
     question: 'Are the layouts really free?',
     answer: 'Yes — every layout in our catalog is free to download. Drop your email and grab as many as you like.',
   },
+  {
+    question: 'Can I try before buying?',
+    answer: 'Always. Every product has a working free tier — free single-page conversions, a free AI Editor download, and a fully free layout catalog.',
+  },
+  {
+    question: 'Is there a refund policy?',
+    answer:
+      "Digital goods are final-sale, but we make things right: if a Pro plugin is genuinely broken for your project and support cannot fix it within 14 days of purchase, we'll sort it out. Subscriptions cancel anytime. Full policy on the license page.",
+  },
+  {
+    question: 'How is payment handled?',
+    answer: 'Checkout runs on Stripe with tax handled automatically. Licenses are delivered instantly by email and manageable from your account.',
+  },
+  {
+    question: 'When is Pro coming for Divi → Elementor?',
+    answer: 'After the free plugin clears wordpress.org review. Join the waitlist on its page — members hear first and get launch pricing.',
+  },
 ];
 
-const E2D5_FEATURES = [
-  'Full kit ZIP import',
-  'Global headers/footers → Divi Theme Builder',
-  'Global colors & typography',
-  '1 year of updates + priority support',
-  'Unlimited sites',
+const TOOLKIT = [
+  {
+    name: 'Elementor → Divi 5 Pro',
+    price: '$49',
+    per: '/yr',
+    tagline: 'The full migration toolkit for moving Elementor sites to Divi 5.',
+    freeTier: `Free plugin: unlimited single-page conversions, ${STATS.elementorWidgetsMapped} widget mappings, conversion reports.`,
+    proTier: 'Pro: full kit ZIP import, Theme Builder headers/footers, global colors & typography.',
+    action: <BuyProButton product="elementor-to-divi5-pro" label="Get Pro — $49/yr" />,
+    href: '/plugins/elementor-to-divi-5',
+    highlight: true,
+  },
+  {
+    name: 'AI Editor for Divi 5 Pro',
+    price: '$79',
+    per: '/yr',
+    tagline: 'Let your AI assistant build pages, menus and site-wide styling — every change validated.',
+    freeTier: 'Free download: edit and validate existing pages, all guides and recipes included.',
+    proTier: 'Pro: create pages from scratch, front page, menus, site-wide CSS, reviewed PHP.',
+    action: <BuyProButton product="ai-editor-divi5-pro" label="Get Pro — $79/yr" />,
+    href: '/plugins/divi-5-ai-editor',
+    highlight: false,
+  },
+  {
+    name: 'Divi → Elementor Pro',
+    price: 'Coming soon',
+    per: '',
+    tagline: `Batch conversions the other way — ${STATS.diviModulesMapped}+ modules mapped.`,
+    freeTier: 'Free plugin pending wordpress.org review — batch conversion, all Divi export formats.',
+    proTier: 'Pro (after launch): Theme Builder templates, WooCommerce mapping — $49/yr.',
+    action: (
+      <Link
+        href="/plugins/divi-to-elementor"
+        className="flex h-12 items-center justify-center rounded-full border border-border bg-paper px-8 text-body font-semibold text-navy transition hover:border-action hover:text-action"
+      >
+        Get notified
+      </Link>
+    ),
+    href: '/plugins/divi-to-elementor',
+    highlight: false,
+  },
 ];
-
-const D2E_FEATURES = ['Divi Theme Builder templates', 'WooCommerce module/widget mapping', 'Batch conversion tooling', 'Unlimited sites'];
-
-function Feature({ children }: { children: React.ReactNode }) {
-  return (
-    <li className="flex items-start gap-2 text-body text-navy">
-      <Icon name="check_circle" size={18} className="mt-0.5 shrink-0 text-action" /> {children}
-    </li>
-  );
-}
 
 export default async function PricingPage() {
   return (
-    <main className="py-16">
-      <Container>
-        <SectionTitle eyebrow="Pricing" title="Simple pricing">
-          Free plugins to start. Pro unlocks the full toolkit — from $49/yr, unlimited sites.
-        </SectionTitle>
+    <main>
+      <section className="border-b border-border bg-mist py-16">
+        <Container>
+          <SectionTitle eyebrow="Pricing" title="Licenses that respect you">
+            Free tiers on everything. Pro from $49/yr on unlimited sites — and when a license lapses,
+            nothing breaks: activated sites keep working. Renewal buys updates and support, not hostage access.
+          </SectionTitle>
+        </Container>
+      </section>
 
-        <div className="mt-12 grid items-stretch gap-6 lg:grid-cols-2">
-          <Card className="relative flex flex-col border-action p-8 shadow-lg ring-1 ring-action">
-            <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-action px-3 py-1 text-small font-semibold text-paper">
-              Available now
-            </span>
-            <h2 className="text-section text-navy">Elementor → Divi 5 Pro</h2>
-            <div className="mt-3 flex items-baseline gap-1.5">
-              <span className="text-h2 text-navy">$49</span>
-              <span className="text-small text-muted">/yr</span>
-            </div>
-            <p className="mt-2 text-body text-muted">The full migration toolkit for moving Elementor sites to Divi 5.</p>
-            <ul className="mt-6 flex-1 space-y-3">
-              {E2D5_FEATURES.map((f) => (
-                <Feature key={f}>{f}</Feature>
-              ))}
-            </ul>
-            <div className="mt-8 flex flex-col gap-2">
-              <BuyProButton product="elementor-to-divi5-pro" label="Get Pro — $49/yr" />
-              <Link href="/plugins/elementor-to-divi-5" className="text-center text-small font-semibold text-action hover:underline">
-                Learn more
-              </Link>
-            </div>
-          </Card>
-
-          <Card className="flex flex-col p-8">
-            <h2 className="text-section text-navy">Divi → Elementor Pro</h2>
-            <div className="mt-3 text-h3 text-navy">Coming soon</div>
-            <p className="mt-2 text-body text-muted">Free plugin pending wordpress.org review — Pro launches once it&apos;s live.</p>
-            <ul className="mt-6 flex-1 space-y-3">
-              {D2E_FEATURES.map((f) => (
-                <Feature key={f}>{f}</Feature>
-              ))}
-            </ul>
-            <div className="mt-8">
-              <Link
-                href="/plugins/divi-to-elementor"
-                className="flex h-12 items-center justify-center rounded-full border border-border bg-paper px-8 text-body font-semibold text-navy transition hover:border-action hover:text-action"
+      <section className="py-16">
+        <Container>
+          <div className="grid items-stretch gap-6 lg:grid-cols-3">
+            {TOOLKIT.map((p) => (
+              <Card
+                key={p.name}
+                className={`relative flex flex-col p-8 ${p.highlight ? 'border-action shadow-lg ring-1 ring-action' : ''}`}
               >
-                Get notified
-              </Link>
-            </div>
-          </Card>
-        </div>
+                {p.highlight && (
+                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-action px-3 py-1 text-small font-semibold text-paper">
+                    Most popular
+                  </span>
+                )}
+                <h2 className="text-section text-navy">{p.name}</h2>
+                <div className="mt-3 flex items-baseline gap-1.5">
+                  <span className={p.per ? 'text-h2 text-navy' : 'text-h3 text-navy'}>{p.price}</span>
+                  {p.per && <span className="text-small text-muted">{p.per}</span>}
+                </div>
+                <p className="mt-2 text-body text-muted">{p.tagline}</p>
+                <ul className="mt-6 flex-1 space-y-3">
+                  <li className="flex items-start gap-2 text-body text-navy">
+                    <Icon name="check_circle" size={18} className="mt-0.5 shrink-0 text-action" /> {p.freeTier}
+                  </li>
+                  <li className="flex items-start gap-2 text-body text-navy">
+                    <Icon name="workspace_premium" size={18} className="mt-0.5 shrink-0 text-action" /> {p.proTier}
+                  </li>
+                </ul>
+                <div className="mt-8 flex flex-col gap-2">
+                  {p.action}
+                  <Link href={p.href} className="text-center text-small font-semibold text-action hover:underline">
+                    Full details
+                  </Link>
+                </div>
+              </Card>
+            ))}
+          </div>
 
-        <section className="mt-16">
-          <Card className="flex flex-col gap-6 p-8 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <h2 className="text-section text-navy">AI Editor for Divi 5 — Pro</h2>
-              <div className="mt-3 flex items-baseline gap-1.5">
-                <span className="text-h2 text-navy">$79</span>
-                <span className="text-small text-muted">/yr</span>
-              </div>
-              <p className="mt-2 max-w-xl text-body text-muted">
-                Let your AI assistant build whole pages, menus and site-wide styling — every change validated before it
-                lands. Free tier edits existing pages.
-              </p>
-            </div>
-            <div className="flex shrink-0 flex-col gap-2">
-              <BuyProButton product="ai-editor-divi5-pro" label="Get Pro — $79/yr" />
-              <Link href="/plugins/divi-5-ai-editor" className="text-center text-small font-semibold text-action hover:underline">
-                Learn more
-              </Link>
-            </div>
-          </Card>
-        </section>
-
-        <section className="mt-8">
-          <Card className="flex flex-col gap-3 p-8 sm:flex-row sm:items-center sm:justify-between">
+          <Card className="mt-8 flex flex-col gap-3 p-8 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h2 className="text-section text-navy">Free Divi 5 layouts</h2>
-              <p className="mt-2 max-w-xl text-body text-muted">Every layout in our catalog is free — grab as many as you like.</p>
+              <p className="mt-2 max-w-xl text-body text-muted">
+                Every layout in our catalog — {STATS.freeLayoutsPublished}+ validated sections and pages — is free.
+                Grab as many as you like.
+              </p>
             </div>
             <div className="flex shrink-0 flex-wrap gap-3">
               <Link
@@ -148,20 +169,28 @@ export default async function PricingPage() {
               </Link>
             </div>
           </Card>
-        </section>
+        </Container>
+      </section>
 
-        <section className="mt-20">
-          <h2 className="text-section text-navy">Frequently asked questions</h2>
-          <dl className="mt-6 max-w-3xl space-y-6">
+      <section className="border-t border-border bg-mist py-20">
+        <Container>
+          <h2 className="text-h2 text-navy">Frequently asked questions</h2>
+          <dl className="mt-8 max-w-3xl space-y-6">
             {FAQ.map((f) => (
               <div key={f.question}>
                 <dt className="text-body font-semibold text-navy">{f.question}</dt>
-                <dd className="mt-1 text-small text-muted">{f.answer}</dd>
+                <dd className="mt-1 text-body text-muted">{f.answer}</dd>
               </div>
             ))}
           </dl>
-        </section>
-      </Container>
+        </Container>
+      </section>
+
+      <CtaBand
+        title="Try everything free first."
+        body="Free conversions, a free AI Editor, a free layout catalog — upgrade when the tools have already earned it."
+        cta={{ label: 'Browse the plugins', href: '/plugins' }}
+      />
 
       <JsonLd data={faqJsonLd(FAQ)} />
     </main>

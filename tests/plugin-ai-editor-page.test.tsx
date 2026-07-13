@@ -15,4 +15,23 @@ describe('/plugins/divi-5-ai-editor', () => {
     expect(String(metadata.title)).not.toMatch(/coming soon/i);
     expect(String(metadata.description)).toMatch(/validat/i);
   });
+  it('shows the live chat demo with a self-correction', () => {
+    render(<AiEditorPage />);
+    expect(screen.getByText(/WRONG_FIELD_TYPE/)).toBeTruthy();
+  });
+  it('lists compatible assistants', () => {
+    render(<AiEditorPage />);
+    // getAllBy: assistants appear in the hero "Works with" line and the FAQ.
+    expect(screen.getAllByText(/claude desktop/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/cursor/i).length).toBeGreaterThan(0);
+  });
+  it('renders Free vs Pro as a comparison table with the free download form', () => {
+    render(<AiEditorPage />);
+    expect(screen.getByRole('table')).toBeTruthy();
+    expect(screen.getByText(/create pages from scratch/i)).toBeTruthy();
+  });
+  it('has an expanded FAQ', () => {
+    render(<AiEditorPage />);
+    expect(document.querySelectorAll('dl dt').length).toBeGreaterThanOrEqual(8);
+  });
 });

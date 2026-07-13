@@ -34,8 +34,9 @@ export default function GuidesIndexPage() {
 
         <h1 className="mt-4 text-h2 text-navy">Divi 5 Guides &amp; Tutorials</h1>
         <p className="mt-4 max-w-2xl text-body text-muted">
-          Field notes from building and validating thousands of Divi 5 sections: import walkthroughs,
-          per-industry layout picks, honest builder comparisons, and the design rules our generator follows.
+          The lab notebook, published. Everything here comes from building and validating hundreds of Divi 5
+          layouts: import walkthroughs, migration checklists, honest builder comparisons, and the design rules our
+          own generator has to follow.
         </p>
 
         <div className="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-2">

@@ -16,4 +16,14 @@ describe('/plugins/divi-to-elementor', () => {
     expect(screen.getAllByText(/\$49\/yr/).length).toBeGreaterThan(0);
   });
   it('has metadata', () => { expect(String(metadata.title)).toMatch(/Divi to Elementor/i); });
+  it('shows the batch-conversion mock', async () => {
+    render(await D2EPage());
+    // "batch run" also appears in the agency use-case copy ("Batch runs turn
+    // each handover…"), so assert presence rather than a single unique match.
+    expect(screen.getAllByText(/batch run/i).length).toBeGreaterThan(0);
+  });
+  it('has an expanded FAQ', async () => {
+    render(await D2EPage());
+    expect(document.querySelectorAll('dl dt').length).toBeGreaterThanOrEqual(6);
+  });
 });
