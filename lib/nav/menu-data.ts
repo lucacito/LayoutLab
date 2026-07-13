@@ -74,14 +74,97 @@ export const NICHE_LABELS: Record<string, string> = {
   events: 'Events',
 };
 
-// A plain nav link (e.g. the primary header nav).
-export type NavLinkMenu = { key: string; label: string; href: string };
+// A primary nav item. Items with a `mega` key open a mega-menu panel on
+// hover/focus while their label still navigates to `href`.
+export type MegaKey = 'plugins' | 'layouts';
+export type NavLinkMenu = { key: string; label: string; href: string; mega?: MegaKey };
 
-// Primary navigation (plugins-first). This is the site's front door; the
-// taxonomy stays reachable via the footer + catalog pages.
+// Primary navigation (plugins-first). "Plugins" and "Free layouts" open
+// mega-menus; "Free layouts" itself lands on the full /browse catalog.
 export const PRIMARY_NAV: NavLinkMenu[] = [
-  { key: 'plugins', label: 'Plugins', href: '/plugins' },
-  { key: 'layouts', label: 'Free layouts', href: '/free-divi-layouts' },
-  { key: 'browse', label: 'Browse', href: '/browse' },
+  { key: 'plugins', label: 'Plugins', href: '/plugins', mega: 'plugins' },
+  { key: 'layouts', label: 'Free layouts', href: '/browse', mega: 'layouts' },
   { key: 'guides', label: 'Guides', href: '/guides' },
 ];
+
+// ── Plugins mega-menu ───────────────────────────────────────────────────────
+export type PluginMenuItem = {
+  name: string;
+  desc: string;
+  href: string;
+  icon: string;
+  chip: string;
+  tone: 'green' | 'amber';
+};
+
+export const PLUGIN_MENU: PluginMenuItem[] = [
+  {
+    name: 'Elementor → Divi 5',
+    desc: 'Migrate Elementor pages and kits into validated Divi 5.',
+    href: '/plugins/elementor-to-divi-5',
+    icon: 'sync_alt',
+    chip: 'Free · Pro $49/yr',
+    tone: 'green',
+  },
+  {
+    name: 'Divi → Elementor',
+    desc: 'Batch-convert Divi sites the other way.',
+    href: '/plugins/divi-to-elementor',
+    icon: 'u_turn_left',
+    chip: 'Pending wordpress.org review',
+    tone: 'amber',
+  },
+  {
+    name: 'AI Editor for Divi 5',
+    desc: 'Edit Divi 5 in plain English — every change validated.',
+    href: '/plugins/divi-5-ai-editor',
+    icon: 'smart_toy',
+    chip: 'Free · Pro $79/yr',
+    tone: 'green',
+  },
+];
+
+// ── Free-layouts mega-menu ──────────────────────────────────────────────────
+export type MegaLink = { href: string; label: string; icon: string; blurb: string };
+export type MegaColumn = { title: string; links: MegaLink[] };
+
+const typeLink = (v: string): MegaLink => ({
+  href: `/type/${v}`,
+  label: TYPE_LABELS[v] ?? v,
+  icon: AXIS_META.type[v]?.icon ?? 'grid_view',
+  blurb: AXIS_META.type[v]?.blurb ?? '',
+});
+const nicheLink = (v: string): MegaLink => ({
+  href: `/niche/${v}`,
+  label: NICHE_LABELS[v] ?? v,
+  icon: AXIS_META.niche[v]?.icon ?? 'grid_view',
+  blurb: AXIS_META.niche[v]?.blurb ?? '',
+});
+const styleLink = (v: string): MegaLink => ({
+  href: `/style/${v}`,
+  label: v.charAt(0).toUpperCase() + v.slice(1),
+  icon: AXIS_META.style[v]?.icon ?? 'grid_view',
+  blurb: AXIS_META.style[v]?.blurb ?? '',
+});
+
+export const LAYOUT_MENU_COLUMNS: MegaColumn[] = [
+  {
+    title: 'By type',
+    links: ['hero', 'pricing', 'features', 'cta', 'testimonials', 'faq', 'cards', 'full_landing'].map(typeLink),
+  },
+  {
+    title: 'By industry',
+    links: ['saas', 'agency', 'restaurant', 'real_estate', 'fitness', 'ecommerce'].map(nicheLink),
+  },
+  {
+    title: 'By style',
+    links: ['minimal', 'bold', 'dark', 'elegant'].map(styleLink),
+  },
+];
+
+export const LAYOUT_MENU_CTA: MegaLink = {
+  href: '/browse',
+  label: 'Browse all layouts',
+  icon: 'grid_view',
+  blurb: 'The full validated catalog — filter by type, industry, style and colour.',
+};

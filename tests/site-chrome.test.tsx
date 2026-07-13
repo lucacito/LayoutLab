@@ -12,10 +12,9 @@ describe('site chrome', () => {
   it('Header shows the wordmark and plugins-first nav links', () => {
     const { container, queryByText } = render(<Header />, { wrapper: BookmarksProvider });
     expect(container.querySelector('img[alt="Divi5Lab"]')).not.toBeNull();
-    // Plugins-first nav: Plugins → /plugins, Free layouts → /free-divi-layouts,
-    // Browse → /browse, Guides → /guides, Get Pro CTA → /pricing.
+    // Plugins-first nav (mega-menus): Plugins → /plugins, Free layouts → /browse,
+    // Guides → /guides, Get Pro CTA → /pricing.
     expect(container.querySelector('a[href="/plugins"]')).not.toBeNull();
-    expect(container.querySelector('a[href="/free-divi-layouts"]')).not.toBeNull();
     expect(container.querySelector('a[href="/browse"]')).not.toBeNull();
     expect(container.querySelector('a[href="/guides"]')).not.toBeNull();
     expect(container.querySelector('a[href="/pricing"]')).not.toBeNull();
