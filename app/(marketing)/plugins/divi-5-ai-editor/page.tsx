@@ -2,7 +2,6 @@ import type { Metadata } from 'next';
 import { env } from '@/lib/env';
 import { Container } from '@/components/ui/Container';
 import { Card } from '@/components/ui/Card';
-import { Icon } from '@/components/ui/Icon';
 import { JsonLd } from '@/components/JsonLd';
 import { productJsonLd, faqJsonLd } from '@/lib/seo/jsonld';
 import { BuyProButton } from '@/components/plugins/BuyProButton';

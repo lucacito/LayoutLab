@@ -13,7 +13,7 @@ import { UseCaseVignettes } from '@/components/marketing/UseCaseVignettes';
 export const metadata: Metadata = {
   title: 'Divi to Elementor Converter — free WordPress plugin (pending review)',
   description:
-    'Convert Divi pages and templates to Elementor — 35+ modules mapped, batch conversion, all three Divi export formats. Free plugin pending wordpress.org review; join the waitlist to be notified the moment it ships.',
+    `Convert Divi pages and templates to Elementor — ${STATS.diviModulesMapped}+ modules mapped, batch conversion, all three Divi export formats. Free plugin pending wordpress.org review; join the waitlist to be notified the moment it ships.`,
 };
 
 // Batch mock: what a run over a small site looks like.
