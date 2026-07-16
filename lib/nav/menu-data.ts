@@ -119,7 +119,7 @@ export const PLUGIN_MENU: PluginMenuItem[] = [
     desc: 'Edit Divi 5 in plain English — every change validated.',
     href: '/plugins/divi-5-ai-editor',
     icon: 'smart_toy',
-    chip: 'Free · Pro $79/yr',
+    chip: 'Free · Pro $39/yr',
     tone: 'green',
   },
 ];

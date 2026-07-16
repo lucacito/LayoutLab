@@ -80,7 +80,10 @@ describe('plugin license checkout', () => {
     expect(params.mode).toBe('subscription');
     expect(params.line_items).toEqual([{ price: 'price_pro_yearly', quantity: 1 }]);
     expect(params.metadata).toEqual({ kind: 'plugin', product: 'elementor-to-divi5-pro' });
-    expect(params.subscription_data).toEqual({ metadata: { kind: 'plugin', product: 'elementor-to-divi5-pro' } });
+    expect((params.subscription_data as any).metadata).toEqual({ kind: 'plugin', product: 'elementor-to-divi5-pro' });
+    // The launch trial is scoped to the AI Editor only — other plugins pay now.
+    expect((params.subscription_data as any).trial_period_days).toBeUndefined();
+    expect(params.payment_method_collection).toBeUndefined();
   });
 
   it('plugin checkout sessions allow promotion codes', () => {
@@ -90,6 +93,22 @@ describe('plugin license checkout', () => {
     );
     expect(params.allow_promotion_codes).toBe(true);
     expect(params.mode).toBe('subscription');
+  });
+
+  // Launch offer: every plugin subscription starts with a 45-day free trial, and
+  // Checkout must NOT collect a card up front (`if_required`). Because no payment
+  // method is on file, the trial can't silently auto-charge — it ends by cancelling
+  // (missing_payment_method: 'cancel') so no tester is ever hit with a surprise
+  // invoice. The webhook mints the license on session.completed regardless of $0 due.
+  it('starts a 45-day free trial with no card required, cancelling at trial end', () => {
+    const params = buildCheckoutSessionParams(
+      { kind: 'plugin', product: 'ai-editor-divi5-pro' },
+      { siteUrl: 'https://divi5lab.com', pluginPriceId: 'price_x', automaticTax: true },
+    );
+    expect(params.payment_method_collection).toBe('if_required');
+    const subData = params.subscription_data as any;
+    expect(subData.trial_period_days).toBe(45);
+    expect(subData.trial_settings.end_behavior.missing_payment_method).toBe('cancel');
   });
 });
 

@@ -103,7 +103,7 @@ export default function AiEditorPage() {
           name: PRODUCT_NAME,
           description: PRODUCT_DESCRIPTION,
           url,
-          offer: { priceCents: 7900, currency: 'USD' },
+          offer: { priceCents: 3900, currency: 'USD' },
         })}
       />
       <JsonLd data={faqJsonLd(FAQ)} />
@@ -119,7 +119,7 @@ export default function AiEditorPage() {
                 passes a deterministic validator before it touches your database — broken layouts are impossible.
               </p>
               <div className="mt-8 flex flex-wrap items-center gap-3">
-                <BuyProButton product="ai-editor-divi5-pro" label="Get Pro — $79/yr" />
+                <BuyProButton product="ai-editor-divi5-pro" label="Start 45-day free trial" />
                 <a
                   href="#free"
                   className="inline-flex h-12 items-center justify-center rounded-full border border-border bg-paper px-8 text-body font-semibold text-navy transition hover:border-action hover:text-action"
@@ -186,7 +186,7 @@ export default function AiEditorPage() {
           <ComparisonTable
             className="mt-8"
             caption="AI Editor for Divi 5 — Free vs Pro"
-            columns={['Free', 'Pro — $79/yr']}
+            columns={['Free', 'Pro — $39/yr']}
             rows={[
               { label: 'List pages & read layouts', values: [true, true] },
               { label: 'Update existing pages', values: [true, true] },
@@ -221,7 +221,7 @@ export default function AiEditorPage() {
                 building with AI, not just editing.
               </p>
               <div className="mt-6">
-                <BuyProButton product="ai-editor-divi5-pro" label="Get Pro — $79/yr" />
+                <BuyProButton product="ai-editor-divi5-pro" label="Start 45-day free trial" />
               </div>
             </Card>
           </div>
@@ -254,7 +254,7 @@ export default function AiEditorPage() {
       <CtaBand
         title="Your assistant already knows Divi. Now it can prove it."
         body="Free to try on any Divi 5 site — Pro when you want it building pages, menus, and site-wide styles."
-        cta={{ label: 'Get Pro — $79/yr', href: '/pricing' }}
+        cta={{ label: 'Start 45-day free trial', href: '/pricing' }}
         secondary={{ label: 'Read the setup guides', href: '/guides' }}
       />
     </main>

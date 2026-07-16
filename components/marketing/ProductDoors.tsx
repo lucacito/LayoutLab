@@ -70,7 +70,7 @@ const DOORS: Door[] = [
   {
     headline: 'Edit Divi 5 in plain English',
     name: 'AI Editor for Divi 5',
-    chip: { label: 'Free download · Pro $79/yr', tone: 'green' },
+    chip: { label: 'Free download · Pro $39/yr', tone: 'green' },
     body: 'Connect Claude, Cursor, or ChatGPT to your site. Every AI edit passes the validator before it touches your database.',
     stats: `${STATS.validatorViolationClasses} violation classes checked on every save`,
     href: '/plugins/divi-5-ai-editor',

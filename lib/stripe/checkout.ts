@@ -65,13 +65,31 @@ export function buildCheckoutSessionParams(
     };
   }
   if (input.kind === 'plugin') {
+    // Launch offer, scoped to the AI Editor only: a 45-day free trial with NO card
+    // up front. `if_required` tells Checkout to skip payment-method collection when
+    // nothing is due now (the whole trial is $0). Consequence: with no card on file
+    // the trial can't auto-charge, so it ends by cancelling — a tester who wants to
+    // keep the plugin must return and re-subscribe (and pay). Nobody gets a surprise
+    // invoice. The webhook mints the license on `checkout.session.completed`
+    // regardless of amount paid, and `trialing` maps to an active license
+    // (see fulfillment.ts). Other plugins keep the standard pay-now flow.
+    const aiEditorLaunchTrial = input.product === 'ai-editor-divi5-pro';
     return {
       ...common,
       mode: 'subscription',
       allow_promotion_codes: true,
+      ...(aiEditorLaunchTrial ? { payment_method_collection: 'if_required' } : {}),
       line_items: [{ price: ctx.pluginPriceId, quantity: 1 }],
       metadata: { kind: 'plugin', product: input.product },
-      subscription_data: { metadata: { kind: 'plugin', product: input.product } },
+      subscription_data: {
+        metadata: { kind: 'plugin', product: input.product },
+        ...(aiEditorLaunchTrial
+          ? {
+              trial_period_days: 45,
+              trial_settings: { end_behavior: { missing_payment_method: 'cancel' } },
+            }
+          : {}),
+      },
     };
   }
   return {
