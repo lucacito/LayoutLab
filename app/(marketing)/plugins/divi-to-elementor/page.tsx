@@ -50,7 +50,7 @@ const FAQ = [
   },
   {
     question: 'Will there be a Pro version?',
-    answer: 'Yes — Pro launches after the free plugin is approved, at $49/yr for unlimited sites, with Theme Builder templates and WooCommerce support.',
+    answer: 'Yes — Pro launches after the free plugin is approved, at $25/yr for unlimited sites, with Theme Builder templates and WooCommerce support.',
   },
   {
     question: 'Which Divi export formats work?',
@@ -135,7 +135,7 @@ export default function D2EPage() {
           <ComparisonTable
             className="mt-8"
             caption="Divi to Elementor Converter — Free vs planned Pro"
-            columns={['Free', 'Pro — $49/yr (after launch)']}
+            columns={['Free', 'Pro — $25/yr (after launch)']}
             rows={[
               { label: `${STATS.diviModulesMapped}+ module mappings`, values: [true, true] },
               { label: 'All three Divi export formats', values: [true, true] },

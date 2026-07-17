@@ -103,7 +103,7 @@ export default function AiEditorPage() {
           name: PRODUCT_NAME,
           description: PRODUCT_DESCRIPTION,
           url,
-          offer: { priceCents: 3900, currency: 'USD' },
+          offer: { priceCents: 3000, currency: 'USD' },
         })}
       />
       <JsonLd data={faqJsonLd(FAQ)} />
@@ -186,7 +186,7 @@ export default function AiEditorPage() {
           <ComparisonTable
             className="mt-8"
             caption="AI Editor for Divi 5 — Free vs Pro"
-            columns={['Free', 'Pro — $39/yr']}
+            columns={['Free', 'Pro — $30/yr']}
             rows={[
               { label: 'List pages & read layouts', values: [true, true] },
               { label: 'Update existing pages', values: [true, true] },

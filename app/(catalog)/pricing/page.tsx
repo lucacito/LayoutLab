@@ -14,7 +14,7 @@ import { CtaBand } from '@/components/marketing/CtaBand';
 export const metadata: Metadata = {
   title: 'Pricing — Pro plugin licenses',
   description:
-    'Simple pricing for the Divi 5 plugin toolkit. Free plugins and free layouts to start; Pro licenses from $49/yr on unlimited sites — and nothing breaks if you stop paying.',
+    'Simple pricing for the Divi 5 plugin toolkit. Free plugins and free layouts to start; Pro licenses from $25/yr on unlimited sites — and nothing breaks if you stop paying.',
 };
 
 const FAQ = [
@@ -57,18 +57,18 @@ const FAQ = [
 const TOOLKIT = [
   {
     name: 'Elementor → Divi 5 Pro',
-    price: '$49',
+    price: '$25',
     per: '/yr',
     tagline: 'The full migration toolkit for moving Elementor sites to Divi 5.',
     freeTier: `Free plugin: unlimited single-page conversions, ${STATS.elementorWidgetsMapped} widget mappings, conversion reports.`,
     proTier: 'Pro: full kit ZIP import, Theme Builder headers/footers, global colors & typography.',
-    action: <BuyProButton product="elementor-to-divi5-pro" label="Get Pro — $49/yr" />,
+    action: <BuyProButton product="elementor-to-divi5-pro" label="Get Pro — $25/yr" />,
     href: '/plugins/elementor-to-divi-5',
     highlight: true,
   },
   {
     name: 'AI Editor for Divi 5 Pro',
-    price: '$39',
+    price: '$30',
     per: '/yr',
     tagline: 'Let your AI assistant build pages, menus and site-wide styling — every change validated. Start with a 45-day free trial, no card required.',
     freeTier: 'Free download: edit and validate existing pages, all guides and recipes included.',
@@ -83,7 +83,7 @@ const TOOLKIT = [
     per: '',
     tagline: `Batch conversions the other way — ${STATS.diviModulesMapped}+ modules mapped.`,
     freeTier: 'Free plugin pending wordpress.org review — batch conversion, all Divi export formats.',
-    proTier: 'Pro (after launch): Theme Builder templates, WooCommerce mapping — $49/yr.',
+    proTier: 'Pro (after launch): Theme Builder templates, WooCommerce mapping — $25/yr.',
     action: (
       <Link
         href="/plugins/divi-to-elementor"
@@ -103,7 +103,7 @@ export default async function PricingPage() {
       <section className="border-b border-border bg-mist py-16">
         <Container>
           <SectionTitle eyebrow="Pricing" title="Licenses that respect you">
-            Free tiers on everything. Pro from $49/yr on unlimited sites — and when a license lapses,
+            Free tiers on everything. Pro from $25/yr on unlimited sites — and when a license lapses,
             nothing breaks: activated sites keep working. Renewal buys updates and support, not hostage access.
           </SectionTitle>
         </Container>

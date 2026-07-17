@@ -12,7 +12,7 @@ describe('/pricing (plugin licenses)', () => {
   it('shows the Elementor→Divi5 Pro card with a live buy button', async () => {
     render(await PricingPage());
     expect(screen.getByText(/Elementor → Divi 5 Pro/i)).toBeTruthy();
-    expect(screen.getAllByText(/\$49/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/\$25/).length).toBeGreaterThan(0);
     expect(screen.getByTestId('buy-elementor-to-divi5-pro')).toBeTruthy();
   });
   it('shows Divi→Elementor Pro as coming soon (no buy button)', async () => {
@@ -40,9 +40,9 @@ describe('/pricing (plugin licenses)', () => {
     expect(screen.getByText(/licenses that respect you/i)).toBeTruthy();
     expect(screen.getByText(/nothing breaks/i)).toBeTruthy();
   });
-  it('shows the AI Editor at $39', async () => {
+  it('shows the AI Editor at $30', async () => {
     render(await PricingPage());
-    expect(screen.getAllByText(/\$39/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/\$30/).length).toBeGreaterThan(0);
     expect(screen.getByTestId('buy-ai-editor-divi5-pro')).toBeTruthy();
   });
 });

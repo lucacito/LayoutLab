@@ -13,7 +13,7 @@ describe('/plugins/divi-to-elementor', () => {
   });
   it('mentions the coming Pro tier price', async () => {
     render(await D2EPage());
-    expect(screen.getAllByText(/\$49\/yr/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/\$25\/yr/).length).toBeGreaterThan(0);
   });
   it('has metadata', () => { expect(String(metadata.title)).toMatch(/Divi to Elementor/i); });
   it('shows the batch-conversion mock', async () => {

@@ -8,7 +8,7 @@ describe('/plugins/elementor-to-divi-5', () => {
     render(await PluginPage());
     expect(screen.getByRole('heading', { level: 1 }).textContent).toMatch(/Elementor to Divi 5/i);
     // Deep page now surfaces the price in multiple CTAs (hero, comparison, CTA band).
-    expect(screen.getAllByText(/\$49/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/\$25/).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/kit zip import/i).length).toBeGreaterThan(0);
   });
 
@@ -18,7 +18,7 @@ describe('/plugins/elementor-to-divi-5', () => {
     expect(ld).toBeTruthy();
     const data = JSON.parse(ld!.textContent ?? '{}');
     expect(data['@type']).toBe('Product');
-    expect(data.offers.price).toBe('49.00');
+    expect(data.offers.price).toBe('25.00');
     expect(data.image).toBeTruthy();
   });
 
