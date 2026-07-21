@@ -63,7 +63,7 @@ Practically, this means you can let Claude make real edits without babysitting t
 
 The **free tier** covers everything above: listing pages, reading layouts, updating existing pages, dry-run validation, and all of the plugin's built-in guides (style, site structure, section recipes). That's enough for the vast majority of "edit my existing site" work.
 
-**Pro** ($79/yr, one license for unlimited sites) unlocks the tools that create things rather than edit them: building new pages from scratch, setting the site's front page, assembling the primary menu, writing site-wide custom CSS, and proposing reviewed PHP snippets. If you find yourself asking Claude to "build a new pricing page" and it can edit but not create, that's the free/Pro line — see the full breakdown on the [plugin page](/plugins/divi-5-ai-editor).
+**Pro** ($30/yr, one license for unlimited sites) unlocks the tools that create things rather than edit them: building new pages from scratch, setting the site's front page, assembling the primary menu, writing site-wide custom CSS, and proposing reviewed PHP snippets. If you find yourself asking Claude to "build a new pricing page" and it can edit but not create, that's the free/Pro line — see the full breakdown on the [plugin page](/plugins/divi-5-ai-editor).
 
 ## Troubleshooting
 

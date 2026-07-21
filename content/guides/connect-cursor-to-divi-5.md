@@ -49,7 +49,7 @@ Whichever tool proposes the edit, the request lands on the same plugin backend, 
 
 Free covers listing pages, reading pages, updating existing ones, dry-run validation, and the plugin's bundled guides — plenty for iterating on a site that already exists, which is most of what developers use an editor-based workflow for anyway.
 
-**Pro** ($79/yr, unlimited sites on one license) adds the tools that build rather than edit: creating new pages, setting the front page, assembling the primary menu, site-wide custom CSS, and reviewed PHP snippet proposals. If you're scaffolding a new site section entirely from an agent prompt, that's Pro territory — full comparison on the [plugin page](/plugins/divi-5-ai-editor).
+**Pro** ($30/yr, unlimited sites on one license) adds the tools that build rather than edit: creating new pages, setting the front page, assembling the primary menu, site-wide custom CSS, and reviewed PHP snippet proposals. If you're scaffolding a new site section entirely from an agent prompt, that's Pro territory — full comparison on the [plugin page](/plugins/divi-5-ai-editor).
 
 ## Troubleshooting
 

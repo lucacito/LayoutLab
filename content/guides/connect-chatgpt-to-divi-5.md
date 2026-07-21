@@ -48,7 +48,7 @@ Actions and MCP are just two doors into the same house. Whether the request come
 
 The **free tier** gives your Custom GPT the ability to list pages, read layouts, update existing ones, run dry-run validation, and pull the plugin's built-in style, site, and section guides — enough to have ChatGPT genuinely maintain a site that already exists.
 
-**Pro** ($79/yr, one license across unlimited sites) adds the Actions for creating new pages, setting the front page, and building the primary menu. If your GPT needs to spin up a whole new page rather than edit an existing one, that's the Pro line. Two other Pro tools — site-wide custom CSS and reviewed PHP snippet proposals — are MCP-only for now and aren't available over Actions, so they need an MCP-based assistant like Claude or Cursor instead; details on the [plugin page](/plugins/divi-5-ai-editor).
+**Pro** ($30/yr, one license across unlimited sites) adds the Actions for creating new pages, setting the front page, and building the primary menu. If your GPT needs to spin up a whole new page rather than edit an existing one, that's the Pro line. Two other Pro tools — site-wide custom CSS and reviewed PHP snippet proposals — are MCP-only for now and aren't available over Actions, so they need an MCP-based assistant like Claude or Cursor instead; details on the [plugin page](/plugins/divi-5-ai-editor).
 
 ## Troubleshooting
 
