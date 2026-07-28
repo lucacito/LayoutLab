@@ -1,4 +1,4 @@
-# Divi Cross-Site Clipboard — Browser Extension (Design)
+# Divi Cross-Site Clipboard: Browser Extension (Design)
 
 **Date:** 2026-07-28
 **Status:** Approved design, ready for implementation plan
@@ -78,7 +78,7 @@ no paid tier (a paid tier would require a backend and break "clean/free").
 
 Three parts with clean, single-purpose boundaries.
 
-### 4.1 Content script (+ MAIN-world shim) — "talk to Divi"
+### 4.1 Content script (+ MAIN-world shim): "talk to Divi"
 Injected into pages running the Divi builder. Responsibilities:
 - **Capture:** `localStorage` does not fire a `storage` event in the same tab
   that wrote the value, so passive listening does not work. A tiny shim is
@@ -92,7 +92,7 @@ Injected into pages running the Divi builder. Responsibilities:
 - The content script never mutates page/layout content directly. It only reads
   and writes Divi's own clipboard key.
 
-### 4.2 Background service worker — "own the data"
+### 4.2 Background service worker: "own the data"
 - Receives captured items from the content script.
 - Builds the text label from the Divi JSON (type, element count, source host,
   time).
@@ -100,7 +100,7 @@ Injected into pages running the Divi builder. Responsibilities:
 - Serves the history to the popup and relays "load this item" requests to the
   active tab's content script.
 
-### 4.3 Popup UI — "show the data"
+### 4.3 Popup UI: "show the data"
 - Renders the history list: each row shows its label, a **Load** button, and an
   **×** delete control.
 - A persistent one-line coaching hint at the bottom (so first-timers understand
@@ -130,9 +130,9 @@ History item stored in `chrome.storage.local`:
 
 ## 6. Two capture paths (typed items)
 
-- **module / row / section** — all ride Divi's `localStorage` clipboard key; one
+- **module / row / section**, all ride Divi's `localStorage` clipboard key; one
   mechanism (the MAIN-world shim).
-- **page (whole layout)** — Divi does not put a full page on the clipboard the
+- **page (whole layout)**, Divi does not put a full page on the clipboard the
   same way; the full-page representation is the **portability export** (page-level
   JSON). This needs a second hook: intercept Divi's page-export, or pull the full
   layout from the builder state, and store it as a `type: "page"` item. Loading a
@@ -170,7 +170,7 @@ mechanism). These are Divi's, not ours.
    a page). The shim captures it; it appears at the top of history with a label.
 2. On Site B's Divi builder, the user opens the extension popup, sees the history,
    and clicks **Load** on an item.
-3. The clicked row shows an inline confirmation, e.g. **"Loaded ✓ — now
+3. The clicked row shows an inline confirmation, e.g. **"Loaded ✓ -- now
    right-click -> Paste in Divi."** A persistent one-liner at the bottom of the
    popup states the same for first-timers.
 4. The user pastes the native Divi way (right-click -> Paste, or the paste button).
