@@ -2,7 +2,7 @@
 
 **Date:** 2026-07-28
 **Status:** Approved design, ready for implementation plan
-**Type:** Standalone product (separate repo/distribution from the Divi5Lab marketplace and the AI Editor plugin). This spec lives here for continuity; the extension itself is its own codebase.
+**Type:** Standalone product in its own separate repo/folder, `divi5-copy-paste-extension` (distinct from the Divi5Lab marketplace and the AI Editor plugin). This spec lives here for continuity; the extension itself is its own codebase.
 
 ---
 
@@ -158,11 +158,21 @@ mechanism). These are Divi's, not ours.
 
 ## 8. Cross-browser
 
-- Manifest V3 WebExtension, shared codebase.
-- Chromium (Chrome/Edge) and Firefox. The WebExtension API is shared; expected
-  divergence is limited to manifest details and background/service-worker
-  handling on Firefox. Any real fork is flagged in the implementation plan.
-- Two store listings (Chrome Web Store, Firefox Add-ons).
+**One codebase, two packaged builds.** Not two separately maintained extensions.
+
+- Manifest V3 WebExtension. All logic (content script, background, popup, history,
+  labels) is written once and normalized across `chrome.*` / `browser.*` with
+  `webextension-polyfill`.
+- A small build step emits two artifacts (e.g. `build:chrome` and `build:firefox`)
+  that differ only in a handful of manifest keys: Chrome/Edge service-worker
+  background vs. Firefox's `browser_specific_settings` add-on id and minor field
+  differences.
+- Two store listings (Chrome Web Store, Firefox Add-ons); one source tree.
+- **Portability of the MAIN-world shim (important):** do NOT rely on the manifest
+  `world: "MAIN"` content-script flag, which landed in Chrome earlier than Firefox
+  and would fork the builds. Instead the content script injects a `<script>` tag
+  into the page; that executes in the page's MAIN world identically in both
+  browsers, keeping the shim single-source.
 
 ## 9. UX flow
 
