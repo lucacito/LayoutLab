@@ -2,58 +2,47 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Ship a free, same-browser Chromium + Firefox extension that captures Divi 5 copied elements into a clipboard history and lets the user load any past item into Divi's clipboard on a different site so native paste works.
+**Goal:** Ship a free, same-browser Chromium + Firefox extension that captures Divi 5 copied elements from Divi's `D5Clipboard` IndexedDB into a cross-site history picker, and loads any past entry back into Divi's clipboard on a different site so native paste works.
 
-**Architecture:** One WXT (WebExtension) codebase in TypeScript producing two builds. A MAIN-world shim (injected as a `<script>` tag for cross-browser portability) wraps `localStorage.setItem` to capture Divi's copied blob; a background service worker owns the history in `browser.storage.local`; a popup lists the history and loads a chosen blob back into Divi's clipboard key. Pure logic (label building, history trim/dedupe, clipboard parsing) lives in framework-free `lib/` modules with Vitest unit tests. Browser-glue (shim, content script, background, popup) is verified by loading the unpacked extension against two local Divi sites.
+**Architecture:** One WXT (WebExtension) codebase in TypeScript, two builds. Divi 5 stores its clipboard in **IndexedDB** (`D5Clipboard` DB, `clipboard` store, `items` record = JSON string array of entries). A content script reads/writes that IndexedDB directly (no MAIN-world injection): it polls the `timestamp` record to capture new entries, and on load places a chosen entry as Divi's current clipboard item. A background service worker owns the cross-site history in `browser.storage.local`; a popup shows the picker. Pure logic (type mapping, labels, history trim/dedupe, items array ops) lives in framework-free `lib/` modules with Vitest tests. Browser glue is verified against two local Divi sites.
 
-**Tech Stack:** TypeScript, WXT (`wxt`), Vitest, `browser.*` WebExtension API (provided by WXT), Manifest V3. Code lives in the separate project folder `/Users/Lucas/Documents/JHMG-Local/divi5-copy-paste-extension` (its own git repo). This plan lives in the Divi5Lab repo alongside the spec for continuity.
+**Tech Stack:** TypeScript, WXT (`wxt`), Vitest, `browser.*` WebExtension API, IndexedDB, Manifest V3. Code lives in `/Users/Lucas/Documents/JHMG-Local/divi5-copy-paste-extension` (its own git repo). This plan lives in the Divi5Lab repo alongside the spec.
 
 **Spec:** `docs/superpowers/specs/2026-07-28-divi-cross-site-clipboard-extension-design.md`
 
 ## Global Constraints
 
-- Same-browser only. No backend, no account, no cloud, no plugin on any WP site.
-- Free. No license check, no paid tier.
-- History cap: keep the last **50** items; oldest trims off.
-- Dedupe: an identical blob captured consecutively (matches the newest existing item) does not create a duplicate.
-- Text labels only. No visual thumbnails.
-- Manifest V3. Ship Chromium (Chrome/Edge) and Firefox from **one codebase, two builds**.
-- The MAIN-world shim is injected via a `<script>` tag from the content script. Do NOT rely on the manifest `world: "MAIN"` content-script flag (it forks Chrome vs Firefox).
-- The Divi clipboard `localStorage` key is isolated as a single named constant with a fallback list (`lib/divi-clipboard.ts`). If Divi renames it, capture stops quietly; the extension never writes page/layout content, only Divi's clipboard key and its own `browser.storage.local`.
+- Same-browser only. No backend, no account, no cloud, no plugin on any WP site. Free.
+- Divi 5 clipboard = IndexedDB `D5Clipboard` / store `clipboard` / records `items` (JSON string array), `timestamp` (int ms), `lastDependencyChange` (int). Entry shape: `{ clipboardType: "module", origin: string, payload: { moduleIds: string[], moduleType: string, moduleObjects: Record<string, {children?: string[], ...}> } }`. Real type is `payload.moduleType`.
+- All Divi IndexedDB names and field paths are isolated in `lib/d5clipboard.ts` constants. If Divi changes them, capture/load stops quietly; the extension only touches `D5Clipboard` and its own `browser.storage.local`, never page/layout content.
+- Content script accesses IndexedDB directly. NO MAIN-world script injection.
+- History cap: last **50**; oldest trims off. Dedupe: an entry matching the newest existing item (by `origin`) is not duplicated.
+- Text labels only. Manifest V3. Chromium + Firefox from one codebase, two builds.
+- Load path: place the chosen entry as Divi's current clipboard item, then the user **reloads the Divi builder** and pastes natively. (Divi reads its clipboard from IndexedDB on load; confirmed items survive reload.) The extension never reproduces Divi's paste-targeting.
 - No em dashes in any user-facing copy, README, or comments. Use commas, parentheses, periods, or colons.
-- Load then native paste: the extension writes the blob into Divi's clipboard key; the user pastes the native Divi way. The extension never reproduces Divi's paste-targeting.
 
 ---
 
 ### Task 1: Project scaffold (WXT + TypeScript + Vitest, two-build config)
 
 **Files:**
-- Create: `/Users/Lucas/Documents/JHMG-Local/divi5-copy-paste-extension/package.json`
-- Create: `.../wxt.config.ts`
-- Create: `.../tsconfig.json`
-- Create: `.../vitest.config.ts`
-- Create: `.../.gitignore`
-- Create: `.../entrypoints/background.ts` (stub)
-- Create: `.../entrypoints/popup/index.html` (stub)
-- Create: `.../entrypoints/popup/main.ts` (stub)
-- Create: `.../README.md`
+- Create: `.../package.json`, `.../wxt.config.ts`, `.../tsconfig.json`, `.../vitest.config.ts`, `.../.gitignore`, `.../README.md`
+- Create: `.../entrypoints/background.ts` (stub), `.../entrypoints/popup/index.html` (stub), `.../entrypoints/popup/main.ts` (stub)
 
 **Interfaces:**
-- Consumes: nothing (first task).
-- Produces: a buildable WXT project. `npm run build` (Chrome) and `npm run build:firefox` both succeed; `npm run test` runs Vitest.
+- Produces: a buildable WXT project. `npm run build` and `npm run build:firefox` both succeed; `npm run test` runs Vitest.
 
-- [ ] **Step 1: Initialize the project and install deps**
+- [ ] **Step 1: Initialize and install**
 
 ```bash
 cd /Users/Lucas/Documents/JHMG-Local/divi5-copy-paste-extension
 git init
 npm init -y
-npm install -D wxt typescript vitest @types/node
+npm install -D wxt typescript vitest @types/node fake-indexeddb
 ```
+(`fake-indexeddb` is used later to unit-test IndexedDB ops in Node.)
 
-- [ ] **Step 2: Write `package.json` scripts**
-
-Replace the `scripts` block in `package.json` with:
+- [ ] **Step 2: `package.json` scripts + type module**
 
 ```json
 {
@@ -71,7 +60,7 @@ Replace the `scripts` block in `package.json` with:
 }
 ```
 
-- [ ] **Step 3: Write `wxt.config.ts`**
+- [ ] **Step 3: `wxt.config.ts`**
 
 ```ts
 import { defineConfig } from "wxt";
@@ -80,64 +69,43 @@ export default defineConfig({
   manifest: {
     name: "Divi5 Cross-Site Copy/Paste",
     description: "Copy Divi 5 sections, rows, modules, and pages on one site and paste them on another. Same browser, free, no account.",
-    permissions: ["storage", "activeTab", "tabs", "scripting"],
+    permissions: ["storage", "activeTab", "tabs"],
     host_permissions: ["<all_urls>"],
-    browser_specific_settings: {
-      gecko: { id: "divi5-copy-paste@divi5lab.com" }
-    }
+    browser_specific_settings: { gecko: { id: "divi5-copy-paste@divi5lab.com" } }
   }
 });
 ```
 
-- [ ] **Step 4: Write `tsconfig.json`**
+- [ ] **Step 4: `tsconfig.json`**
 
 ```json
-{
-  "extends": "./.wxt/tsconfig.json",
-  "compilerOptions": {
-    "strict": true,
-    "types": ["node"]
-  }
-}
+{ "extends": "./.wxt/tsconfig.json", "compilerOptions": { "strict": true, "types": ["node"] } }
 ```
 
-- [ ] **Step 5: Write `vitest.config.ts`**
+- [ ] **Step 5: `vitest.config.ts`**
 
 ```ts
 import { defineConfig } from "vitest/config";
-
-export default defineConfig({
-  test: {
-    include: ["tests/**/*.test.ts"],
-    environment: "node"
-  }
-});
+export default defineConfig({ test: { include: ["tests/**/*.test.ts"], environment: "node" } });
 ```
 
-- [ ] **Step 6: Write stub entrypoints so the build has content**
+- [ ] **Step 6: Stub entrypoints**
 
 `entrypoints/background.ts`:
 ```ts
-export default defineBackground(() => {
-  // wired up in later tasks
-});
+export default defineBackground(() => {});
 ```
-
 `entrypoints/popup/index.html`:
 ```html
-<!doctype html>
-<html>
-  <head><meta charset="utf-8" /><title>Divi5 Copy/Paste</title></head>
-  <body><div id="app"></div><script type="module" src="./main.ts"></script></body>
-</html>
+<!doctype html><html><head><meta charset="utf-8" /><title>Divi5 Copy/Paste</title></head>
+<body><div id="app"></div><script type="module" src="./main.ts"></script></body></html>
 ```
-
 `entrypoints/popup/main.ts`:
 ```ts
 document.querySelector("#app")!.textContent = "Divi5 Copy/Paste";
 ```
 
-- [ ] **Step 7: Write `.gitignore`**
+- [ ] **Step 7: `.gitignore`**
 
 ```
 node_modules
@@ -146,60 +114,58 @@ node_modules
 *.zip
 ```
 
-- [ ] **Step 8: Write a short `README.md`**
+- [ ] **Step 8: `README.md`**: one paragraph on what it does (no em dashes), plus `npm run dev`, `npm run build` / `build:firefox`, and "load unpacked from `.output/chrome-mv3`".
 
-Document: what it does (one paragraph, no em dashes), `npm run dev`, `npm run build` / `build:firefox`, and "load unpacked from `.output/chrome-mv3`".
-
-- [ ] **Step 9: Verify both builds succeed**
+- [ ] **Step 9: Verify both builds**
 
 Run: `npm run build && npm run build:firefox`
-Expected: both complete, producing `.output/chrome-mv3/` and `.output/firefox-mv2/` (or `firefox-mv3`) with a `manifest.json`.
+Expected: both produce `.output/chrome-mv3/` and a firefox output with `manifest.json`.
 
-- [ ] **Step 10: Verify Vitest runs (no tests yet is fine)**
+- [ ] **Step 10: Verify Vitest runs**
 
 Run: `npm run test`
-Expected: Vitest runs and reports "no test files found" or 0 tests, exit 0.
+Expected: exit 0 (no tests yet is fine).
 
 - [ ] **Step 11: Commit**
 
 ```bash
-git add -A
-git commit -m "chore: scaffold WXT extension with chrome+firefox builds and vitest"
+git add -A && git commit -m "chore: scaffold WXT extension with chrome+firefox builds and vitest"
 ```
 
 ---
 
-### Task 2: Shared types
+### Task 2: Shared types + Divi constants
 
 **Files:**
 - Create: `.../lib/types.ts`
+- Create: `.../lib/d5clipboard.ts` (constants only in this task)
 - Test: `.../tests/types.test.ts`
 
 **Interfaces:**
-- Consumes: nothing.
 - Produces:
-  - `type ItemType = "module" | "row" | "section" | "page"`
-  - `interface HistoryItem { id: string; type: ItemType; label: string; diviJson: string; sourceHost: string; copiedAt: number }`
-  - Message union `Message` (see code) used by content script, background, popup.
+  - `type ItemType = "module" | "row" | "section" | "page"`; `ITEM_TYPES`
+  - `interface DiviClipboardEntry { clipboardType: string; origin: string; payload: { moduleIds: string[]; moduleType: string; moduleObjects: Record<string, { children?: string[]; [k: string]: unknown }> } }`
+  - `interface HistoryItem { id: string; type: ItemType; label: string; entry: DiviClipboardEntry; sourceHost: string; copiedAt: number }`
+  - `Message` union
+  - `lib/d5clipboard.ts`: `DB_NAME`, `STORE`, `ITEMS_KEY`, `TIMESTAMP_KEY`, `DEP_KEY` constants (real values from the live dump)
 
 - [ ] **Step 1: Write the failing test**
 
 `tests/types.test.ts`:
 ```ts
 import { describe, it, expect } from "vitest";
-import type { HistoryItem, ItemType } from "../lib/types";
 import { ITEM_TYPES } from "../lib/types";
+import { DB_NAME, STORE, ITEMS_KEY, TIMESTAMP_KEY } from "../lib/d5clipboard";
 
-describe("types", () => {
-  it("exposes the four item types", () => {
+describe("constants", () => {
+  it("lists the four item types", () => {
     expect(ITEM_TYPES).toEqual(["module", "row", "section", "page"]);
   });
-  it("builds a HistoryItem shape", () => {
-    const item: HistoryItem = {
-      id: "x", type: "section" as ItemType, label: "L",
-      diviJson: "{}", sourceHost: "a.com", copiedAt: 1
-    };
-    expect(item.type).toBe("section");
+  it("pins the Divi 5 IndexedDB names discovered by inspection", () => {
+    expect(DB_NAME).toBe("D5Clipboard");
+    expect(STORE).toBe("clipboard");
+    expect(ITEMS_KEY).toBe("items");
+    expect(TIMESTAMP_KEY).toBe("timestamp");
   });
 });
 ```
@@ -207,198 +173,210 @@ describe("types", () => {
 - [ ] **Step 2: Run test to verify it fails**
 
 Run: `npx vitest run tests/types.test.ts`
-Expected: FAIL, cannot find `../lib/types`.
+Expected: FAIL (modules missing).
 
 - [ ] **Step 3: Write `lib/types.ts`**
 
 ```ts
 export type ItemType = "module" | "row" | "section" | "page";
-
 export const ITEM_TYPES: ItemType[] = ["module", "row", "section", "page"];
+
+export interface DiviClipboardEntry {
+  clipboardType: string;
+  origin: string;
+  payload: {
+    moduleIds: string[];
+    moduleType: string;
+    moduleObjects: Record<string, { children?: string[]; [k: string]: unknown }>;
+  };
+}
 
 export interface HistoryItem {
   id: string;
   type: ItemType;
   label: string;
-  diviJson: string;
+  entry: DiviClipboardEntry;
   sourceHost: string;
   copiedAt: number;
 }
 
 export type Message =
-  | { type: "CAPTURE"; diviJson: string; sourceHost: string; copiedAt: number }
+  | { type: "CAPTURE"; entries: DiviClipboardEntry[]; sourceHost: string; copiedAt: number }
   | { type: "GET_HISTORY" }
   | { type: "LOAD"; id: string }
   | { type: "DELETE"; id: string }
   | { type: "CLEAR" }
-  | { type: "WRITE_CLIPBOARD"; key: string; value: string };
+  | { type: "WRITE_CLIPBOARD"; entry: DiviClipboardEntry };
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [ ] **Step 4: Write `lib/d5clipboard.ts` constants**
+
+```ts
+// Divi 5 clipboard lives in IndexedDB. Names discovered by live inspection
+// on 2026-07-28 (see tests/fixtures/d5clipboard-dump.json). If a Divi update
+// renames these, update them here; capture/load fail quietly until then.
+export const DB_NAME = "D5Clipboard";
+export const STORE = "clipboard";
+export const ITEMS_KEY = "items";
+export const TIMESTAMP_KEY = "timestamp";
+export const DEP_KEY = "lastDependencyChange";
+```
+
+- [ ] **Step 5: Run test to verify it passes**
 
 Run: `npx vitest run tests/types.test.ts`
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
-
-```bash
-git add lib/types.ts tests/types.test.ts
-git commit -m "feat: shared HistoryItem and Message types"
-```
-
----
-
-### Task 3: Discover the Divi 5 clipboard key and record fixtures (spike)
-
-This task nails the one external unknown the whole extension depends on. It produces real captured fixtures that later tasks test against.
-
-**Files:**
-- Create: `.../lib/divi-clipboard.ts` (constants only in this task)
-- Create: `.../tests/fixtures/README.md`
-- Create: `.../tests/fixtures/section.divi.json` (real captured blob)
-- Create: `.../tests/fixtures/row.divi.json`
-- Create: `.../tests/fixtures/module.divi.json`
-- Create: `.../tests/fixtures/fixtures.meta.json` (records expected type + childCount per fixture)
-
-**Interfaces:**
-- Consumes: nothing.
-- Produces: `DIVI_CLIPBOARD_KEYS: string[]` and `DIVI_CLIPBOARD_KEY: string` (primary). Real fixture files + a `fixtures.meta.json` mapping each fixture filename to `{ type, childCount }` for Task 4's parser tests.
-
-- [ ] **Step 1: Capture the key from a live Divi 5 site**
-
-Procedure (manual, documented in `tests/fixtures/README.md`):
-1. Open a Divi 5 site in the builder. Open DevTools console.
-2. Run `Object.keys(localStorage)` and note candidates (look for names containing `clipboard`, `copy`, `et_`, or `divi`).
-3. Copy a section in the builder, re-run `Object.keys(localStorage)`, and diff: the key whose value just appeared/changed is the clipboard key.
-4. Record `localStorage.getItem("<key>")` for a section, a row, and a module.
-
-- [ ] **Step 2: Save the three real blobs as fixtures**
-
-Save each captured value verbatim to `tests/fixtures/section.divi.json`, `row.divi.json`, `module.divi.json`.
-
-- [ ] **Step 3: Record expected parse results**
-
-`tests/fixtures/fixtures.meta.json` (fill childCount from what you actually copied, e.g. a section containing 3 rows):
-```json
-{
-  "section.divi.json": { "type": "section", "childCount": 3 },
-  "row.divi.json": { "type": "row", "childCount": 2 },
-  "module.divi.json": { "type": "module", "childCount": 0 }
-}
-```
-
-- [ ] **Step 4: Write `lib/divi-clipboard.ts` constants**
-
-Use the real key discovered in Step 1 as the primary; keep any observed variants as fallbacks:
-```ts
-// Discovered by live inspection on 2026-07-2x. See tests/fixtures/README.md.
-// If Divi renames this in an update, add the new value at the front here.
-export const DIVI_CLIPBOARD_KEYS: string[] = [
-  "<PRIMARY_KEY_FROM_STEP_1>"
-  // add fallbacks/variants if observed
-];
-
-export const DIVI_CLIPBOARD_KEY = DIVI_CLIPBOARD_KEYS[0];
-```
-
-- [ ] **Step 5: Document the whole-page finding**
-
-In `tests/fixtures/README.md`, record how a full page is represented: does copying/using page-level actions write another `localStorage` key (if so, capture and add it), or is a full page only available via the portability export? This decides Task 10's mechanism. If page is export-only, note it explicitly.
-
 - [ ] **Step 6: Commit**
 
 ```bash
-git add lib/divi-clipboard.ts tests/fixtures
-git commit -m "spike: pin Divi 5 clipboard localStorage key + capture real fixtures"
+git add lib/types.ts lib/d5clipboard.ts tests/types.test.ts
+git commit -m "feat: shared types + Divi D5Clipboard IndexedDB constants"
 ```
 
 ---
 
-### Task 4: Clipboard parser (type + child count)
+### Task 3: Real fixtures already captured; add labeled cases
+
+The `D5Clipboard` dump is already saved at `tests/fixtures/d5clipboard-dump.json`. This task extracts clean single-entry fixtures with known types/counts for the parser tests.
 
 **Files:**
-- Create: `.../lib/parse-clipboard.ts`
-- Test: `.../tests/parse-clipboard.test.ts`
+- Create: `.../tests/fixtures/entry.section.json`, `entry.row.json`, `entry.module.json`, `entry.page.json`
+- Create: `.../tests/fixtures/fixtures.meta.json`
+- Create: `.../tests/fixtures/README.md`
 
 **Interfaces:**
-- Consumes: `ItemType` from `lib/types`; fixtures + `fixtures.meta.json` from Task 3.
-- Produces: `parseClipboard(raw: string): { type: ItemType; childCount: number } | null`. Returns `null` for input that is not a recognizable Divi clipboard blob (so the background can ignore unrelated `localStorage` writes).
+- Produces: one `DiviClipboardEntry` per file, plus `fixtures.meta.json` mapping filename to `{ type, childCount }` for Task 4.
 
-- [ ] **Step 1: Write the failing test (driven by the real fixtures)**
+- [ ] **Step 1: Extract a row entry from the existing dump**
 
-`tests/parse-clipboard.test.ts`:
+The dump's `stores.clipboard.records[0]` is the `items` JSON string. Parse it, take one entry whose `payload.moduleType === "row"`, and save it (pretty-printed) to `tests/fixtures/entry.row.json`. Node one-off:
+```bash
+node -e "const d=require('./tests/fixtures/d5clipboard-dump.json');const items=JSON.parse(d.stores.clipboard.records[0]);const row=items.find(e=>e.payload.moduleType==='row');require('fs').writeFileSync('tests/fixtures/entry.row.json',JSON.stringify(row,null,2));console.log('rootId',row.payload.moduleIds[0],'children',(row.payload.moduleObjects[row.payload.moduleIds[0]].children||[]).length)"
+```
+Note the printed child count.
+
+- [ ] **Step 2: Capture section, module, and page entries from a live site**
+
+In the Divi 5 builder, copy a **section** (note its row count), a single **module**, and a **whole page** (note its section count). After each, dump the newest entry using this console snippet, then save the three files:
+```js
+(async () => {
+  const open = indexedDB.open('D5Clipboard');
+  const db = await new Promise(r => { open.onsuccess = () => r(open.result); });
+  const os = db.transaction('clipboard','readonly').objectStore('clipboard');
+  const items = JSON.parse(await new Promise(r => { const q = os.get('items'); q.onsuccess = () => r(q.result); }));
+  window.__entry = items[0]; // adjust index after Step 4 confirms newest position
+  const b = new Blob([JSON.stringify(window.__entry, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = 'entry.json'; a.click();
+  return 'moduleType=' + window.__entry.payload.moduleType;
+})();
+```
+Save as `entry.section.json`, `entry.module.json`, `entry.page.json`. Record each `moduleType` value.
+
+- [ ] **Step 3: Write `fixtures.meta.json`**
+
+Fill in the real counts observed:
+```json
+{
+  "entry.section.json": { "type": "section", "childCount": 3 },
+  "entry.row.json": { "type": "row", "childCount": 4 },
+  "entry.module.json": { "type": "module", "childCount": 0 },
+  "entry.page.json": { "type": "page", "childCount": 5 }
+}
+```
+
+- [ ] **Step 4: Record the newest-entry position + page moduleType**
+
+In `tests/fixtures/README.md`, document: (a) whether the just-copied entry appears at `items[0]` (front) or the end, and whether `timestamp` alone marks the current item; (b) the exact `payload.moduleType` string for a full page. These drive Task 5 and Task 6.
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add tests/fixtures
+git commit -m "test: extract labeled Divi clipboard entry fixtures + record newest-position finding"
+```
+
+---
+
+### Task 4: Entry type mapping + child count
+
+**Files:**
+- Create: `.../lib/entry.ts`
+- Test: `.../tests/entry.test.ts`
+
+**Interfaces:**
+- Consumes: `DiviClipboardEntry`, `ItemType` (`lib/types`); fixtures + meta (Task 3).
+- Produces:
+  - `entryType(entry: DiviClipboardEntry): ItemType`
+  - `entryChildCount(entry: DiviClipboardEntry): number`
+  - `entryOrigin(entry: DiviClipboardEntry): string`
+
+- [ ] **Step 1: Write the failing test (driven by real fixtures)**
+
+`tests/entry.test.ts`:
 ```ts
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
-import { parseClipboard } from "../lib/parse-clipboard";
+import { entryType, entryChildCount } from "../lib/entry";
 
 const dir = dirname(fileURLToPath(import.meta.url));
 const meta = JSON.parse(readFileSync(join(dir, "fixtures/fixtures.meta.json"), "utf8"));
 
-describe("parseClipboard", () => {
+describe("entry", () => {
   for (const [file, expected] of Object.entries<any>(meta)) {
-    it(`parses ${file} as ${expected.type} with ${expected.childCount} children`, () => {
-      const raw = readFileSync(join(dir, "fixtures", file), "utf8");
-      expect(parseClipboard(raw)).toEqual(expected);
+    it(`${file}: type ${expected.type}, ${expected.childCount} children`, () => {
+      const entry = JSON.parse(readFileSync(join(dir, "fixtures", file), "utf8"));
+      expect(entryType(entry)).toBe(expected.type);
+      expect(entryChildCount(entry)).toBe(expected.childCount);
     });
   }
-
-  it("returns null for non-Divi input", () => {
-    expect(parseClipboard('{"unrelated":true}')).toBeNull();
-    expect(parseClipboard("not json")).toBeNull();
-  });
 });
 ```
 
 - [ ] **Step 2: Run test to verify it fails**
 
-Run: `npx vitest run tests/parse-clipboard.test.ts`
-Expected: FAIL, cannot find `../lib/parse-clipboard`.
+Run: `npx vitest run tests/entry.test.ts`
+Expected: FAIL (module missing).
 
-- [ ] **Step 3: Implement `lib/parse-clipboard.ts` against the real fixture shape**
+- [ ] **Step 3: Implement `lib/entry.ts`**
 
-Inspect the fixture JSON structure from Task 3 and implement to satisfy the tests. Representative implementation to adapt to the actual shape (map Divi's element tag to `ItemType`, count immediate children):
+Adjust the page branch per the Task 3 Step 4 finding (the real full-page `moduleType`):
 ```ts
-import type { ItemType } from "./types";
+import type { DiviClipboardEntry, ItemType } from "./types";
 
-// Map Divi's element identifier to our ItemType. Adjust the tag strings and the
-// traversal to match the real fixture structure captured in Task 3.
-function classify(node: any): ItemType | null {
-  const tag: string = node?.type ?? node?.name ?? node?.component ?? "";
-  if (/section/i.test(tag)) return "section";
-  if (/row/i.test(tag)) return "row";
-  if (/module|text|image|button|blurb/i.test(tag)) return "module";
-  return null;
+const PAGE_MODULE_TYPE = "layout"; // set to the real full-page moduleType recorded in Task 3 Step 4
+
+export function entryType(entry: DiviClipboardEntry): ItemType {
+  const mt = entry.payload.moduleType;
+  if (mt === PAGE_MODULE_TYPE) return "page";
+  if (mt === "section") return "section";
+  if (mt === "row") return "row";
+  return "module";
 }
 
-function childrenOf(node: any): any[] {
-  return node?.children ?? node?.content ?? node?.inner ?? [];
+export function entryChildCount(entry: DiviClipboardEntry): number {
+  const rootId = entry.payload.moduleIds[0];
+  const root = entry.payload.moduleObjects[rootId];
+  return root?.children?.length ?? 0;
 }
 
-export function parseClipboard(raw: string): { type: ItemType; childCount: number } | null {
-  let data: any;
-  try { data = JSON.parse(raw); } catch { return null; }
-  // Divi may wrap the copied element; unwrap to the root node. Adjust per fixture.
-  const root = data?.root ?? data?.module ?? data?.[0] ?? data;
-  const type = classify(root);
-  if (!type) return null;
-  const childCount = type === "module" ? 0 : childrenOf(root).length;
-  return { type, childCount };
+export function entryOrigin(entry: DiviClipboardEntry): string {
+  return entry.origin;
 }
 ```
 
 - [ ] **Step 4: Run test to verify it passes**
 
-Run: `npx vitest run tests/parse-clipboard.test.ts`
-Expected: PASS for all fixtures and the null cases. Iterate on the traversal until green.
+Run: `npx vitest run tests/entry.test.ts`
+Expected: PASS. Adjust `PAGE_MODULE_TYPE` and the child-count traversal to match the real fixtures until green.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add lib/parse-clipboard.ts tests/parse-clipboard.test.ts
-git commit -m "feat: parse Divi clipboard blob into type + child count"
+git add lib/entry.ts tests/entry.test.ts
+git commit -m "feat: map Divi clipboard entry to type + child count"
 ```
 
 ---
@@ -410,10 +388,8 @@ git commit -m "feat: parse Divi clipboard blob into type + child count"
 - Test: `.../tests/labels.test.ts`
 
 **Interfaces:**
-- Consumes: `ItemType` from `lib/types`.
-- Produces:
-  - `relativeTime(from: number, now: number): string`
-  - `buildLabel(p: { type: ItemType; childCount: number; sourceHost: string; copiedAt: number; now: number }): string`
+- Consumes: `ItemType` (`lib/types`).
+- Produces: `relativeTime(from, now)`, `buildLabel({ type, childCount, sourceHost, copiedAt, now })`.
 
 - [ ] **Step 1: Write the failing test**
 
@@ -421,14 +397,11 @@ git commit -m "feat: parse Divi clipboard blob into type + child count"
 ```ts
 import { describe, it, expect } from "vitest";
 import { relativeTime, buildLabel } from "../lib/labels";
-
 const NOW = 1_000_000_000_000;
 
 describe("relativeTime", () => {
-  it("shows just now under a minute", () => {
+  it("humanizes deltas", () => {
     expect(relativeTime(NOW - 30_000, NOW)).toBe("just now");
-  });
-  it("shows minutes, hours, days", () => {
     expect(relativeTime(NOW - 2 * 60_000, NOW)).toBe("2m ago");
     expect(relativeTime(NOW - 3 * 3_600_000, NOW)).toBe("3h ago");
     expect(relativeTime(NOW - 5 * 86_400_000, NOW)).toBe("5d ago");
@@ -436,19 +409,19 @@ describe("relativeTime", () => {
 });
 
 describe("buildLabel", () => {
-  it("labels a section with pluralized rows", () => {
+  it("section with pluralized rows", () => {
     expect(buildLabel({ type: "section", childCount: 3, sourceHost: "site-a.com", copiedAt: NOW - 120_000, now: NOW }))
       .toBe("Section · 3 rows · from site-a.com · 2m ago");
   });
-  it("uses singular for a single child", () => {
-    expect(buildLabel({ type: "section", childCount: 1, sourceHost: "site-a.com", copiedAt: NOW, now: NOW }))
-      .toBe("Section · 1 row · from site-a.com · just now");
+  it("singular child", () => {
+    expect(buildLabel({ type: "row", childCount: 1, sourceHost: "a.com", copiedAt: NOW, now: NOW }))
+      .toBe("Row · 1 module · from a.com · just now");
   });
-  it("omits the child clause for a module", () => {
+  it("module has no child clause", () => {
     expect(buildLabel({ type: "module", childCount: 0, sourceHost: "b.com", copiedAt: NOW, now: NOW }))
       .toBe("Module · from b.com · just now");
   });
-  it("labels a full page with sections", () => {
+  it("full page with sections", () => {
     expect(buildLabel({ type: "page", childCount: 4, sourceHost: "b.com", copiedAt: NOW, now: NOW }))
       .toBe("Full page · 4 sections · from b.com · just now");
   });
@@ -458,7 +431,7 @@ describe("buildLabel", () => {
 - [ ] **Step 2: Run test to verify it fails**
 
 Run: `npx vitest run tests/labels.test.ts`
-Expected: FAIL, cannot find `../lib/labels`.
+Expected: FAIL.
 
 - [ ] **Step 3: Implement `lib/labels.ts`**
 
@@ -475,17 +448,10 @@ export function relativeTime(from: number, now: number): string {
   return `${Math.floor(h / 24)}d ago`;
 }
 
-const TITLE: Record<ItemType, string> = {
-  module: "Module", row: "Row", section: "Section", page: "Full page"
-};
-// Plural noun for the immediate children of each type. Module has none.
-const CHILD_NOUN: Record<ItemType, string | null> = {
-  module: null, row: "modules", section: "rows", page: "sections"
-};
+const TITLE: Record<ItemType, string> = { module: "Module", row: "Row", section: "Section", page: "Full page" };
+const CHILD_NOUN: Record<ItemType, string | null> = { module: null, row: "modules", section: "rows", page: "sections" };
 
-export function buildLabel(p: {
-  type: ItemType; childCount: number; sourceHost: string; copiedAt: number; now: number;
-}): string {
+export function buildLabel(p: { type: ItemType; childCount: number; sourceHost: string; copiedAt: number; now: number; }): string {
   const parts: string[] = [TITLE[p.type]];
   const noun = CHILD_NOUN[p.type];
   if (noun && p.childCount > 0) {
@@ -512,83 +478,111 @@ git commit -m "feat: build history item labels"
 
 ---
 
-### Task 6: History pure logic (add, dedupe, trim, remove, build item)
+### Task 6: History pure logic + items array ops
 
 **Files:**
 - Create: `.../lib/history.ts`
-- Test: `.../tests/history.test.ts`
+- Create: `.../lib/clipboard-ops.ts`
+- Test: `.../tests/history.test.ts`, `.../tests/clipboard-ops.test.ts`
 
 **Interfaces:**
-- Consumes: `HistoryItem` from `lib/types`; `buildLabel` from `lib/labels`.
+- Consumes: `HistoryItem`, `DiviClipboardEntry` (`lib/types`); `buildLabel` (`lib/labels`); `entryType`/`entryChildCount`/`entryOrigin` (`lib/entry`).
 - Produces:
-  - `MAX_HISTORY = 50`
-  - `addToHistory(list: HistoryItem[], item: HistoryItem): HistoryItem[]`
-  - `removeFromHistory(list: HistoryItem[], id: string): HistoryItem[]`
-  - `buildHistoryItem(args: { id: string; diviJson: string; parsed: { type: ItemType; childCount: number }; sourceHost: string; copiedAt: number; now: number }): HistoryItem`
+  - history: `MAX_HISTORY = 50`, `addToHistory(list, item)`, `removeFromHistory(list, id)`, `buildHistoryItem({ id, entry, sourceHost, copiedAt, now })`
+  - clipboard-ops: `parseItems(raw: string): DiviClipboardEntry[]`, `serializeItems(entries): string`, `newestEntry(entries): DiviClipboardEntry | null`, `placeAsCurrent(entries, entry): DiviClipboardEntry[]`
 
-- [ ] **Step 1: Write the failing test**
+- [ ] **Step 1: Write the failing history test**
 
 `tests/history.test.ts`:
 ```ts
 import { describe, it, expect } from "vitest";
 import { addToHistory, removeFromHistory, buildHistoryItem, MAX_HISTORY } from "../lib/history";
-import type { HistoryItem } from "../lib/types";
+import type { DiviClipboardEntry, HistoryItem } from "../lib/types";
 
-function item(id: string, json = `{"j":"${id}"}`): HistoryItem {
-  return { id, type: "section", label: id, diviJson: json, sourceHost: "a.com", copiedAt: 0 };
+function entry(origin: string, moduleType = "row", childIds: string[] = ["x"]): DiviClipboardEntry {
+  return { clipboardType: "module", origin, payload: { moduleIds: [origin], moduleType, moduleObjects: { [origin]: { children: childIds } } } };
+}
+function hitem(id: string, origin = id): HistoryItem {
+  return { id, type: "row", label: id, entry: entry(origin), sourceHost: "a.com", copiedAt: 0 };
 }
 
 describe("addToHistory", () => {
-  it("prepends new items", () => {
-    const out = addToHistory([item("a")], item("b"));
-    expect(out.map(i => i.id)).toEqual(["b", "a"]);
+  it("prepends", () => {
+    expect(addToHistory([hitem("a")], hitem("b")).map(i => i.id)).toEqual(["b", "a"]);
   });
-  it("dedupes an identical blob captured right after the newest", () => {
-    const list = [item("a", '{"same":1}')];
-    const out = addToHistory(list, item("b", '{"same":1}'));
-    expect(out.map(i => i.id)).toEqual(["a"]);
+  it("dedupes when the newest has the same entry origin", () => {
+    const list = [hitem("a", "same")];
+    expect(addToHistory(list, hitem("b", "same")).map(i => i.id)).toEqual(["a"]);
   });
-  it("caps the list at MAX_HISTORY", () => {
+  it("caps at MAX_HISTORY", () => {
     let list: HistoryItem[] = [];
-    for (let i = 0; i < MAX_HISTORY + 10; i++) list = addToHistory(list, item(`i${i}`));
+    for (let i = 0; i < MAX_HISTORY + 5; i++) list = addToHistory(list, hitem(`i${i}`, `o${i}`));
     expect(list.length).toBe(MAX_HISTORY);
-    expect(list[0].id).toBe(`i${MAX_HISTORY + 9}`);
   });
 });
 
 describe("removeFromHistory", () => {
   it("removes by id", () => {
-    expect(removeFromHistory([item("a"), item("b")], "a").map(i => i.id)).toEqual(["b"]);
+    expect(removeFromHistory([hitem("a"), hitem("b")], "a").map(i => i.id)).toEqual(["b"]);
   });
 });
 
 describe("buildHistoryItem", () => {
-  it("assembles a labeled item", () => {
-    const it = buildHistoryItem({
-      id: "x", diviJson: "{}", parsed: { type: "section", childCount: 2 },
-      sourceHost: "a.com", copiedAt: 1000, now: 1000
-    });
-    expect(it).toMatchObject({ id: "x", type: "section", sourceHost: "a.com", copiedAt: 1000 });
+  it("labels from the entry", () => {
+    const it = buildHistoryItem({ id: "x", entry: entry("o1", "section", ["r1", "r2"]), sourceHost: "a.com", copiedAt: 1000, now: 1000 });
+    expect(it).toMatchObject({ id: "x", type: "section", sourceHost: "a.com" });
     expect(it.label).toBe("Section · 2 rows · from a.com · just now");
   });
 });
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [ ] **Step 2: Write the failing clipboard-ops test**
 
-Run: `npx vitest run tests/history.test.ts`
-Expected: FAIL, cannot find `../lib/history`.
+`tests/clipboard-ops.test.ts`:
+```ts
+import { describe, it, expect } from "vitest";
+import { parseItems, serializeItems, newestEntry, placeAsCurrent } from "../lib/clipboard-ops";
+import type { DiviClipboardEntry } from "../lib/types";
 
-- [ ] **Step 3: Implement `lib/history.ts`**
+const e = (o: string): DiviClipboardEntry => ({ clipboardType: "module", origin: o, payload: { moduleIds: [o], moduleType: "row", moduleObjects: { [o]: { children: [] } } } });
+
+describe("clipboard-ops", () => {
+  it("parses and serializes the items string", () => {
+    const raw = JSON.stringify([e("a"), e("b")]);
+    const list = parseItems(raw);
+    expect(list.map(x => x.origin)).toEqual(["a", "b"]);
+    expect(parseItems(serializeItems(list)).map(x => x.origin)).toEqual(["a", "b"]);
+  });
+  it("returns [] for bad input", () => {
+    expect(parseItems("nope")).toEqual([]);
+  });
+  it("newestEntry is the front of the array", () => {
+    expect(newestEntry([e("a"), e("b")])?.origin).toBe("a");
+    expect(newestEntry([])).toBeNull();
+  });
+  it("placeAsCurrent puts the entry at the front and dedupes it", () => {
+    const out = placeAsCurrent([e("a"), e("b")], e("b"));
+    expect(out.map(x => x.origin)).toEqual(["b", "a"]);
+  });
+});
+```
+
+- [ ] **Step 3: Run both tests to verify they fail**
+
+Run: `npx vitest run tests/history.test.ts tests/clipboard-ops.test.ts`
+Expected: FAIL (modules missing).
+
+- [ ] **Step 4: Implement `lib/history.ts`**
 
 ```ts
-import type { HistoryItem, ItemType } from "./types";
+import type { DiviClipboardEntry, HistoryItem } from "./types";
 import { buildLabel } from "./labels";
+import { entryType, entryChildCount } from "./entry";
 
 export const MAX_HISTORY = 50;
 
 export function addToHistory(list: HistoryItem[], item: HistoryItem): HistoryItem[] {
-  if (list.length > 0 && list[0].diviJson === item.diviJson) return list;
+  if (list.length > 0 && list[0].entry.origin === item.entry.origin) return list;
   return [item, ...list].slice(0, MAX_HISTORY);
 }
 
@@ -596,41 +590,58 @@ export function removeFromHistory(list: HistoryItem[], id: string): HistoryItem[
   return list.filter(i => i.id !== id);
 }
 
-export function buildHistoryItem(args: {
-  id: string;
-  diviJson: string;
-  parsed: { type: ItemType; childCount: number };
-  sourceHost: string;
-  copiedAt: number;
-  now: number;
-}): HistoryItem {
+export function buildHistoryItem(args: { id: string; entry: DiviClipboardEntry; sourceHost: string; copiedAt: number; now: number; }): HistoryItem {
+  const type = entryType(args.entry);
   return {
     id: args.id,
-    type: args.parsed.type,
-    label: buildLabel({
-      type: args.parsed.type,
-      childCount: args.parsed.childCount,
-      sourceHost: args.sourceHost,
-      copiedAt: args.copiedAt,
-      now: args.now
-    }),
-    diviJson: args.diviJson,
+    type,
+    label: buildLabel({ type, childCount: entryChildCount(args.entry), sourceHost: args.sourceHost, copiedAt: args.copiedAt, now: args.now }),
+    entry: args.entry,
     sourceHost: args.sourceHost,
     copiedAt: args.copiedAt
   };
 }
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [ ] **Step 5: Implement `lib/clipboard-ops.ts`**
 
-Run: `npx vitest run tests/history.test.ts`
+`newestEntry`/`placeAsCurrent` assume the front of the array is the current item; flip if Task 3 Step 4 found otherwise.
+```ts
+import type { DiviClipboardEntry } from "./types";
+
+export function parseItems(raw: string): DiviClipboardEntry[] {
+  try {
+    const v = JSON.parse(raw);
+    return Array.isArray(v) ? v : [];
+  } catch {
+    return [];
+  }
+}
+
+export function serializeItems(entries: DiviClipboardEntry[]): string {
+  return JSON.stringify(entries);
+}
+
+export function newestEntry(entries: DiviClipboardEntry[]): DiviClipboardEntry | null {
+  return entries.length ? entries[0] : null;
+}
+
+export function placeAsCurrent(entries: DiviClipboardEntry[], entry: DiviClipboardEntry): DiviClipboardEntry[] {
+  const rest = entries.filter(e => e.origin !== entry.origin);
+  return [entry, ...rest];
+}
+```
+
+- [ ] **Step 6: Run both tests to verify they pass**
+
+Run: `npx vitest run tests/history.test.ts tests/clipboard-ops.test.ts`
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [ ] **Step 7: Commit**
 
 ```bash
-git add lib/history.ts tests/history.test.ts
-git commit -m "feat: history add/dedupe/trim/remove + item builder"
+git add lib/history.ts lib/clipboard-ops.ts tests/history.test.ts tests/clipboard-ops.test.ts
+git commit -m "feat: history logic + Divi items array ops"
 ```
 
 ---
@@ -642,13 +653,10 @@ git commit -m "feat: history add/dedupe/trim/remove + item builder"
 - Test: `.../tests/history-store.test.ts`
 
 **Interfaces:**
-- Consumes: `HistoryItem` from `lib/types`; WXT's auto-imported `browser` (or `webextension-polyfill`) at runtime.
-- Produces:
-  - `getHistory(): Promise<HistoryItem[]>`
-  - `setHistory(list: HistoryItem[]): Promise<void>`
-  - The store is dependency-injected so it is unit-testable: `createHistoryStore(area: StorageArea)` where `StorageArea` has `get`/`set`. The module also exports default `getHistory`/`setHistory` bound to `browser.storage.local`.
+- Consumes: `HistoryItem` (`lib/types`); WXT's `browser` at runtime.
+- Produces: `createHistoryStore(area: StorageArea)` returning `{ getHistory, setHistory }`; default `getHistory`/`setHistory` bound to `browser.storage.local`.
 
-- [ ] **Step 1: Write the failing test with a fake storage area**
+- [ ] **Step 1: Write the failing test with a fake area**
 
 `tests/history-store.test.ts`:
 ```ts
@@ -659,19 +667,17 @@ import type { HistoryItem } from "../lib/types";
 function fakeArea() {
   const data: Record<string, unknown> = {};
   return {
-    async get(key: string) { return { [key]: data[key] }; },
-    async set(obj: Record<string, unknown>) { Object.assign(data, obj); }
+    async get(k: string) { return { [k]: data[k] }; },
+    async set(o: Record<string, unknown>) { Object.assign(data, o); }
   };
 }
-
-const item: HistoryItem = { id: "a", type: "row", label: "L", diviJson: "{}", sourceHost: "a.com", copiedAt: 0 };
+const item = { id: "a", type: "row", label: "L", entry: { clipboardType: "module", origin: "a", payload: { moduleIds: ["a"], moduleType: "row", moduleObjects: {} } }, sourceHost: "a.com", copiedAt: 0 } as HistoryItem;
 
 describe("history store", () => {
   it("returns [] when empty", async () => {
-    const s = createHistoryStore(fakeArea());
-    expect(await s.getHistory()).toEqual([]);
+    expect(await createHistoryStore(fakeArea()).getHistory()).toEqual([]);
   });
-  it("round-trips a list", async () => {
+  it("round-trips", async () => {
     const s = createHistoryStore(fakeArea());
     await s.setHistory([item]);
     expect(await s.getHistory()).toEqual([item]);
@@ -682,13 +688,12 @@ describe("history store", () => {
 - [ ] **Step 2: Run test to verify it fails**
 
 Run: `npx vitest run tests/history-store.test.ts`
-Expected: FAIL, cannot find `../lib/history-store`.
+Expected: FAIL.
 
 - [ ] **Step 3: Implement `lib/history-store.ts`**
 
 ```ts
 import type { HistoryItem } from "./types";
-
 const STORAGE_KEY = "history";
 
 export interface StorageArea {
@@ -708,7 +713,6 @@ export function createHistoryStore(area: StorageArea) {
   };
 }
 
-// Runtime binding to the extension's local storage (WXT provides `browser`).
 const runtimeStore = createHistoryStore(browser.storage.local as unknown as StorageArea);
 export const getHistory = runtimeStore.getHistory;
 export const setHistory = runtimeStore.setHistory;
@@ -717,7 +721,7 @@ export const setHistory = runtimeStore.setHistory;
 - [ ] **Step 4: Run test to verify it passes**
 
 Run: `npx vitest run tests/history-store.test.ts`
-Expected: PASS. (The runtime `browser` reference is not exercised by the test; only `createHistoryStore` with the fake is.)
+Expected: PASS.
 
 - [ ] **Step 5: Commit**
 
@@ -728,176 +732,234 @@ git commit -m "feat: browser.storage.local history wrapper (injectable for tests
 
 ---
 
-### Task 8: MAIN-world shim + content script (capture and load paths)
+### Task 8: IndexedDB access module (read/write D5Clipboard)
 
 **Files:**
-- Create: `.../lib/shim.ts`
-- Create: `.../entrypoints/divi.content.ts`
-- Test: `.../tests/shim.test.ts`
+- Create: `.../lib/d5-idb.ts`
+- Test: `.../tests/d5-idb.test.ts`
 
 **Interfaces:**
-- Consumes: `DIVI_CLIPBOARD_KEYS`, `DIVI_CLIPBOARD_KEY` from `lib/divi-clipboard`; `Message` from `lib/types`.
-- Produces: a content script that (a) injects the shim into MAIN world via a `<script>` tag, (b) relays captured blobs to the background as `CAPTURE`, (c) on `WRITE_CLIPBOARD` writes the value into `localStorage` (content scripts share the page's `localStorage`, so no MAIN world needed for writing). `lib/shim.ts` exports `diviClipboardShim(keys: string[]): void` (dependency-free so `.toString()` injection works) and `buildShimSource(keys: string[]): string`.
+- Consumes: `DB_NAME`, `STORE`, `ITEMS_KEY`, `TIMESTAMP_KEY` (`lib/d5clipboard`); `parseItems`, `serializeItems`, `placeAsCurrent` (`lib/clipboard-ops`); `DiviClipboardEntry` (`lib/types`).
+- Produces (all take an `IDBFactory` so they are testable with `fake-indexeddb`):
+  - `readTimestamp(idb: IDBFactory): Promise<number | null>`
+  - `readItems(idb: IDBFactory): Promise<DiviClipboardEntry[]>`
+  - `writeCurrentEntry(idb: IDBFactory, entry: DiviClipboardEntry, now: number): Promise<void>` (places entry as current, writes `items`, bumps `timestamp`)
 
-- [ ] **Step 1: Write the failing test for the injectable shim source**
+- [ ] **Step 1: Write the failing test (fake-indexeddb)**
 
-`tests/shim.test.ts`:
+`tests/d5-idb.test.ts`:
 ```ts
-import { describe, it, expect } from "vitest";
-import { buildShimSource } from "../lib/shim";
+import { describe, it, expect, beforeEach } from "vitest";
+import { IDBFactory } from "fake-indexeddb";
+import { DB_NAME, STORE, ITEMS_KEY, TIMESTAMP_KEY } from "../lib/d5clipboard";
+import { readItems, readTimestamp, writeCurrentEntry } from "../lib/d5-idb";
+import type { DiviClipboardEntry } from "../lib/types";
 
-describe("buildShimSource", () => {
-  it("produces a self-invoking string carrying the keys", () => {
-    const src = buildShimSource(["ETclip", "et_clipboard"]);
-    expect(src).toContain("localStorage.setItem");
-    expect(src).toContain("ETclip");
-    expect(src).toContain("et_clipboard");
-    // must be an immediately-invoked expression (no external references)
-    expect(src.trim().startsWith("(")).toBe(true);
+const entry = (o: string): DiviClipboardEntry => ({ clipboardType: "module", origin: o, payload: { moduleIds: [o], moduleType: "row", moduleObjects: { [o]: { children: [] } } } });
+
+async function seed(idb: IDBFactory, entries: DiviClipboardEntry[], ts: number) {
+  await new Promise<void>((res, rej) => {
+    const open = idb.open(DB_NAME, 1);
+    open.onupgradeneeded = () => open.result.createObjectStore(STORE);
+    open.onsuccess = () => {
+      const tx = open.result.transaction(STORE, "readwrite");
+      tx.objectStore(STORE).put(JSON.stringify(entries), ITEMS_KEY);
+      tx.objectStore(STORE).put(ts, TIMESTAMP_KEY);
+      tx.oncomplete = () => res(); tx.onerror = () => rej(tx.error);
+    };
+    open.onerror = () => rej(open.error);
+  });
+}
+
+describe("d5-idb", () => {
+  let idb: IDBFactory;
+  beforeEach(() => { idb = new IDBFactory(); });
+
+  it("reads timestamp and items", async () => {
+    await seed(idb, [entry("a"), entry("b")], 111);
+    expect(await readTimestamp(idb)).toBe(111);
+    expect((await readItems(idb)).map(e => e.origin)).toEqual(["a", "b"]);
+  });
+
+  it("writeCurrentEntry places the entry at the front and bumps timestamp", async () => {
+    await seed(idb, [entry("a"), entry("b")], 111);
+    await writeCurrentEntry(idb, entry("z"), 999);
+    expect((await readItems(idb)).map(e => e.origin)).toEqual(["z", "a", "b"]);
+    expect(await readTimestamp(idb)).toBe(999);
   });
 });
 ```
 
 - [ ] **Step 2: Run test to verify it fails**
 
-Run: `npx vitest run tests/shim.test.ts`
-Expected: FAIL, cannot find `../lib/shim`.
+Run: `npx vitest run tests/d5-idb.test.ts`
+Expected: FAIL (module missing).
 
-- [ ] **Step 3: Implement `lib/shim.ts`**
+- [ ] **Step 3: Implement `lib/d5-idb.ts`**
 
 ```ts
-// Runs in the page's MAIN world. Must be fully self-contained (no imports,
-// no closure references) so `.toString()` injection works across browsers.
-export function diviClipboardShim(keys: string[]): void {
-  const original = localStorage.setItem.bind(localStorage);
-  localStorage.setItem = function (key: string, value: string) {
-    original(key, value);
-    try {
-      if (keys.indexOf(key) !== -1) {
-        window.postMessage({ __divi5cp: true, kind: "capture", key, value }, "*");
-      }
-    } catch (_e) {
-      // never let our hook break the host page
-    }
-  };
+import { DB_NAME, STORE, ITEMS_KEY, TIMESTAMP_KEY } from "./d5clipboard";
+import { parseItems, serializeItems, placeAsCurrent } from "./clipboard-ops";
+import type { DiviClipboardEntry } from "./types";
+
+function openDb(idb: IDBFactory): Promise<IDBDatabase> {
+  return new Promise((res, rej) => {
+    const req = idb.open(DB_NAME);
+    req.onsuccess = () => res(req.result);
+    req.onerror = () => rej(req.error);
+  });
 }
 
-export function buildShimSource(keys: string[]): string {
-  return `(${diviClipboardShim.toString()})(${JSON.stringify(keys)});`;
+function get<T>(db: IDBDatabase, key: string): Promise<T | undefined> {
+  return new Promise((res, rej) => {
+    const r = db.transaction(STORE, "readonly").objectStore(STORE).get(key);
+    r.onsuccess = () => res(r.result as T);
+    r.onerror = () => rej(r.error);
+  });
+}
+
+export async function readTimestamp(idb: IDBFactory): Promise<number | null> {
+  const db = await openDb(idb);
+  const t = await get<number>(db, TIMESTAMP_KEY);
+  return typeof t === "number" ? t : null;
+}
+
+export async function readItems(idb: IDBFactory): Promise<DiviClipboardEntry[]> {
+  const db = await openDb(idb);
+  const raw = await get<string>(db, ITEMS_KEY);
+  return raw ? parseItems(raw) : [];
+}
+
+export async function writeCurrentEntry(idb: IDBFactory, entry: DiviClipboardEntry, now: number): Promise<void> {
+  const db = await openDb(idb);
+  const raw = await get<string>(db, ITEMS_KEY);
+  const next = placeAsCurrent(raw ? parseItems(raw) : [], entry);
+  await new Promise<void>((res, rej) => {
+    const tx = db.transaction(STORE, "readwrite");
+    tx.objectStore(STORE).put(serializeItems(next), ITEMS_KEY);
+    tx.objectStore(STORE).put(now, TIMESTAMP_KEY);
+    tx.oncomplete = () => res();
+    tx.onerror = () => rej(tx.error);
+  });
 }
 ```
 
 - [ ] **Step 4: Run test to verify it passes**
 
-Run: `npx vitest run tests/shim.test.ts`
+Run: `npx vitest run tests/d5-idb.test.ts`
 Expected: PASS.
 
-- [ ] **Step 5: Write the content script**
+- [ ] **Step 5: Commit**
+
+```bash
+git add lib/d5-idb.ts tests/d5-idb.test.ts
+git commit -m "feat: D5Clipboard IndexedDB read/write (fake-indexeddb tested)"
+```
+
+---
+
+### Task 9: Content script (capture poll + load write)
+
+**Files:**
+- Create: `.../entrypoints/divi.content.ts`
+
+**Interfaces:**
+- Consumes: `readTimestamp`/`readItems`/`writeCurrentEntry` (`lib/d5-idb`); `newestEntry` (`lib/clipboard-ops`); `Message` (`lib/types`).
+- Produces: a content script that (a) polls `timestamp` about every 1s and sends new entries to the background as `CAPTURE`, (b) on `WRITE_CLIPBOARD` calls `writeCurrentEntry` on the page's real `indexedDB`.
+
+- [ ] **Step 1: Write the content script**
 
 `entrypoints/divi.content.ts`:
 ```ts
-import { DIVI_CLIPBOARD_KEYS, DIVI_CLIPBOARD_KEY } from "../lib/divi-clipboard";
-import { buildShimSource } from "../lib/shim";
+import { readTimestamp, readItems, writeCurrentEntry } from "../lib/d5-idb";
+import { newestEntry } from "../lib/clipboard-ops";
 import type { Message } from "../lib/types";
 
 export default defineContentScript({
   matches: ["<all_urls>"],
-  runAt: "document_start",
   main() {
-    // Inject the capture shim into the page's MAIN world via a <script> tag
-    // (portable across Chrome and Firefox; avoids manifest world:"MAIN").
-    const s = document.createElement("script");
-    s.textContent = buildShimSource(DIVI_CLIPBOARD_KEYS);
-    (document.head || document.documentElement).appendChild(s);
-    s.remove();
+    let lastTs: number | null = null;
+    let lastOrigin: string | null = null;
 
-    // Relay captured blobs from the shim to the background.
-    window.addEventListener("message", (e) => {
-      if (e.source !== window) return;
-      const d = e.data;
-      if (!d || d.__divi5cp !== true || d.kind !== "capture") return;
-      browser.runtime.sendMessage({
-        type: "CAPTURE",
-        diviJson: d.value,
-        sourceHost: location.host,
-        copiedAt: Date.now()
-      } satisfies Message);
-    });
+    async function poll() {
+      try {
+        const ts = await readTimestamp(indexedDB);
+        if (ts !== null && ts !== lastTs) {
+          lastTs = ts;
+          const entry = newestEntry(await readItems(indexedDB));
+          if (entry && entry.origin !== lastOrigin) {
+            lastOrigin = entry.origin;
+            browser.runtime.sendMessage({
+              type: "CAPTURE", entries: [entry], sourceHost: location.host, copiedAt: Date.now()
+            } satisfies Message);
+          }
+        }
+      } catch {
+        // D5Clipboard absent on non-Divi pages: ignore.
+      }
+    }
 
-    // Load a chosen blob back into Divi's clipboard key. Content scripts share
-    // the page's localStorage, so a direct write is enough (no MAIN world).
+    setInterval(poll, 1000);
+    poll();
+
     browser.runtime.onMessage.addListener((msg: Message) => {
       if (msg.type === "WRITE_CLIPBOARD") {
-        localStorage.setItem(msg.key || DIVI_CLIPBOARD_KEY, msg.value);
-        return Promise.resolve({ ok: true });
+        return writeCurrentEntry(indexedDB, msg.entry, Date.now()).then(() => ({ ok: true }));
       }
     });
   }
 });
 ```
 
-- [ ] **Step 6: Verify the build still succeeds**
+- [ ] **Step 2: Verify the build**
 
 Run: `npm run build`
-Expected: PASS; `.output/chrome-mv3/manifest.json` lists the content script.
+Expected: PASS; content script present in the manifest.
 
-- [ ] **Step 7: Commit**
+- [ ] **Step 3: Commit**
 
 ```bash
-git add lib/shim.ts entrypoints/divi.content.ts tests/shim.test.ts
-git commit -m "feat: MAIN-world capture shim + content script capture/load relay"
+git add entrypoints/divi.content.ts
+git commit -m "feat: content script captures via IndexedDB poll + loads on demand"
 ```
 
 ---
 
-### Task 9: Background service worker (message hub)
+### Task 10: Background service worker (message hub)
 
 **Files:**
 - Modify: `.../entrypoints/background.ts`
 
 **Interfaces:**
-- Consumes: `getHistory`/`setHistory` (`lib/history-store`); `addToHistory`/`removeFromHistory`/`buildHistoryItem` (`lib/history`); `parseClipboard` (`lib/parse-clipboard`); `DIVI_CLIPBOARD_KEY` (`lib/divi-clipboard`); `Message` (`lib/types`).
-- Produces: handlers for `CAPTURE`, `GET_HISTORY`, `LOAD`, `DELETE`, `CLEAR`. `GET_HISTORY`/`DELETE`/`CLEAR` resolve to the current `HistoryItem[]`; `LOAD` resolves `{ ok: boolean }`.
+- Consumes: `getHistory`/`setHistory` (`lib/history-store`); `addToHistory`/`removeFromHistory`/`buildHistoryItem` (`lib/history`); `Message`, `HistoryItem` (`lib/types`).
+- Produces: handlers for `CAPTURE`, `GET_HISTORY`, `LOAD`, `DELETE`, `CLEAR`. `GET_HISTORY`/`DELETE`/`CLEAR` resolve `HistoryItem[]`; `LOAD` resolves `{ ok: boolean }`.
 
-- [ ] **Step 1: Implement the background hub**
+- [ ] **Step 1: Implement the hub**
 
 `entrypoints/background.ts`:
 ```ts
 import type { HistoryItem, Message } from "../lib/types";
 import { getHistory, setHistory } from "../lib/history-store";
 import { addToHistory, removeFromHistory, buildHistoryItem } from "../lib/history";
-import { parseClipboard } from "../lib/parse-clipboard";
-import { DIVI_CLIPBOARD_KEY } from "../lib/divi-clipboard";
 
-let idCounter = 0;
-function newId(): string {
-  idCounter += 1;
-  return `${Date.now()}-${idCounter}`;
-}
+let counter = 0;
+const newId = () => `${Date.now()}-${counter++}`;
 
 export default defineBackground(() => {
   browser.runtime.onMessage.addListener(async (msg: Message): Promise<HistoryItem[] | { ok: boolean } | undefined> => {
     switch (msg.type) {
       case "CAPTURE": {
-        const parsed = parseClipboard(msg.diviJson);
-        if (!parsed) return; // ignore writes that are not Divi clipboard blobs
-        const list = await getHistory();
-        const item = buildHistoryItem({
-          id: newId(),
-          diviJson: msg.diviJson,
-          parsed,
-          sourceHost: msg.sourceHost,
-          copiedAt: msg.copiedAt,
-          now: Date.now()
-        });
-        await setHistory(addToHistory(list, item));
+        let list = await getHistory();
+        for (const entry of msg.entries) {
+          list = addToHistory(list, buildHistoryItem({ id: newId(), entry, sourceHost: msg.sourceHost, copiedAt: msg.copiedAt, now: Date.now() }));
+        }
+        await setHistory(list);
         return;
       }
       case "GET_HISTORY":
         return await getHistory();
       case "DELETE": {
-        const list = await getHistory();
-        const next = removeFromHistory(list, msg.id);
+        const next = removeFromHistory(await getHistory(), msg.id);
         await setHistory(next);
         return next;
       }
@@ -905,12 +967,11 @@ export default defineBackground(() => {
         await setHistory([]);
         return [];
       case "LOAD": {
-        const list = await getHistory();
-        const item = list.find(i => i.id === msg.id);
+        const item = (await getHistory()).find(i => i.id === msg.id);
         if (!item) return { ok: false };
         const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
         if (!tab?.id) return { ok: false };
-        await browser.tabs.sendMessage(tab.id, { type: "WRITE_CLIPBOARD", key: DIVI_CLIPBOARD_KEY, value: item.diviJson });
+        await browser.tabs.sendMessage(tab.id, { type: "WRITE_CLIPBOARD", entry: item.entry } satisfies Message);
         return { ok: true };
       }
     }
@@ -918,7 +979,7 @@ export default defineBackground(() => {
 });
 ```
 
-- [ ] **Step 2: Verify the build**
+- [ ] **Step 2: Verify both builds**
 
 Run: `npm run build && npm run build:firefox`
 Expected: both PASS.
@@ -932,46 +993,38 @@ git commit -m "feat: background message hub (capture/get/load/delete/clear)"
 
 ---
 
-### Task 10: Popup UI (history list, Load with coaching, delete, clear, funnel link)
+### Task 11: Popup UI (picker, Load with reload coaching, delete, clear, funnel)
 
 **Files:**
-- Modify: `.../entrypoints/popup/index.html`
-- Modify: `.../entrypoints/popup/main.ts`
+- Modify: `.../entrypoints/popup/index.html`, `.../entrypoints/popup/main.ts`
 - Create: `.../entrypoints/popup/style.css`
 
 **Interfaces:**
-- Consumes: `HistoryItem`/`Message` (`lib/types`); background handlers via `browser.runtime.sendMessage`.
-- Produces: rendered history, per-row Load (shows inline "Loaded ✓, now right-click, Paste in Divi"), per-row delete, Clear all, a persistent bottom coaching line, and an AI Editor link.
+- Consumes: `HistoryItem`, `Message` (`lib/types`); background handlers via `browser.runtime.sendMessage`.
+- Produces: rendered history, per-row Load (shows "Loaded, reload the Divi builder and paste"), per-row delete, Clear all, persistent bottom hint, AI Editor link.
 
-- [ ] **Step 1: Write the popup HTML**
+- [ ] **Step 1: Popup HTML**
 
 `entrypoints/popup/index.html`:
 ```html
 <!doctype html>
 <html>
-  <head>
-    <meta charset="utf-8" />
-    <title>Divi5 Copy/Paste</title>
-    <link rel="stylesheet" href="./style.css" />
-  </head>
+  <head><meta charset="utf-8" /><title>Divi5 Copy/Paste</title><link rel="stylesheet" href="./style.css" /></head>
   <body>
-    <header>
-      <strong>Divi5 Copy/Paste</strong>
-      <button id="clear" type="button">Clear all</button>
-    </header>
+    <header><strong>Divi5 Copy/Paste</strong><button id="clear" type="button">Clear all</button></header>
     <ul id="list"></ul>
     <p id="empty" hidden>Nothing copied yet. Copy a section, row, or module in the Divi builder and it shows up here.</p>
     <footer>
-      <p class="hint">Click Load, then in Divi: right-click, Paste.</p>
+      <p class="hint">Click Load, then reload the Divi builder and paste (right-click, Paste).</p>
       <a id="promo" href="https://divi5lab.com/ai-editor" target="_blank" rel="noopener">Powered by AI Editor for Divi 5</a>
     </footer>
   </body>
 </html>
 ```
 
-- [ ] **Step 2: Write the popup styles**
+- [ ] **Step 2: Popup styles**
 
-`entrypoints/popup/style.css` (minimal, readable, ~320px wide popup):
+`entrypoints/popup/style.css`:
 ```css
 body { width: 340px; margin: 0; font: 13px/1.4 system-ui, sans-serif; }
 header { display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; border-bottom: 1px solid #eee; }
@@ -986,7 +1039,7 @@ footer { padding: 10px 12px; border-top: 1px solid #eee; }
 #empty { padding: 16px 12px; color: #666; }
 ```
 
-- [ ] **Step 3: Write the popup logic**
+- [ ] **Step 3: Popup logic**
 
 `entrypoints/popup/main.ts`:
 ```ts
@@ -994,164 +1047,99 @@ import type { HistoryItem, Message } from "../../lib/types";
 
 const listEl = document.querySelector<HTMLUListElement>("#list")!;
 const emptyEl = document.querySelector<HTMLParagraphElement>("#empty")!;
-
-function send<T>(msg: Message): Promise<T> {
-  return browser.runtime.sendMessage(msg) as Promise<T>;
-}
+const send = <T>(msg: Message): Promise<T> => browser.runtime.sendMessage(msg) as Promise<T>;
 
 function render(items: HistoryItem[]) {
   listEl.innerHTML = "";
   emptyEl.hidden = items.length > 0;
   for (const item of items) {
     const li = document.createElement("li");
-
     const label = document.createElement("span");
     label.className = "label";
     label.textContent = item.label;
 
     const load = document.createElement("button");
-    load.type = "button";
-    load.textContent = "Load";
+    load.type = "button"; load.textContent = "Load";
     load.addEventListener("click", async () => {
       const res = await send<{ ok: boolean }>({ type: "LOAD", id: item.id });
-      if (res.ok) {
-        label.className = "label loaded";
-        label.textContent = "Loaded ✓, now in Divi: right-click, Paste.";
-      }
+      if (res.ok) { label.className = "label loaded"; label.textContent = "Loaded, now reload the Divi builder and paste."; }
     });
 
     const del = document.createElement("button");
-    del.type = "button";
-    del.textContent = "×";
-    del.title = "Remove";
-    del.addEventListener("click", async () => {
-      const items2 = await send<HistoryItem[]>({ type: "DELETE", id: item.id });
-      render(items2);
-    });
+    del.type = "button"; del.textContent = "×"; del.title = "Remove";
+    del.addEventListener("click", async () => render(await send<HistoryItem[]>({ type: "DELETE", id: item.id })));
 
     li.append(label, load, del);
     listEl.append(li);
   }
 }
 
-document.querySelector("#clear")!.addEventListener("click", async () => {
-  const items = await send<HistoryItem[]>({ type: "CLEAR" });
-  render(items);
-});
-
+document.querySelector("#clear")!.addEventListener("click", async () => render(await send<HistoryItem[]>({ type: "CLEAR" })));
 send<HistoryItem[]>({ type: "GET_HISTORY" }).then(render);
 ```
 
 - [ ] **Step 4: Verify the build**
 
 Run: `npm run build`
-Expected: PASS; popup assets present in `.output/chrome-mv3/`.
+Expected: PASS.
 
-- [ ] **Step 5: Manual smoke test (load unpacked)**
+- [ ] **Step 5: Manual smoke test (two Divi sites)**
 
-1. `npm run dev` (opens Chrome with the extension) or load `.output/chrome-mv3` unpacked at `chrome://extensions`.
-2. On a Divi 5 builder site, copy a section. Open the popup: the item appears with a correct label.
-3. Click Load: the row shows the "Loaded ✓" coaching text.
-4. On a second Divi site's builder, open the popup, click Load on that item, then right-click, Paste. The section pastes.
-5. Delete an item and Clear all both update the list.
+1. `npm run dev` (Chrome) or load `.output/chrome-mv3` unpacked at `chrome://extensions`.
+2. On Divi Site A builder, copy a section, open the popup: item appears with correct label.
+3. On Divi Site B builder, open the popup, click Load, see the reload coaching, reload the builder, right-click Paste. The section pastes.
+4. Also try pasting WITHOUT reload; note whether it works (informs whether the reload step can be dropped).
+5. Delete and Clear all update the list.
 
 - [ ] **Step 6: Commit**
 
 ```bash
 git add entrypoints/popup
-git commit -m "feat: popup history UI with load/coaching/delete/clear + funnel link"
+git commit -m "feat: popup picker with load/reload coaching/delete/clear + funnel link"
 ```
 
 ---
 
-### Task 11: Whole-page capture and load (page type)
-
-Depends on the Task 3 Step 5 finding. Two mechanisms; implement the one the spike identified.
+### Task 12: Whole-page verification + cross-browser packaging + docs
 
 **Files:**
-- Modify: `.../lib/divi-clipboard.ts` (if page uses an additional localStorage key)
-- Modify: `.../entrypoints/divi.content.ts` (page capture trigger, if needed)
-- Modify: `.../lib/parse-clipboard.ts` (recognize the page shape, return `type: "page"`)
-- Create: `.../tests/fixtures/page.divi.json` + extend `fixtures.meta.json`
-
-**Interfaces:**
-- Consumes: everything from Tasks 3, 4, 8.
-- Produces: `page`-typed history items that capture the full layout and load it back so the whole page can be pasted/imported.
-
-- [ ] **Step 1: Capture a real page fixture**
-
-Using the Task 3 procedure, capture the full-page representation. Save to `tests/fixtures/page.divi.json` and add to `fixtures.meta.json`:
-```json
-"page.divi.json": { "type": "page", "childCount": 4 }
-```
-
-- [ ] **Step 2: Extend the parser test and parser**
-
-The `tests/parse-clipboard.test.ts` loop already iterates `fixtures.meta.json`, so it now asserts the page fixture too. Run:
-`npx vitest run tests/parse-clipboard.test.ts`
-Expected: FAIL for `page.divi.json` until the parser recognizes the page shape.
-
-Update `classify`/`childrenOf` in `lib/parse-clipboard.ts` so a full-page blob returns `type: "page"` with its section count. Re-run until PASS.
-
-- [ ] **Step 3: Wire page capture (mechanism per spike)**
-
-- If the spike found page uses **another localStorage key**: add that key to `DIVI_CLIPBOARD_KEYS` in `lib/divi-clipboard.ts`. Capture then flows through the existing shim with no content-script change. Verify the build.
-- If the spike found page is **export/builder-state only**: add a "Capture current page" button to the popup that sends a `CAPTURE_PAGE` message; the content script reads the page layout from Divi's builder state (documented in the spike) and posts it as a `CAPTURE` with the page blob. Add the `CAPTURE_PAGE` variant to `Message` in `lib/types.ts` and handle it in the content script.
-
-Document which branch was taken at the top of `lib/divi-clipboard.ts`.
-
-- [ ] **Step 4: Manual smoke test**
-
-Copy/capture a full page on Site A, confirm a "Full page ..." item appears, Load on Site B, and paste/import the whole page.
-
-- [ ] **Step 5: Run the full test suite**
-
-Run: `npm run test`
-Expected: all suites PASS.
-
-- [ ] **Step 6: Commit**
-
-```bash
-git add -A
-git commit -m "feat: whole-page (page type) capture and load"
-```
-
----
-
-### Task 12: Cross-browser packaging + README + manual test matrix
-
-**Files:**
-- Modify: `.../README.md`
+- Modify: `.../lib/entry.ts` (finalize `PAGE_MODULE_TYPE` if not already), `.../README.md`
 - Create: `.../docs/manual-test-matrix.md`
 
 **Interfaces:**
 - Consumes: the whole extension.
-- Produces: shippable zips for both stores and documented verification.
+- Produces: verified page support, shippable zips, documented verification.
 
-- [ ] **Step 1: Produce both store zips**
+- [ ] **Step 1: Confirm whole-page capture/load end to end**
+
+With `entry.page.json` in fixtures and `PAGE_MODULE_TYPE` set (Task 4), copy a whole page on Site A, confirm a "Full page ..." item appears, Load on Site B, reload, paste the whole page. If the page uses a different array position or a distinct load path, adjust `clipboard-ops`/`d5-idb` and re-run the affected unit tests.
+
+- [ ] **Step 2: Full test suite**
+
+Run: `npm run test`
+Expected: all suites PASS.
+
+- [ ] **Step 3: Produce both store zips**
 
 Run: `npm run zip && npm run zip:firefox`
-Expected: two zips in the project root / `.output`, one per browser.
+Expected: one zip per browser.
 
-- [ ] **Step 2: Verify unpacked loads in both browsers**
+- [ ] **Step 4: Verify unpacked loads in both browsers**
 
-- Chrome/Edge: load `.output/chrome-mv3` at `chrome://extensions` (Developer mode).
-- Firefox: load the built manifest via `about:debugging` -> This Firefox -> Load Temporary Add-on.
-Confirm the popup opens and capture works in each.
+Chrome/Edge: load `.output/chrome-mv3` at `chrome://extensions`. Firefox: `about:debugging` -> This Firefox -> Load Temporary Add-on. Confirm capture + load work in each.
 
-- [ ] **Step 3: Write the manual test matrix doc**
+- [ ] **Step 5: Write `docs/manual-test-matrix.md`**
 
-`docs/manual-test-matrix.md`: table of {module, row, section, page} × {capture appears with right label, Load then paste works on a second site, delete, clear} across Chrome and Firefox. This is the release checklist.
+Table of {module, row, section, page} × {captured with right label, Load+reload+paste works on a second site, delete, clear} across Chrome and Firefox. Include the no-reload observation. This is the release checklist.
 
-- [ ] **Step 4: Finalize the README**
+- [ ] **Step 6: Finalize `README.md`**
 
-Document install-from-store (placeholder store URLs), install-unpacked for dev, the Divi-key fragility note (if capture stops after a Divi update, update `DIVI_CLIPBOARD_KEYS`), and the same-browser-only limitation. No em dashes.
+Document install-from-store (placeholder URLs), install-unpacked for dev, the fragility note (if capture/load stops after a Divi update, the `D5Clipboard` names in `lib/d5clipboard.ts` likely changed), and the same-browser-only limitation. No em dashes.
 
-- [ ] **Step 5: Commit and tag v1**
+- [ ] **Step 7: Commit and tag v1**
 
 ```bash
-git add -A
-git commit -m "chore: cross-browser zips, README, manual test matrix (v1)"
+git add -A && git commit -m "chore: page verification, cross-browser zips, README, test matrix (v1)"
 git tag v1.0.0
 ```
 
@@ -1160,17 +1148,20 @@ git tag v1.0.0
 ## Self-Review Notes
 
 **Spec coverage:**
-- Summary/mechanism (shim capture, load, native paste): Tasks 8, 9, 10.
-- Goals (module/row/section/page cross-site, history, zero install, chromium+firefox): Tasks 4-11.
-- Non-goals honored: no backend/account (all local), text labels only (Task 5), no thumbnails, no pinning, no auto-paste (Load then native paste in Task 10).
-- Positioning/funnel link: Task 10 promo link; README (Task 12).
-- Architecture (3 parts, clean boundaries): content/shim (Task 8), background (Task 9), popup (Task 10); pure lib (Tasks 2-7).
-- Data model + 50 cap + dedupe: Tasks 2, 6, 7.
-- Two capture paths (typed items, whole page): Tasks 4, 11.
-- Divi key fragility (single constant + fallbacks, quiet-safe failure): Task 3; README note Task 12.
-- Cross-browser one-codebase-two-builds + script-tag shim injection: Tasks 1, 8, 12.
-- Testing (label gen, trim/dedupe, serialization shape; manual two-site matrix): Tasks 5, 6, 7 (unit) and Tasks 10, 12 (manual).
+- IndexedDB mechanism (D5Clipboard/clipboard/items/timestamp): Tasks 2, 8, 9.
+- Capture via timestamp poll, no MAIN-world injection: Task 9.
+- Load = place entry as current + reload coaching: Tasks 8 (`writeCurrentEntry`), 10 (LOAD), 11 (coaching copy).
+- Entry type from `payload.moduleType`, child count from `moduleObjects`: Task 4.
+- Cross-site history picker (cap 50, dedupe by origin): Tasks 6, 7, 11.
+- Whole page (type "page"): Tasks 3, 4, 12.
+- Fragility isolated to `lib/d5clipboard.ts`, quiet-safe failure: Tasks 2, 9 (try/catch), README (Task 12).
+- Cross-browser one-codebase-two-builds: Tasks 1, 10, 12.
+- Positioning/funnel link: Task 11; README Task 12.
+- Testing (type/label, trim/dedupe, entry round-trip, IDB ops; manual two-site matrix): Tasks 4-8 (unit), 11, 12 (manual).
 
-**Type consistency:** `HistoryItem`, `ItemType`, `Message` defined in Task 2 and used unchanged in Tasks 6-10. `parseClipboard` returns `{ type, childCount }` (Task 4), consumed by `buildHistoryItem` (Task 6) and the background (Task 9). `buildShimSource`/`diviClipboardShim` (Task 8) consumed by the content script (Task 8). `DIVI_CLIPBOARD_KEY(S)` (Task 3) consumed by Tasks 8, 9, 11.
+**Type consistency:** `DiviClipboardEntry`, `HistoryItem`, `ItemType`, `Message` defined in Task 2, used unchanged in Tasks 4-11. `entryType`/`entryChildCount`/`entryOrigin` (Task 4) consumed by `buildHistoryItem` (Task 6). `parseItems`/`serializeItems`/`placeAsCurrent`/`newestEntry` (Task 6) consumed by `d5-idb` (Task 8) and the content script (Task 9). `readTimestamp`/`readItems`/`writeCurrentEntry` (Task 8) consumed by the content script (Task 9). D5Clipboard constants (Task 2) consumed by Tasks 8, 9.
 
-**Known inspection-dependent points:** Task 3 discovers the real Divi key and JSON shape; Task 4's parser traversal and Task 11's page mechanism are finalized against the captured fixtures. This is intentional (the external format cannot be invented) and is isolated to those tasks with real-fixture tests as the acceptance gate.
+**Inspection-dependent points (validated during build, not invented):**
+- Newest-entry array position (front assumed in `newestEntry`/`placeAsCurrent`; confirm in Task 3 Step 4, flip if needed).
+- Full-page `moduleType` value (`PAGE_MODULE_TYPE` in `lib/entry.ts`; set from `entry.page.json`).
+- Whether paste needs a builder reload (default: reload; Task 11 Step 4 tests the no-reload case to possibly drop it).
