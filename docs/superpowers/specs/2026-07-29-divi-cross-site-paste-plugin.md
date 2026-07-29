@@ -1,10 +1,19 @@
-# Divi 5 Cross-Site Copy/Paste: WordPress Plugin (Design)
+# Site-to-Site for Divi 5: WordPress Plugin (Design)
+
+**Product name:** **Site-to-Site for Divi 5** ("for Divi 5" is the trademark-safe
+compatibility descriptor per Elegant Themes' policy; the distinct brand is
+"Site-to-Site", paralleling "AI Editor for Divi 5"). Suggested slug:
+`site-to-site-copy-paste-for-divi`.
 
 **Date:** 2026-07-29
 **Status:** Design, ready for build planning. Supersedes the extension approach
 (`2026-07-28-divi-cross-site-clipboard-*`), which is proven-blocked at the preset wall.
 **Type:** New standalone WordPress plugin (its own repo), installed on source and
-destination sites, plus a small transport (cloud relay).
+destination sites, plus a cloud relay transport.
+
+**Confirmed decisions:** name = Site-to-Site for Divi 5; transport = cloud relay;
+development = localhost (the validator repo's Docker WP+Divi 5 env, `make up`), no
+live sites needed until packaging.
 
 ---
 
@@ -112,7 +121,6 @@ extension), which also resolves the earlier monetization question.
 
 ## 8. Open items
 - Exact Divi 5 preset/global-color storage (Phase 0 spike).
-- Transport final choice (relay assumed) + relay hosting details.
+- Cloud relay hosting details (transport itself is decided).
 - License tiers.
 - Fonts/dynamic/images fidelity (post-v1).
-- Repo/name for the new plugin.
