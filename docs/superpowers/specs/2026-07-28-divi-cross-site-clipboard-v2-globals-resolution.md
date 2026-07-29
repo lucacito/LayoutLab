@@ -61,7 +61,7 @@ hope" load path with a resolve-and-recreate load path.
 
 Four parts:
 
-### 4.1 Divi endpoint adapter (`lib/divi-api.ts`) — the new core
+### 4.1 Divi endpoint adapter (`lib/divi-api.ts`): the new core
 The single module that knows Divi's server-side endpoints (discovered by the POC
 capture). Isolated so a Divi change means editing one file (same pattern as
 `d5clipboard.ts`). Responsibilities:
@@ -90,8 +90,8 @@ assemble the payload; validate a payload's shape.
 ### 4.3 Cloud relay (hosted)
 Small service on the existing Vercel/Stripe stack. Stores `PortablePayload`s keyed
 to the user's license/account. Endpoints:
-- `POST /clip` (store a payload, returns id) — license-gated.
-- `GET /clips` (list recent for this user) — powers the cross-site history.
+- `POST /clip` (store a payload, returns id) license-gated.
+- `GET /clips` (list recent for this user) powers the cross-site history.
 - `GET /clip/:id` (fetch one).
 Gives history, cross-machine, and the license checkpoint. Payloads are JSON;
 size-capped. Auth via the user's license key held in the extension.
