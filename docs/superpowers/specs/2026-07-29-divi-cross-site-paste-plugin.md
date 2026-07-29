@@ -108,10 +108,18 @@ extension), which also resolves the earlier monetization question.
 
 ## 7. Build phases
 
-- **Phase 0 (spike):** locate Divi 5's server-side preset + global-color storage
-  (wp_options keys and/or Divi PHP manager classes) by inspecting Divi source. Prove
-  PHP can read the full preset set and write it back merged. This is the make-or-break
-  gate the extension failed; confirm it before building UI.
+- **Phase 0 (spike): PASSED via Divi source inspection (2026-07-29).** Divi exposes
+  everything server-side:
+  - **Storage (wp_options):** presets = `builder_global_presets_ng`; global colors =
+    `et_global_colors` / `et_global_data`; variables = `global_variables`.
+  - **PHP API** in `Divi/includes/builder-5/server/Packages/GlobalData/`:
+    `GlobalPreset::get_data()` (read full preset set), `GlobalPreset::save_data($data)`
+    (write full set, Divi's own save, no REST guard), `GlobalPreset::get_default_preset_id($args)`
+    (valid default id per module type), plus `GlobalData` / `GetGlobalColorsDataTrait`
+    and `GlobalDataController` for colors/variables.
+  - So the preset wall is a 3-step server op: `get_data()` -> merge incoming ->
+    `save_data()`. Remaining Phase-0 verification (optional): run it in the Docker env
+    to confirm behavior end to end. The make-or-break risk is retired.
 - **Phase 1:** plugin scaffold + source/destination REST endpoints + PHP resolution
   (presets + colors). CLI/curl test: resolve on A, recreate on B, verify B's presets.
 - **Phase 2:** builder JS (read/write D5Clipboard, call endpoints) + a paste flow on
