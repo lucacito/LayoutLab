@@ -127,15 +127,14 @@ extension), which also resolves the earlier monetization question.
 - **Phase 3:** cross-site via the cloud relay + a picker UI (history).
 - **Phase 4:** licensing, polish, packaging, both-site install docs.
 
-## 7b. Phase 3 UX (approved 2026-07-29) — proven core, now productize
+## 7b. Phase 3 UX (approved 2026-07-29): proven core, now productize
 
 End-to-end paste is PROVEN (copy Text module on A -> recreate preset on B ->
 paste, styled). Phase 3 turns the 7-step dev flow into ~native copy/paste:
 
 - **Copy:** native Divi copy (no button). Plugin auto-resolves the copied entry and
   uploads the payload to the relay in the background.
-- **Transport:** cloud relay (replaces OS clipboard + the Firefox-blocked read and
-  the manual paste box). Keyed to the user's license.
+- **Transport:** cloud relay (replaces OS clipboard, the Firefox-blocked read, and the manual paste box). Keyed to the user's license.
 - **Paste (picker, chosen over pure-auto):** a small picker lists the user's recent
   cross-site copies; pick one -> plugin recreates its deps on this site -> injects
   the entry -> native paste.
