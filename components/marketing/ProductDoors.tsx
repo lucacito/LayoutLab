@@ -62,11 +62,13 @@ const DOORS: Door[] = [
   {
     headline: 'Going the other way? Also covered.',
     name: 'Divi → Elementor Converter',
-    chip: { label: 'Free plugin pending wordpress.org review', tone: 'amber' },
+    chip: { label: 'Free on wordpress.org · Pro $25/yr', tone: 'green' },
     body: `Batch-convert whole sites from Divi into Elementor — ${STATS.diviModulesMapped}+ modules mapped, every Divi export format supported.`,
     stats: 'Batch conversion · conversion report per run',
     href: '/plugins/divi-to-elementor',
-    cta: 'Join the waitlist',
+    // Distinct from the E→D5 card's "See the converter" — two identical CTAs
+    // side by side give no clue which door is which.
+    cta: 'Convert the other way',
     motif: <MotifBatch />,
   },
   {

@@ -16,7 +16,8 @@ describe('ProductDoors', () => {
   });
   it('keeps honest status chips', () => {
     render(<ProductDoors />);
-    expect(screen.getByText(/pending wordpress\.org review/i)).toBeTruthy();
+    expect(screen.queryByText(/pending wordpress\.org review/i)).toBeNull();
+    expect(screen.getAllByText(/free on wordpress\.org/i).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/free/i).length).toBeGreaterThan(0);
   });
 });

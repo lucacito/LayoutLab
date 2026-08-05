@@ -51,8 +51,8 @@ const FAQ = [
     answer: 'Checkout runs on Stripe with tax handled automatically. Licenses are delivered instantly by email and manageable from your account.',
   },
   {
-    question: 'When is Pro coming for Divi → Elementor?',
-    answer: 'After the free plugin clears wordpress.org review. Join the waitlist on its page — members hear first and get launch pricing.',
+    question: 'Is the Divi → Elementor converter available?',
+    answer: 'Yes — the free plugin is on wordpress.org and Pro is available at $25/yr, adding Divi Theme Builder templates and WooCommerce module mapping.',
   },
 ];
 
@@ -81,19 +81,12 @@ const TOOLKIT = [
   },
   {
     name: 'Divi → Elementor Pro',
-    price: 'Coming soon',
-    per: '',
+    price: '$25',
+    per: '/yr',
     tagline: `Batch conversions the other way — ${STATS.diviModulesMapped}+ modules mapped.`,
-    freeTier: 'Free plugin pending wordpress.org review — batch conversion, all Divi export formats.',
-    proTier: 'Pro (after launch): Theme Builder templates, WooCommerce mapping — $25/yr.',
-    action: (
-      <Link
-        href="/plugins/divi-to-elementor"
-        className="flex h-12 items-center justify-center rounded-pill border border-border bg-paper px-8 text-body font-semibold text-navy transition hover:-translate-y-0.5 hover:border-action hover:text-action hover:shadow-lift"
-      >
-        Get notified
-      </Link>
-    ),
+    freeTier: 'Free plugin on wordpress.org: batch conversion, all three Divi export formats, conversion reports.',
+    proTier: 'Pro: Divi Theme Builder templates and WooCommerce module → widget mapping.',
+    action: <BuyProButton product="divi-to-elementor-pro" label="Get Pro — $25/yr" />,
     href: '/plugins/divi-to-elementor',
     highlight: false,
   },

@@ -6,9 +6,9 @@ import PluginsHub, { metadata } from '@/app/(marketing)/plugins/page';
 describe('/plugins hub', () => {
   it('renders all three products with honest chips', async () => {
     render(await PluginsHub());
-    expect(screen.getByText(/pending wordpress\.org review/i)).toBeTruthy();
+    expect(screen.queryByText(/pending wordpress\.org review/i)).toBeNull();
     expect(screen.getByText(/\$30\/yr/i)).toBeTruthy();
-    expect(screen.getByText(/\$25\/yr/i)).toBeTruthy();
+    expect(screen.getAllByText(/\$25\/yr/i).length).toBeGreaterThan(0);
   });
   it('has a which-tool decision strip', async () => {
     render(await PluginsHub());

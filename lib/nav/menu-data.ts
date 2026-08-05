@@ -111,8 +111,8 @@ export const PLUGIN_MENU: PluginMenuItem[] = [
     desc: 'Batch-convert Divi sites the other way.',
     href: '/plugins/divi-to-elementor',
     icon: 'u_turn_left',
-    chip: 'Pending wordpress.org review',
-    tone: 'amber',
+    chip: 'Free on wordpress.org · Pro $25/yr',
+    tone: 'green',
   },
   {
     name: 'AI Editor for Divi 5',

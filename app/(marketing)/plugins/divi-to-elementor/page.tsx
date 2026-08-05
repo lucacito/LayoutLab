@@ -4,18 +4,27 @@ import { SectionShell, EDGE } from '@/components/ui/SectionShell';
 import { Eyebrow } from '@/components/ui/Eyebrow';
 import { Card } from '@/components/ui/Card';
 import { Icon } from '@/components/ui/Icon';
+import { env } from '@/lib/env';
 import { JsonLd } from '@/components/JsonLd';
-import { faqJsonLd } from '@/lib/seo/jsonld';
-import { WaitlistForm } from '@/components/plugins/WaitlistForm';
+import { productJsonLd, faqJsonLd } from '@/lib/seo/jsonld';
+import { BuyProButton } from '@/components/plugins/BuyProButton';
 import { STATS } from '@/lib/site/stats';
+import { StatStrip } from '@/components/marketing/StatStrip';
 import { ComparisonTable } from '@/components/marketing/ComparisonTable';
 import { CtaBand } from '@/components/marketing/CtaBand';
 import { UseCaseVignettes } from '@/components/marketing/UseCaseVignettes';
 
+const WP_ORG_URL = 'https://wordpress.org/plugins/jhmg-converter-for-divi-to-elementor/';
+
+const PRODUCT_NAME = 'Divi to Elementor Converter';
+const PRODUCT_DESCRIPTION =
+  `Convert Divi pages and templates into Elementor — ${STATS.diviModulesMapped}+ modules mapped, batch conversion, and all three Divi export formats. Free plugin on wordpress.org; Pro adds Theme Builder templates and WooCommerce mapping.`;
+
 export const metadata: Metadata = {
-  title: 'Divi to Elementor Converter — free WordPress plugin (pending review)',
+  title: 'Divi to Elementor Converter — free WordPress plugin + Pro',
   description:
-    `Convert Divi pages and templates to Elementor — ${STATS.diviModulesMapped}+ modules mapped, batch conversion, all three Divi export formats. Free plugin pending wordpress.org review; join the waitlist to be notified the moment it ships.`,
+    `Convert Divi pages and templates to Elementor — ${STATS.diviModulesMapped}+ modules mapped, batch conversion, all three Divi export formats. Free on wordpress.org; Pro adds Theme Builder templates and WooCommerce mapping — $25/yr, unlimited sites.`,
+  alternates: { canonical: `${env.NEXT_PUBLIC_SITE_URL}/plugins/divi-to-elementor` },
 };
 
 // Batch mock: what a run over a small site looks like.
@@ -47,12 +56,16 @@ const USE_CASES = [
 
 const FAQ = [
   {
-    question: 'When will the free plugin be available?',
-    answer: "It's submitted to wordpress.org and awaiting review. We'll email the waitlist the moment it's approved and live.",
+    question: 'Where do I get the free plugin?',
+    answer: 'From wordpress.org — search "JHMG Converter For Divi to Elementor" in your WordPress admin under Plugins → Add New, or install it from the plugin directory.',
   },
   {
-    question: 'Will there be a Pro version?',
-    answer: 'Yes — Pro launches after the free plugin is approved, at $25/yr for unlimited sites, with Theme Builder templates and WooCommerce support.',
+    question: 'What does Pro add?',
+    answer: 'Divi Theme Builder templates (headers, footers, and layouts) convert to their Elementor Theme Builder equivalents, plus WooCommerce module → widget mapping. $25/yr on unlimited sites, including a year of updates and priority support.',
+  },
+  {
+    question: 'Do I need the free plugin to use Pro?',
+    answer: 'Yes — Pro is a license that extends the free plugin. Install the free plugin from wordpress.org first, then activate Pro.',
   },
   {
     question: 'Which Divi export formats work?',
@@ -79,11 +92,21 @@ function BatchStatus({ status }: { status: string }) {
 }
 
 export default function D2EPage() {
+  const url = `${env.NEXT_PUBLIC_SITE_URL}/plugins/divi-to-elementor`;
+
   return (
     <main>
+      <JsonLd
+        data={productJsonLd({
+          name: PRODUCT_NAME,
+          description: PRODUCT_DESCRIPTION,
+          url,
+          offer: { priceCents: 2500, currency: 'USD' },
+        })}
+      />
       <JsonLd data={faqJsonLd(FAQ)} />
 
-      {/* Hero + waitlist */}
+      {/* Hero */}
       <SectionShell tone="hero" underHeader bottom="lg" blooms curveBottom={EDGE.paper} id="top">
         <Container>
           <Eyebrow tone="dark" className="mb-4">Divi → Elementor Converter</Eyebrow>
@@ -93,15 +116,26 @@ export default function D2EPage() {
             supported, and a conversion report for every run. The same converter craft as our flagship — pointed the
             other way.
           </p>
-          <Card tone="glass" className="mt-10 max-w-2xl p-8">
-            <p className="text-body text-paper/85">
-              The free plugin is submitted and <strong className="text-paper">pending wordpress.org review</strong>. Leave your email and
-              we&apos;ll tell you the moment it&apos;s approved — waitlist members hear first, including about Pro.
-            </p>
-            <div className="mt-5">
-              <WaitlistForm source="divi_to_elementor_waitlist" cta="Notify me" />
-            </div>
-          </Card>
+          <div className="mt-10 flex flex-wrap items-center gap-3">
+            <BuyProButton product="divi-to-elementor-pro" label="Get Pro — $25/yr" />
+            <a
+              href={WP_ORG_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex h-12 items-center justify-center rounded-pill border border-paper/35 bg-paper/10 px-8 text-body font-semibold text-paper backdrop-blur transition hover:-translate-y-0.5 hover:border-paper/70 hover:bg-paper/20"
+            >
+              Get the free plugin
+            </a>
+          </div>
+          <StatStrip
+            className="mt-12 !mx-0"
+            tone="dark"
+            stats={[
+              { value: `${STATS.diviModulesMapped}+`, label: 'Divi modules mapped' },
+              { value: '3', label: 'Divi export formats supported' },
+              { value: '1', label: 'conversion report per run' },
+            ]}
+          />
         </Container>
       </SectionShell>
 
@@ -134,11 +168,11 @@ export default function D2EPage() {
       {/* Free vs Pro (planned) */}
       <SectionShell tone="mist" pad="lg">
         <Container>
-          <h2 className="text-h2 text-navy">Free now (pending review), Pro after launch</h2>
+          <h2 className="text-h2 text-navy">Free on wordpress.org, Pro when you need the whole site</h2>
           <ComparisonTable
             className="mt-8"
-            caption="Divi to Elementor Converter — Free vs planned Pro"
-            columns={['Free', 'Pro — $25/yr (after launch)']}
+            caption="Divi to Elementor Converter — Free vs Pro"
+            columns={['Free', 'Pro — $25/yr']}
             rows={[
               { label: `${STATS.diviModulesMapped}+ module mappings`, values: [true, true] },
               { label: 'All three Divi export formats', values: [true, true] },
@@ -149,7 +183,7 @@ export default function D2EPage() {
               { label: 'Support', values: ['Community', 'Priority'] },
               { label: 'Sites', values: ['Unlimited', 'Unlimited'] },
             ]}
-            footnote="Pro pricing and scope may be refined at launch — waitlist members hear first."
+            footnote="One Pro license activates on unlimited sites, yours or your clients'. If it lapses, activated sites keep working — renewal buys updates and support."
           />
         </Container>
       </SectionShell>
@@ -178,10 +212,12 @@ export default function D2EPage() {
       </SectionShell>
 
       <CtaBand
-        title="Be first through the door."
-        body="The waitlist hears the moment wordpress.org approves the free plugin — and gets launch pricing on Pro."
-        cta={{ label: 'Join the waitlist', href: '#top' }}
+        eyebrow="Free on wordpress.org"
+        title="Move the site, not the weekend."
+        body="Install the free plugin and batch-convert your first pages today. Upgrade to Pro when the Theme Builder templates and WooCommerce modules need to come along."
+        cta={{ label: 'See pricing', href: '/pricing' }}
         secondary={{ label: 'See all plugins', href: '/plugins' }}
+        curveTop={EDGE.mist}
       />
     </main>
   );

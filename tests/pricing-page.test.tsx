@@ -15,11 +15,11 @@ describe('/pricing (plugin licenses)', () => {
     expect(screen.getAllByText(/\$25/).length).toBeGreaterThan(0);
     expect(screen.getByTestId('buy-elementor-to-divi5-pro')).toBeTruthy();
   });
-  it('shows Divi→Elementor Pro as coming soon (no buy button)', async () => {
+  it('shows Divi→Elementor Pro with a live buy button, no longer coming soon', async () => {
     render(await PricingPage());
     expect(screen.getByText(/Divi → Elementor Pro/i)).toBeTruthy();
-    expect(screen.queryByTestId('buy-divi-to-elementor-pro')).toBeNull();
-    expect(screen.getAllByText(/coming soon/i).length).toBeGreaterThan(0);
+    expect(screen.getByTestId('buy-divi-to-elementor-pro')).toBeTruthy();
+    expect(screen.queryByText(/coming soon/i)).toBeNull();
   });
   it('mentions free layouts but sells no packs or membership', async () => {
     render(await PricingPage());
