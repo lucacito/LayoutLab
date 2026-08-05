@@ -1,5 +1,7 @@
 import type { Metadata } from 'next';
 import { Container } from '@/components/ui/Container';
+import { SectionShell, EDGE } from '@/components/ui/SectionShell';
+import { Eyebrow } from '@/components/ui/Eyebrow';
 import { Card } from '@/components/ui/Card';
 import { Icon } from '@/components/ui/Icon';
 import { JsonLd } from '@/components/JsonLd';
@@ -82,28 +84,29 @@ export default function D2EPage() {
       <JsonLd data={faqJsonLd(FAQ)} />
 
       {/* Hero + waitlist */}
-      <section id="top" className="border-b border-border bg-mist py-16">
+      <SectionShell tone="hero" underHeader bottom="lg" blooms curveBottom={EDGE.paper} id="top">
         <Container>
-          <h1 className="max-w-3xl text-h1 text-navy">Convert Divi to Elementor — the whole site, in batches.</h1>
-          <p className="mt-4 max-w-2xl text-lead text-muted">
+          <Eyebrow tone="dark" className="mb-4">Divi → Elementor Converter</Eyebrow>
+          <h1 className="max-w-3xl text-h1 text-paper">Convert Divi to Elementor — the whole site, in batches.</h1>
+          <p className="mt-6 max-w-2xl text-lead text-paper/80">
             {STATS.diviModulesMapped}+ Divi modules mapped to their Elementor equivalents, every Divi export format
             supported, and a conversion report for every run. The same converter craft as our flagship — pointed the
             other way.
           </p>
-          <Card className="mt-8 max-w-2xl border-amber-200 bg-amber-50 p-8">
-            <p className="text-body text-navy">
-              The free plugin is submitted and <strong>pending wordpress.org review</strong>. Leave your email and
+          <Card tone="glass" className="mt-10 max-w-2xl p-8">
+            <p className="text-body text-paper/85">
+              The free plugin is submitted and <strong className="text-paper">pending wordpress.org review</strong>. Leave your email and
               we&apos;ll tell you the moment it&apos;s approved — waitlist members hear first, including about Pro.
             </p>
-            <div className="mt-4">
+            <div className="mt-5">
               <WaitlistForm source="divi_to_elementor_waitlist" cta="Notify me" />
             </div>
           </Card>
         </Container>
-      </section>
+      </SectionShell>
 
       {/* Batch demo */}
-      <section className="py-20">
+      <SectionShell tone="paper" pad="lg">
         <Container>
           <div className="grid items-center gap-10 lg:grid-cols-2">
             <div>
@@ -114,7 +117,7 @@ export default function D2EPage() {
               </p>
             </div>
             <Card className="p-6">
-              <p className="text-small font-semibold uppercase tracking-wide text-muted">Batch run — 5 pages</p>
+              <p className="eyebrow text-muted">Batch run — 5 pages</p>
               <ul className="mt-3 divide-y divide-border">
                 {BATCH_ROWS.map((r) => (
                   <li key={r.page} className="flex items-center justify-between py-2.5">
@@ -126,10 +129,10 @@ export default function D2EPage() {
             </Card>
           </div>
         </Container>
-      </section>
+      </SectionShell>
 
       {/* Free vs Pro (planned) */}
-      <section className="border-t border-border bg-mist py-20">
+      <SectionShell tone="mist" pad="lg">
         <Container>
           <h2 className="text-h2 text-navy">Free now (pending review), Pro after launch</h2>
           <ComparisonTable
@@ -149,18 +152,18 @@ export default function D2EPage() {
             footnote="Pro pricing and scope may be refined at launch — waitlist members hear first."
           />
         </Container>
-      </section>
+      </SectionShell>
 
       {/* Use cases */}
-      <section className="py-20">
+      <SectionShell tone="paper" pad="lg">
         <Container>
           <h2 className="text-h2 text-navy">Who converts this direction</h2>
           <UseCaseVignettes className="mt-8" items={USE_CASES} />
         </Container>
-      </section>
+      </SectionShell>
 
       {/* FAQ */}
-      <section className="border-t border-border bg-mist py-20">
+      <SectionShell tone="mist" pad="lg">
         <Container>
           <h2 className="text-h2 text-navy">Frequently asked questions</h2>
           <dl className="mt-8 max-w-3xl space-y-6">
@@ -172,7 +175,7 @@ export default function D2EPage() {
             ))}
           </dl>
         </Container>
-      </section>
+      </SectionShell>
 
       <CtaBand
         title="Be first through the door."

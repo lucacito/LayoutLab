@@ -1,5 +1,5 @@
-import Link from 'next/link';
 import { Card } from '@/components/ui/Card';
+import { Button } from '@/components/ui/Button';
 import { Icon } from '@/components/ui/Icon';
 import { STATS } from '@/lib/site/stats';
 
@@ -18,6 +18,8 @@ const CHIP: Record<'green' | 'amber', string> = {
   green: 'bg-green-50 text-green-700 border-green-200',
   amber: 'bg-amber-50 text-amber-700 border-amber-200',
 };
+
+const MOTIF_SHELL = 'mt-6 rounded-card border border-fog bg-mist p-5';
 
 // Tiny code-built motifs — one visual idea per product, no images.
 function MotifMapping() {
@@ -83,21 +85,22 @@ export function ProductDoors() {
   return (
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
       {DOORS.map((d) => (
-        <Card key={d.href} className="flex flex-col p-7">
-          <span className={`inline-flex w-fit items-center rounded-full border px-3 py-1 text-small font-semibold ${CHIP[d.chip.tone]}`}>
-            {d.chip.label}
-          </span>
-          <h3 className="mt-5 text-section leading-snug text-navy">{d.headline}</h3>
-          <p className="mt-1 text-small font-semibold uppercase tracking-wide text-muted">{d.name}</p>
-          <div className="mt-5 rounded-card bg-mist p-4">{d.motif}</div>
-          <p className="mt-4 flex-1 text-body text-muted">{d.body}</p>
-          <p className="mt-3 text-small font-medium text-muted">{d.stats}</p>
-          <Link
-            href={d.href}
-            className="mt-6 inline-flex h-11 w-fit items-center justify-center gap-1.5 rounded-full bg-action px-6 text-small font-semibold text-paper transition hover:brightness-110"
-          >
+        <Card key={d.href} className="flex flex-col p-8 transition duration-300 hover:-translate-y-1.5 hover:shadow-lift">
+          {/* Fixed-height slot: chip labels differ in length, and without this
+              the three headlines land at different heights. */}
+          <div className="flex min-h-[3.25rem] items-start">
+            <span className={`inline-flex w-fit items-center rounded-pill border px-3.5 py-1.5 text-small font-semibold ${CHIP[d.chip.tone]}`}>
+              {d.chip.label}
+            </span>
+          </div>
+          <p className="eyebrow mt-4 text-action">{d.name}</p>
+          <h3 className="mt-2.5 text-section leading-snug text-navy">{d.headline}</h3>
+          <div className={MOTIF_SHELL}>{d.motif}</div>
+          <p className="mt-5 flex-1 text-body text-muted">{d.body}</p>
+          <p className="mt-4 text-small font-medium text-muted">{d.stats}</p>
+          <Button href={d.href} size="sm" className="mt-7 w-fit">
             {d.cta} <Icon name="arrow_forward" size={15} />
-          </Link>
+          </Button>
         </Card>
       ))}
     </div>

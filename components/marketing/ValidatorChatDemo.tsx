@@ -31,7 +31,7 @@ export function ValidatorChatDemo({ steps, className = '' }: { steps: ChatStep[]
   }, [visible, steps.length]);
 
   return (
-    <div className={`rounded-card border border-border bg-paper p-5 shadow-soft sm:p-6 ${className}`} aria-label="AI Editor demo">
+    <div className={`rounded-panel border border-border bg-paper p-6 shadow-float sm:p-7 ${className}`} aria-label="AI Editor demo">
       <ol className="space-y-3">
         {steps.slice(0, visible).map((s, i) => (
           <li key={i} className={s.role === 'user' ? 'flex justify-end' : 'flex justify-start'}>

@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
 import { env } from '@/lib/env';
 import { Container } from '@/components/ui/Container';
+import { SectionShell, EDGE } from '@/components/ui/SectionShell';
+import { Eyebrow } from '@/components/ui/Eyebrow';
 import { Card } from '@/components/ui/Card';
 import { JsonLd } from '@/components/JsonLd';
 import { productJsonLd, faqJsonLd } from '@/lib/seo/jsonld';
@@ -109,38 +111,39 @@ export default function AiEditorPage() {
       <JsonLd data={faqJsonLd(FAQ)} />
 
       {/* Hero + demo */}
-      <section className="border-b border-border bg-mist py-16">
+      <SectionShell tone="hero" underHeader bottom="lg" blooms curveBottom={EDGE.paper}>
         <Container>
-          <div className="grid items-center gap-10 lg:grid-cols-2">
+          <div className="grid items-center gap-12 lg:grid-cols-2">
             <div>
-              <h1 className="text-h1 text-navy">The AI Editor for Divi 5</h1>
-              <p className="mt-4 max-w-xl text-lead text-muted">
+              <Eyebrow tone="dark" className="mb-4">AI Editor for Divi 5</Eyebrow>
+              <h1 className="text-h1 text-paper">The AI Editor for Divi 5</h1>
+              <p className="mt-6 max-w-xl text-lead text-paper/80">
                 Connect Claude, Cursor, or ChatGPT to your site and edit pages in plain English. Every change
                 passes a deterministic validator before it touches your database — broken layouts are impossible.
               </p>
-              <div className="mt-8 flex flex-wrap items-center gap-3">
+              <div className="mt-10 flex flex-wrap items-center gap-3">
                 <BuyProButton product="ai-editor-divi5-pro" label="Start 45-day free trial" />
                 <a
                   href="#free"
-                  className="inline-flex h-12 items-center justify-center rounded-full border border-border bg-paper px-8 text-body font-semibold text-navy transition hover:border-action hover:text-action"
+                  className="inline-flex h-12 items-center justify-center rounded-pill border border-paper/35 bg-paper/10 px-8 text-body font-semibold text-paper backdrop-blur transition hover:-translate-y-0.5 hover:border-paper/70 hover:bg-paper/20"
                 >
                   Try it free
                 </a>
               </div>
-              <p className="mt-6 text-small font-medium text-muted">
+              <p className="mt-6 text-small font-medium text-paper/60">
                 Works with: {ASSISTANTS.join(' · ')}
               </p>
             </div>
-            <ValidatorChatDemo steps={DEMO_STEPS} />
+            <ValidatorChatDemo steps={DEMO_STEPS} className="animate-float" />
           </div>
         </Container>
-      </section>
+      </SectionShell>
 
       {/* The safety mechanism */}
-      <section className="py-20">
+      <SectionShell tone="paper" pad="lg">
         <Container>
           <div className="mx-auto max-w-2xl text-center">
-            <p className="text-small font-semibold uppercase tracking-wide text-action">Why it&apos;s safe</p>
+            <p className="eyebrow text-action">Why it&apos;s safe</p>
             <h2 className="mt-3 text-h2 text-navy">AI drafts. The validator decides.</h2>
             <p className="mt-4 text-lead text-muted">
               Language models are confident even when they&apos;re wrong — so we never trust one with your database.
@@ -157,10 +160,10 @@ export default function AiEditorPage() {
             ]}
           />
         </Container>
-      </section>
+      </SectionShell>
 
       {/* How it works */}
-      <section className="border-t border-border bg-mist py-20">
+      <SectionShell tone="mist" pad="lg">
         <Container>
           <h2 className="text-h2 text-navy">Three steps to your first AI edit</h2>
           <div className="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-3">
@@ -177,10 +180,10 @@ export default function AiEditorPage() {
             ))}
           </div>
         </Container>
-      </section>
+      </SectionShell>
 
       {/* Free vs Pro */}
-      <section id="free" className="py-20">
+      <SectionShell tone="paper" pad="lg" className="scroll-mt-24" id="free">
         <Container>
           <h2 className="text-h2 text-navy">What your assistant can do — today vs. with Pro</h2>
           <ComparisonTable
@@ -212,7 +215,7 @@ export default function AiEditorPage() {
               </div>
             </Card>
             <Card className="relative border-action p-8 shadow-lg ring-1 ring-action">
-              <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-action px-3 py-1 text-small font-semibold text-paper">
+              <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-pill bg-action px-4 py-1.5 text-small font-semibold text-paper shadow-glow">
                 One license, unlimited sites
               </span>
               <h3 className="text-section text-navy">Go Pro</h3>
@@ -226,18 +229,18 @@ export default function AiEditorPage() {
             </Card>
           </div>
         </Container>
-      </section>
+      </SectionShell>
 
       {/* Use cases */}
-      <section className="border-t border-border bg-mist py-20">
+      <SectionShell tone="mist" pad="lg">
         <Container>
           <h2 className="text-h2 text-navy">Who edits with it</h2>
           <UseCaseVignettes className="mt-8" items={USE_CASES} />
         </Container>
-      </section>
+      </SectionShell>
 
       {/* FAQ */}
-      <section className="py-20">
+      <SectionShell tone="paper" pad="lg">
         <Container>
           <h2 className="text-h2 text-navy">Frequently asked questions</h2>
           <dl className="mt-8 max-w-3xl space-y-6">
@@ -249,7 +252,7 @@ export default function AiEditorPage() {
             ))}
           </dl>
         </Container>
-      </section>
+      </SectionShell>
 
       <CtaBand
         title="Your assistant already knows Divi. Now it can prove it."

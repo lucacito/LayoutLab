@@ -16,11 +16,32 @@ describe('brand theme tokens', () => {
     expect(colors.slate).toBeUndefined();
     expect(colors.gray).toBeUndefined();
   });
-  it('defines brand radii and the soft shadow', () => {
+  it('defines the gradient stops used to build the immersive canvas', () => {
+    // The `.canvas-*` grounds are blends of these — no new brand hues.
+    expect(colors['g-purple']).toBe('#8247F5');
+    expect(colors['g-pink']).toBe('#E55CFF');
+    expect(colors['g-cyan']).toBe('#0099FF');
+    expect(colors['g-amber']).toBe('#FFA600');
+  });
+  it('defines brand radii, including the full pill', () => {
     const r = (config.theme?.extend?.borderRadius ?? {}) as Record<string, string>;
-    expect(r.button).toBe('4px');
-    expect(r.card).toBe('16px');
+    expect(r.button).toBe('10px');
+    expect(r.card).toBe('20px');
+    expect(r.panel).toBe('28px');
+    expect(r.pill).toBe('999px');
+  });
+  it('tints every elevation shadow with a brand colour, never neutral grey', () => {
     const s = (config.theme?.extend?.boxShadow ?? {}) as Record<string, string>;
-    expect(s.soft).toContain('rgba(71,103,136');
+    // navy 11,53,88 · action 99,91,255 — depth reads as coloured light.
+    expect(s.soft).toContain('rgba(11,53,88');
+    expect(s.float).toContain('rgba(11,53,88');
+    expect(s.lift).toContain('rgba(99,91,255');
+    expect(s.glow).toContain('rgba(99,91,255');
+    expect(s['glow-lg']).toContain('rgba(99,91,255');
+  });
+  it('loads a display face separate from the body face', () => {
+    const f = (config.theme?.extend?.fontFamily ?? {}) as Record<string, string[]>;
+    expect(f.display?.[0]).toBe('var(--font-display)');
+    expect(f.sans?.[0]).toBe('var(--font-sans)');
   });
 });
