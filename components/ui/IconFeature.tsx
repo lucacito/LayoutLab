@@ -1,11 +1,31 @@
 import type { ReactNode } from 'react';
 
-export function IconFeature({ icon, title, body }: { icon: ReactNode; title: string; body: string }) {
+/** Circular tinted icon puck + title + body — the feature-grid unit. */
+export function IconFeature({
+  icon,
+  title,
+  body,
+  tone = 'light',
+  className = '',
+}: {
+  icon: ReactNode;
+  title: string;
+  body: string;
+  tone?: 'light' | 'dark';
+  className?: string;
+}) {
+  const dark = tone === 'dark';
   return (
-    <div>
-      <div className="flex h-10 w-10 items-center justify-center rounded-button bg-fog text-action">{icon}</div>
-      <h3 className="mt-4 text-section text-navy">{title}</h3>
-      <p className="mt-2 text-body text-muted">{body}</p>
+    <div className={className}>
+      <div
+        className={`flex h-14 w-14 items-center justify-center rounded-pill ${
+          dark ? 'bg-paper/10 text-paper ring-1 ring-inset ring-paper/20' : 'bg-action/10 text-action'
+        }`}
+      >
+        {icon}
+      </div>
+      <h3 className={`mt-5 text-section ${dark ? 'text-paper' : 'text-navy'}`}>{title}</h3>
+      <p className={`mt-2 text-body ${dark ? 'text-paper/75' : 'text-muted'}`}>{body}</p>
     </div>
   );
 }

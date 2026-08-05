@@ -18,8 +18,14 @@ const CHIP_TONE: Record<'green' | 'amber', string> = {
 // Desktop navigation. "Plugins" and "Free layouts" open mega-menu panels on
 // hover/focus; their labels still navigate. Panels stay in the DOM (hidden via
 // CSS) so links remain crawlable and testable.
-export function PrimaryNav() {
+export function PrimaryNav({ inverted = false }: { inverted?: boolean }) {
   const [open, setOpen] = useState<MegaKey | null>(null);
+
+  // Over the canvas hero the nav is light-on-gradient; once the header
+  // solidifies it reverts to navy-on-paper.
+  const itemCls = inverted
+    ? 'text-paper/85 hover:bg-paper/15 hover:text-paper'
+    : 'text-navy hover:bg-action/10 hover:text-action';
 
   return (
     <nav
@@ -39,14 +45,14 @@ export function PrimaryNav() {
             aria-haspopup={m.mega ? 'true' : undefined}
             aria-expanded={m.mega ? open === m.mega : undefined}
             onFocus={() => setOpen(m.mega ?? null)}
-            className="inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-small font-medium text-navy transition hover:text-action"
+            className={`inline-flex items-center gap-1 rounded-pill px-4 py-2 text-small font-semibold transition ${itemCls}`}
           >
             {m.label}
             {m.mega && (
               <Icon
                 name="expand_more"
                 size={16}
-                className={`text-muted transition-transform ${open === m.mega ? 'rotate-180' : ''}`}
+                className={`transition-transform ${inverted ? 'text-paper/60' : 'text-muted'} ${open === m.mega ? 'rotate-180' : ''}`}
               />
             )}
           </Link>
@@ -123,7 +129,7 @@ export function PrimaryNav() {
 function MegaPanel({ visible, width, children }: { visible: boolean; width: string; children: React.ReactNode }) {
   return (
     <div
-      className={`absolute left-1/2 top-full z-50 mt-3 -translate-x-1/2 ${width} max-w-[calc(100vw-2rem)] rounded-card border border-border bg-paper p-3 shadow-soft transition ${
+      className={`absolute left-1/2 top-full z-50 mt-4 -translate-x-1/2 ${width} max-w-[calc(100vw-2rem)] rounded-panel border border-border bg-paper p-4 shadow-lift transition ${
         visible ? 'visible translate-y-0 opacity-100' : 'invisible -translate-y-1 opacity-0'
       }`}
       aria-hidden={!visible}

@@ -2,7 +2,7 @@ import './globals.css';
 import 'material-icons/iconfont/outlined.css';
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
-import { Inter } from 'next/font/google';
+import { Inter, Poppins } from 'next/font/google';
 import { Analytics } from '@vercel/analytics/react';
 import { GoogleAnalytics } from '@next/third-parties/google';
 import { SessionProvider } from 'next-auth/react';
@@ -15,6 +15,9 @@ import { BookmarksProvider } from '@/components/bookmarks/BookmarksProvider';
 import { env } from '@/lib/env';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-sans', display: 'swap' });
+// Display face for headings/eyebrows only — body copy stays on Inter, which
+// reads better at length across the guides and catalog.
+const poppins = Poppins({ subsets: ['latin'], weight: ['600', '700', '800'], variable: '--font-display', display: 'swap' });
 
 const GA_ID = env.NEXT_PUBLIC_GA_ID ?? 'G-YCK6MN99PR';
 
@@ -69,7 +72,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en" className={inter.variable}>
+    <html lang="en" className={`${inter.variable} ${poppins.variable}`}>
       <body className="font-sans">
         <JsonLd data={SITE_JSONLD} />
         <SessionProvider>

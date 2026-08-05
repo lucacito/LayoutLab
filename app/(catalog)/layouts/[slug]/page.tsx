@@ -104,7 +104,7 @@ export default async function LayoutPage({ params }: { params: Promise<{ slug: s
 
         <Card className="mt-6 flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <p className="text-small font-semibold uppercase tracking-wide text-muted">Rate this element</p>
+            <p className="eyebrow text-muted">Rate this element</p>
             <div className="mt-2">
               <StarRating layoutId={layout.id} slug={layout.slug} initialAverage={ratingAvg} initialCount={layout.ratingCount} />
             </div>

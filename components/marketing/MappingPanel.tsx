@@ -14,7 +14,7 @@ export function MappingPanel({
 }) {
   return (
     <div className={`rounded-card border border-border bg-paper p-6 shadow-soft ${className}`}>
-      <div className="mb-4 flex items-center justify-between text-small font-semibold uppercase tracking-wide text-muted">
+      <div className="mb-4 flex items-center justify-between eyebrow text-muted">
         <span>{fromLabel}</span>
         <span>{toLabel}</span>
       </div>

@@ -12,7 +12,7 @@ export function VerdictCard({
   className?: string;
 }) {
   return (
-    <div className={`overflow-hidden rounded-card border border-border bg-ink text-paper shadow-soft ${className}`}>
+    <div className={`overflow-hidden rounded-card border border-navy/60 bg-ink text-paper shadow-float ${className}`}>
       <div className="flex items-center gap-2 border-b border-paper/10 px-5 py-3">
         <span className="h-2.5 w-2.5 rounded-full bg-paper/25" />
         <span className="h-2.5 w-2.5 rounded-full bg-paper/25" />

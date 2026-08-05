@@ -30,7 +30,7 @@ const SUBLINKS: Record<MegaKey, { href: string; label: string; icon: string }[]>
   ],
 };
 
-export function MobileNav() {
+export function MobileNav({ inverted = false }: { inverted?: boolean }) {
   const [open, setOpen] = useState(false);
   const [expanded, setExpanded] = useState<MegaKey | null>(null);
   const { data: session } = useSession();
@@ -42,7 +42,12 @@ export function MobileNav() {
 
   return (
     <div className="md:hidden">
-      <button aria-label="Toggle menu" aria-expanded={open} onClick={() => setOpen((v) => !v)} className="rounded-button p-2 text-navy">
+      <button
+        aria-label="Toggle menu"
+        aria-expanded={open}
+        onClick={() => setOpen((v) => !v)}
+        className={`rounded-pill p-2 transition ${inverted && !open ? 'text-paper hover:bg-paper/15' : 'text-navy hover:bg-fog'}`}
+      >
         <Icon name={open ? 'close' : 'menu'} size={26} />
       </button>
 

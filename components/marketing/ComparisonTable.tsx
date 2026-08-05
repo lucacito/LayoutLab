@@ -19,7 +19,7 @@ export function ComparisonTable({
         <caption className="sr-only">{caption}</caption>
         <thead>
           <tr className="border-b border-border bg-mist">
-            <th scope="col" className="px-5 py-3.5 text-small font-semibold uppercase tracking-wide text-muted">Capability</th>
+            <th scope="col" className="px-5 py-3.5 eyebrow text-muted">Capability</th>
             {columns.map((c) => (
               <th key={c} scope="col" className="px-5 py-3.5 text-small font-semibold uppercase tracking-wide text-navy">{c}</th>
             ))}

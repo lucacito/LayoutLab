@@ -3,7 +3,9 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Container } from '@/components/ui/Container';
 import { Card } from '@/components/ui/Card';
-import { SectionTitle } from '@/components/ui/SectionTitle';
+import { SectionShell, EDGE } from '@/components/ui/SectionShell';
+import { Eyebrow } from '@/components/ui/Eyebrow';
+import { PageHero } from '@/components/marketing/PageHero';
 import { Icon } from '@/components/ui/Icon';
 import { JsonLd } from '@/components/JsonLd';
 import { faqJsonLd } from '@/lib/seo/jsonld';
@@ -87,7 +89,7 @@ const TOOLKIT = [
     action: (
       <Link
         href="/plugins/divi-to-elementor"
-        className="flex h-12 items-center justify-center rounded-full border border-border bg-paper px-8 text-body font-semibold text-navy transition hover:border-action hover:text-action"
+        className="flex h-12 items-center justify-center rounded-pill border border-border bg-paper px-8 text-body font-semibold text-navy transition hover:-translate-y-0.5 hover:border-action hover:text-action hover:shadow-lift"
       >
         Get notified
       </Link>
@@ -100,25 +102,22 @@ const TOOLKIT = [
 export default async function PricingPage() {
   return (
     <main>
-      <section className="border-b border-border bg-mist py-16">
-        <Container>
-          <SectionTitle eyebrow="Pricing" title="Licenses that respect you">
-            Free tiers on everything. Pro from $25/yr on unlimited sites — and when a license lapses,
-            nothing breaks: activated sites keep working. Renewal buys updates and support, not hostage access.
-          </SectionTitle>
-        </Container>
-      </section>
+      <PageHero
+        eyebrow="Pricing"
+        title="Licenses that respect you"
+        lead="Free tiers on everything. Pro from $25/yr on unlimited sites — and when a license lapses, nothing breaks: activated sites keep working. Renewal buys updates and support, not hostage access."
+      />
 
-      <section className="py-16">
+      <SectionShell tone="paper" pad="lg">
         <Container>
           <div className="grid items-stretch gap-6 lg:grid-cols-3">
             {TOOLKIT.map((p) => (
               <Card
                 key={p.name}
-                className={`relative flex flex-col p-8 ${p.highlight ? 'border-action shadow-lg ring-1 ring-action' : ''}`}
+                className={`relative flex flex-col p-8 transition duration-300 hover:-translate-y-1.5 hover:shadow-lift ${p.highlight ? 'border-action shadow-lift ring-1 ring-action' : ''}`}
               >
                 {p.highlight && (
-                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-action px-3 py-1 text-small font-semibold text-paper">
+                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-pill bg-action px-4 py-1.5 text-small font-semibold text-paper shadow-glow">
                     Most popular
                   </span>
                 )}
@@ -157,25 +156,26 @@ export default async function PricingPage() {
             <div className="flex shrink-0 flex-wrap gap-3">
               <Link
                 href="/free-divi-layouts"
-                className="flex h-12 items-center justify-center rounded-full bg-action px-8 text-body font-semibold text-paper transition hover:brightness-110"
+                className="flex h-12 items-center justify-center rounded-pill bg-action px-8 text-body font-semibold text-paper shadow-glow transition hover:-translate-y-0.5 hover:shadow-glow-lg hover:brightness-110"
               >
                 Get free layouts
               </Link>
               <Link
                 href="/browse"
-                className="flex h-12 items-center justify-center rounded-full border border-border bg-paper px-8 text-body font-semibold text-navy transition hover:border-action hover:text-action"
+                className="flex h-12 items-center justify-center rounded-pill border border-border bg-paper px-8 text-body font-semibold text-navy transition hover:-translate-y-0.5 hover:border-action hover:text-action hover:shadow-lift"
               >
                 Browse the catalog
               </Link>
             </div>
           </Card>
         </Container>
-      </section>
+      </SectionShell>
 
-      <section className="border-t border-border bg-mist py-20">
+      <SectionShell tone="mist" pad="lg">
         <Container>
-          <h2 className="text-h2 text-navy">Frequently asked questions</h2>
-          <dl className="mt-8 max-w-3xl space-y-6">
+          <Eyebrow>Answers</Eyebrow>
+          <h2 className="mt-3 text-h2 text-navy">Frequently asked questions</h2>
+          <dl className="mt-10 max-w-3xl space-y-7">
             {FAQ.map((f) => (
               <div key={f.question}>
                 <dt className="text-body font-semibold text-navy">{f.question}</dt>
@@ -184,12 +184,14 @@ export default async function PricingPage() {
             ))}
           </dl>
         </Container>
-      </section>
+      </SectionShell>
 
       <CtaBand
+        eyebrow="No card required"
         title="Try everything free first."
         body="Free conversions, a free AI Editor, a free layout catalog — upgrade when the tools have already earned it."
         cta={{ label: 'Browse the plugins', href: '/plugins' }}
+        curveTop={EDGE.mist}
       />
 
       <JsonLd data={faqJsonLd(FAQ)} />

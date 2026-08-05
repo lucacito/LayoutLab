@@ -1,6 +1,9 @@
 import type { Metadata } from 'next';
 import { env } from '@/lib/env';
 import { Container } from '@/components/ui/Container';
+import { SectionShell, EDGE } from '@/components/ui/SectionShell';
+import { Eyebrow } from '@/components/ui/Eyebrow';
+import { PageHero } from '@/components/marketing/PageHero';
 import { Card } from '@/components/ui/Card';
 import { Icon } from '@/components/ui/Icon';
 import { JsonLd } from '@/components/JsonLd';
@@ -153,37 +156,36 @@ export default function PluginPage() {
       <JsonLd data={faqJsonLd(FAQ)} />
 
       {/* Hero */}
-      <section className="border-b border-border bg-mist py-16">
-        <Container>
-          <h1 className="max-w-3xl text-h1 text-navy">Convert Elementor to Divi 5 — without rebuilding a thing.</h1>
-          <p className="mt-4 max-w-2xl text-lead text-muted">
-            Export from Elementor, import into Divi 5, review real modules — not shortcode soup. Every conversion
-            is checked against the Divi 5 schema before you see it. Free for single pages; Pro moves whole sites.
-          </p>
-          <div className="mt-8 flex flex-wrap items-center gap-3">
-            <BuyProButton product="elementor-to-divi5-pro" label="Get Pro — $25/yr" />
-            <a
-              href={WP_ORG_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex h-12 items-center justify-center rounded-full border border-border bg-paper px-8 text-body font-semibold text-navy transition hover:border-action hover:text-action"
-            >
-              Get the free plugin
-            </a>
-          </div>
-          <StatStrip
-            className="mt-12 justify-start"
-            stats={[
-              { value: String(WIDGET_TYPES_MAPPED), label: 'widget types mapped' },
-              { value: `${STATS.activeInstalls}+`, label: 'active installs' },
-              { value: '3', label: 'steps to a converted page' },
-            ]}
-          />
-        </Container>
-      </section>
+      <PageHero
+        align="left"
+        eyebrow="Elementor → Divi 5 Converter"
+        title="Convert Elementor to Divi 5 — without rebuilding a thing."
+        lead="Export from Elementor, import into Divi 5, review real modules — not shortcode soup. Every conversion is checked against the Divi 5 schema before you see it. Free for single pages; Pro moves whole sites."
+      >
+        <div className="flex flex-wrap items-center gap-3">
+          <BuyProButton product="elementor-to-divi5-pro" label="Get Pro — $25/yr" />
+          <a
+            href={WP_ORG_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex h-12 items-center justify-center rounded-pill border border-paper/35 bg-paper/10 px-8 text-body font-semibold text-paper backdrop-blur transition hover:-translate-y-0.5 hover:border-paper/70 hover:bg-paper/20"
+          >
+            Get the free plugin
+          </a>
+        </div>
+        <StatStrip
+          className="mt-12 !mx-0"
+          tone="dark"
+          stats={[
+            { value: String(WIDGET_TYPES_MAPPED), label: 'widget types mapped' },
+            { value: `${STATS.activeInstalls}+`, label: 'active installs' },
+            { value: '3', label: 'steps to a converted page' },
+          ]}
+        />
+      </PageHero>
 
       {/* Demo: mapping panel + conversion report */}
-      <section className="py-20">
+      <SectionShell tone="paper" pad="lg">
         <Container>
           <div className="grid items-start gap-10 lg:grid-cols-2">
             <div className="min-w-0">
@@ -201,7 +203,7 @@ export default function PluginPage() {
                 without a mapping, which is preserved as an embed and flagged. Nothing is silently dropped.
               </p>
               <Card className="mt-8 p-6">
-                <p className="text-small font-semibold uppercase tracking-wide text-muted">Conversion report — home.json</p>
+                <p className="eyebrow text-muted">Conversion report — home.json</p>
                 <ul className="mt-3 divide-y divide-border">
                   {REPORT_ROWS.map((r) => (
                     <ReportRow key={r.widget} {...r} />
@@ -212,10 +214,10 @@ export default function PluginPage() {
             </div>
           </div>
         </Container>
-      </section>
+      </SectionShell>
 
       {/* How it works */}
-      <section className="border-t border-border bg-mist py-20">
+      <SectionShell tone="mist" pad="lg">
         <Container>
           <h2 className="text-h2 text-navy">Three steps, no surprises</h2>
           <div className="mt-8 grid grid-cols-1 gap-8 sm:grid-cols-3">
@@ -232,10 +234,10 @@ export default function PluginPage() {
             ))}
           </div>
         </Container>
-      </section>
+      </SectionShell>
 
       {/* Pro depth */}
-      <section className="py-20">
+      <SectionShell tone="paper" pad="lg">
         <Container>
           <h2 className="text-h2 text-navy">What Pro actually buys you</h2>
           <div className="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2">
@@ -247,10 +249,10 @@ export default function PluginPage() {
             ))}
           </div>
         </Container>
-      </section>
+      </SectionShell>
 
       {/* Free vs Pro table */}
-      <section className="border-t border-border bg-mist py-20">
+      <SectionShell tone="mist" pad="lg">
         <Container>
           <h2 className="text-h2 text-navy">Free vs. Pro</h2>
           <ComparisonTable
@@ -277,18 +279,18 @@ export default function PluginPage() {
             </a>
           </div>
         </Container>
-      </section>
+      </SectionShell>
 
       {/* Use cases */}
-      <section className="py-20">
+      <SectionShell tone="paper" pad="lg">
         <Container>
           <h2 className="text-h2 text-navy">Who moves sites with it</h2>
           <UseCaseVignettes className="mt-8" items={USE_CASES} />
         </Container>
-      </section>
+      </SectionShell>
 
       {/* Widget mapping reference */}
-      <section className="border-t border-border bg-mist py-20">
+      <SectionShell tone="mist" pad="lg">
         <Container>
           <h2 className="text-h2 text-navy">The full mapping reference</h2>
           <p className="mt-4 max-w-2xl text-lead text-muted">
@@ -312,10 +314,10 @@ export default function PluginPage() {
             ))}
           </div>
         </Container>
-      </section>
+      </SectionShell>
 
       {/* FAQ */}
-      <section className="py-20">
+      <SectionShell tone="paper" pad="lg">
         <Container>
           <h2 className="text-h2 text-navy">Frequently asked questions</h2>
           <dl className="mt-8 max-w-3xl space-y-6">
@@ -327,7 +329,7 @@ export default function PluginPage() {
             ))}
           </dl>
         </Container>
-      </section>
+      </SectionShell>
 
       <CtaBand
         title="Ship your migration this week."

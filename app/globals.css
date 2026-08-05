@@ -7,24 +7,85 @@
     @apply bg-mist text-ink antialiased;
     font-family: var(--font-sans), Inter, system-ui, sans-serif;
   }
-  h1, h2, h3, h4 { @apply text-navy; }
+  /* Headings carry the identity: geometric, heavy, tight. Body stays Inter. */
+  h1, h2, h3, h4 {
+    @apply text-navy;
+    font-family: var(--font-display), Poppins, var(--font-sans), sans-serif;
+  }
   a { @apply text-action; }
 }
 
 @layer components {
-  /* Type scale — responsive via clamp so large display sizes shrink on mobile. */
-  .text-display { font-size: clamp(40px, 8vw, 80px); line-height: 1.1; font-weight: 700; letter-spacing: -0.02em; }
-  .text-h1      { font-size: clamp(34px, 6vw, 68px); line-height: 1.15; font-weight: 700; letter-spacing: -0.02em; }
-  .text-h2      { font-size: clamp(30px, 5vw, 50px); line-height: 1.2;  font-weight: 700; letter-spacing: -0.01em; }
-  .text-h3      { font-size: clamp(24px, 4vw, 38px); line-height: 1.25; font-weight: 700; }
-  .text-section { font-size: 28px; line-height: 1.4; font-weight: 600; }
-  .text-lead    { font-size: 20px; line-height: 1.6; font-weight: 500; }
-  .text-body    { font-size: 18px; line-height: 1.6; font-weight: 400; }
+  /* ---------------------------------------------------------------- type --
+     Responsive via clamp so display sizes shrink on mobile. Weights and
+     tracking are heavier/tighter than the previous scale — that density is
+     what makes the display face read as a brand voice rather than as text. */
+  .text-display { font-size: clamp(42px, 8vw, 84px); line-height: 1.05; font-weight: 800; letter-spacing: -0.03em; }
+  .text-h1      { font-size: clamp(36px, 6.5vw, 72px); line-height: 1.08; font-weight: 800; letter-spacing: -0.025em; }
+  .text-h2      { font-size: clamp(30px, 5vw, 52px); line-height: 1.15; font-weight: 700; letter-spacing: -0.02em; }
+  .text-h3      { font-size: clamp(25px, 4vw, 40px); line-height: 1.2;  font-weight: 700; letter-spacing: -0.015em; }
+  .text-section { font-size: 24px; line-height: 1.3; font-weight: 700; letter-spacing: -0.01em; }
+  .text-lead    { font-size: 20px; line-height: 1.65; font-weight: 400; }
+  .text-body    { font-size: 17px; line-height: 1.65; font-weight: 400; }
   .text-small   { font-size: 14px; line-height: 1.5; font-weight: 400; }
 
-  /* Long-form rendered markdown (guides, keyword pages, layout articles,
-     taxonomy body copy). Deliberately narrow element coverage — our own
-     trusted markdown only ever emits these. */
+  /* Uppercase tracked kicker above a section headline. */
+  .eyebrow {
+    font-family: var(--font-display), Poppins, sans-serif;
+    font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.18em;
+  }
+  /* Same voice, tighter — for narrow columns where 0.18em runs into the
+     neighbouring column (footer headings, card labels). */
+  .eyebrow-tight {
+    font-family: var(--font-display), Poppins, sans-serif;
+    font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em;
+  }
+
+  /* ------------------------------------------------------------- canvases --
+     Immersive brand grounds, blended only from palette tokens:
+     navy #0B3558 · action #635BFF · g-purple #8247F5 · g-pink #E55CFF. */
+  .canvas-deep {
+    background-color: #0B3558;
+    background-image: linear-gradient(162deg, #0B3558 0%, #232F79 46%, #4A45C9 78%, #635BFF 100%);
+  }
+  .canvas-hero {
+    background-color: #0B3558;
+    background-image:
+      radial-gradient(58% 62% at 82% 8%, rgba(229, 92, 255, 0.32) 0%, rgba(229, 92, 255, 0) 62%),
+      radial-gradient(52% 58% at 12% 88%, rgba(130, 71, 245, 0.42) 0%, rgba(130, 71, 245, 0) 66%),
+      linear-gradient(162deg, #0B3558 0%, #232F79 44%, #4A45C9 76%, #635BFF 100%);
+  }
+  /* Faint tinted ground for light sections that still need to feel branded. */
+  .canvas-mist {
+    background-color: #F8F9FB;
+    background-image: radial-gradient(46% 52% at 88% 0%, rgba(99, 91, 255, 0.07) 0%, rgba(99, 91, 255, 0) 60%);
+  }
+
+  /* ----------------------------------------------------------- section -----
+     Organic curved transitions between bands. The pseudo-element is a very
+     wide, short ellipse in the *neighbouring* band's colour, so the seam reads
+     as one surface curving over another. Colour is supplied per-instance via
+     --curve-color. */
+  .curve-top, .curve-bottom { position: relative; }
+  .curve-top::before, .curve-bottom::after {
+    content: ''; position: absolute; left: 50%; z-index: 1;
+    width: 140%; height: 90px; transform: translateX(-50%);
+    background: var(--curve-color, #FFFFFF);
+    pointer-events: none;
+  }
+  .curve-top::before    { top: -1px; border-radius: 0 0 50% 50% / 0 0 100% 100%; }
+  .curve-bottom::after  { bottom: -1px; border-radius: 50% 50% 0 0 / 100% 100% 0 0; }
+  @media (max-width: 640px) {
+    .curve-top::before, .curve-bottom::after { height: 48px; }
+  }
+
+  /* Soft blurred colour bloom used as background decoration. */
+  .bloom { position: absolute; border-radius: 9999px; filter: blur(90px); pointer-events: none; }
+
+  /* ------------------------------------------------------------ longform --
+     Rendered markdown (guides, keyword pages, layout articles, taxonomy body
+     copy). Deliberately narrow element coverage — our own trusted markdown
+     only ever emits these. */
   .prose-divi { @apply text-body text-ink; }
   .prose-divi > * + * { margin-top: 1em; }
   .prose-divi h2 { @apply text-section text-navy; margin-top: 1.6em; }
@@ -37,7 +98,7 @@
   .prose-divi blockquote { @apply border-l-4 border-fog pl-4 text-muted; }
   .prose-divi code { @apply rounded bg-fog px-1.5 py-0.5; font-size: 0.9em; }
 
-  /* Stagger-rise entrance for marketing panels. Rows set --rise-i. */
+  /* ---------------------------------------------------------------- motion */
   @keyframes rise-in {
     from { opacity: 0; transform: translateY(6px); }
     to   { opacity: 1; transform: none; }
@@ -49,5 +110,5 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; animation-iteration-count: 1 !important; }
 }

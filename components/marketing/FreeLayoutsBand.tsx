@@ -29,24 +29,36 @@ export function FreeLayoutsBand() {
   }
 
   return (
-    <section className="py-16">
-      <div className="mx-auto max-w-4xl px-4">
-        <div className="rounded-card border border-border bg-mist p-8 md:p-12">
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-action/10 px-3 py-1 text-small font-semibold text-action">
+    <section className="bg-paper py-20">
+      <div className="mx-auto max-w-5xl px-4">
+        {/* Inset canvas panel — the lead magnet gets the brand ground even
+            though the surrounding section stays light. */}
+        <div className="canvas-deep relative overflow-hidden rounded-panel p-9 text-paper shadow-lift md:p-14">
+          <div aria-hidden className="absolute inset-0">
+            <span className="bloom -right-16 -top-16 h-80 w-80 bg-g-pink/30" />
+            <span className="bloom -bottom-20 left-8 h-72 w-72 bg-g-purple/30" />
+          </div>
+          <div className="relative">
+          <span className="inline-flex items-center gap-1.5 rounded-pill border border-paper/25 bg-paper/10 px-3.5 py-1.5 text-small font-semibold text-paper backdrop-blur">
             <Icon name="download" size={16} /> Free for Divi builders
           </span>
-          <h2 className="mt-4 text-h3 text-navy">Free Divi 5 layouts, straight from the lab.</h2>
-          <p className="mt-3 max-w-xl text-body text-muted">
+          <h2 className="mt-5 text-h3 text-paper">Free Divi 5 layouts, straight from the lab.</h2>
+          <p className="mt-4 max-w-xl text-body text-paper/80">
             The catalog is the validator&apos;s proving ground: 190+ sections and pages generated, validated,
             rendered, and shipped — every one free. Drop your email and new ones land in your inbox.
           </p>
 
           {status === 'done' ? (
-            <p role="status" aria-live="polite" className="mt-6 flex items-center gap-2 text-body font-semibold text-navy">
-              <Icon name="mark_email_read" size={20} className="text-action" /> Check your inbox — you&apos;re on the list!
+            <p role="status" aria-live="polite" className="mt-8 flex items-center gap-2 text-body font-semibold text-paper">
+              <Icon name="mark_email_read" size={20} className="text-g-pink" /> Check your inbox — you&apos;re on the list!
             </p>
           ) : (
-            <form onSubmit={submit} className="mt-6 flex max-w-md flex-col gap-3 sm:flex-row">
+            /* One pill that contains the field and the button, Divi-Pixel style,
+               rather than two separate controls sitting side by side. */
+            <form
+              onSubmit={submit}
+              className="mt-8 flex max-w-lg flex-col gap-3 sm:flex-row sm:items-center sm:gap-0 sm:rounded-pill sm:border sm:border-paper/25 sm:bg-paper/10 sm:p-1.5 sm:backdrop-blur"
+            >
               <input
                 type="email"
                 required
@@ -54,26 +66,27 @@ export function FreeLayoutsBand() {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@email.com"
                 aria-label="Your email"
-                className="min-w-0 flex-1 rounded-full border border-border bg-paper px-4 py-3 text-body text-navy outline-none"
+                className="min-w-0 flex-1 rounded-pill border border-paper/25 bg-paper/10 px-5 py-3 text-body text-paper outline-none backdrop-blur placeholder:text-paper/50 focus:border-paper/60 sm:border-transparent sm:bg-transparent sm:backdrop-blur-none sm:focus:border-transparent"
               />
               <button
                 type="submit"
                 disabled={submitting}
-                className="shrink-0 rounded-full bg-action px-6 py-3 text-small font-semibold text-paper transition hover:brightness-110 disabled:opacity-60"
+                className="shrink-0 rounded-pill bg-action px-7 py-3 text-small font-semibold text-paper shadow-glow transition hover:brightness-110 disabled:opacity-60"
               >
                 {submitting ? 'Sending…' : 'Send me layouts'}
               </button>
             </form>
           )}
           {status === 'error' && (
-            <p role="status" aria-live="polite" className="mt-2 text-small text-red-600">
+            <p role="status" aria-live="polite" className="mt-3 text-small text-g-amber">
               Something went wrong — try again.
             </p>
           )}
 
-          <Link href="/browse" className="mt-5 inline-flex items-center gap-1 text-small font-semibold text-action hover:underline">
+          <Link href="/browse" className="mt-7 inline-flex items-center gap-1.5 text-small font-semibold text-paper/90 transition hover:text-paper">
             Browse the free library <Icon name="arrow_forward" size={15} />
           </Link>
+          </div>
         </div>
       </div>
     </section>

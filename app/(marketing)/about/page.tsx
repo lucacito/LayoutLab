@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Container } from '@/components/ui/Container';
+import { SectionShell, EDGE } from '@/components/ui/SectionShell';
+import { PageHero } from '@/components/marketing/PageHero';
 import { STATS } from '@/lib/site/stats';
 import { StatStrip } from '@/components/marketing/StatStrip';
 import { CtaBand } from '@/components/marketing/CtaBand';
@@ -14,17 +16,13 @@ export const metadata: Metadata = {
 export default function AboutPage() {
   return (
     <main>
-      <section className="border-b border-border bg-mist py-16">
-        <Container className="max-w-3xl">
-          <h1 className="text-h1 text-navy">The lab behind the validator.</h1>
-          <p className="mt-5 text-lead text-muted">
-            Divi5Lab exists because of one stubborn observation: converters and AI both produce confident,
-            broken page-builder markup — and nobody finds out until after the import.
-          </p>
-        </Container>
-      </section>
+      <PageHero
+        eyebrow="About Divi5Lab"
+        title="The lab behind the validator."
+        lead="Divi5Lab exists because of one stubborn observation: converters and AI both produce confident, broken page-builder markup — and nobody finds out until after the import."
+      />
 
-      <section className="py-16">
+      <SectionShell tone="paper" pad="lg">
         <Container className="max-w-3xl space-y-12">
           <div>
             <h2 className="text-section text-navy">The problem we kept hitting</h2>
@@ -58,7 +56,7 @@ export default function AboutPage() {
           </div>
 
           <StatStrip
-            className="justify-start"
+            className="rounded-panel border border-fog bg-mist"
             stats={[
               { value: `${STATS.freeLayoutsPublished}+`, label: 'free layouts shipped' },
               { value: String(STATS.elementorWidgetsMapped), label: 'widget types mapped' },
@@ -76,13 +74,15 @@ export default function AboutPage() {
             </p>
           </div>
         </Container>
-      </section>
+      </SectionShell>
 
       <CtaBand
+        eyebrow="Every product has a free tier"
         title="Kick the tires, free."
         body="Browse the catalog, convert a page, or wire your AI assistant to a test site — every product has a free tier."
         cta={{ label: 'See the plugins', href: '/plugins' }}
         secondary={{ label: 'Browse free layouts', href: '/browse' }}
+        curveTop={EDGE.paper}
       />
     </main>
   );

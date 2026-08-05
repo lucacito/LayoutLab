@@ -33,7 +33,7 @@ export function VariantSwitcher({ current, siblings }: { current: LayoutRow; sib
 
   return (
     <div className="mt-4 rounded-card border border-border bg-paper p-4">
-      <p className="text-small font-semibold uppercase tracking-wide text-muted">Variations</p>
+      <p className="eyebrow text-muted">Variations</p>
       <div className="mt-3 space-y-3">
         {columns.length > 1 && (
           <div className="flex flex-wrap items-center gap-2">

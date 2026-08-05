@@ -3,6 +3,8 @@ import Link from 'next/link';
 import { Container } from '@/components/ui/Container';
 import { Card } from '@/components/ui/Card';
 import { Icon } from '@/components/ui/Icon';
+import { SectionShell, EDGE } from '@/components/ui/SectionShell';
+import { PageHero } from '@/components/marketing/PageHero';
 import { ProductDoors } from '@/components/marketing/ProductDoors';
 import { CtaBand } from '@/components/marketing/CtaBand';
 
@@ -36,23 +38,19 @@ const DECISIONS = [
 export default function PluginsHub() {
   return (
     <main>
-      <section className="border-b border-border bg-mist py-16">
-        <Container>
-          <h1 className="text-h1 text-navy">Plugins</h1>
-          <p className="mt-4 max-w-2xl text-lead text-muted">
-            Migration converters and an AI editor for Divi 5 — every one built on the same deterministic
-            validator, so the output is real, importable markup. Never a guess.
-          </p>
-        </Container>
-      </section>
+      <PageHero
+        eyebrow="WordPress plugins"
+        title="Plugins"
+        lead="Migration converters and an AI editor for Divi 5 — every one built on the same deterministic validator, so the output is real, importable markup. Never a guess."
+      />
 
-      <section className="py-16">
+      <SectionShell tone="paper" pad="lg" bottom="sm">
         <Container>
           <ProductDoors />
         </Container>
-      </section>
+      </SectionShell>
 
-      <section className="pb-20">
+      <SectionShell tone="paper" top="none" pad="lg">
         <Container>
           <Card className="p-8">
             <h2 className="text-section text-navy">Which tool do I need?</h2>
@@ -70,12 +68,14 @@ export default function PluginsHub() {
             </ul>
           </Card>
         </Container>
-      </section>
+      </SectionShell>
 
       <CtaBand
+        eyebrow="Start free"
         title="One validator. Three ways to use it."
         body="Free tiers on everything — try a conversion or an AI edit before you spend a cent."
         cta={{ label: 'See pricing', href: '/pricing' }}
+        curveTop={EDGE.paper}
       />
     </main>
   );

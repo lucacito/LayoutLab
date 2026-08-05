@@ -58,7 +58,7 @@ export function TaxonomyLanding({ axis, value, siteUrl, copy, layouts, searchPar
           <h2 className="text-section text-navy">Related categories</h2>
           <div className="mt-4 grid grid-cols-1 gap-8 sm:grid-cols-3">
             <div>
-              <h3 className="text-small font-semibold uppercase tracking-wide text-muted">More by {axis === 'type' ? 'section type' : axis}</h3>
+              <h3 className="eyebrow text-muted">More by {axis === 'type' ? 'section type' : axis}</h3>
               <ul className="mt-3 flex flex-wrap gap-x-4 gap-y-2">
                 {siblings.map((v) => (
                   <li key={v}>
@@ -69,7 +69,7 @@ export function TaxonomyLanding({ axis, value, siteUrl, copy, layouts, searchPar
             </div>
             {crossGroups.map((g) => (
               <div key={g.heading}>
-                <h3 className="text-small font-semibold uppercase tracking-wide text-muted">{g.heading}</h3>
+                <h3 className="eyebrow text-muted">{g.heading}</h3>
                 <ul className="mt-3 flex flex-wrap gap-x-4 gap-y-2">
                   {g.links.map((l) => (
                     <li key={l.href}>
@@ -81,7 +81,7 @@ export function TaxonomyLanding({ axis, value, siteUrl, copy, layouts, searchPar
             ))}
             {guides.length > 0 && (
               <div>
-                <h3 className="text-small font-semibold uppercase tracking-wide text-muted">From the guides</h3>
+                <h3 className="eyebrow text-muted">From the guides</h3>
                 <ul className="mt-3 space-y-2">
                   {guides.map((g) => (
                     <li key={g.slug}>

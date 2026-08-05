@@ -128,7 +128,7 @@ export default async function KeywordLandingPage({ params }: { params: Promise<{
           <h2 className="text-section text-navy">Keep exploring</h2>
           <div className="mt-4 grid grid-cols-1 gap-8 sm:grid-cols-3">
             <div>
-              <h3 className="text-small font-semibold uppercase tracking-wide text-muted">Related collections</h3>
+              <h3 className="eyebrow text-muted">Related collections</h3>
               <ul className="mt-3 space-y-2">
                 {related.map((r) => (
                   <li key={r.slug}>
@@ -139,7 +139,7 @@ export default async function KeywordLandingPage({ params }: { params: Promise<{
             </div>
             {hubs.map((g) => (
               <div key={g.heading}>
-                <h3 className="text-small font-semibold uppercase tracking-wide text-muted">{g.heading}</h3>
+                <h3 className="eyebrow text-muted">{g.heading}</h3>
                 <ul className="mt-3 space-y-2">
                   {g.links.map((l) => (
                     <li key={l.href}>

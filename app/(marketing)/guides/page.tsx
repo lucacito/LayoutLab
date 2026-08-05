@@ -9,6 +9,8 @@ import { JsonLd } from '@/components/JsonLd';
 import { Breadcrumbs } from '@/components/Breadcrumbs';
 import { Container } from '@/components/ui/Container';
 import { Card } from '@/components/ui/Card';
+import { SectionShell } from '@/components/ui/SectionShell';
+import { PageHero } from '@/components/marketing/PageHero';
 
 const TITLE = 'Divi 5 Guides & Tutorials — Layouts, Imports, Comparisons';
 const DESCRIPTION =
@@ -25,32 +27,33 @@ export default function GuidesIndexPage() {
   const guides = listGuides();
   const site = env.NEXT_PUBLIC_SITE_URL;
   return (
-    <main className="py-12">
-      <Container>
-        <Breadcrumbs crumbs={[{ name: 'Home', url: site }, { name: 'Guides', url: `${site}/guides` }]} />
-        <JsonLd data={collectionPageJsonLd({ name: 'Divi 5 Guides & Tutorials', description: DESCRIPTION, url: `${site}/guides` })} />
-        <JsonLd data={breadcrumbJsonLd([{ name: 'Home', url: site }, { name: 'Guides', url: `${site}/guides` }])} />
-        <JsonLd data={itemListJsonLd(guides.map((g) => ({ name: g.title, url: `${site}/guides/${g.slug}` })))} />
+    <main>
+      <JsonLd data={collectionPageJsonLd({ name: 'Divi 5 Guides & Tutorials', description: DESCRIPTION, url: `${site}/guides` })} />
+      <JsonLd data={breadcrumbJsonLd([{ name: 'Home', url: site }, { name: 'Guides', url: `${site}/guides` }])} />
+      <JsonLd data={itemListJsonLd(guides.map((g) => ({ name: g.title, url: `${site}/guides/${g.slug}` })))} />
 
-        <h1 className="mt-4 text-h2 text-navy">Divi 5 Guides &amp; Tutorials</h1>
-        <p className="mt-4 max-w-2xl text-body text-muted">
-          The lab notebook, published. Everything here comes from building and validating hundreds of Divi 5
-          layouts: import walkthroughs, migration checklists, honest builder comparisons, and the design rules our
-          own generator has to follow.
-        </p>
+      <PageHero
+        above={<Breadcrumbs tone="dark" crumbs={[{ name: 'Home', url: site }, { name: 'Guides', url: `${site}/guides` }]} />}
+        eyebrow="The lab notebook"
+        title={<>Divi 5 Guides &amp; Tutorials</>}
+        lead="The lab notebook, published. Everything here comes from building and validating hundreds of Divi 5 layouts: import walkthroughs, migration checklists, honest builder comparisons, and the design rules our own generator has to follow."
+      />
 
-        <div className="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-2">
-          {guides.map((g) => (
-            <Link key={g.slug} href={`/guides/${g.slug}`} className="group block">
-              <Card className="h-full p-6 transition group-hover:-translate-y-0.5">
-                <p className="text-small text-muted">{g.date}</p>
-                <h2 className="mt-2 text-section text-navy transition group-hover:text-action">{g.title}</h2>
-                <p className="mt-3 text-body text-muted">{g.description}</p>
-              </Card>
-            </Link>
-          ))}
-        </div>
-      </Container>
+      <SectionShell tone="paper" pad="lg">
+        <Container>
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+            {guides.map((g) => (
+              <Link key={g.slug} href={`/guides/${g.slug}`} className="group block">
+                <Card className="h-full p-7 transition duration-300 group-hover:-translate-y-1.5 group-hover:shadow-lift">
+                  <p className="eyebrow text-muted">{g.date}</p>
+                  <h2 className="mt-3 text-section text-navy transition group-hover:text-action">{g.title}</h2>
+                  <p className="mt-3 text-body text-muted">{g.description}</p>
+                </Card>
+              </Link>
+            ))}
+          </div>
+        </Container>
+      </SectionShell>
     </main>
   );
 }
