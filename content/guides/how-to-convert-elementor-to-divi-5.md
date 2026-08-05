@@ -39,7 +39,7 @@ Open the converted page in the Divi 5 builder the same way you'd open any layout
 
 ## When you need Pro
 
-The free plugin is intentionally scoped to single pages, and that covers a lot of real migrations — moving one landing page, one service page, one blog template. Three situations push you into **[Elementor → Divi 5 Pro](/plugins/elementor-to-divi-5)** ($49/yr, unlimited sites):
+The free plugin is intentionally scoped to single pages, and that covers a lot of real migrations — moving one landing page, one service page, one blog template. Three situations push you into **[Elementor → Divi 5 Pro](/plugins/elementor-to-divi-5)** ($25/yr, unlimited sites):
 
 1. **You're migrating a whole site, not one page.** Pro imports the full kit ZIP in one pass instead of exporting and uploading page by page.
 2. **You use Elementor's global header/footer.** Pro maps those into Divi 5's Theme Builder, so your site-wide navigation and footer survive the move instead of needing to be rebuilt by hand.

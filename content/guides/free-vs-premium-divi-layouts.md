@@ -24,7 +24,7 @@ Free Divi layouts come from four sources, each with a distinct catch:
 
 If every layout is free, what do we sell? Not layouts — **migration tooling**. Two WordPress plugins move sites between page builders, and that's where a Pro tier exists:
 
-1. **[Elementor → Divi 5](/plugins/elementor-to-divi-5).** Free on wordpress.org for unlimited single-page conversions, 140+ widget mappings, and a conversion report on every run. Pro ($49/yr, unlimited sites) adds full kit ZIP import and global headers/footers mapped into the Divi Theme Builder — the pieces that matter for a whole-site migration rather than one page. Full walkthrough in [How to Convert Elementor to Divi 5](/guides/how-to-convert-elementor-to-divi-5).
+1. **[Elementor → Divi 5](/plugins/elementor-to-divi-5).** Free on wordpress.org for unlimited single-page conversions, 140+ widget mappings, and a conversion report on every run. Pro ($25/yr, unlimited sites) adds full kit ZIP import and global headers/footers mapped into the Divi Theme Builder — the pieces that matter for a whole-site migration rather than one page. Full walkthrough in [How to Convert Elementor to Divi 5](/guides/how-to-convert-elementor-to-divi-5).
 2. **[Divi → Elementor](/plugins/divi-to-elementor).** The free plugin is submitted and pending wordpress.org review as of this writing; Pro follows after it ships. See the honest status in [How to Convert Divi to Elementor](/guides/how-to-convert-divi-to-elementor).
 
 That's the entire paid surface of the site. There is no locked layout tier, no membership, and no "upgrade to unlock this section" anywhere in the catalog — current details and prices are always on [the pricing page](/pricing).
