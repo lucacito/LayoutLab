@@ -83,6 +83,13 @@ export async function handleStripeEvent(event: Stripe.Event, store: FulfillmentS
     case 'customer.subscription.created':
     case 'customer.subscription.updated': {
       const sub = event.data.object as Stripe.Subscription;
+      // 'incomplete' is the pre-payment snapshot; Stripe doesn't guarantee event
+      // order, so a subscription.created payload can arrive AFTER the sub went
+      // active and must never downgrade it (2026-08-13 incident: mapped to
+      // 'canceled', bricking a just-paid license). Fulfillment/grants only ever
+      // happen via checkout.session.completed, so skipping loses nothing —
+      // 'incomplete_expired' subs never had anything granted to revoke.
+      if (sub.status === 'incomplete' || sub.status === 'incomplete_expired') break;
       if ((sub.metadata as Record<string, string> | null)?.kind === 'plugin') {
         const periodEnd = subscriptionPeriodEnd(sub);
         const { found } = await store.setLicenseStatusBySubscription({

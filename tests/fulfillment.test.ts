@@ -229,6 +229,52 @@ describe('plugin license fulfillment', () => {
     expect(store.revokePluginEntitlement).not.toHaveBeenCalled();
   });
 
+  // Regression: 2026-08-13 incident. Stripe delivered subscription.created
+  // (payload status 'incomplete' — snapshotted before payment confirmed) AFTER
+  // checkout.session.completed and subscription.updated(active), and the stale
+  // 'incomplete' mapped to 'canceled', bricking a just-paid license.
+  it('subscription.created with plugin metadata and status incomplete is ignored (out-of-order pre-payment snapshot)', async () => {
+    const store = fakeStore();
+    await handleStripeEvent({
+      id: 'evt_p_incomplete', type: 'customer.subscription.created',
+      data: { object: {
+        id: 'sub_plugin_1', customer: 'cus_1', status: 'incomplete',
+        current_period_end: 1780000000,
+        metadata: { kind: 'plugin', product: 'elementor-to-divi5-pro' },
+      } },
+    } as never, store);
+    expect(store.setLicenseStatusBySubscription).not.toHaveBeenCalled();
+    expect(store.markEventProcessed).toHaveBeenCalledWith('evt_p_incomplete', 'customer.subscription.created');
+  });
+
+  it('subscription.updated with plugin metadata and status incomplete_expired is ignored', async () => {
+    const store = fakeStore();
+    await handleStripeEvent({
+      id: 'evt_p_incexp', type: 'customer.subscription.updated',
+      data: { object: {
+        id: 'sub_plugin_1', customer: 'cus_1', status: 'incomplete_expired',
+        metadata: { kind: 'plugin', product: 'elementor-to-divi5-pro' },
+      } },
+    } as never, store);
+    expect(store.setLicenseStatusBySubscription).not.toHaveBeenCalled();
+    expect(store.markEventProcessed).toHaveBeenCalledWith('evt_p_incexp', 'customer.subscription.updated');
+  });
+
+  it('membership subscription.created with status incomplete does NOT revoke all-access (same race)', async () => {
+    const store = fakeStore();
+    await handleStripeEvent({
+      id: 'evt_m_incomplete', type: 'customer.subscription.created',
+      data: { object: {
+        id: 'sub_123', customer: 'cus_123', status: 'incomplete',
+        current_period_end: 1780000000,
+        metadata: {},
+      } },
+    } as never, store);
+    expect(store.revokeAllAccess).not.toHaveBeenCalled();
+    expect(store.upsertSubscription).not.toHaveBeenCalled();
+    expect(store.markEventProcessed).toHaveBeenCalledWith('evt_m_incomplete', 'customer.subscription.created');
+  });
+
   it('subscription.deleted with plugin metadata does NOT revoke the entitlement when the license is not minted yet', async () => {
     const store = fakeStore({
       setLicenseStatusBySubscription: vi.fn(async () => ({ found: false })),
