@@ -2,6 +2,22 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
+> **STATUS (updated 2026-08-28).** Tasks 1–7 are COMPLETE and merged (D2E `300e5ee`, E2D5 `b120007`).
+> The free plugin is LIVE on wordpress.org as 1.0.0 since 2026-08-05 and the layoutlab site flip
+> shipped (`bd8296a`, `b0dc60f`) — at **$25/yr**, not the $49 written below.
+>
+> Still open:
+> - **Task 8 steps 1–3** — the local docker e2e funnel walk. No evidence (screenshots/curl output)
+>   was ever recorded, so these stay unticked.
+> - **Publish Pro 1.0.0 to prod** (runbook step 3) — there is no `plugin_releases` row for
+>   `divi-to-elementor-pro`, so `update-check` returns `{"update":false}` and every download path
+>   404s on `no_release`. The site has been selling this product since 2026-08-05.
+> - **Woo widget verification** — 9 of the 11 `wc_*` widgetType strings are untested and were wrong
+>   once already (`c4fb213`). Decoupled from the publish; ships as a 1.0.1 if wrong.
+> - The **waitlist email** step is DROPPED — no longer part of the launch.
+>
+> See `jhmg-divi-to-elementor/docs/launch-runbook.md` for the current operational state.
+
 **Goal:** Split the Divi→Elementor converter into a wp.org-compliant free plugin (single-file, single-layout conversion) and a Pro companion ($49/yr: batch/multi-file, all-layouts, WooCommerce widget mapping, Theme Builder import) wired to divi5lab's live license API — ready to launch the moment wordpress.org approves the free plugin.
 
 **Architecture:** Mirror of the proven Phase 2 split (jhmg-elementor-to-divi5). The free plugin gains seams (`jhmgcofo_loaded` action; `jhmgcofo_pro_active`, `jhmgcofo_convert_module`, `jhmgcofo_max_layouts` filters) and is TRIMMED per Lucas's boundary decision (2026-07-12): WooCommerce mappings, multi-file/multi-layout batch, and Theme Builder handling move OUT (guideline 5 — the plugin is pre-approval, so the FIRST public release is already the trimmed one; no public claw-back). The Pro plugin hooks the seams with its own non-colliding `jhmgcofop_*` dispatch identifiers (Phase 2's Critical lesson) and ships the synced license client — which first gets parameterized in the canonical copy (its admin slug + product URL are currently hardcoded to the E2D5 product).
@@ -52,9 +68,9 @@ public function __construct(
 ) {}
 ```
 
-- [ ] **Step 1 (TDD, E2D5_REPO):** update `tests/LicenseClientTest.php`'s `setUp` constructor call to pass `'edcp-kit'` and `'https://divi5lab.com/plugins/elementor-to-divi-5'`; add to the licensed-update test: `$this->assertSame( 'https://divi5lab.com/plugins/elementor-to-divi-5', $entry->url );`. Run → FAIL (ctor arity).
-- [ ] **Step 2:** edit the CANONICAL file: add the two ctor params; replace the hardcoded `tools.php?page=edcp-kit` in `status_notice()` with `admin_url( 'tools.php?page=' . $this->admin_page_slug )`; replace the hardcoded product URL in `inject_update()`'s entry `url` (and any renew-link in notices) with `$this->product_page_url`. Update the header comment: "constructor-parameterized per product; see sync script for consumers."
-- [ ] **Step 3:** extend `scripts/sync-license-client.sh`:
+- [x] **Step 1 (TDD, E2D5_REPO):** update `tests/LicenseClientTest.php`'s `setUp` constructor call to pass `'edcp-kit'` and `'https://divi5lab.com/plugins/elementor-to-divi-5'`; add to the licensed-update test: `$this->assertSame( 'https://divi5lab.com/plugins/elementor-to-divi-5', $entry->url );`. Run → FAIL (ctor arity).
+- [x] **Step 2:** edit the CANONICAL file: add the two ctor params; replace the hardcoded `tools.php?page=edcp-kit` in `status_notice()` with `admin_url( 'tools.php?page=' . $this->admin_page_slug )`; replace the hardcoded product URL in `inject_update()`'s entry `url` (and any renew-link in notices) with `$this->product_page_url`. Update the header comment: "constructor-parameterized per product; see sync script for consumers."
+- [x] **Step 3:** extend `scripts/sync-license-client.sh`:
 
 ```bash
 DEST_D2E="/Users/Lucas/Documents/JHMG-Local/jhmg-divi-to-elementor/plugin/jhmg-converter-divi-to-elementor-pro/includes/licensing/class-license-client.php"
@@ -64,8 +80,8 @@ echo "synced -> $DEST_D2E"
 ```
 
 Run it (both destinations sync; the D2E Pro dir may not exist yet — mkdir handles it).
-- [ ] **Step 4 (E2D5_REPO):** update `includes/class-plugin.php`'s `new Licensing\LicenseClient(...)` to pass `'edcp-kit'` and `'https://divi5lab.com/plugins/elementor-to-divi-5'`.
-- [ ] **Step 5:** `E2D5_REPO vendor/bin/phpunit` → all 321+ green; `diff` canonical vs both synced copies → identical. SITE_REPO: `npm run test` (no TS consumers of the PHP file — expect unchanged green) — commit both repos:
+- [x] **Step 4 (E2D5_REPO):** update `includes/class-plugin.php`'s `new Licensing\LicenseClient(...)` to pass `'edcp-kit'` and `'https://divi5lab.com/plugins/elementor-to-divi-5'`.
+- [x] **Step 5:** `E2D5_REPO vendor/bin/phpunit` → all 321+ green; `diff` canonical vs both synced copies → identical. SITE_REPO: `npm run test` (no TS consumers of the PHP file — expect unchanged green) — commit both repos:
 
 ```bash
 # SITE_REPO: git commit -m "refactor(licensing): parameterize canonical client (admin slug, product URL) + dual-destination sync"
@@ -87,9 +103,9 @@ D2E's `tests/bootstrap.php` has NO WP stubs (pure parser/builder unit tests). Po
 **Interfaces:**
 - Produces: the full stub set from `E2D5_REPO/tests/bootstrap.php` — filter/action registry (`add_filter`/`apply_filters`/`do_action`/`add_action` + reset helper), options/transients in-memory stores, post stubs, `WP_Error`, HTTP-queue stubs (`wp_remote_post/get` + `edc_test_http_queue`-equivalent), misc (`esc_html*`, `wp_json_encode`, `plugin_basename`, `home_url`, `admin_url`, `DAY_IN_SECONDS`…). Rename the test helpers to `jhmg_test_reset_hooks()` / `jhmg_test_http_queue()` / `$GLOBALS['jhmg_test_hooks']` / `$GLOBALS['jhmg_test_http']` — this repo has no `edc_` heritage.
 
-- [ ] **Step 1:** copy `tests/FilterStubTest.php` from the sibling, rename helpers to `jhmg_test_*`, and use D2E hook names in the assertions (`jhmgcofo_pro_active`, `jhmgcofo_loaded`). Run → FAIL.
-- [ ] **Step 2:** port the sibling's bootstrap stub blocks into D2E's `tests/bootstrap.php` (KEEP its existing autoloader + `ABSPATH` lines; add only missing stubs, all `function_exists`-guarded; rename globals/helpers per the interface). Do NOT require the plugin main file if the current bootstrap doesn't (check — if the 45 unit tests construct classes directly via composer autoload, keep it that way and require the plugin bootstrap only if a later test needs `Plugin::instance()`; document the choice in the file).
-- [ ] **Step 3:** `vendor/bin/phpunit` → 45 existing + 4 new green. Commit: `test: WP stub layer with filter/action registry (ported from sibling repo)`.
+- [x] **Step 1:** copy `tests/FilterStubTest.php` from the sibling, rename helpers to `jhmg_test_*`, and use D2E hook names in the assertions (`jhmgcofo_pro_active`, `jhmgcofo_loaded`). Run → FAIL.
+- [x] **Step 2:** port the sibling's bootstrap stub blocks into D2E's `tests/bootstrap.php` (KEEP its existing autoloader + `ABSPATH` lines; add only missing stubs, all `function_exists`-guarded; rename globals/helpers per the interface). Do NOT require the plugin main file if the current bootstrap doesn't (check — if the 45 unit tests construct classes directly via composer autoload, keep it that way and require the plugin bootstrap only if a later test needs `Plugin::instance()`; document the choice in the file).
+- [x] **Step 3:** `vendor/bin/phpunit` → 45 existing + 4 new green. Commit: `test: WP stub layer with filter/action registry (ported from sibling repo)`.
 
 ---
 
@@ -110,7 +126,7 @@ Add the seams while ALL features still exist (trims happen in Task 6, after Pro 
   - `apply_filters( 'jhmgcofo_max_layouts', 1 ): int` — cap on layouts converted per import run (free default 1; Pro returns `PHP_INT_MAX`). When layouts are skipped, each result set gains a report warning naming the count and the Pro URL.
   - `do_action( 'jhmgcofo_loaded', \DiviElementorConverter\Plugin $plugin )` at the end of `register_hooks()`.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```php
 <?php
@@ -162,8 +178,8 @@ class SeamsTest extends TestCase {
 
 IMPLEMENTER NOTE (binding): the fixture comments above are NOT placeholders to skip — read `tests/ElementorBuilderTest.php` and `tests/DiviParserTest.php` first and build real minimal fixtures in their established node shapes. `BatchImporter::import()`'s signature must be read before writing the test (recon says `import()` takes parsed layouts + options ~:29-51 — match reality). `is_admin()` stubs false, so `register_hooks()` skips AdminPage — safe to call in tests.
 
-- [ ] **Step 2: Run → FAIL.**
-- [ ] **Step 3: Implement.**
+- [x] **Step 2: Run → FAIL.**
+- [x] **Step 3: Implement.**
 
 `class-elementor-builder.php` `convert_module()` — at the top, before the WIDGET_MAP lookup:
 
@@ -197,7 +213,7 @@ and after the loop, when `$skipped > 0`, append to the last result's report warn
 
 NOTE: the default cap changes free behavior for multi-layout files ALREADY in this task — that is intended (the trim boundary), and the existing 45 unit tests don't exercise `BatchImporter` (they cover parser/builder), so nothing else breaks. Verify that claim by running the suite.
 
-- [ ] **Step 4:** full suite green + `php -l` sweep. Commit: `feat(free): extension seams — convert-module/max-layouts filters, pro-active, loaded action`.
+- [x] **Step 4:** full suite green + `php -l` sweep. Commit: `feat(free): extension seams — convert-module/max-layouts filters, pro-active, loaded action`.
 
 ---
 
@@ -217,9 +233,9 @@ NOTE: the default cap changes free behavior for multi-layout files ALREADY in th
 
 Main file / autoloader / Plugin / uninstall: mirror the E2D5 Pro scaffold exactly (read `E2D5_REPO/plugin/jhmg-converter-for-elementor-to-divi-pro/` files and transliterate: `EDCP_`→`JHMGCOFOP_`, `ElementorDivi5Converter\Pro`→`DiviElementorConverter\Pro`, text domain `jhmg-converter-divi-to-elementor-pro`, plugin name `JHMG Converter For Divi to Elementor — Pro`, description "Pro add-on: batch conversion, WooCommerce widget mapping, and Divi Theme Builder import."). `uninstall.php` deletes `jhmgcofop_license_key`, `jhmgcofop_license_state`, `jhmgcofop_update_blocked`.
 
-- [ ] **Step 1 (TDD):** `tests/ProPluginTest.php` — mirror the sibling's: Pro Plugin class exists, `register_hooks()` makes `apply_filters('jhmgcofo_pro_active', false)` true, constants equal `divi-to-elementor-pro` / `1.0.0`. Run → FAIL.
-- [ ] **Step 2:** implement per the interface. `composer dump-autoload`. Add any missing bootstrap stubs the Pro main file needs.
-- [ ] **Step 3:** full suite + `php -l` green. Commit: `feat(pro): plugin scaffold — autoloader, dependency guard, jhmgcofo_pro_active`.
+- [x] **Step 1 (TDD):** `tests/ProPluginTest.php` — mirror the sibling's: Pro Plugin class exists, `register_hooks()` makes `apply_filters('jhmgcofo_pro_active', false)` true, constants equal `divi-to-elementor-pro` / `1.0.0`. Run → FAIL.
+- [x] **Step 2:** implement per the interface. `composer dump-autoload`. Add any missing bootstrap stubs the Pro main file needs.
+- [x] **Step 3:** full suite + `php -l` green. Commit: `feat(pro): plugin scaffold — autoloader, dependency guard, jhmgcofo_pro_active`.
 
 ---
 
@@ -242,10 +258,10 @@ COPY (not delete) the premium-bound code into Pro and wire the seams. Free still
 ```
 - Test: `tests/ProFeaturesTest.php` — (a) with Pro hooks registered, a `wc_price` node converts to `woocommerce-product-price` through the FREE builder (proves the seam end-to-end); (b) two-layout import produces 2 posts; (c) `ThemeBuilderImporter::import()` on a minimal et_theme_builder fixture creates `elementor_library` posts for header+footer with `_elementor_data` set (use the post stubs from Task 2). Build fixtures from the shapes in `tests/DiviParserTest.php`.
 
-- [ ] **Step 1: TDD** — write `tests/ProFeaturesTest.php` → RED.
-- [ ] **Step 2:** implement per Files (copy + renamespace; keep free untouched).
-- [ ] **Step 3:** full suite + `php -l` green; grep Pro page source for free dispatch identifiers (`jhmgcofo_import`, `jhmgcofo_action`, `jhmgcofo_publish_`) — must be zero hits (add this as a test assertion in ProFeaturesTest, mirroring Phase 2's collision-guard test).
-- [ ] **Step 4:** Commit: `feat(pro): woo mapping, uncapped batch, theme-builder import, pro admin page (jhmgcofop_* dispatch)`.
+- [x] **Step 1: TDD** — write `tests/ProFeaturesTest.php` → RED.
+- [x] **Step 2:** implement per Files (copy + renamespace; keep free untouched).
+- [x] **Step 3:** full suite + `php -l` green; grep Pro page source for free dispatch identifiers (`jhmgcofo_import`, `jhmgcofo_action`, `jhmgcofo_publish_`) — must be zero hits (add this as a test assertion in ProFeaturesTest, mirroring Phase 2's collision-guard test).
+- [x] **Step 4:** Commit: `feat(pro): woo mapping, uncapped batch, theme-builder import, pro admin page (jhmgcofop_* dispatch)`.
 
 ---
 
@@ -259,10 +275,10 @@ COPY (not delete) the premium-bound code into Pro and wire the seams. Free still
 - Modify: free `readme.txt` — walk back to the trimmed story (single JSON file, first layout, 35+ modules, conversion reports; Pro add-on paragraph for batch/Woo/TB with the divi5lab URL; FAQ answers for multi-layout and TB now point at Pro). Fix lines :19, :23-24, :29, :41, :75, :77-79, :85-87, changelog :102-105. Keep `Stable tag: 1.0.0` for now — version strategy decided at launch (Task 8).
 - Test: `tests/FreeTrimTest.php` — greps: no `wc_` entry in the builder's WIDGET_MAP source, no `parse_theme_builder_layouts` in free, `class-converter.php` absent; behavior: converting a fixture with a `wc_price` module yields no `woocommerce-` widget and a report warning containing `divi-to-elementor?utm`; `parse_json` on an et_theme_builder fixture throws with "Pro add-on"; ProFeaturesTest still green (Pro path unaffected).
 
-- [ ] **Step 1: TDD** — write `tests/FreeTrimTest.php` → RED.
-- [ ] **Step 2:** perform the trim per Files.
-- [ ] **Step 3:** full suite + `php -l` green (existing DiviParserTest cases that exercised TB parsing move to Pro's suite or are rewritten against the Pro importer — never silently deleted; adapt with the same assertions).
-- [ ] **Step 4:** Commit: `feat(free)!: trim to single-file/single-layout (guideline 5) — woo/batch/theme-builder now Pro; readme walk-back`.
+- [x] **Step 1: TDD** — write `tests/FreeTrimTest.php` → RED.
+- [x] **Step 2:** perform the trim per Files.
+- [x] **Step 3:** full suite + `php -l` green (existing DiviParserTest cases that exercised TB parsing move to Pro's suite or are rewritten against the Pro importer — never silently deleted; adapt with the same assertions).
+- [x] **Step 4:** Commit: `feat(free)!: trim to single-file/single-layout (guideline 5) — woo/batch/theme-builder now Pro; readme walk-back`.
 
 ---
 
@@ -291,10 +307,10 @@ COPY (not delete) the premium-bound code into Pro and wire the seams. Free still
 ```
 - Test: `tests/D2ELicenseClientTest.php` — port the sibling's 6 LicenseClientTest cases with D2E values (product `divi-to-elementor-pro`, basename `jhmg-converter-divi-to-elementor-pro/jhmg-converter-divi-to-elementor-pro.php`, the D2E product URL asserted in the update entry) using the `jhmg_test_http_queue` stubs.
 
-- [ ] **Step 1:** the option-prefix check (see Files note) — resolve it FIRST, including canonical edit + resync + sibling updates if needed (report what you found either way).
-- [ ] **Step 2: TDD** — port the test file → RED → implement wiring + LicensePage → GREEN.
-- [ ] **Step 3:** byte-identity check canonical vs BOTH synced copies; E2D5 suite re-run if the canonical changed. Full D2E suite + `php -l` green.
-- [ ] **Step 4:** Commit: `feat(pro): license client wired (parameterized canonical) — soft enforcement, WP-native updates`.
+- [x] **Step 1:** the option-prefix check (see Files note) — resolve it FIRST, including canonical edit + resync + sibling updates if needed (report what you found either way).
+- [x] **Step 2: TDD** — port the test file → RED → implement wiring + LicensePage → GREEN.
+- [x] **Step 3:** byte-identity check canonical vs BOTH synced copies; E2D5 suite re-run if the canonical changed. Full D2E suite + `php -l` green.
+- [x] **Step 4:** Commit: `feat(pro): license client wired (parameterized canonical) — soft enforcement, WP-native updates`.
 
 ---
 
@@ -303,8 +319,8 @@ COPY (not delete) the premium-bound code into Pro and wire the seams. Free still
 - [ ] **Step 1:** docker env: `cd D2E_REPO && docker compose up -d` (port 8001; compose mounts only the free plugin — add the Pro plugin mount + `WORDPRESS_CONFIG_EXTRA` defining `JHMGCOFOP_API_BASE 'http://host.docker.internal:3100'`, mirroring the sibling's compose change; commit).
 - [ ] **Step 2:** site dev server :3100; mint a dev license: `npx tsx scripts/mint-dev-license.ts --email e2e-d2e@divi5lab-test.com --product divi-to-elementor-pro`.
 - [ ] **Step 3:** walk the funnel with evidence (screenshots + curl output): both plugins activate w/o fatals; FREE page: single-file import works, a multi-layout file converts 1 + upsell warning, a TB file errors with upsell, a Woo-module file skips with upsell; PRO page: multi-file batch converts all layouts, TB file → elementor_library posts, wc_price → woocommerce-product-price in `_elementor_data`; license tab: activate (row lands in local DB), status active; publish a local `1.0.1` release for `divi-to-elementor-pro` via `release-plugin.ts` → wp-admin Updates shows it (don't install — bind mount).
-- [ ] **Step 4:** write `D2E_REPO/docs/launch-runbook.md`: ON WP.ORG APPROVAL → ① confirm the real slug; fix Pro's `Requires Plugins` header if it differs ② first SVN commit = the TRIMMED free plugin (assets from `assets/`), version as `1.0.0` if wp.org never published the fat zip, else `1.1.0` ③ publish Pro 1.0.0 to prod (`release-plugin.ts` + `.env.prod`) ④ SITE flip: D2E page → BuyProButton (`product="divi-to-elementor-pro"`, drop the pending banner, keep the waitlist as a secondary "get launch news"), pricing card 2 → buyable, plugins hub chip → "Free on wordpress.org · Pro $49/yr" ⑤ email the `divi_to_elementor_waitlist` list via Loops ⑥ verify live checkout returns cs_live for the D2E product. Each step operator-confirmed.
-- [ ] **Step 5:** merge `feat/pro-split` → D2E main + push (GitHub only — no deploy semantics in that repo).
+- [x] **Step 4:** write `D2E_REPO/docs/launch-runbook.md`: ON WP.ORG APPROVAL → ① confirm the real slug; fix Pro's `Requires Plugins` header if it differs ② first SVN commit = the TRIMMED free plugin (assets from `assets/`), version as `1.0.0` if wp.org never published the fat zip, else `1.1.0` ③ publish Pro 1.0.0 to prod (`release-plugin.ts` + `.env.prod`) ④ SITE flip: D2E page → BuyProButton (`product="divi-to-elementor-pro"`, drop the pending banner, keep the waitlist as a secondary "get launch news"), pricing card 2 → buyable, plugins hub chip → "Free on wordpress.org · Pro $49/yr" ⑤ email the `divi_to_elementor_waitlist` list via Loops ⑥ verify live checkout returns cs_live for the D2E product. Each step operator-confirmed.
+- [x] **Step 5:** merge `feat/pro-split` → D2E main + push (GitHub only — no deploy semantics in that repo).
 
 ---
 
