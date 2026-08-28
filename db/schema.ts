@@ -272,3 +272,16 @@ export const pluginReleases = pgTable('plugin_releases', {
 }, (t) => ({
   productVersionUq: uniqueIndex('plugin_releases_product_version_uq').on(t.productSlug, t.version),
 }));
+
+// Anonymous conversion-coverage reports from the free converter plugins.
+// Deliberately carries nothing that identifies a site: consent is opt-in and
+// the payload is a list of Elementor widget type names and nothing else.
+export const pluginCoverageReports = pgTable('plugin_coverage_reports', {
+  id: text('id').primaryKey(),
+  product: text('product').notNull(), // 'elementor-to-divi5' | 'divi-to-elementor'
+  widgetTypes: jsonb('widget_types').notNull().$type<string[]>(),
+  receivedAt: timestamp('received_at').notNull().defaultNow(),
+}, (t) => ({
+  productIdx: index('plugin_coverage_product_idx').on(t.product),
+  receivedIdx: index('plugin_coverage_received_idx').on(t.receivedAt),
+}));

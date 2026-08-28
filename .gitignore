@@ -8,7 +8,7 @@ dist
 .vercel
 *.log
 .DS_Store
-coverage
+/coverage
 playwright-report
 test-results
 *.tsbuildinfo
