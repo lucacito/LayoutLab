@@ -62,6 +62,14 @@ fi
 echo "[release] env loaded (POSTGRES_URL host: $(echo "$POSTGRES_URL" | sed -E 's#.*@([^/?]+).*#\1#'))"
 echo "[release] product: $PRODUCT  version: $VERSION  dir: $PLUGIN_DIR"
 
+# Prove the credentials work before uploading anything. Without this a stale
+# password is only discovered after the zip is already in blob storage, as a
+# Drizzle stack trace — which is exactly how the first two attempts failed.
+if ! npx tsx scripts/check-prod-db.ts; then
+  echo "[release] aborted before uploading anything." >&2
+  exit 1
+fi
+
 CHANGELOG='Theme Builder headers and footers now update in place instead of stacking duplicate layouts and default templates on every re-import. Requires Divi 5.0 or newer — the converter now checks and explains itself instead of writing pages that render blank. Global colours and fonts are read from your own Elementor kit, including typography, and an unresolved global is reported rather than replaced with a built-in value. Nested accordion and nested tabs are supported. Pro admin screens are styled. Translation template included.'
 
 if [ "$CONFIRM" != "--confirm" ]; then
