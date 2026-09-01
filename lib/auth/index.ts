@@ -7,7 +7,7 @@ import { authConfig } from './config';
 import { sendMagicLink } from '@/lib/email';
 
 // Hand-built magic-link provider. We do NOT use next-auth/providers/email or
-// /nodemailer — those throw "Nodemailer requires a `server` configuration" at
+// /nodemailer, which throws "Nodemailer requires a `server` configuration" at
 // construction. type:'email' drives Auth.js's verification-token flow; our
 // sendVerificationRequest delivers the link via Resend (or console in dev).
 const magicLink: EmailConfig = {
@@ -18,7 +18,7 @@ const magicLink: EmailConfig = {
   maxAge: 24 * 60 * 60,
   options: {},
   sendVerificationRequest: async ({ identifier, url }: { identifier: string; url: string }) => {
-    // Dev convenience: with no RESEND_API_KEY, no email is sent — print the
+    // Dev convenience: with no RESEND_API_KEY, no email is sent, so print the
     // sign-in link so local login works without email configured.
     if (!process.env.RESEND_API_KEY) {
       console.log(`\n[auth:dev] magic sign-in link for ${identifier}:\n${url}\n`);

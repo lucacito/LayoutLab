@@ -25,14 +25,14 @@ export function taxonomyFallbackCopy(axis: TaxonomyAxis, value: string, count: n
   const intro = axis === 'type'
     ? `Browse ${countPhrase}professionally designed ${label} layouts for Divi 5. Import the JSON, customize in the builder, and ship faster.`
     : axis === 'niche'
-      ? `Divi 5 layouts crafted for the ${label} industry — ${countPhrase}ready-to-import sections you can make your own in minutes.`
+      ? `Divi 5 layouts crafted for the ${label} industry: ${countPhrase}ready-to-import sections you can make your own in minutes.`
       : axis === 'style'
         ? `Explore ${countPhrase}${label.toLowerCase()} Divi 5 layouts. A curated ${label} aesthetic, ready to import and customize.`
-        : `Divi 5 layouts in ${label.toLowerCase()} — ${countPhrase}designs built around a ${label.toLowerCase()} palette, ready to import.`;
+        : `Divi 5 layouts in ${label.toLowerCase()}: ${countPhrase}designs built around a ${label.toLowerCase()} palette, ready to import.`;
   const metaTitle =
     axis === 'type'
-      ? `Free Divi 5 ${label} Sections — Download & Import`
-      : `Free ${label} Divi 5 Layouts — Download & Import`;
-  const metaDescription = `Download ${countPhrase}free ${label} Divi 5 ${axis === 'type' ? 'sections' : 'layouts'} as JSON — import, customize, and launch. Commercial license included.`;
+      ? `Free Divi 5 ${label} Sections: Download & Import`
+      : `Free ${label} Divi 5 Layouts: Download & Import`;
+  const metaDescription = `Download ${countPhrase}free ${label} Divi 5 ${axis === 'type' ? 'sections' : 'layouts'} as JSON. Import, customize, and launch. Commercial license included.`;
   return { intro, metaTitle, metaDescription };
 }

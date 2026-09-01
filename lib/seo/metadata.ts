@@ -23,11 +23,11 @@ function baseMetadata(i: EntityMetaInput, canonical: string, fallbackTemplate: s
 }
 
 export function buildLayoutMetadata(i: EntityMetaInput): Metadata {
-  const fallbackDescription = `Download ${i.title} — a free, validated Divi 5 layout you can import into the builder in seconds. Commercial license included.`;
+  const fallbackDescription = `Download ${i.title}, a free, validated Divi 5 layout you can import into the builder in seconds. Commercial license included.`;
   return baseMetadata(i, `${i.siteUrl}/layouts/${i.slug}`, fallbackDescription);
 }
 
 export function buildPackMetadata(i: EntityMetaInput): Metadata {
-  const fallbackDescription = `Download the ${i.title} pack — a curated set of free, validated Divi 5 layouts, import-ready with a commercial license.`;
+  const fallbackDescription = `Download the ${i.title} pack, a curated set of free, validated Divi 5 layouts, import-ready with a commercial license.`;
   return baseMetadata(i, `${i.siteUrl}/packs/${i.slug}`, fallbackDescription);
 }

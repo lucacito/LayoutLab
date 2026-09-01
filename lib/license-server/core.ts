@@ -1,4 +1,4 @@
-// Pure license-domain logic. No DB, no HTTP — everything here is unit-testable
+// Pure license-domain logic. No DB, no HTTP, so everything here is unit-testable
 // and shared by the fulfillment webhook, the license API, and account queries.
 import { randomBytes } from 'node:crypto';
 
@@ -6,9 +6,9 @@ export const PLUGIN_PRODUCTS = ['elementor-to-divi5-pro', 'divi-to-elementor-pro
 export type PluginProduct = (typeof PLUGIN_PRODUCTS)[number];
 
 export const PRODUCT_TITLES: Record<PluginProduct, string> = {
-  'elementor-to-divi5-pro': 'JHMG Converter For Elementor to Divi 5 — Pro',
-  'divi-to-elementor-pro': 'JHMG Converter For Divi to Elementor — Pro',
-  'ai-editor-divi5-pro': 'AI Editor for Divi 5 — Pro',
+  'elementor-to-divi5-pro': 'JHMG Converter For Elementor to Divi 5 Pro',
+  'divi-to-elementor-pro': 'JHMG Converter For Divi to Elementor Pro',
+  'ai-editor-divi5-pro': 'AI Editor for Divi 5 Pro',
 };
 
 // No 0/O/1/I/L so keys survive being read aloud or retyped from a receipt.
@@ -23,7 +23,7 @@ export function generateLicenseKey(rng: (n: number) => Buffer = randomBytes): st
 }
 
 // Canonical site identity: host(+port)+path, lowercase, no scheme/www/trailing
-// slash — so http://www.Foo.com/ and https://foo.com activate the same slot.
+// slash, so http://www.Foo.com/ and https://foo.com activate the same slot.
 export function normalizeSiteUrl(raw: string): string | null {
   let s = raw.trim().toLowerCase();
   if (!s) return null;

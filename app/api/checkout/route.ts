@@ -6,7 +6,7 @@ import { stripe } from '@/lib/stripe/client';
 import { buildCheckoutSessionParams, type CheckoutInput, type CheckoutContext } from '@/lib/stripe/checkout';
 import { PLUGIN_PRODUCTS, type PluginProduct } from '@/lib/license-server/core';
 
-// Marketplace demotion (Task 6): layouts/packs are free-with-capture now — only the
+// Marketplace demotion (Task 6): layouts/packs are free-with-capture now, so only the
 // shipped WordPress plugin is still sold through this route. `pack` and `membership`
 // are deliberately absent from this union (not just unreachable branches) so any
 // caller still POSTing them gets a clean 400 `invalid_request`, exactly like any
@@ -27,7 +27,7 @@ export async function POST(req: Request): Promise<Response> {
   const input: Extract<CheckoutInput, { kind: 'plugin' }> = parsed.data;
 
   // Built per-request (not module-level) so it always reflects the live `env`
-  // singleton — keeps the next product a one-line addition.
+  // singleton, which keeps the next product a one-line addition.
   const PRICE_ENV: Record<PluginProduct, string | undefined> = {
     'elementor-to-divi5-pro': env.STRIPE_PRICE_ELEM2DIVI_PRO,
     'divi-to-elementor-pro': env.STRIPE_PRICE_DIVI2ELEM_PRO,
@@ -60,7 +60,7 @@ export async function POST(req: Request): Promise<Response> {
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     if (!/tax/i.test(msg)) return fail(err);
-    // automatic_tax failed (e.g. Stripe Tax not enabled) — retry without tax, and
+    // automatic_tax failed (e.g. Stripe Tax not enabled), so retry without tax, and
     // return a clean error if THAT also fails (previously this threw → 500 crash).
     console.warn('[checkout] automatic_tax failed; retrying without tax:', msg);
     try {

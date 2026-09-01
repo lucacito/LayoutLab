@@ -3,7 +3,7 @@ const LOOPS_URL = 'https://app.loops.so/api/v1/contacts/update';
 export async function syncContact(input: { email: string; source?: string; packId?: string }): Promise<{ synced: boolean }> {
   const apiKey = process.env.LOOPS_API_KEY;
   if (!apiKey) {
-    console.log(`[loops:dev] no LOOPS_API_KEY — would sync contact ${input.email}` + (input.packId ? ` (pack ${input.packId})` : ''));
+    console.log(`[loops:dev] no LOOPS_API_KEY, would sync contact ${input.email}` + (input.packId ? ` (pack ${input.packId})` : ''));
     return { synced: false };
   }
   try {

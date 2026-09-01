@@ -30,7 +30,7 @@ export function ContactForm() {
     return (
       <div className="flex items-center gap-2 rounded-2xl border border-fog bg-paper p-6 text-body text-navy">
         <Icon name="mark_email_read" size={22} className="text-action" />
-        Thanks — your message is on its way. We&apos;ll reply by email shortly.
+        Thanks. Your message is on its way. We&apos;ll reply by email shortly.
       </div>
     );
   }

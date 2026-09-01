@@ -15,19 +15,19 @@ import { BookmarksProvider } from '@/components/bookmarks/BookmarksProvider';
 import { env } from '@/lib/env';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-sans', display: 'swap' });
-// Display face for headings/eyebrows only — body copy stays on Inter, which
+// Display face for headings/eyebrows only. Body copy stays on Inter, which
 // reads better at length across the guides and catalog.
 const poppins = Poppins({ subsets: ['latin'], weight: ['600', '700', '800'], variable: '--font-display', display: 'swap' });
 
 const GA_ID = env.NEXT_PUBLIC_GA_ID ?? 'G-YCK6MN99PR';
 
 // Homepage title deliberately differs from /browse ("Free Divi 5 Layouts &
-// Sections — Download & Import") so the two top pages don't compete for the same
+// Sections: Download & Import") so the two top pages don't compete for the same
 // SERP label. The home/hub title names all three primary sections (layouts,
-// sections, packs) — the exact set we want Google to surface as sitelinks.
+// sections, packs), the exact set we want Google to surface as sitelinks.
 const TITLE = 'Free & Premium Divi 5 Layouts, Sections & Theme Packs';
 const DESCRIPTION =
-  'Browse a growing library of free, validated Divi 5 layouts and sections — heroes, pricing tables, CTAs and full landing pages. Download the JSON and import into Divi 5 in seconds. Commercial license included.';
+  'Browse a growing library of free, validated Divi 5 layouts and sections: heroes, pricing tables, CTAs and full landing pages. Download the JSON and import into Divi 5 in seconds. Commercial license included.';
 
 // Site-wide brand entity + sitelinks search box (entity SEO). Add real social
 // profile URLs to `sameAs` as they go live to strengthen the brand entity.
@@ -47,7 +47,7 @@ const SITE_JSONLD = [
     searchUrlTemplate: `${SITE_URL}/browse?q={search_term_string}`,
     publisherId: organizationId(SITE_URL),
   }),
-  // The canonical set of sections we want Google to consider for sitelinks —
+  // The canonical set of sections we want Google to consider for sitelinks,
   // identical to the primary nav so on-page links and structured data agree.
   siteNavigationJsonLd([
     { name: 'Browse layouts', url: `${SITE_URL}/browse` },
@@ -67,7 +67,7 @@ export const metadata: Metadata = {
   alternates: { canonical: '/' },
   icons: { icon: '/favicon.png', shortcut: '/favicon.png', apple: '/favicon.png' },
   openGraph: { type: 'website', siteName: 'Divi5Lab', url: '/', title: TITLE, description: DESCRIPTION },
-  twitter: { card: 'summary_large_image', title: TITLE, description: 'Free, validated Divi 5 layouts & sections — import-ready JSON.' },
+  twitter: { card: 'summary_large_image', title: TITLE, description: 'Free, validated Divi 5 layouts & sections, import-ready JSON.' },
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {

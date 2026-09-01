@@ -16,9 +16,9 @@ import { env } from '@/lib/env';
 const SITE = env.NEXT_PUBLIC_SITE_URL.replace(/\/+$/, '');
 
 export const metadata: Metadata = {
-  title: 'Free Divi 5 Layouts & Sections — Download & Import',
+  title: 'Free Divi 5 Layouts & Sections: Download & Import',
   description:
-    'Browse and download free, validated Divi 5 layouts and sections — heroes, pricing, CTAs, full landing pages and more. Import the JSON into Divi 5 in seconds. Commercial license included.',
+    'Browse and download free, validated Divi 5 layouts and sections: heroes, pricing, CTAs, full landing pages and more. Import the JSON into Divi 5 in seconds. Commercial license included.',
   alternates: { canonical: `${SITE}/browse` },
 };
 
@@ -49,7 +49,7 @@ export default async function BrowsePage({
           breadcrumbJsonLd([
             { name: 'Home', url: SITE },
             // Same node name Google sees for /browse everywhere else (layout &
-            // taxonomy breadcrumbs) — one URL, one name, one hierarchy.
+            // taxonomy breadcrumbs): one URL, one name, one hierarchy.
             { name: 'Browse', url: `${SITE}/browse` },
           ]),
         ]}
@@ -58,7 +58,7 @@ export default async function BrowsePage({
         <div className="mb-8 max-w-3xl">
           <h1 className="text-h3 text-navy">Free Divi 5 Layouts &amp; Sections</h1>
           <p className="mt-3 text-body text-muted">
-            Browse our growing library of validated, import-ready Divi 5 layouts — heroes, pricing
+            Browse our growing library of validated, import-ready Divi 5 layouts: heroes, pricing
             tables, CTAs, testimonials and full landing pages. Download the JSON, import into the Divi 5
             builder, and customize. Every layout ships with a commercial license.
           </p>
@@ -85,7 +85,7 @@ export default async function BrowsePage({
           </section>
         </div>
 
-        {/* Browse by category — internal links out to the taxonomy hubs (hub → spoke). */}
+        {/* Browse by category: internal links out to the taxonomy hubs (hub → spoke). */}
         <section className="mt-16 border-t border-border pt-10" aria-label="Browse Divi 5 layouts by category">
           <h2 className="text-h4 text-navy">Browse by category</h2>
           <div className="mt-6 grid grid-cols-1 gap-8 sm:grid-cols-3">

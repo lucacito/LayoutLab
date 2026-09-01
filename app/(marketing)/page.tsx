@@ -17,11 +17,11 @@ import { CtaBand } from '@/components/marketing/CtaBand';
 import { FreeLayoutsBand } from '@/components/marketing/FreeLayoutsBand';
 
 const DEMO_STEPS: ChatStep[] = [
-  { role: 'user', text: 'Change the hero headline to “Spring sale — 20% off everything” and center the button.' },
+  { role: 'user', text: 'Change the hero headline to “Spring sale: 20% off everything” and center the button.' },
   { role: 'assistant', text: 'update_page_layout(page: "Home", …)' },
-  { role: 'validator-fail', text: 'WRONG_FIELD_TYPE — button alignment must be an object, got string' },
+  { role: 'validator-fail', text: 'WRONG_FIELD_TYPE: button alignment must be an object, got string' },
   { role: 'assistant', text: 'Correcting the attribute shape, re-submitting…' },
-  { role: 'validator-pass', text: 'Valid — 14 blocks, 0 violations. Saved to “Home”.' },
+  { role: 'validator-pass', text: 'Valid. 14 blocks, 0 violations. Saved to “Home”.' },
 ];
 
 const FEATURED_GUIDES = ['how-to-convert-elementor-to-divi-5', 'connect-claude-to-divi-5', 'elementor-to-divi-migration-checklist'];
@@ -41,15 +41,15 @@ export default async function HomePage() {
 
   return (
     <main>
-      {/* 1 — Hero: the promise, then proof, on the brand canvas */}
+      {/* 1. Hero: the promise, then proof, on the brand canvas */}
       {/* `bottom="xl"` keeps the floating stack clear of the curved seam. */}
       <SectionShell tone="hero" underHeader bottom="xl" blooms curveBottom={EDGE.paper}>
         <Container className="text-center">
           <Eyebrow tone="dark" className="mb-5">Validated Divi 5 tooling</Eyebrow>
           <h1 className="mx-auto max-w-4xl text-display text-paper">Divi 5 tools that never ship a broken layout.</h1>
           <p className="mx-auto mt-6 max-w-2xl text-lead text-paper/80">
-            Converters and an AI editor built on a deterministic validator — every block, attribute, and nesting
-            rule checked before anything touches your site. If it imports, it works.
+            Converters and an AI editor built on a deterministic validator. Every block, attribute, and nesting
+            rule is checked before anything touches your site. If it imports, it works.
           </p>
           <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
             <Button href="/plugins/elementor-to-divi-5" size="lg" variant="primary">Convert Elementor to Divi 5</Button>
@@ -67,17 +67,17 @@ export default async function HomePage() {
             ]}
           />
 
-          {/* The product, floating over the canvas — the verdict is the hero image. */}
+          {/* The product, floating over the canvas. The verdict is the hero image. */}
           <FloatingStack
             className="mx-auto mt-16 max-w-3xl"
             main={
               <VerdictCard
-                title="divi5-validator — layout.json"
+                title="divi5-validator · layout.json"
                 failures={[
                   { code: 'WRONG_NESTING', detail: 'divi/button directly inside divi/section' },
                   { code: 'UNKNOWN_MODULE_TYPE', detail: '“divi/hero” is not a Divi 5 block' },
                 ]}
-                passSummary="Valid — 14 blocks, 0 violations"
+                passSummary="Valid. 14 blocks, 0 violations"
                 className="text-left"
               />
             }
@@ -97,18 +97,18 @@ export default async function HomePage() {
         </Container>
       </SectionShell>
 
-      {/* 2 — Problem band */}
+      {/* 2. Problem band */}
       <SectionShell tone="paper" pad="lg">
         <Container>
           <SectionTitle eyebrow="The problem" title="Page-builder markup is unforgiving.">
-            Rebuild a site by hand and you lose weeks. Trust a naive converter — or raw AI output — and you get
+            Rebuild a site by hand and you lose weeks. Trust a naive converter (or raw AI output) and you get
             markup Divi half-renders: collapsed sections, attributes that don&apos;t exist, nesting the builder never
             allowed. And you find out after the import.
           </SectionTitle>
         </Container>
       </SectionShell>
 
-      {/* 3 — Mechanism, on the canvas */}
+      {/* 3. Mechanism, on the canvas */}
       <SectionShell tone="deep" pad="lg" blooms curveTop={EDGE.paper}>
         <Container>
           <div className="grid items-center gap-14 lg:grid-cols-2">
@@ -116,14 +116,14 @@ export default async function HomePage() {
               <Eyebrow tone="dark">The fix</Eyebrow>
               <h2 className="mt-4 text-h2 text-paper">Same input, same verdict.</h2>
               <p className="mt-5 max-w-xl text-lead text-paper/80">
-                Everything we produce — converted pages, AI edits, generated layouts — runs through the same
+                Everything we produce (converted pages, AI edits, generated layouts) runs through the same
                 deterministic validator before it reaches you. Not a linter, not a vibe check: a strict schema of{' '}
                 {STATS.validatorBlockTypes} Divi 5 block types with every attribute and nesting rule enforced.
               </p>
               <ol className="mt-10 space-y-6">
                 {[
                   { t: 'Convert or generate', b: 'A converter maps your old markup; the AI drafts your edit.' },
-                  { t: 'Validate', b: `${STATS.validatorViolationClasses} classes of violations checked — exact codes come back, and the tool self-corrects.` },
+                  { t: 'Validate', b: `${STATS.validatorViolationClasses} classes of violations checked, with exact codes coming back so the tool self-corrects.` },
                   { t: 'Import clean', b: 'Only layouts with a passing verdict ever reach your site.' },
                 ].map((s, i) => (
                   <li key={s.t} className="flex gap-5">
@@ -144,7 +144,7 @@ export default async function HomePage() {
         </Container>
       </SectionShell>
 
-      {/* 4 — Three doors */}
+      {/* 4. Three doors */}
       <SectionShell tone="mist" pad="lg" curveTop={EDGE.deepBottom}>
         <Container>
           <SectionTitle eyebrow="Pick your door" title="Three tools, one guarantee">
@@ -156,10 +156,10 @@ export default async function HomePage() {
         </Container>
       </SectionShell>
 
-      {/* 5 — Free layouts (lead capture) */}
+      {/* 5. Free layouts (lead capture) */}
       <FreeLayoutsBand />
 
-      {/* 6 — Guides strip */}
+      {/* 6. Guides strip */}
       <SectionShell tone="mist" pad="md">
         <Container>
           <div className="flex flex-wrap items-end justify-between gap-4">
@@ -185,11 +185,11 @@ export default async function HomePage() {
         </Container>
       </SectionShell>
 
-      {/* 7 — Closing CTA, straight into the footer's canvas */}
+      {/* 7. Closing CTA, straight into the footer's canvas */}
       <CtaBand
         eyebrow="Ready when you are"
         title="Stop rebuilding. Start shipping."
-        body="Move a whole site this week — headers, footers, global styles and all — into real, validated Divi 5 markup."
+        body="Move a whole site this week, headers, footers, global styles and all, into real, validated Divi 5 markup."
         cta={{ label: 'See pricing', href: '/pricing' }}
         secondary={{ label: 'Browse free layouts', href: '/browse' }}
         curveTop={EDGE.mist}

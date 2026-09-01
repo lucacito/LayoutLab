@@ -1,4 +1,4 @@
-// /guides — editorial cluster index. Every guide links into the catalog
+// /guides: editorial cluster index. Every guide links into the catalog
 // (taxonomy + keyword pages), building topical authority around "Divi layouts".
 import type { Metadata } from 'next';
 import Link from 'next/link';
@@ -12,7 +12,7 @@ import { Card } from '@/components/ui/Card';
 import { SectionShell } from '@/components/ui/SectionShell';
 import { PageHero } from '@/components/marketing/PageHero';
 
-const TITLE = 'Divi 5 Guides & Tutorials — Layouts, Imports, Comparisons';
+const TITLE = 'Divi 5 Guides & Tutorials: Layouts, Imports, Comparisons';
 const DESCRIPTION =
   'Practical Divi 5 guides: how to import layouts, the best layouts per industry, honest builder comparisons, and design tips from a validated layout pipeline.';
 

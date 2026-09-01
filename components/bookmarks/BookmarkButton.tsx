@@ -2,7 +2,7 @@
 import { useBookmarks } from './BookmarksProvider';
 import { Icon } from '@/components/ui/Icon';
 
-// Toggle a layout's bookmark. Safe to place inside a card <Link> — it stops the
+// Toggle a layout's bookmark. Safe to place inside a card <Link>, because it stops the
 // click from navigating.
 export function BookmarkButton({ slug, className = '' }: { slug: string; className?: string }) {
   const { has, toggle } = useBookmarks();
@@ -17,7 +17,7 @@ export function BookmarkButton({ slug, className = '' }: { slug: string; classNa
       }}
       aria-label={saved ? 'Remove bookmark' : 'Bookmark this layout'}
       aria-pressed={saved}
-      title={saved ? 'Saved — click to remove' : 'Save for later'}
+      title={saved ? 'Saved, click to remove' : 'Save for later'}
       className={`flex h-9 w-9 items-center justify-center rounded-full shadow-soft transition ${
         saved ? 'bg-action text-paper' : 'bg-paper/90 text-navy backdrop-blur hover:bg-paper'
       } ${className}`}

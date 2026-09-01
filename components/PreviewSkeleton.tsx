@@ -2,7 +2,7 @@ import { skeletonForType, skinForLayout, type PreviewArchetype, type PreviewSkin
 
 // Style A: a faux-browser tile whose inner skeleton varies by layout type and
 // whose tint comes from the color axis (dark style overrides). Renders nothing
-// real — a deterministic on-brand stand-in until Phase 3b screenshots land.
+// real: a deterministic on-brand stand-in until Phase 3b screenshots land.
 
 function Bar({ w, h = 8, skin, r = 3 }: { w: string; h?: number; skin: PreviewSkin; r?: number }) {
   return <div style={{ width: w, height: h, background: skin.block, borderRadius: r }} />;

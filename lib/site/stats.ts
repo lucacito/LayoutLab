@@ -1,5 +1,5 @@
 // Real, verifiable marketing numbers. Every figure has a source; update the
-// source, then this file — never invent.
+// source, then this file. Never invent.
 import { WIDGET_TYPES_MAPPED } from './widget-mappings';
 
 export const STATS = {

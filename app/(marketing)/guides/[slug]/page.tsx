@@ -1,4 +1,4 @@
-// /guides/[slug] — a single editorial guide rendered from content/guides/*.md.
+// /guides/[slug]: a single editorial guide rendered from content/guides/*.md.
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';

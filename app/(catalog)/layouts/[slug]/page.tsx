@@ -61,7 +61,7 @@ export default async function LayoutPage({ params }: { params: Promise<{ slug: s
   // Screenshots as captioned ImageObjects (Google Images + product rich results).
   const productImages = layout.previewImageKeys.map((k) => ({
     url: assetUrl(k),
-    caption: /-mobile\./.test(k) ? `${altBase} — mobile screenshot` : `${altBase} — desktop screenshot`,
+    caption: /-mobile\./.test(k) ? `${altBase}, mobile screenshot` : `${altBase}, desktop screenshot`,
   }));
   const article = layout.seo?.article;
 
@@ -72,7 +72,7 @@ export default async function LayoutPage({ params }: { params: Promise<{ slug: s
         <Breadcrumbs crumbs={[{ name: 'Home', url: site }, { name: 'Browse', url: `${site}/browse` }, { name: layout.title, url }]} />
         <JsonLd data={productJsonLd({
           name: layout.title, description: layout.description, image: cover, images: productImages, url,
-          // Layouts are free — a $0.00 Offer satisfies Google's "offers required" rule.
+          // Layouts are free, and a $0.00 Offer satisfies Google's "offers required" rule.
           offer: { priceCents: 0 },
           // Real ratings only (helper drops it when ratingCount === 0).
           aggregateRating: { ratingValue: ratingAvg, ratingCount: layout.ratingCount },
@@ -114,9 +114,9 @@ export default async function LayoutPage({ params }: { params: Promise<{ slug: s
 
         <Card className="mt-6 flex flex-col gap-5 p-6 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h2 className="text-section text-navy">Download this section — free</h2>
+            <h2 className="text-section text-navy">Download this section, free</h2>
             <ul className="mt-3 space-y-1.5 text-small text-muted">
-              {['Divi 5 JSON — import in seconds', 'Commercial license included', 'No account needed'].map((t) => (
+              {['Divi 5 JSON, imports in seconds', 'Commercial license included', 'No account needed'].map((t) => (
                 <li key={t} className="flex items-center gap-2">
                   <Icon name="check_circle" size={18} className="text-action" /> {t}
                 </li>

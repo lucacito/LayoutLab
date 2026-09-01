@@ -19,7 +19,7 @@ export interface CheckoutContext {
    * thereby waives the statutory right of withdrawal/refund. This is what makes
    * a "no refunds" policy lawful for EU/UK consumers (Consumer Rights Directive
    * art. 16(m) / UK CCR reg. 37). Off by default because Stripe requires a Terms
-   * of Service URL configured in the Dashboard when this is enabled — turning it
+   * of Service URL configured in the Dashboard when this is enabled, so turning it
    * on without that URL makes session creation fail. Point that Dashboard URL at
    * `${siteUrl}/license`.
    */
@@ -68,7 +68,7 @@ export function buildCheckoutSessionParams(
     // Launch offer, scoped to the AI Editor only: a 45-day free trial with NO card
     // up front. `if_required` tells Checkout to skip payment-method collection when
     // nothing is due now (the whole trial is $0). Consequence: with no card on file
-    // the trial can't auto-charge, so it ends by cancelling — a tester who wants to
+    // the trial can't auto-charge, so it ends by cancelling. A tester who wants to
     // keep the plugin must return and re-subscribe (and pay). Nobody gets a surprise
     // invoice. The webhook mints the license on `checkout.session.completed`
     // regardless of amount paid, and `trialing` maps to an active license

@@ -77,7 +77,7 @@ export function SectionShell({
 }) {
   const curveClass = `${curveTop ? 'curve-top ' : ''}${curveBottom ? 'curve-bottom' : ''}`.trim();
   // Both pseudo-elements read the same custom property, so a section may use one
-  // curve or the other — not two different colours at once.
+  // curve or the other, not two different colours at once.
   const style = { '--curve-color': curveTop ?? curveBottom } as CSSProperties;
 
   const pt = padTop[top ?? (underHeader ? 'xl' : pad)];

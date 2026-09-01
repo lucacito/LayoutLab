@@ -9,7 +9,7 @@ export function purchaseReceiptEmail(input: { kind: 'pack' | 'membership'; packT
       <h1 style="color:#0B3558;font-size:22px;margin:0 0 12px">Thank you for your purchase</h1>
       <p style="color:#476788;font-size:15px;margin:0 0 8px">Item: <strong>${item}</strong></p>
       ${amountLine}
-      <p style="color:#476788;font-size:15px;line-height:1.5;margin:16px 0 24px">Your files are ready. Click below to sign in and download — no password needed.</p>
+      <p style="color:#476788;font-size:15px;line-height:1.5;margin:16px 0 24px">Your files are ready. Click below to sign in and download. No password needed.</p>
       <a href="${input.signInUrl}" style="display:inline-block;background:#006BFF;color:#fff;text-decoration:none;font-weight:600;padding:12px 20px;border-radius:4px">Access your downloads</a>
       <p style="color:#476788;font-size:13px;margin:24px 0 0">Or paste this link into your browser:<br><a href="${input.signInUrl}" style="color:#006BFF">${input.signInUrl}</a></p>
     </td></tr>

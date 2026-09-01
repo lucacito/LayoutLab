@@ -10,7 +10,7 @@ import { AccountNav } from '@/components/account/AccountNav';
 export const dynamic = 'force-dynamic';
 
 const STATUS_LABEL: Record<string, string> = {
-  active: 'Active', past_due: 'Payment issue — update billing',
+  active: 'Active', past_due: 'Payment issue, update billing',
   expired: 'Expired', canceled: 'Canceled',
 };
 

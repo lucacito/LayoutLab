@@ -19,14 +19,14 @@ export async function countLayouts(f: CatalogFilters): Promise<number> {
   return row?.n ?? 0;
 }
 
-/** All published layouts, newest first — used to build the homepage category sections. */
+/** All published layouts, newest first. Used to build the homepage category sections. */
 export async function listPublishedLayouts(): Promise<LayoutRow[]> {
   return db.select().from(layouts)
     .where(eq(layouts.status, 'published'))
     .orderBy(desc(layouts.publishedAt), desc(layouts.createdAt));
 }
 
-/** Sibling elements of the same type (variant navigation) — same type, others first by niche match. */
+/** Sibling elements of the same type (variant navigation): same type, others first by niche match. */
 export async function listRelatedLayouts(type: string, excludeId: string, limit = 6): Promise<LayoutRow[]> {
   return db
     .select()
@@ -45,7 +45,7 @@ export async function listVariantSiblings(group: string): Promise<LayoutRow[]> {
 }
 
 /**
- * Layouts downloadable for free — the complement of isPaidOnlyLayout
+ * Layouts downloadable for free: the complement of isPaidOnlyLayout
  * (lib/stripe/entitlements): a layout is free unless EVERY published pack it
  * belongs to is paid. So: no paid pack, or at least one free pack.
  */

@@ -11,8 +11,8 @@ export interface SignInUrlDeps {
 
 // Reproduces Auth.js's email verification-token scheme so a receipt link clicks
 // straight through Auth.js's real callback. Verified vs next-auth 5.0.0-beta.31:
-//   @auth/core/lib/actions/signin/send-token.js  — token row = SHA-256(`${token}${secret}`), secret = AUTH_SECRET
-//   @auth/core/lib/actions/callback/index.js      — re-hashes ?token, requires invite.identifier === ?email
+//   @auth/core/lib/actions/signin/send-token.js  : token row = SHA-256(`${token}${secret}`), secret = AUTH_SECRET
+//   @auth/core/lib/actions/callback/index.js      : re-hashes ?token, requires invite.identifier === ?email
 // URL: ${SITE}/api/auth/callback/email?callbackUrl=&token=<raw>&email=<identifier>
 export async function createMagicSignInUrl(email: string, callbackPath: string, deps: SignInUrlDeps): Promise<string> {
   const secret = process.env.AUTH_SECRET;

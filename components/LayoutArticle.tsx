@@ -4,8 +4,8 @@ import { Icon } from '@/components/ui/Icon';
 
 // Long-form SEO body for a layout page: overview, features, audience,
 // customization tips, a shared install walkthrough, and FAQ. Rendered only
-// when the pipeline/backfill has generated `seo.article` for the layout —
-// pages without one keep their compact form.
+// when the pipeline/backfill has generated `seo.article` for the layout.
+// Pages without one keep their compact form.
 export interface LayoutArticleContent {
   overview: string;
   features: string[];

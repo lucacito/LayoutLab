@@ -19,7 +19,7 @@ export default function ContactPage() {
         title="Get in touch"
         lead={
           <>
-            A human reads every message — usually within one business day. For support, include your site&apos;s
+            A human reads every message, usually within one business day. For support, include your site&apos;s
             WordPress and plugin versions and (for conversions) the export file that misbehaved; you&apos;ll skip a
             round-trip. Email works too:{' '}
             <a href={`mailto:${SUPPORT_EMAIL}`} className="text-paper underline underline-offset-2">{SUPPORT_EMAIL}</a>{' '}

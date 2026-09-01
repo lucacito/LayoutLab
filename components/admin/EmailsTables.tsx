@@ -14,7 +14,7 @@ export function CapturesTable({ rows }: { rows: Capture[] }) {
         {rows.map((r, i) => (
           <tr key={i} className="border-t border-border">
             <td className="py-2 text-navy">{r.email}</td>
-            <td className="text-muted">{r.packTitle ?? '—'}</td>
+            <td className="text-muted">{r.packTitle ?? 'n/a'}</td>
             <td className="text-muted">{fmt(r.createdAt)}</td>
           </tr>
         ))}
@@ -34,8 +34,8 @@ export function DownloadsTable({ rows }: { rows: Download[] }) {
         {rows.map((r, i) => (
           <tr key={i} className="border-t border-border">
             <td className="py-2 text-navy">{r.layoutTitle}</td>
-            <td className="text-muted">{r.email ?? '—'}</td>
-            <td className="text-muted">{r.ip ?? '—'}</td>
+            <td className="text-muted">{r.email ?? 'n/a'}</td>
+            <td className="text-muted">{r.ip ?? 'n/a'}</td>
             <td className="text-muted">{fmt(r.createdAt)}</td>
           </tr>
         ))}

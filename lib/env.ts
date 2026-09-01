@@ -7,7 +7,7 @@ const schema = z.object({
   DATABASE_URL: z.string().min(1),
   AUTH_SECRET: z.string().min(16),
   NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: z.string().min(1),
-  // Optional in Phase 0 — required by their owning features later.
+  // Optional in Phase 0, required by their owning features later.
   STRIPE_SECRET_KEY: z.string().optional(),
   STRIPE_WEBHOOK_SECRET: z.string().optional(),
   STRIPE_PRICE_MEMBERSHIP_MONTHLY: z.string().optional(),

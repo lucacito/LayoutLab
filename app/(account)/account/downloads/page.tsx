@@ -19,7 +19,7 @@ export default async function DownloadsPage() {
       <Container>
         <AccountNav />
         <h1 className="text-h2 text-navy">Your downloads</h1>
-        <p className="mt-2 text-body text-muted">Everything you’re entitled to — re-download anytime.</p>
+        <p className="mt-2 text-body text-muted">Everything you’re entitled to, re-downloadable anytime.</p>
         {layouts.length === 0 ? (
           <div className="mt-8 rounded-card border border-border bg-mist p-10 text-center">
             <p className="text-body text-navy">Nothing here yet.</p>

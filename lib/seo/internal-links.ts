@@ -2,7 +2,7 @@ import { axisLabel } from './taxonomy-copy';
 
 // Curated internal-link hubs for link sculpting. These are the taxonomy pages we
 // deliberately push equity toward from the money page (/browse) and the sitewide
-// band. Curated subsets of AXIS_VALUES (lib/catalog/filters.ts) — kept focused so
+// band. Curated subsets of AXIS_VALUES (lib/catalog/filters.ts), kept focused so
 // anchor-text density stays meaningful. Values MUST exist in AXIS_VALUES; the
 // test asserts this so a renamed/removed value fails loudly instead of 404-ing.
 const TYPE_VALUES = ['hero', 'pricing', 'cta', 'testimonials', 'features', 'faq', 'footer', 'contact', 'gallery', 'full_landing'];
@@ -22,7 +22,7 @@ function toLinks(axis: 'type' | 'niche', values: string[]): HubLink[] {
   return values.map((v) => ({ label: axisLabel(v), href: `/${axis}/${v}` }));
 }
 
-// Broad-keyword collection pages + editorial guides — the third equity lane.
+// Broad-keyword collection pages + editorial guides: the third equity lane.
 // Slugs must exist in lib/seo/keyword-pages.ts (or be real routes); the
 // internal-links test asserts this.
 const COLLECTION_LINKS: HubLink[] = [

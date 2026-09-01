@@ -31,7 +31,7 @@ export function FreeLayoutsBand() {
   return (
     <section className="bg-paper py-20">
       <div className="mx-auto max-w-5xl px-4">
-        {/* Inset canvas panel — the lead magnet gets the brand ground even
+        {/* Inset canvas panel: the lead magnet gets the brand ground even
             though the surrounding section stays light. */}
         <div className="canvas-deep relative overflow-hidden rounded-panel p-9 text-paper shadow-lift md:p-14">
           <div aria-hidden className="absolute inset-0">
@@ -45,12 +45,12 @@ export function FreeLayoutsBand() {
           <h2 className="mt-5 text-h3 text-paper">Free Divi 5 layouts, straight from the lab.</h2>
           <p className="mt-4 max-w-xl text-body text-paper/80">
             The catalog is the validator&apos;s proving ground: 190+ sections and pages generated, validated,
-            rendered, and shipped — every one free. Drop your email and new ones land in your inbox.
+            rendered, and shipped, every one free. Drop your email and new ones land in your inbox.
           </p>
 
           {status === 'done' ? (
             <p role="status" aria-live="polite" className="mt-8 flex items-center gap-2 text-body font-semibold text-paper">
-              <Icon name="mark_email_read" size={20} className="text-g-pink" /> Check your inbox — you&apos;re on the list!
+              <Icon name="mark_email_read" size={20} className="text-g-pink" /> Check your inbox. You&apos;re on the list!
             </p>
           ) : (
             /* One pill that contains the field and the button, Divi-Pixel style,
@@ -79,7 +79,7 @@ export function FreeLayoutsBand() {
           )}
           {status === 'error' && (
             <p role="status" aria-live="polite" className="mt-3 text-small text-g-amber">
-              Something went wrong — try again.
+              Something went wrong. Try again.
             </p>
           )}
 

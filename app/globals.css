@@ -18,7 +18,7 @@
 @layer components {
   /* ---------------------------------------------------------------- type --
      Responsive via clamp so display sizes shrink on mobile. Weights and
-     tracking are heavier/tighter than the previous scale — that density is
+     tracking are heavier/tighter than the previous scale. That density is
      what makes the display face read as a brand voice rather than as text. */
   .text-display { font-size: clamp(42px, 8vw, 84px); line-height: 1.05; font-weight: 800; letter-spacing: -0.03em; }
   .text-h1      { font-size: clamp(36px, 6.5vw, 72px); line-height: 1.08; font-weight: 800; letter-spacing: -0.025em; }
@@ -34,7 +34,7 @@
     font-family: var(--font-display), Poppins, sans-serif;
     font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.18em;
   }
-  /* Same voice, tighter — for narrow columns where 0.18em runs into the
+  /* Same voice, tighter, for narrow columns where 0.18em runs into the
      neighbouring column (footer headings, card labels). */
   .eyebrow-tight {
     font-family: var(--font-display), Poppins, sans-serif;
@@ -84,7 +84,7 @@
 
   /* ------------------------------------------------------------ longform --
      Rendered markdown (guides, keyword pages, layout articles, taxonomy body
-     copy). Deliberately narrow element coverage — our own trusted markdown
+     copy). Deliberately narrow element coverage: our own trusted markdown
      only ever emits these. */
   .prose-divi { @apply text-body text-ink; }
   .prose-divi > * + * { margin-top: 1em; }

@@ -2,7 +2,7 @@ import Stripe from 'stripe';
 import { env } from '@/lib/env';
 
 // Server-only. STRIPE_SECRET_KEY is required at runtime by the commerce routes,
-// but NOT at build time — so the SDK is constructed lazily on first use. Building
+// but NOT at build time, so the SDK is constructed lazily on first use. Building
 // `new Stripe('')` at module load (no key) throws and breaks `next build` when the
 // API routes are collected. The lazy proxy below defers construction to request time.
 let instance: Stripe | null = null;

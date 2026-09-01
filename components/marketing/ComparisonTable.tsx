@@ -37,7 +37,10 @@ export function ComparisonTable({
                       <span className="sr-only">Included</span>
                     </>
                   ) : v === false ? (
-                    <span aria-label="Not included">—</span>
+                    <>
+                      <Icon name="cancel" size={20} className="text-muted/40" />
+                      <span className="sr-only">Not included</span>
+                    </>
                   ) : (
                     v
                   )}

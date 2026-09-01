@@ -25,6 +25,6 @@ describe('EmailsTables', () => {
     const { getByText, getAllByText } = render(<DownloadsTable rows={rows} />);
     expect(getByText('Bold Fitness Hero')).toBeTruthy();
     expect(getByText('buyer@x.com')).toBeTruthy();
-    expect(getAllByText('—').length).toBeGreaterThanOrEqual(1);
+    expect(getAllByText('n/a').length).toBeGreaterThanOrEqual(1);
   });
 });

@@ -3,7 +3,7 @@ import { and, eq, inArray } from 'drizzle-orm';
 import { db } from '@/db/client';
 import { layouts } from '@/db/schema';
 
-// Fetch published layouts by slug — backs the client-side /saved (bookmarks) page.
+// Fetch published layouts by slug. Backs the client-side /saved (bookmarks) page.
 export async function GET(req: NextRequest) {
   const raw = req.nextUrl.searchParams.get('slugs') ?? '';
   const slugs = raw.split(',').map((s) => s.trim()).filter(Boolean).slice(0, 100);

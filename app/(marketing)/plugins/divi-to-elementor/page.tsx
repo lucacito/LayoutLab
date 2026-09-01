@@ -18,12 +18,12 @@ const WP_ORG_URL = 'https://wordpress.org/plugins/jhmg-converter-for-divi-to-ele
 
 const PRODUCT_NAME = 'Divi to Elementor Converter';
 const PRODUCT_DESCRIPTION =
-  `Convert Divi pages and templates into Elementor — ${STATS.diviModulesMapped}+ modules mapped, batch conversion, and all three Divi export formats. Free plugin on wordpress.org; Pro adds Theme Builder templates and WooCommerce mapping.`;
+  `Convert Divi pages and templates into Elementor: ${STATS.diviModulesMapped}+ modules mapped, batch conversion, and all three Divi export formats. Free plugin on wordpress.org; Pro adds Theme Builder templates and WooCommerce mapping.`;
 
 export const metadata: Metadata = {
-  title: 'Divi to Elementor Converter — free WordPress plugin + Pro',
+  title: 'Divi to Elementor Converter: free WordPress plugin + Pro',
   description:
-    `Convert Divi pages and templates to Elementor — ${STATS.diviModulesMapped}+ modules mapped, batch conversion, all three Divi export formats. Free on wordpress.org; Pro adds Theme Builder templates and WooCommerce mapping — $25/yr, unlimited sites.`,
+    `Convert Divi pages and templates to Elementor: ${STATS.diviModulesMapped}+ modules mapped, batch conversion, all three Divi export formats. Free on wordpress.org; Pro adds Theme Builder templates and WooCommerce mapping, at $25/yr on unlimited sites.`,
   alternates: { canonical: `${env.NEXT_PUBLIC_SITE_URL}/plugins/divi-to-elementor` },
 };
 
@@ -57,7 +57,7 @@ const USE_CASES = [
 const FAQ = [
   {
     question: 'Where do I get the free plugin?',
-    answer: 'From wordpress.org — search "JHMG Converter For Divi to Elementor" in your WordPress admin under Plugins → Add New, or install it from the plugin directory.',
+    answer: 'From wordpress.org: search "JHMG Converter For Divi to Elementor" in your WordPress admin under Plugins → Add New, or install it from the plugin directory.',
   },
   {
     question: 'What does Pro add?',
@@ -65,11 +65,11 @@ const FAQ = [
   },
   {
     question: 'Do I need the free plugin to use Pro?',
-    answer: 'Yes — Pro is a license that extends the free plugin. Install the free plugin from wordpress.org first, then activate Pro.',
+    answer: 'Yes. Pro is a license that extends the free plugin. Install the free plugin from wordpress.org first, then activate Pro.',
   },
   {
     question: 'Which Divi export formats work?',
-    answer: 'All three — Divi Library JSON, portability exports, and raw post content. The converter detects the format automatically.',
+    answer: 'All three: Divi Library JSON, portability exports, and raw post content. The converter detects the format automatically.',
   },
   {
     question: 'What about Divi Theme Builder templates?',
@@ -77,7 +77,7 @@ const FAQ = [
   },
   {
     question: 'What happens to modules without a mapping?',
-    answer: `${STATS.diviModulesMapped}+ Divi modules have dedicated mappings. Anything exotic is preserved as an HTML widget and flagged in the conversion report — nothing is silently dropped.`,
+    answer: `${STATS.diviModulesMapped}+ Divi modules have dedicated mappings. Anything exotic is preserved as an HTML widget and flagged in the conversion report, so nothing is silently dropped.`,
   },
   {
     question: 'Does it modify my Divi site?',
@@ -110,14 +110,14 @@ export default function D2EPage() {
       <SectionShell tone="hero" underHeader bottom="lg" blooms curveBottom={EDGE.paper} id="top">
         <Container>
           <Eyebrow tone="dark" className="mb-4">Divi → Elementor Converter</Eyebrow>
-          <h1 className="max-w-3xl text-h1 text-paper">Convert Divi to Elementor — the whole site, in batches.</h1>
+          <h1 className="max-w-3xl text-h1 text-paper">Convert Divi to Elementor, the whole site, in batches.</h1>
           <p className="mt-6 max-w-2xl text-lead text-paper/80">
             {STATS.diviModulesMapped}+ Divi modules mapped to their Elementor equivalents, every Divi export format
-            supported, and a conversion report for every run. The same converter craft as our flagship — pointed the
+            supported, and a conversion report for every run. The same converter craft as our flagship, pointed the
             other way.
           </p>
           <div className="mt-10 flex flex-wrap items-center gap-3">
-            <BuyProButton product="divi-to-elementor-pro" label="Get Pro — $25/yr" />
+            <BuyProButton product="divi-to-elementor-pro" label="Get Pro · $25/yr" />
             <a
               href={WP_ORG_URL}
               target="_blank"
@@ -147,11 +147,11 @@ export default function D2EPage() {
               <h2 className="text-h2 text-navy">Point it at pages, not paragraphs</h2>
               <p className="mt-4 max-w-xl text-lead text-muted">
                 Select every page that should move and run one batch. Each page gets converted, reported on, and
-                saved as an Elementor draft for review — you approve, it publishes.
+                saved as an Elementor draft for review. You approve, it publishes.
               </p>
             </div>
             <Card className="p-6">
-              <p className="eyebrow text-muted">Batch run — 5 pages</p>
+              <p className="eyebrow text-muted">Batch run · 5 pages</p>
               <ul className="mt-3 divide-y divide-border">
                 {BATCH_ROWS.map((r) => (
                   <li key={r.page} className="flex items-center justify-between py-2.5">
@@ -171,8 +171,8 @@ export default function D2EPage() {
           <h2 className="text-h2 text-navy">Free on wordpress.org, Pro when you need the whole site</h2>
           <ComparisonTable
             className="mt-8"
-            caption="Divi to Elementor Converter — Free vs Pro"
-            columns={['Free', 'Pro — $25/yr']}
+            caption="Divi to Elementor Converter: Free vs Pro"
+            columns={['Free', 'Pro · $25/yr']}
             rows={[
               { label: `${STATS.diviModulesMapped}+ module mappings`, values: [true, true] },
               { label: 'All three Divi export formats', values: [true, true] },
@@ -183,7 +183,7 @@ export default function D2EPage() {
               { label: 'Support', values: ['Community', 'Priority'] },
               { label: 'Sites', values: ['Unlimited', 'Unlimited'] },
             ]}
-            footnote="One Pro license activates on unlimited sites, yours or your clients'. If it lapses, activated sites keep working — renewal buys updates and support."
+            footnote="One Pro license activates on unlimited sites, yours or your clients'. If it lapses, activated sites keep working, and renewal buys updates and support."
           />
         </Container>
       </SectionShell>

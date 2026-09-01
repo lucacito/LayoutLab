@@ -5,7 +5,7 @@ const tones = {
   paper: 'border-border bg-paper shadow-soft',
   /** Frosted card for use on top of the immersive canvas. */
   glass: 'border-paper/15 bg-paper/10 backdrop-blur-md shadow-float',
-  /** Deep card — inverts against a light section. */
+  /** Deep card: inverts against a light section. */
   deep: 'border-navy/40 bg-navy shadow-float',
 };
 

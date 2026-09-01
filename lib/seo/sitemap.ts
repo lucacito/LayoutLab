@@ -13,11 +13,11 @@ export function sitemapEntries(i: {
   const staticPages: MetadataRoute.Sitemap = [
     { url: base, changeFrequency: 'weekly', priority: 1 },
     { url: `${base}/browse`, changeFrequency: 'daily', priority: 0.9 },
-    // /packs is a primary nav section (Themes & Packs) — it was previously
+    // /packs is a primary nav section (Themes & Packs). It was previously
     // omitted from the sitemap, hiding a top-level section from Google.
     { url: `${base}/packs`, changeFrequency: 'daily', priority: 0.9 },
     { url: `${base}/pricing`, changeFrequency: 'weekly', priority: 0.8 },
-    // WordPress plugins section — the hub and both converters are the money
+    // WordPress plugins section: the hub and both converters are the money
     // pages here; the AI Editor ranks lower until it has directory presence.
     { url: `${base}/plugins`, changeFrequency: 'weekly', priority: 0.9 },
     { url: `${base}/plugins/elementor-to-divi-5`, changeFrequency: 'weekly', priority: 0.9 },
@@ -27,7 +27,7 @@ export function sitemapEntries(i: {
     { url: `${base}/contact`, changeFrequency: 'yearly', priority: 0.3 },
     { url: `${base}/license`, changeFrequency: 'yearly', priority: 0.3 },
   ];
-  // Broad-keyword landing pages (/divi-layouts, /divi-templates, …) — money
+  // Broad-keyword landing pages (/divi-layouts, /divi-templates, …): money
   // pages for head terms, prioritized just under /browse.
   const keywordEntries: MetadataRoute.Sitemap = listKeywordPages().map((p) => ({
     url: `${base}/${p.slug}`,

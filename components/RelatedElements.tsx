@@ -4,8 +4,8 @@ import { TYPE_LABELS } from '@/lib/nav/menu-data';
 import { AXIS_VALUES } from '@/lib/catalog/filters';
 import type { LayoutRow } from '@/lib/catalog/queries';
 
-// Variant navigation: from any element, flip to other versions of the same type —
-// pivot by style, or browse sibling elements directly.
+// Variant navigation: from any element, flip to other versions of the same type.
+// Pivot by style, or browse sibling elements directly.
 export function RelatedElements({
   type,
   currentStyle,
