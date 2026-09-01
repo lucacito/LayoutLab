@@ -11,7 +11,7 @@ function typeLabel(value: string): string {
   return TYPE_LABELS[value] ?? value.charAt(0).toUpperCase() + value.slice(1);
 }
 
-// "Find layouts by type" — a tile grid of every section type. Industries have their own
+// "Find layouts by type": a tile grid of every section type. Industries have their own
 // dedicated section below, so this axis stands alone here (distinct visual treatment: flat
 // tiles, not preview cards) and reads as a clean "what kind of section do you need?" index.
 export function ElementDirectory({ counts }: { counts: Counts }) {
@@ -19,7 +19,7 @@ export function ElementDirectory({ counts }: { counts: Counts }) {
     <section className="border-y border-border bg-mist py-12">
       <Container>
         <SectionTitle eyebrow="By section" title="Find layouts by type">
-          Pick the kind of section you need — hero, pricing, FAQ, CTA and more.
+          Pick the kind of section you need: hero, pricing, FAQ, CTA and more.
         </SectionTitle>
 
         <div className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">

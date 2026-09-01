@@ -25,9 +25,9 @@ const PRODUCT_DESCRIPTION =
 
 export const metadata: Metadata = {
   // Root layout's title.template appends "| Divi5Lab".
-  title: 'Elementor to Divi 5 Converter — Free plugin + Pro',
+  title: 'Elementor to Divi 5 Converter: Free plugin + Pro',
   description:
-    `Convert Elementor pages and kits to Divi 5 in minutes. ${WIDGET_TYPES_MAPPED} widget types mapped to real, validated Divi 5 modules. Free plugin for single pages; Pro adds full kit ZIP import and global styles — $25/yr, unlimited sites.`,
+    `Convert Elementor pages and kits to Divi 5 in minutes. ${WIDGET_TYPES_MAPPED} widget types mapped to real, validated Divi 5 modules. Free plugin for single pages; Pro adds full kit ZIP import and global styles, at $25/yr on unlimited sites.`,
   alternates: { canonical: `${env.NEXT_PUBLIC_SITE_URL}/plugins/elementor-to-divi-5` },
 };
 
@@ -52,7 +52,7 @@ const REPORT_ROWS = [
 const PRO_WHY = [
   {
     title: 'Full kit ZIP import',
-    body: 'Convert an entire Elementor site in one run — every page, template, and popup in the kit — instead of exporting pages one at a time.',
+    body: 'Convert an entire Elementor site in one run (every page, template, and popup in the kit) instead of exporting pages one at a time.',
   },
   {
     title: 'Global headers & footers → Divi Theme Builder',
@@ -60,7 +60,7 @@ const PRO_WHY = [
   },
   {
     title: 'Global colors & typography',
-    body: 'Elementor kit styles become Divi global presets, so the converted site keeps its design system — and stays editable.',
+    body: 'Elementor kit styles become Divi global presets, so the converted site keeps its design system, and stays editable.',
   },
   {
     title: 'Priority support + a year of updates',
@@ -77,7 +77,7 @@ const USE_CASES = [
   {
     icon: 'storefront',
     title: 'The site owner',
-    body: 'One site, one move. Free plugin, page by page, zero cost — upgrade only if the header and footer should come along.',
+    body: 'One site, one move. Free plugin, page by page, zero cost. Upgrade only if the header and footer should come along.',
   },
   {
     icon: 'handyman',
@@ -89,7 +89,7 @@ const USE_CASES = [
 const FAQ = [
   {
     question: 'Is it really unlimited sites?',
-    answer: 'Yes — a Pro license activates on as many sites as you own or build for clients, for as long as it stays active.',
+    answer: 'Yes. A Pro license activates on as many sites as you own or build for clients, for as long as it stays active.',
   },
   {
     question: "What happens if I don't renew?",
@@ -97,19 +97,19 @@ const FAQ = [
   },
   {
     question: 'Do I need the free plugin?',
-    answer: 'Yes — Pro is a license that extends the free plugin. Install the free plugin from wordpress.org first, then activate Pro.',
+    answer: 'Yes. Pro is a license that extends the free plugin. Install the free plugin from wordpress.org first, then activate Pro.',
   },
   {
     question: 'What if a widget has no mapping?',
-    answer: `${WIDGET_TYPES_MAPPED} widget types have dedicated converters. Anything else falls back gracefully — content is preserved in a Divi code module and flagged in the conversion report, never silently dropped.`,
+    answer: `${WIDGET_TYPES_MAPPED} widget types have dedicated converters. Anything else falls back gracefully: content is preserved in a Divi code module and flagged in the conversion report, never silently dropped.`,
   },
   {
     question: 'Does it touch my Elementor site?',
-    answer: 'No. You export from Elementor and import into your Divi site. The original site is never modified — you can compare both until you are happy.',
+    answer: 'No. You export from Elementor and import into your Divi site. The original site is never modified, so you can compare both until you are happy.',
   },
   {
     question: 'Does it work with Divi 4?',
-    answer: 'Output targets Divi 5 markup specifically — that is the point. Divi 5 imports it natively; we validate against the Divi 5 schema.',
+    answer: 'Output targets Divi 5 markup specifically. That is the point. Divi 5 imports it natively; we validate against the Divi 5 schema.',
   },
   {
     question: 'How do I know the output is valid?',
@@ -117,7 +117,7 @@ const FAQ = [
   },
   {
     question: 'Which page-builder add-ons are covered?',
-    answer: 'Elementor core plus Essential Addons, ElementsKit, Header Footer Elementor, and popular Woo widgets — see the full mapping reference on this page.',
+    answer: 'Elementor core plus Essential Addons, ElementsKit, Header Footer Elementor, and popular Woo widgets. See the full mapping reference on this page.',
   },
   {
     question: 'Is there a refund policy?',
@@ -159,11 +159,11 @@ export default function PluginPage() {
       <PageHero
         align="left"
         eyebrow="Elementor → Divi 5 Converter"
-        title="Convert Elementor to Divi 5 — without rebuilding a thing."
-        lead="Export from Elementor, import into Divi 5, review real modules — not shortcode soup. Every conversion is checked against the Divi 5 schema before you see it. Free for single pages; Pro moves whole sites."
+        title="Convert Elementor to Divi 5 without rebuilding a thing."
+        lead="Export from Elementor, import into Divi 5, review real modules, not shortcode soup. Every conversion is checked against the Divi 5 schema before you see it. Free for single pages; Pro moves whole sites."
       >
         <div className="flex flex-wrap items-center gap-3">
-          <BuyProButton product="elementor-to-divi5-pro" label="Get Pro — $25/yr" />
+          <BuyProButton product="elementor-to-divi5-pro" label="Get Pro · $25/yr" />
           <a
             href={WP_ORG_URL}
             target="_blank"
@@ -191,19 +191,19 @@ export default function PluginPage() {
             <div className="min-w-0">
               <h2 className="text-h2 text-navy">Real modules, mapped one to one</h2>
               <p className="mt-4 max-w-xl text-lead text-muted">
-                Each Elementor widget has a dedicated converter that produces the equivalent Divi 5 module —
-                content, links, and styling included. No generic wrappers, no lossy HTML dumps.
+                Each Elementor widget has a dedicated converter that produces the equivalent Divi 5 module,
+                content and links and styling included. No generic wrappers, no lossy HTML dumps.
               </p>
               <MappingPanel className="mt-8" fromLabel="Elementor" toLabel="Divi 5" pairs={MAPPING_PAIRS} />
             </div>
             <div className="min-w-0">
               <h2 className="text-h2 text-navy">A report for every run</h2>
               <p className="mt-4 max-w-xl text-lead text-muted">
-                The conversion report tells you exactly what happened to every widget — including the rare one
+                The conversion report tells you exactly what happened to every widget, including the rare one
                 without a mapping, which is preserved as an embed and flagged. Nothing is silently dropped.
               </p>
               <Card className="mt-8 p-6">
-                <p className="eyebrow text-muted">Conversion report — home.json</p>
+                <p className="eyebrow text-muted">Conversion report · home.json</p>
                 <ul className="mt-3 divide-y divide-border">
                   {REPORT_ROWS.map((r) => (
                     <ReportRow key={r.widget} {...r} />
@@ -222,7 +222,7 @@ export default function PluginPage() {
           <h2 className="text-h2 text-navy">Three steps, no surprises</h2>
           <div className="mt-8 grid grid-cols-1 gap-8 sm:grid-cols-3">
             {[
-              { title: 'Export from Elementor', body: 'A page JSON (free) or the full kit ZIP (Pro) — straight from your existing site, which is never modified.' },
+              { title: 'Export from Elementor', body: 'A page JSON (free) or the full kit ZIP (Pro), straight from your existing site, which is never modified.' },
               { title: 'Upload in Tools', body: 'Open the plugin under WordPress → Tools on your Divi site and upload the export.' },
               { title: 'Review & publish', body: 'Widgets arrive as native Divi 5 modules with a per-widget report. Validated against the Divi 5 schema before you ever see it.' },
             ].map((s, i) => (
@@ -257,8 +257,8 @@ export default function PluginPage() {
           <h2 className="text-h2 text-navy">Free vs. Pro</h2>
           <ComparisonTable
             className="mt-8"
-            caption="Elementor to Divi 5 Converter — Free vs Pro"
-            columns={['Free', 'Pro — $25/yr']}
+            caption="Elementor to Divi 5 Converter: Free vs Pro"
+            columns={['Free', 'Pro · $25/yr']}
             rows={[
               { label: 'Single-page JSON imports (unlimited)', values: [true, true] },
               { label: `${WIDGET_TYPES_MAPPED} widget-type mappings`, values: [true, true] },
@@ -266,14 +266,14 @@ export default function PluginPage() {
               { label: 'Full kit ZIP import', values: [false, true] },
               { label: 'Global headers/footers → Theme Builder', values: [false, true] },
               { label: 'Global colors & typography', values: [false, true] },
-              { label: 'Updates', values: ['—', '1 year'] },
+              { label: 'Updates', values: ['n/a', '1 year'] },
               { label: 'Support', values: ['Community', 'Priority'] },
               { label: 'Sites', values: ['Unlimited', 'Unlimited'] },
             ]}
-            footnote="Pro keeps working on activated sites even if the license lapses — renewal covers updates and support."
+            footnote="Pro keeps working on activated sites even if the license lapses. Renewal covers updates and support."
           />
           <div className="mt-8 flex flex-wrap items-center gap-3">
-            <BuyProButton product="elementor-to-divi5-pro" label="Get Pro — $25/yr" />
+            <BuyProButton product="elementor-to-divi5-pro" label="Get Pro · $25/yr" />
             <a href={WP_ORG_URL} target="_blank" rel="noopener noreferrer" className="text-body font-semibold text-action hover:underline">
               Start with the free plugin
             </a>
@@ -333,8 +333,8 @@ export default function PluginPage() {
 
       <CtaBand
         title="Ship your migration this week."
-        body="Full kits, global styles, headers and footers — converted into validated Divi 5 markup, reviewed by you."
-        cta={{ label: 'Get Pro — $25/yr', href: '/pricing' }}
+        body="Full kits, global styles, headers and footers, converted into validated Divi 5 markup and reviewed by you."
+        cta={{ label: 'Get Pro · $25/yr', href: '/pricing' }}
         secondary={{ label: 'Try the free plugin first', href: WP_ORG_URL }}
       />
     </main>

@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 
-/** Circular tinted icon puck + title + body — the feature-grid unit. */
+/** Circular tinted icon puck + title + body: the feature-grid unit. */
 export function IconFeature({
   icon,
   title,

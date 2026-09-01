@@ -31,7 +31,7 @@ export function RewardsProgress({ className = '' }: { className?: string }) {
           </span>
           <div className="min-w-0 flex-1">
             <p className="text-body font-semibold text-navy">Reviewer reward unlocked 🎉</p>
-            <p className="text-small text-muted">Thanks for rating {count} elements — claim a free premium pack.</p>
+            <p className="text-small text-muted">Thanks for rating {count} elements. Claim a free premium pack.</p>
           </div>
           <Link href="/login" className="shrink-0 rounded-full bg-action px-4 py-2 text-small font-semibold text-paper transition hover:brightness-110">
             Claim

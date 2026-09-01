@@ -29,7 +29,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ layoutId
   const sessionEmail = session?.user?.email ?? null;
   const userId = sessionEmail ? await getUserIdByEmail(sessionEmail) : null;
 
-  // Marketplace demotion (Task 6): every layout is a free lead magnet now — no more
+  // Marketplace demotion (Task 6): every layout is a free lead magnet now, so no more
   // paid-only gate. A captured email or a session is all that's required.
   const email = sessionEmail ?? capturedEmail;
   if (!email) {
@@ -40,7 +40,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ layoutId
   if (!bytes) return NextResponse.json({ error: 'asset_unavailable' }, { status: 404 });
   const zip = await buildLayoutZip(bytes.toString('utf8'), layout.slug, readLicense());
   const downloaderEmail = sessionEmail ?? capturedEmail ?? null;
-  // Audit + notification are BEST-EFFORT — a logging failure (e.g. a prod DB that
+  // Audit + notification are BEST-EFFORT. A logging failure (e.g. a prod DB that
   // hasn't run the downloads.email migration) must never turn a valid download into a 500.
   try {
     await recordDownload(userId, layout.id, ip, downloaderEmail);
@@ -50,7 +50,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ layoutId
   try {
     await notifyDownload({ layoutTitle: layout.title, slug: layout.slug, downloader: downloaderEmail ?? 'guest', ip });
   } catch {
-    /* best-effort — never break a download on a notification failure */
+    /* best-effort: never break a download on a notification failure */
   }
 
   return new Response(new Uint8Array(zip), {

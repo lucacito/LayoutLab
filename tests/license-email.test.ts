@@ -4,7 +4,7 @@ import { licenseKeyEmail } from '@/lib/email/license-email';
 describe('licenseKeyEmail', () => {
   it('includes product title, key and sign-in url in text and html', () => {
     const { subject, html, text } = licenseKeyEmail({
-      productTitle: 'JHMG Converter For Elementor to Divi 5 — Pro',
+      productTitle: 'JHMG Converter For Elementor to Divi 5 Pro',
       licenseKey: 'JHMG-AAAA-BBBB-CCCC-DDDD',
       signInUrl: 'https://divi5lab.com/login?x=1',
     });

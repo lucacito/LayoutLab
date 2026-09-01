@@ -3,7 +3,7 @@ import type { CSSProperties, ReactNode } from 'react';
 /**
  * Layered product-panel motif: a main panel in flow (so it sets the height)
  * with satellite panels floating over its corners. Satellites are hidden below
- * `lg` — at phone widths they would overlap the main panel's content rather
+ * `lg`, because at phone widths they would overlap the main panel's content rather
  * than framing it.
  *
  * The gentle float is staggered per layer so the group never moves in lockstep;
@@ -24,7 +24,7 @@ export function FloatingStack({
     <div className={`relative ${className}`}>
       <div className="relative z-10 animate-float [animation-delay:-1s] drop-shadow-[0_40px_80px_rgba(11,53,88,.45)]">{main}</div>
 
-      {/* Satellites sit almost entirely outside the main panel — they should
+      {/* Satellites sit almost entirely outside the main panel, so they should
           frame it, not cover its content. */}
       {left && (
         <div

@@ -53,7 +53,7 @@ export function ResponsivePreview({
         <div className="mx-auto w-full max-w-[360px]">
           <div className="overflow-hidden rounded-[2rem] border-[7px] border-navy bg-navy shadow-soft">
             <button type="button" onClick={() => setZoom(true)} className="block w-full">
-              <PreviewImage src={mobile!} alt={`${stem} — mobile screenshot`} type={type} color={color} layoutStyle={layoutStyle} sizes="360px" className="aspect-[9/16]" />
+              <PreviewImage src={mobile!} alt={`${stem}, mobile screenshot`} type={type} color={color} layoutStyle={layoutStyle} sizes="360px" className="aspect-[9/16]" />
             </button>
           </div>
         </div>
@@ -65,7 +65,7 @@ export function ResponsivePreview({
             <span className="h-2.5 w-2.5 rounded-full bg-emerald-400/70" />
           </div>
           <button type="button" onClick={() => setZoom(true)} className="block max-h-[640px] w-full overflow-hidden">
-            <PreviewImage src={desktop} alt={`${stem} — desktop screenshot`} type={type} color={color} layoutStyle={layoutStyle} natural />
+            <PreviewImage src={desktop} alt={`${stem}, desktop screenshot`} type={type} color={color} layoutStyle={layoutStyle} natural />
           </button>
         </div>
       )}
@@ -82,12 +82,12 @@ export function ResponsivePreview({
           >
             <Icon name="close" size={20} />
           </button>
-          {/* Full page at natural aspect inside a scrollable overlay — the whole layout
+          {/* Full page at natural aspect inside a scrollable overlay, so the whole layout
               is visible top-to-bottom by scrolling. Clicking the image doesn't close. */}
           <div className={`mx-auto ${onMobile ? 'max-w-[420px]' : 'max-w-5xl'}`} onClick={(e) => e.stopPropagation()}>
             <PreviewImage
               src={onMobile ? mobile! : desktop}
-              alt={`${stem} — full-page screenshot`}
+              alt={`${stem}, full-page screenshot`}
               type={type}
               color={color}
               layoutStyle={layoutStyle}

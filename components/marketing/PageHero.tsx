@@ -18,7 +18,7 @@ export function PageHero({
   curveInto = EDGE.paper,
   children,
 }: {
-  /** Rendered above the eyebrow — breadcrumbs live here. */
+  /** Rendered above the eyebrow. Breadcrumbs live here. */
   above?: ReactNode;
   eyebrow?: string;
   title: ReactNode;

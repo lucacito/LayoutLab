@@ -116,7 +116,7 @@ export const PLUGIN_MENU: PluginMenuItem[] = [
   },
   {
     name: 'AI Editor for Divi 5',
-    desc: 'Edit Divi 5 in plain English — every change validated.',
+    desc: 'Edit Divi 5 in plain English, with every change validated.',
     href: '/plugins/divi-5-ai-editor',
     icon: 'smart_toy',
     chip: 'Free · Pro $30/yr',
@@ -166,5 +166,5 @@ export const LAYOUT_MENU_CTA: MegaLink = {
   href: '/browse',
   label: 'Browse all layouts',
   icon: 'grid_view',
-  blurb: 'The full validated catalog — filter by type, industry, style and colour.',
+  blurb: 'The full validated catalog. Filter by type, industry, style and colour.',
 };

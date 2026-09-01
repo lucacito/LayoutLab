@@ -30,7 +30,7 @@ export function BuyProButton({ product, label }: { product: string; label: strin
         {state === 'loading' ? 'Redirecting…' : label}
       </button>
       {state === 'error' && (
-        <p className="mt-2 text-small text-red-600">Something went wrong — please try again or email support@divi5lab.com.</p>
+        <p className="mt-2 text-small text-red-600">Something went wrong. Please try again or email support@divi5lab.com.</p>
       )}
     </div>
   );

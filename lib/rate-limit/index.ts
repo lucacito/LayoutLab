@@ -1,5 +1,5 @@
 // Best-effort in-memory fixed-window limiter. Per-instance only (resets on cold
-// start; not shared across serverless instances) — a stopgap to be replaced by a
+// start; not shared across serverless instances): a stopgap to be replaced by a
 // shared store (Vercel KV/Upstash). See CLAUDE.md §16.
 type Bucket = { count: number; resetAt: number };
 const buckets = new Map<string, Bucket>();

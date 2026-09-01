@@ -2,7 +2,7 @@
 //
 // When a layout is published, we push its URL to the IndexNow API, which fans
 // out to Bing, Yandex, DuckDuckGo, Seznam, Naver and the shared IndexNow
-// network — so new pages are discovered in seconds instead of waiting for a
+// network, so new pages are discovered in seconds instead of waiting for a
 // sitemap crawl. (Google deprecated its sitemap-ping endpoint in 2023 and does
 // not participate in IndexNow, so this targets everyone else; Google still
 // finds pages via the dynamic sitemap.)

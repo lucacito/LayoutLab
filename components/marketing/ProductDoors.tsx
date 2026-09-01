@@ -21,7 +21,7 @@ const CHIP: Record<'green' | 'amber', string> = {
 
 const MOTIF_SHELL = 'mt-6 rounded-card border border-fog bg-mist p-5';
 
-// Tiny code-built motifs — one visual idea per product, no images.
+// Tiny code-built motifs: one visual idea per product, no images.
 function MotifMapping() {
   return (
     <div className="flex items-center gap-2 font-mono text-small" aria-hidden>
@@ -53,7 +53,7 @@ const DOORS: Door[] = [
     headline: 'Leave Elementor without rebuilding',
     name: 'Elementor → Divi 5 Converter',
     chip: { label: 'Free on wordpress.org · Pro $25/yr', tone: 'green' },
-    body: 'Pages, full kits, global headers and footers — converted into real, validated Divi 5 markup that imports clean the first time.',
+    body: 'Pages, full kits, global headers and footers, converted into real, validated Divi 5 markup that imports clean the first time.',
     stats: `${STATS.elementorWidgetsMapped} widget types mapped · ${STATS.activeInstalls}+ active installs`,
     href: '/plugins/elementor-to-divi-5',
     cta: 'See the converter',
@@ -63,10 +63,10 @@ const DOORS: Door[] = [
     headline: 'Going the other way? Also covered.',
     name: 'Divi → Elementor Converter',
     chip: { label: 'Free on wordpress.org · Pro $25/yr', tone: 'green' },
-    body: `Batch-convert whole sites from Divi into Elementor — ${STATS.diviModulesMapped}+ modules mapped, every Divi export format supported.`,
+    body: `Batch-convert whole sites from Divi into Elementor, with ${STATS.diviModulesMapped}+ modules mapped and every Divi export format supported.`,
     stats: 'Batch conversion · conversion report per run',
     href: '/plugins/divi-to-elementor',
-    // Distinct from the E→D5 card's "See the converter" — two identical CTAs
+    // Distinct from the E→D5 card's "See the converter", because two identical CTAs
     // side by side give no clue which door is which.
     cta: 'Convert the other way',
     motif: <MotifBatch />,

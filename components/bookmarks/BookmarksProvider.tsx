@@ -1,7 +1,7 @@
 'use client';
 import { createContext, useContext, useEffect, useState, useCallback, type ReactNode } from 'react';
 
-// Client-side bookmarks — no account needed. Persisted to localStorage so users can
+// Client-side bookmarks, no account needed. Persisted to localStorage so users can
 // save elements and come back to them. (Account sync can layer on later.)
 const KEY = 'll_bookmarks';
 

@@ -1,4 +1,4 @@
-// app/(catalog)/[keyword]/page.tsx — programmatic keyword landing pages.
+// app/(catalog)/[keyword]/page.tsx: programmatic keyword landing pages.
 // One dynamic route renders every entry in lib/seo/keyword-pages.ts
 // (/divi-layouts, /divi-templates, /free-divi-layouts, …). Static routes always
 // win over this segment, so real pages (/browse, /pricing, /free, …) are never
@@ -61,7 +61,7 @@ export default async function KeywordLandingPage({ params }: { params: Promise<{
     page: 1,
   };
   const [layouts, packs] = await Promise.all([
-    // Free pages show genuinely free layouts (not paid-only ones) — the page's
+    // Free pages show genuinely free layouts (not paid-only ones). The page's
     // promise is "every card here is a free download".
     page.freeOnly ? listFreeLayouts(GRID_SIZE) : listLayouts(filters).then((rows) => rows.slice(0, GRID_SIZE)),
     page.freeOnly ? listPacks().then((ps) => ps.filter((p) => p.kind === 'free')) : Promise.resolve([]),
@@ -96,7 +96,7 @@ export default async function KeywordLandingPage({ params }: { params: Promise<{
         <section className="mt-12">
           <h2 className="mb-4 text-section text-navy">Newest layouts</h2>
           {layouts.length === 0 ? (
-            <p className="text-body text-muted">No layouts here yet — check back soon.</p>
+            <p className="text-body text-muted">No layouts here yet. Check back soon.</p>
           ) : (
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {layouts.map((l) => <LayoutCard key={l.id} layout={l} />)}

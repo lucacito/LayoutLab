@@ -34,14 +34,14 @@ export default async function PurchasesPage() {
         <h2 className="mt-8 text-section text-navy">Your packs</h2>
         {allAccess && (
           <p className="mt-2 flex items-center gap-1.5 text-small font-medium text-action">
-            <Icon name="auto_awesome" size={16} /> All-access membership active — every pack is yours.
+            <Icon name="auto_awesome" size={16} /> All-access membership active. Every pack is yours.
           </p>
         )}
         {ownedPacks.length === 0 ? (
           <Card className="mt-3 flex flex-col items-start gap-3 p-6 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <p className="text-body font-semibold text-navy">No packs yet</p>
-              <p className="text-small text-muted">Every layout in the catalog is free — grab one from Browse, or check out the migration plugins.</p>
+              <p className="text-small text-muted">Every layout in the catalog is free. Grab one from Browse, or check out the migration plugins.</p>
             </div>
             <Link href="/plugins" className="inline-flex h-10 shrink-0 items-center justify-center rounded-full bg-action px-5 text-small font-semibold text-paper transition hover:brightness-110">
               Browse plugins
@@ -71,7 +71,7 @@ export default async function PurchasesPage() {
 
         <h2 className="mt-10 text-section text-navy">Orders</h2>
         {orders.length === 0 ? (
-          <p className="mt-2 text-body text-muted">No orders yet — your receipts will appear here after a purchase.</p>
+          <p className="mt-2 text-body text-muted">No orders yet. Your receipts will appear here after a purchase.</p>
         ) : (
           <ul className="mt-3 space-y-2">
             {orders.map((o) => (

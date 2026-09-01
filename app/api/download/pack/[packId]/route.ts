@@ -48,7 +48,7 @@ export async function GET(
   }
 
   const zip = await buildPackZip(items, readLicense());
-  // Best-effort audit — a logging failure must never break a paid pack download.
+  // Best-effort audit: a logging failure must never break a paid pack download.
   try {
     for (const it of items) await recordDownload(userId, it.id, ip);
   } catch (err) {

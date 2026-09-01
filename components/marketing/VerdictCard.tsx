@@ -1,5 +1,5 @@
 // A validator transcript: caught violations, the retry, the clean verdict.
-// Deliberately monospace and terminal-flavored — this is the product talking.
+// Deliberately monospace and terminal-flavored: this is the product talking.
 export function VerdictCard({
   title,
   failures,

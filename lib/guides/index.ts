@@ -17,7 +17,7 @@ export interface Guide {
 const GUIDES_DIR = path.join(process.cwd(), 'content', 'guides');
 
 /**
- * Tiny frontmatter parser — supports exactly what our guide files use:
+ * Tiny frontmatter parser. Supports exactly what our guide files use:
  * `key: value` lines (value may contain colons), optional double quotes,
  * and comma-separated lists for `keywords`. Not YAML; kept deliberately dumb.
  */

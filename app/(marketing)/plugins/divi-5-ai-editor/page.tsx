@@ -17,22 +17,22 @@ import { UseCaseVignettes } from '@/components/marketing/UseCaseVignettes';
 
 const PRODUCT_NAME = 'AI Editor for Divi 5';
 const PRODUCT_DESCRIPTION =
-  'Connect Claude, Cursor, or ChatGPT to your Divi 5 site and edit pages in plain English. Every change passes a deterministic validator before it touches your database — broken layouts are impossible. Free tier edits existing pages; Pro unlocks page creation, menus, and site-wide styling.';
+  'Connect Claude, Cursor, or ChatGPT to your Divi 5 site and edit pages in plain English. Every change passes a deterministic validator before it touches your database, so broken layouts are impossible. Free tier edits existing pages; Pro unlocks page creation, menus, and site-wide styling.';
 
 export const metadata: Metadata = {
   // Root layout's title.template appends "| Divi5Lab".
-  title: 'AI Editor for Divi 5 — edit Divi with AI, validated',
+  title: 'AI Editor for Divi 5: edit Divi with AI, validated',
   description:
-    'Connect Claude, Cursor, or ChatGPT to your Divi 5 site and edit pages in plain English. Every change passes a deterministic validator before it touches your database — broken layouts are impossible.',
+    'Connect Claude, Cursor, or ChatGPT to your Divi 5 site and edit pages in plain English. Every change passes a deterministic validator before it touches your database, so broken layouts are impossible.',
   alternates: { canonical: `${env.NEXT_PUBLIC_SITE_URL}/plugins/divi-5-ai-editor` },
 };
 
 const DEMO_STEPS: ChatStep[] = [
   { role: 'user', text: 'Add a three-column pricing section under the hero on the Services page.' },
   { role: 'assistant', text: 'get_section_recipes(type: "pricing") → update_page_layout(page: "Services", …)' },
-  { role: 'validator-fail', text: 'WRONG_FIELD_TYPE — divi/pricing-tables “featured” must be an object, got boolean' },
+  { role: 'validator-fail', text: 'WRONG_FIELD_TYPE: divi/pricing-tables “featured” must be an object, got boolean' },
   { role: 'assistant', text: 'Correcting the attribute shape from the violation, re-submitting…' },
-  { role: 'validator-pass', text: 'Valid — 21 blocks, 0 violations. Saved to “Services”.' },
+  { role: 'validator-pass', text: 'Valid. 21 blocks, 0 violations. Saved to “Services”.' },
 ];
 
 const ASSISTANTS = ['Claude Desktop', 'Claude Code', 'Cursor', 'Windsurf', 'VS Code Copilot', 'ChatGPT (Actions)'];
@@ -41,7 +41,7 @@ const USE_CASES = [
   {
     icon: 'edit_note',
     title: 'The content editor',
-    body: 'Updates hero copy, swaps testimonials, adjusts CTAs — in chat, without opening the builder or fearing the layout.',
+    body: 'Updates hero copy, swaps testimonials, adjusts CTAs, all in chat, without opening the builder or fearing the layout.',
   },
   {
     icon: 'business_center',
@@ -64,16 +64,16 @@ const FAQ = [
   {
     question: 'Do I need an AI subscription?',
     answer:
-      'Yes — bring your own assistant. The plugin adds the tools and the safety net (the validator); your assistant supplies the AI.',
+      'Yes, bring your own assistant. The plugin adds the tools and the safety net (the validator); your assistant supplies the AI.',
   },
   {
     question: 'Can the AI break my site?',
-    answer: `No layout reaches your database without a passing verdict — ${STATS.validatorViolationClasses} violation classes checked across ${STATS.validatorBlockTypes} Divi 5 block types. An edit either validates or it doesn't save.`,
+    answer: `No layout reaches your database without a passing verdict: ${STATS.validatorViolationClasses} violation classes checked across ${STATS.validatorBlockTypes} Divi 5 block types. An edit either validates or it doesn't save.`,
   },
   {
     question: 'What does the validator actually check?',
     answer:
-      'Block types, required attributes, attribute shapes, and nesting rules — the full Divi 5 schema, derived from real exports. Same input, same verdict, every time.',
+      'Block types, required attributes, attribute shapes, and nesting rules, the full Divi 5 schema, derived from real exports. Same input, same verdict, every time.',
   },
   {
     question: 'What can the free version do?',
@@ -86,7 +86,7 @@ const FAQ = [
   },
   {
     question: 'How many sites?',
-    answer: 'Unlimited — one Pro license activates on as many sites as you own or build for clients.',
+    answer: 'Unlimited. One Pro license activates on as many sites as you own or build for clients.',
   },
   {
     question: 'Is my site data sent to Divi5Lab?',
@@ -119,7 +119,7 @@ export default function AiEditorPage() {
               <h1 className="text-h1 text-paper">The AI Editor for Divi 5</h1>
               <p className="mt-6 max-w-xl text-lead text-paper/80">
                 Connect Claude, Cursor, or ChatGPT to your site and edit pages in plain English. Every change
-                passes a deterministic validator before it touches your database — broken layouts are impossible.
+                passes a deterministic validator before it touches your database, so broken layouts are impossible.
               </p>
               <div className="mt-10 flex flex-wrap items-center gap-3">
                 <BuyProButton product="ai-editor-divi5-pro" label="Start 45-day free trial" />
@@ -146,7 +146,7 @@ export default function AiEditorPage() {
             <p className="eyebrow text-action">Why it&apos;s safe</p>
             <h2 className="mt-3 text-h2 text-navy">AI drafts. The validator decides.</h2>
             <p className="mt-4 text-lead text-muted">
-              Language models are confident even when they&apos;re wrong — so we never trust one with your database.
+              Language models are confident even when they&apos;re wrong, so we never trust one with your database.
               Every proposed layout is checked block by block against the real Divi 5 schema. Invalid edits bounce
               back with exact violation codes, and the assistant fixes its own mistake before you ever see it.
             </p>
@@ -169,7 +169,7 @@ export default function AiEditorPage() {
           <div className="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-3">
             {[
               { title: 'Connect', body: "Paste the API key from the AI Editor menu in wp-admin into your assistant's MCP config. Two minutes, once." },
-              { title: 'Instruct', body: '“Change the hero heading on Home to…” — describe the change the way you would to a colleague.' },
+              { title: 'Instruct', body: '“Change the hero heading on Home to…”, describing the change the way you would to a colleague.' },
               { title: 'Validated & saved', body: 'The validator checks every block, attribute, and nesting rule. Invalid? Exact violations come back and the AI self-corrects.' },
             ].map((s, i) => (
               <Card key={s.title} className="p-8">
@@ -185,11 +185,11 @@ export default function AiEditorPage() {
       {/* Free vs Pro */}
       <SectionShell tone="paper" pad="lg" className="scroll-mt-24" id="free">
         <Container>
-          <h2 className="text-h2 text-navy">What your assistant can do — today vs. with Pro</h2>
+          <h2 className="text-h2 text-navy">What your assistant can do, today vs. with Pro</h2>
           <ComparisonTable
             className="mt-8"
-            caption="AI Editor for Divi 5 — Free vs Pro"
-            columns={['Free', 'Pro — $30/yr']}
+            caption="AI Editor for Divi 5: Free vs Pro"
+            columns={['Free', 'Pro · $30/yr']}
             rows={[
               { label: 'List pages & read layouts', values: [true, true] },
               { label: 'Update existing pages', values: [true, true] },
@@ -201,15 +201,15 @@ export default function AiEditorPage() {
               { label: 'Build the primary menu', values: [false, true] },
               { label: 'Site-wide custom CSS', values: [false, true] },
               { label: 'Reviewed PHP proposals', values: [false, true] },
-              { label: 'Updates & support', values: ['—', 'WP-native updates + priority'] },
+              { label: 'Updates & support', values: ['n/a', 'WP-native updates + priority'] },
               { label: 'Sites', values: ['Unlimited', 'Unlimited'] },
             ]}
-            footnote="Pro keeps working on activated sites even if the license lapses — renewal covers updates and support."
+            footnote="Pro keeps working on activated sites even if the license lapses. Renewal covers updates and support."
           />
           <div className="mt-10 grid items-start gap-6 lg:grid-cols-2">
             <Card className="p-8">
               <h3 className="text-section text-navy">Start free</h3>
-              <p className="mt-2 text-body text-muted">Edit and validate existing pages, all guides included. Direct download — no account needed.</p>
+              <p className="mt-2 text-body text-muted">Edit and validate existing pages, all guides included. Direct download, no account needed.</p>
               <div className="mt-6">
                 <FreeDownloadForm product="ai-editor-divi5-pro" />
               </div>
@@ -220,7 +220,7 @@ export default function AiEditorPage() {
               </span>
               <h3 className="text-section text-navy">Go Pro</h3>
               <p className="mt-2 text-body text-muted">
-                Whole-page creation, menus, front-page control, and site-wide styling — the full toolset for
+                Whole-page creation, menus, front-page control, and site-wide styling: the full toolset for
                 building with AI, not just editing.
               </p>
               <div className="mt-6">
@@ -256,7 +256,7 @@ export default function AiEditorPage() {
 
       <CtaBand
         title="Your assistant already knows Divi. Now it can prove it."
-        body="Free to try on any Divi 5 site — Pro when you want it building pages, menus, and site-wide styles."
+        body="Free to try on any Divi 5 site. Pro when you want it building pages, menus, and site-wide styles."
         cta={{ label: 'Start 45-day free trial', href: '/pricing' }}
         secondary={{ label: 'Read the setup guides', href: '/guides' }}
       />

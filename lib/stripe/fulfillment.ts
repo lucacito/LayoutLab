@@ -87,7 +87,7 @@ export async function handleStripeEvent(event: Stripe.Event, store: FulfillmentS
       // order, so a subscription.created payload can arrive AFTER the sub went
       // active and must never downgrade it (2026-08-13 incident: mapped to
       // 'canceled', bricking a just-paid license). Fulfillment/grants only ever
-      // happen via checkout.session.completed, so skipping loses nothing —
+      // happen via checkout.session.completed, so skipping loses nothing,
       // 'incomplete_expired' subs never had anything granted to revoke.
       if (sub.status === 'incomplete' || sub.status === 'incomplete_expired') break;
       if ((sub.metadata as Record<string, string> | null)?.kind === 'plugin') {

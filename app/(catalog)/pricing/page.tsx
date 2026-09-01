@@ -14,9 +14,9 @@ import { STATS } from '@/lib/site/stats';
 import { CtaBand } from '@/components/marketing/CtaBand';
 
 export const metadata: Metadata = {
-  title: 'Pricing — Pro plugin licenses',
+  title: 'Pricing: Pro plugin licenses',
   description:
-    'Simple pricing for the Divi 5 plugin toolkit. Free plugins and free layouts to start; Pro licenses from $25/yr on unlimited sites — and nothing breaks if you stop paying.',
+    'Simple pricing for the Divi 5 plugin toolkit. Free plugins and free layouts to start; Pro licenses from $25/yr on unlimited sites, and nothing breaks if you stop paying.',
 };
 
 const FAQ = [
@@ -27,7 +27,7 @@ const FAQ = [
   },
   {
     question: 'Do licenses cover client sites?',
-    answer: 'Yes — every Pro license activates on unlimited sites, whether they are yours or built for clients.',
+    answer: 'Yes. Every Pro license activates on unlimited sites, whether they are yours or built for clients.',
   },
   {
     question: "What happens if I don't renew?",
@@ -35,11 +35,11 @@ const FAQ = [
   },
   {
     question: 'Are the layouts really free?',
-    answer: 'Yes — every layout in our catalog is free to download. Drop your email and grab as many as you like.',
+    answer: 'Yes. Every layout in our catalog is free to download. Drop your email and grab as many as you like.',
   },
   {
     question: 'Can I try before buying?',
-    answer: 'Always. Every product has a working free tier — free single-page conversions, a free AI Editor download, and a fully free layout catalog.',
+    answer: 'Always. Every product has a working free tier: free single-page conversions, a free AI Editor download, and a fully free layout catalog.',
   },
   {
     question: 'Is there a refund policy?',
@@ -52,7 +52,7 @@ const FAQ = [
   },
   {
     question: 'Is the Divi → Elementor converter available?',
-    answer: 'Yes — the free plugin is on wordpress.org and Pro is available at $25/yr, adding Divi Theme Builder templates and WooCommerce module mapping.',
+    answer: 'Yes. The free plugin is on wordpress.org and Pro is available at $25/yr, adding Divi Theme Builder templates and WooCommerce module mapping.',
   },
 ];
 
@@ -64,7 +64,7 @@ const TOOLKIT = [
     tagline: 'The full migration toolkit for moving Elementor sites to Divi 5.',
     freeTier: `Free plugin: unlimited single-page conversions, ${STATS.elementorWidgetsMapped} widget mappings, conversion reports.`,
     proTier: 'Pro: full kit ZIP import, Theme Builder headers/footers, global colors & typography.',
-    action: <BuyProButton product="elementor-to-divi5-pro" label="Get Pro — $25/yr" />,
+    action: <BuyProButton product="elementor-to-divi5-pro" label="Get Pro · $25/yr" />,
     href: '/plugins/elementor-to-divi-5',
     highlight: true,
   },
@@ -72,7 +72,7 @@ const TOOLKIT = [
     name: 'AI Editor for Divi 5 Pro',
     price: '$30',
     per: '/yr',
-    tagline: 'Let your AI assistant build pages, menus and site-wide styling — every change validated. Start with a 45-day free trial, no card required.',
+    tagline: 'Let your AI assistant build pages, menus and site-wide styling, with every change validated. Start with a 45-day free trial, no card required.',
     freeTier: 'Free download: edit and validate existing pages, all guides and recipes included.',
     proTier: 'Pro: create pages from scratch, front page, menus, site-wide CSS, reviewed PHP.',
     action: <BuyProButton product="ai-editor-divi5-pro" label="Start 45-day free trial" />,
@@ -83,10 +83,10 @@ const TOOLKIT = [
     name: 'Divi → Elementor Pro',
     price: '$25',
     per: '/yr',
-    tagline: `Batch conversions the other way — ${STATS.diviModulesMapped}+ modules mapped.`,
+    tagline: `Batch conversions the other way, with ${STATS.diviModulesMapped}+ modules mapped.`,
     freeTier: 'Free plugin on wordpress.org: batch conversion, all three Divi export formats, conversion reports.',
     proTier: 'Pro: Divi Theme Builder templates and WooCommerce module → widget mapping.',
-    action: <BuyProButton product="divi-to-elementor-pro" label="Get Pro — $25/yr" />,
+    action: <BuyProButton product="divi-to-elementor-pro" label="Get Pro · $25/yr" />,
     href: '/plugins/divi-to-elementor',
     highlight: false,
   },
@@ -98,7 +98,7 @@ export default async function PricingPage() {
       <PageHero
         eyebrow="Pricing"
         title="Licenses that respect you"
-        lead="Free tiers on everything. Pro from $25/yr on unlimited sites — and when a license lapses, nothing breaks: activated sites keep working. Renewal buys updates and support, not hostage access."
+        lead="Free tiers on everything. Pro from $25/yr on unlimited sites, and when a license lapses nothing breaks: activated sites keep working. Renewal buys updates and support, not hostage access."
       />
 
       <SectionShell tone="paper" pad="lg">
@@ -142,7 +142,7 @@ export default async function PricingPage() {
             <div>
               <h2 className="text-section text-navy">Free Divi 5 layouts</h2>
               <p className="mt-2 max-w-xl text-body text-muted">
-                Every layout in our catalog — {STATS.freeLayoutsPublished}+ validated sections and pages — is free.
+                Every layout in our catalog ({STATS.freeLayoutsPublished}+ validated sections and pages) is free.
                 Grab as many as you like.
               </p>
             </div>
@@ -182,7 +182,7 @@ export default async function PricingPage() {
       <CtaBand
         eyebrow="No card required"
         title="Try everything free first."
-        body="Free conversions, a free AI Editor, a free layout catalog — upgrade when the tools have already earned it."
+        body="Free conversions, a free AI Editor, a free layout catalog. Upgrade when the tools have already earned it."
         cta={{ label: 'Browse the plugins', href: '/plugins' }}
         curveTop={EDGE.mist}
       />

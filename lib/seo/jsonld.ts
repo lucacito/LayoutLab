@@ -2,15 +2,15 @@ export function productJsonLd(p: {
   name: string;
   description?: string | null;
   image?: string;
-  // Screenshot set as captioned ImageObjects — richer than a bare URL for
+  // Screenshot set as captioned ImageObjects, richer than a bare URL for
   // Google Images and product rich results. Wins over `image` when both given.
   images?: { url: string; caption: string }[];
   url: string;
-  // Always pass an offer — Google requires every Product to carry one of
+  // Always pass an offer: Google requires every Product to carry one of
   // `offers` / `review` / `aggregateRating`, else Search Console flags it. Free
   // items pass `{ priceCents: 0 }`, which renders a valid $0.00 Offer.
   offer?: { priceCents: number; currency?: string };
-  // Only pass when real ratings exist (ratingCount > 0). Never fabricate — an
+  // Only pass when real ratings exist (ratingCount > 0). Never fabricate: an
   // empty/fake aggregateRating is a manual-action risk.
   aggregateRating?: { ratingValue: number; ratingCount: number };
 }) {
@@ -74,7 +74,7 @@ export function breadcrumbJsonLd(crumbs: { name: string; url: string }[]) {
 // Site-wide brand entity. Feeds Google's Knowledge Graph so "Divi5Lab" is
 // understood as an organization/brand (entity SEO), not just a keyword.
 // Add real profile URLs to `sameAs` (X, GitHub, LinkedIn, YouTube…) as they go
-// live — sameAs is the strongest signal tying the brand to its off-site entities.
+// live. sameAs is the strongest signal tying the brand to its off-site entities.
 // A stable `@id` for the brand entity so the WebSite (and any Product/page) can
 // reference the *same* Organization node instead of Google having to guess that
 // two loose Organization blobs are the same thing. `#organization` is the
@@ -151,7 +151,7 @@ export function siteNavigationJsonLd(items: { name: string; url: string }[]) {
   };
 }
 
-// Marks a catalog/listing page (e.g. /browse) as a canonical CollectionPage —
+// Marks a catalog/listing page (e.g. /browse) as a canonical CollectionPage,
 // reinforces it as the money page for the head term.
 export function collectionPageJsonLd(c: { name: string; description?: string; url: string }) {
   const base: Record<string, unknown> = {
@@ -164,7 +164,7 @@ export function collectionPageJsonLd(c: { name: string; description?: string; ur
   return base;
 }
 
-// Editorial content (guides). `author` is the brand Organization — there is no
+// Editorial content (guides). `author` is the brand Organization, and there is no
 // human byline to fabricate. `publisher` references the sitewide Organization
 // node by @id so all Articles roll up to one brand entity.
 export function articleJsonLd(a: {

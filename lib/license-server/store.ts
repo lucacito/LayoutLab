@@ -1,5 +1,5 @@
 // Drizzle-backed LicenseStore (same idiom as lib/stripe/fulfillment-store.ts):
-// deliberately thin SQL — behavioral coverage lives in the handler tests
+// deliberately thin SQL. Behavioral coverage lives in the handler tests
 // (lib/license-server/handlers.ts consumers) plus the e2e.
 import { randomUUID } from 'node:crypto';
 import { and, desc, eq, isNull } from 'drizzle-orm';

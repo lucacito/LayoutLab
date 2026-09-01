@@ -12,8 +12,8 @@ import { AccountNav } from './AccountNav';
 /**
  * Routes whose first section is an immersive canvas hero (`SectionShell`
  * tone="hero" / `PageHero`). On those the header floats transparently over the
- * gradient until the user scrolls, then solidifies. Everywhere else — catalog,
- * account, admin, guide detail — it is solid from the start.
+ * gradient until the user scrolls, then solidifies. Everywhere else (catalog,
+ * account, admin, guide detail) it is solid from the start.
  *
  * Keep this in sync when a page gains or loses a canvas hero.
  */

@@ -66,7 +66,7 @@ export default async function AccountPage() {
           <div className="mt-8 flex flex-col items-start justify-between gap-4 rounded-card bg-navy p-6 text-paper shadow-soft sm:flex-row sm:items-center">
             <div>
               <p className="text-body font-semibold text-paper">No plugin licenses yet</p>
-              <p className="text-small text-paper/80">Pro unlocks the full WordPress migration toolkit — license keys, activated sites, and downloads all live in one place.</p>
+              <p className="text-small text-paper/80">Pro unlocks the full WordPress migration toolkit: license keys, activated sites, and downloads all live in one place.</p>
             </div>
             <Button href="/account/licenses" variant="secondary" className="shrink-0">View licenses</Button>
           </div>
@@ -108,7 +108,7 @@ export default async function AccountPage() {
             </span>
             <h2 className="mt-4 text-h3 text-navy">Let’s get you started</h2>
             <p className="mx-auto mt-2 max-w-md text-body text-muted">
-              You haven’t grabbed anything yet. Every individual section is free — pick one and import it into Divi 5 in seconds.
+              You haven’t grabbed anything yet. Every individual section is free, so pick one and import it into Divi 5 in seconds.
             </p>
             <div className="mt-6 flex flex-wrap justify-center gap-3">
               <Button href="/browse">Browse free sections</Button>

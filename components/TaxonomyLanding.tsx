@@ -14,12 +14,12 @@ import type { LayoutRow } from '@/lib/catalog/queries';
 export function TaxonomyLanding({ axis, value, siteUrl, copy, layouts, searchParams, currentPage, totalPages, guides = [] }: {
   axis: TaxonomyAxis; value: string; siteUrl: string; copy: TaxonomyCopy; layouts: LayoutRow[];
   searchParams: Record<string, string | string[] | undefined>; currentPage: number; totalPages: number;
-  /** Latest guides for the cross-link block (passed by the page — keeps this component fs-free). */
+  /** Latest guides for the cross-link block (passed by the page, which keeps this component fs-free). */
   guides?: { slug: string; title: string }[];
 }) {
   const label = axisLabel(value);
   const pageUrl = `${siteUrl}/${axis}/${value}`;
-  // Sibling values on the same axis — the strongest "related categories" links.
+  // Sibling values on the same axis: the strongest "related categories" links.
   const siblings = AXIS_VALUES[axis].filter((v) => v !== value);
   // Cross-axis hubs, minus the group for the current axis (its links live above as siblings).
   const crossGroups = hubLinkGroups().filter((g) => g.axis !== axis);
@@ -33,7 +33,7 @@ export function TaxonomyLanding({ axis, value, siteUrl, copy, layouts, searchPar
         <p className="mt-3 max-w-2xl text-body text-muted">{copy.intro}</p>
 
         {layouts.length === 0 ? (
-          <p className="mt-10 text-body text-muted">No layouts here yet — check back soon.</p>
+          <p className="mt-10 text-body text-muted">No layouts here yet. Check back soon.</p>
         ) : (
           <>
             <div className="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">

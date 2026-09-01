@@ -8,7 +8,7 @@ const tones = {
 
 /**
  * Uppercase tracked kicker that sits above a section headline. Every major
- * section gets one — the repetition is what establishes the rhythm.
+ * section gets one, and the repetition is what establishes the rhythm.
  */
 export function Eyebrow({
   tone = 'light',

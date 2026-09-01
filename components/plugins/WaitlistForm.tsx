@@ -21,7 +21,7 @@ export function WaitlistForm({ source, cta }: { source: string; cta: string }) {
   };
 
   if (state === 'done') {
-    return <p className="text-body font-medium text-navy">You&rsquo;re on the list — we&rsquo;ll email you at launch.</p>;
+    return <p className="text-body font-medium text-navy">You&rsquo;re on the list. We&rsquo;ll email you at launch.</p>;
   }
   return (
     <form onSubmit={submit} className="flex w-full max-w-md flex-wrap gap-2">
@@ -40,7 +40,7 @@ export function WaitlistForm({ source, cta }: { source: string; cta: string }) {
       >
         {state === 'loading' ? 'Joining…' : cta}
       </button>
-      {state === 'error' && <p className="w-full text-small text-red-600">Something went wrong — please try again.</p>}
+      {state === 'error' && <p className="w-full text-small text-red-600">Something went wrong. Please try again.</p>}
     </form>
   );
 }

@@ -3,7 +3,7 @@ import type { Metadata } from 'next';
 import { Container } from '@/components/ui/Container';
 import { Button } from '@/components/ui/Button';
 
-// Post-purchase confirmation — noindex (thin, per-user, not a content section).
+// Post-purchase confirmation, noindex (thin, per-user, not a content section).
 export const metadata: Metadata = { title: 'Payment received', robots: { index: false, follow: true } };
 
 export default function CheckoutSuccess() {

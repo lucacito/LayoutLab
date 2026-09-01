@@ -1,4 +1,4 @@
-// Pure rating math — safe to import in client components (no db).
+// Pure rating math, safe to import in client components (no db).
 export function clampStars(n: unknown): number {
   const v = Math.round(Number(n));
   if (!Number.isFinite(v)) return 0;

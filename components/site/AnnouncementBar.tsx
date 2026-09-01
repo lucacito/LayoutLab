@@ -33,7 +33,7 @@ export function AnnouncementBar() {
     <div className="relative bg-navy bg-[linear-gradient(90deg,#0B3558_0%,#3D2F9B_55%,#635BFF_100%)] text-paper">
       <div className="mx-auto flex max-w-7xl items-center justify-center gap-2 px-10 py-2.5 text-small">
         <Icon name="bolt" size={16} className="text-g-amber" />
-        <span className="text-paper/90">The Elementor → Divi 5 converter is live — free on wordpress.org.</span>
+        <span className="text-paper/90">The Elementor → Divi 5 converter is live, free on wordpress.org.</span>
         <Link href="/plugins/elementor-to-divi-5" className="font-semibold text-paper underline underline-offset-2 hover:text-g-pink">
           Get the plugin
         </Link>

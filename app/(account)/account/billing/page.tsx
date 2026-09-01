@@ -18,11 +18,11 @@ export default async function BillingPage() {
     ? await Promise.all([getActiveSubscription(userId), getLicensesForUser(userId), getStripeCustomerIdByEmail(email)])
     : [null, [], null];
   // "Active" covers both the legacy all-access subscription and any current
-  // plugin Pro license — the Stripe portal handles renewals for either.
+  // plugin Pro license. The Stripe portal handles renewals for either.
   const hasActiveLicense = licenses.some((l) => l.status === 'active' || l.status === 'past_due');
   const active = sub?.status === 'active' || hasActiveLicense;
   // The portal can only resolve users whose account is linked to a Stripe
-  // customer (checkout does this; comped/manually-minted licenses don't) —
+  // customer (checkout does this; comped/manually-minted licenses don't),
   // without it the portal route 400s, so don't render a dead button.
   const canOpenPortal = active && Boolean(stripeCustomerId);
 
@@ -44,7 +44,7 @@ export default async function BillingPage() {
               </p>
               <p className="text-small text-muted">
                 {active
-                  ? 'Update your payment method, download invoices, or cancel anytime in the secure portal — the same portal handles Pro plugin license renewals.'
+                  ? 'Update your payment method, download invoices, or cancel anytime in the secure portal, which also handles Pro plugin license renewals.'
                   : 'Plugin license renewals are managed in the secure Stripe portal. See Pro plugin pricing below.'}
               </p>
             </div>
@@ -54,7 +54,7 @@ export default async function BillingPage() {
               <BillingButton />
             ) : active ? (
               <p className="text-small text-muted">
-                Your license was issued manually — contact support@divi5lab.com for billing questions.
+                Your license was issued manually. Contact support@divi5lab.com for billing questions.
               </p>
             ) : (
               <Link href="/pricing" className="inline-flex h-10 items-center justify-center rounded-full bg-action px-5 text-small font-semibold text-paper transition hover:brightness-110">
@@ -64,7 +64,7 @@ export default async function BillingPage() {
           </div>
         </Card>
 
-        <p className="mt-4 max-w-xl text-small text-muted">Payments are handled securely by Stripe — we never see your card details.</p>
+        <p className="mt-4 max-w-xl text-small text-muted">Payments are handled securely by Stripe, and we never see your card details.</p>
       </Container>
     </main>
   );

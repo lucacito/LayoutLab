@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 
 const SUMMARY = [
   { ok: true, title: 'Unlimited sites', body: 'Use what you buy on any site you own.' },
-  { ok: true, title: 'Client work', body: 'Build for clients — no extra seats, no per-site fees.' },
+  { ok: true, title: 'Client work', body: 'Build for clients, with no extra seats and no per-site fees.' },
   { ok: true, title: 'Keeps working', body: 'A lapsed license never breaks an activated site.' },
   { ok: false, title: 'No resale', body: 'Don’t sell or license the files themselves.' },
   { ok: false, title: 'No redistribution', body: 'Don’t republish downloads as your own library.' },
