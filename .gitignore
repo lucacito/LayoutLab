@@ -22,3 +22,6 @@ public/screenshots/
 
 # Library conversion raw corpus (127MB, local-only)
 public/layout-library-json/
+
+# Pre-change snapshots taken before destructive backfills (local-only)
+/.backups/
