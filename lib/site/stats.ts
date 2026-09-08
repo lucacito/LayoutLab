@@ -1,10 +1,13 @@
 // Real, verifiable marketing numbers. Every figure has a source; update the
 // source, then this file. Never invent.
 import { WIDGET_TYPES_MAPPED } from './widget-mappings';
+import { BEAVER_MODULE_TYPES_MAPPED } from './beaver-module-mappings';
 
 export const STATS = {
   /** registerWidget() calls in the E→D5 converter registry (see widget-mappings.ts). */
   elementorWidgetsMapped: WIDGET_TYPES_MAPPED,
+  /** Module types with a handler in the BB→D5 converter (see beaver-module-mappings.ts). */
+  beaverModulesMapped: BEAVER_MODULE_TYPES_MAPPED,
   /** D→E converter module coverage (established claim, plugin README). */
   diviModulesMapped: 35,
   /** E_* violation-code constants in Divi5Validator/src/Validator.php. */

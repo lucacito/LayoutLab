@@ -54,6 +54,10 @@ const FAQ = [
     question: 'Is the Divi → Elementor converter available?',
     answer: 'Yes. The free plugin is on wordpress.org and Pro is available at $25/yr, adding Divi Theme Builder templates and WooCommerce module mapping.',
   },
+  {
+    question: 'Is the Beaver Builder → Divi 5 converter available?',
+    answer: 'Yes. The free plugin converts one page per run and Pro is $25/yr, adding whole-site runs and Beaver Themer headers and footers in the Divi Theme Builder.',
+  },
 ];
 
 const TOOLKIT = [
@@ -90,6 +94,17 @@ const TOOLKIT = [
     href: '/plugins/divi-to-elementor',
     highlight: false,
   },
+  {
+    name: 'Beaver Builder → Divi 5 Pro',
+    price: '$25',
+    per: '/yr',
+    tagline: 'Move whole Beaver Builder sites to Divi 5, Themer headers and footers included.',
+    freeTier: `Free plugin: one page per run, ${STATS.beaverModulesMapped} module mappings, check-before-convert report, one-click undo.`,
+    proTier: 'Pro: unlimited pages per run, Beaver Themer headers/footers into the Divi Theme Builder.',
+    action: <BuyProButton product="beaver-to-divi5-pro" label="Get Pro · $25/yr" />,
+    href: '/plugins/beaver-builder-to-divi-5',
+    highlight: false,
+  },
 ];
 
 export default async function PricingPage() {
@@ -103,7 +118,7 @@ export default async function PricingPage() {
 
       <SectionShell tone="paper" pad="lg">
         <Container>
-          <div className="grid items-stretch gap-6 lg:grid-cols-3">
+          <div className="grid items-stretch gap-6 md:grid-cols-2">
             {TOOLKIT.map((p) => (
               <Card
                 key={p.name}

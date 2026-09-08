@@ -72,11 +72,12 @@ describe('isNewerVersion', () => {
 });
 
 describe('PLUGIN_PRODUCTS', () => {
-  it('lists the two converter Pro slugs plus the AI Editor Pro slug', () => {
+  it('lists the three converter Pro slugs plus the AI Editor Pro slug', () => {
     expect([...PLUGIN_PRODUCTS]).toEqual([
       'elementor-to-divi5-pro',
       'divi-to-elementor-pro',
       'ai-editor-divi5-pro',
+      'beaver-to-divi5-pro',
     ]);
   });
 });

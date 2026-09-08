@@ -4,8 +4,9 @@ import { render, screen } from '@testing-library/react';
 import PluginsHub, { metadata } from '@/app/(marketing)/plugins/page';
 
 describe('/plugins hub', () => {
-  it('renders all three products with honest chips', async () => {
+  it('renders all four products with honest chips', async () => {
     render(await PluginsHub());
+    expect(screen.getAllByText(/beaver builder → divi 5 converter/i).length).toBeGreaterThan(0);
     expect(screen.queryByText(/pending wordpress\.org review/i)).toBeNull();
     expect(screen.getByText(/\$30\/yr/i)).toBeTruthy();
     expect(screen.getAllByText(/\$25\/yr/i).length).toBeGreaterThan(0);

@@ -6,6 +6,13 @@ const nextConfig = {
   outputFileTracingIncludes: {
     '/api/download/**': ['./lib/license/commercial-license.txt'],
   },
+  // Both plugin readmes link /terms and /privacy; the legal text lives on one page.
+  async redirects() {
+    return [
+      { source: '/terms', destination: '/license', permanent: true },
+      { source: '/privacy', destination: '/license', permanent: true },
+    ];
+  },
   images: {
     // Screenshots are pre-optimized by the pipeline (WebP, ≤1600px, ~≤250KB), so
     // Vercel's Image Optimization adds cost (transformation quota) without value.

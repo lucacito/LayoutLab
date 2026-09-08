@@ -11,7 +11,7 @@ import { CtaBand } from '@/components/marketing/CtaBand';
 export const metadata: Metadata = {
   title: 'WordPress Plugins by Divi5Lab: converters & AI tools',
   description:
-    'WordPress plugins for Divi 5: convert Elementor pages to Divi 5, convert Divi to Elementor, and edit Divi 5 pages with a validated AI editor.',
+    'WordPress plugins for Divi 5: convert Elementor or Beaver Builder pages to Divi 5, convert Divi to Elementor, and edit Divi 5 pages with a validated AI editor.',
 };
 
 const DECISIONS = [
@@ -20,6 +20,12 @@ const DECISIONS = [
     situation: 'I have an Elementor site and want Divi 5.',
     answer: 'Elementor → Divi 5 Converter',
     href: '/plugins/elementor-to-divi-5',
+  },
+  {
+    icon: 'sync_alt',
+    situation: 'I have a Beaver Builder site and want Divi 5.',
+    answer: 'Beaver Builder → Divi 5 Converter',
+    href: '/plugins/beaver-builder-to-divi-5',
   },
   {
     icon: 'u_turn_left',
@@ -72,7 +78,7 @@ export default function PluginsHub() {
 
       <CtaBand
         eyebrow="Start free"
-        title="One validator. Three ways to use it."
+        title="One validator. Four ways to use it."
         body="Free tiers on everything. Try a conversion or an AI edit before you spend a cent."
         cta={{ label: 'See pricing', href: '/pricing' }}
         curveTop={EDGE.paper}

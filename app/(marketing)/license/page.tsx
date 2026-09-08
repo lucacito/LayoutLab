@@ -6,8 +6,8 @@ import { Card } from '@/components/ui/Card';
 import { Icon } from '@/components/ui/Icon';
 
 export const metadata: Metadata = {
-  title: 'License & Refunds',
-  description: 'The commercial license that comes with every Divi5Lab purchase, plus our digital-goods refund policy.',
+  title: 'License, Refunds & Privacy',
+  description: 'The commercial license that comes with every Divi5Lab purchase, our digital-goods refund policy, and what this site and our plugins collect.',
 };
 
 const SUMMARY = [
@@ -52,6 +52,29 @@ export default function LicensePage() {
 
         <h2 className="mt-12 text-section text-navy">Refunds</h2>
         <p className="mt-3 text-body text-muted">{REFUND_POLICY}</p>
+
+        <h2 id="privacy" className="mt-12 text-section text-navy">Privacy</h2>
+        <div className="mt-3 space-y-3 text-body text-muted">
+          <p>
+            <strong className="text-navy">Free converter plugins</strong> send nothing unless you turn on coverage
+            sharing from the plugin&apos;s coverage panel. When you do, the plugin posts the product name and the names
+            of the module or widget types it could not convert, at most once a week. No site address, page content,
+            licence or personal data is included, and you can stop sharing from the same panel at any time.
+          </p>
+          <p>
+            <strong className="text-navy">Pro plugins</strong> send the licence key, the site address and the plugin
+            and WordPress version numbers when you activate or deactivate a licence and when WordPress checks for
+            updates. That is what a licence needs to work.
+          </p>
+          <p>
+            <strong className="text-navy">Accounts and purchases</strong> store your email address and what you
+            bought. Payments are processed by Stripe; card details never reach this site.
+          </p>
+          <p>
+            <strong className="text-navy">This website</strong> uses Google Analytics to count visits. Questions or
+            deletion requests: support@divi5lab.com.
+          </p>
+        </div>
       </Container>
     </main>
   );

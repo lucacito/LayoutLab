@@ -32,6 +32,7 @@ export async function POST(req: Request): Promise<Response> {
     'elementor-to-divi5-pro': env.STRIPE_PRICE_ELEM2DIVI_PRO,
     'divi-to-elementor-pro': env.STRIPE_PRICE_DIVI2ELEM_PRO,
     'ai-editor-divi5-pro': env.STRIPE_PRICE_AI_EDITOR_PRO,
+    'beaver-to-divi5-pro': env.STRIPE_PRICE_BB2DIVI_PRO,
   };
   const pluginPriceId = PRICE_ENV[input.product];
   if (!pluginPriceId) return NextResponse.json({ error: 'plugin_unavailable' }, { status: 400 });

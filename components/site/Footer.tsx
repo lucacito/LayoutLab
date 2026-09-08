@@ -108,7 +108,7 @@ export function Footer() {
                 beats an inherited colour on the wrapper. */}
             <div className="flex items-center gap-6 text-small">
               <Link href="/license" className="text-paper/80 transition hover:text-paper">Terms</Link>
-              <Link href="/license" className="text-paper/80 transition hover:text-paper">Privacy</Link>
+              <Link href="/license#privacy" className="text-paper/80 transition hover:text-paper">Privacy</Link>
               <Link href="/license" className="text-paper/80 transition hover:text-paper">License</Link>
             </div>
           </div>

@@ -48,6 +48,15 @@ function MotifChat() {
   );
 }
 
+function MotifCheck() {
+  return (
+    <div className="space-y-1.5 font-mono text-small" aria-hidden>
+      <p className="text-muted">Check this page <span className="text-green-700">✓ 76 modules</span></p>
+      <p className="text-muted">Convert to Divi 5 → draft · <span className="text-action">Undo</span></p>
+    </div>
+  );
+}
+
 const DOORS: Door[] = [
   {
     headline: 'Leave Elementor without rebuilding',
@@ -58,6 +67,16 @@ const DOORS: Door[] = [
     href: '/plugins/elementor-to-divi-5',
     cta: 'See the converter',
     motif: <MotifMapping />,
+  },
+  {
+    headline: 'Leave Beaver Builder without rebuilding',
+    name: 'Beaver Builder → Divi 5 Converter',
+    chip: { label: 'Free plugin · Pro $25/yr', tone: 'green' },
+    body: "Pick a page on your site, check what the conversion will produce, convert. Every module in Beaver Builder's reference lands as a native, validated Divi 5 module.",
+    stats: `${STATS.beaverModulesMapped} module types mapped · check first, undo any run`,
+    href: '/plugins/beaver-builder-to-divi-5',
+    cta: 'See the Beaver converter',
+    motif: <MotifCheck />,
   },
   {
     headline: 'Going the other way? Also covered.',
@@ -85,11 +104,11 @@ const DOORS: Door[] = [
 
 export function ProductDoors() {
   return (
-    <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+    <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
       {DOORS.map((d) => (
         <Card key={d.href} className="flex flex-col p-8 transition duration-300 hover:-translate-y-1.5 hover:shadow-lift">
           {/* Fixed-height slot: chip labels differ in length, and without this
-              the three headlines land at different heights. */}
+              the headlines land at different heights. */}
           <div className="flex min-h-[3.25rem] items-start">
             <span className={`inline-flex w-fit items-center rounded-pill border px-3.5 py-1.5 text-small font-semibold ${CHIP[d.chip.tone]}`}>
               {d.chip.label}

@@ -13,6 +13,7 @@ const PRODUCTS = [
   { slug: 'elementor-to-divi5-pro', name: 'JHMG Converter For Elementor to Divi 5 — Pro', envVar: 'STRIPE_PRICE_ELEM2DIVI_PRO', yearlyUsdCents: 2500 },
   { slug: 'divi-to-elementor-pro', name: 'JHMG Converter For Divi to Elementor — Pro', envVar: 'STRIPE_PRICE_DIVI2ELEM_PRO', yearlyUsdCents: 2500 },
   { slug: 'ai-editor-divi5-pro', name: 'AI Editor for Divi 5 — Pro', envVar: 'STRIPE_PRICE_AI_EDITOR_PRO', yearlyUsdCents: 3000 },
+  { slug: 'beaver-to-divi5-pro', name: 'JHMG Converter For Beaver Builder to Divi 5 — Pro', envVar: 'STRIPE_PRICE_BB2DIVI_PRO', yearlyUsdCents: 2500 },
 ] as const;
 
 async function findBySlug(stripe: Stripe, slug: string): Promise<Stripe.Product | undefined> {
