@@ -21,9 +21,10 @@ describe('menu-data', () => {
     expect(PRIMARY_NAV.find((m) => m.key === 'browse')).toBeUndefined();
   });
 
-  it('lists all three plugins in the plugins mega-menu', () => {
+  it('lists all four plugins in the plugins mega-menu', () => {
     expect(PLUGIN_MENU.map((p) => p.href)).toEqual([
       '/plugins/elementor-to-divi-5',
+      '/plugins/beaver-builder-to-divi-5',
       '/plugins/divi-to-elementor',
       '/plugins/divi-5-ai-editor',
     ]);
