@@ -1,0 +1,1 @@
+ALTER TABLE "email_captures" ADD COLUMN "source" text;

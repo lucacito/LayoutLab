@@ -10,7 +10,7 @@ import { syncContact } from '@/lib/email/loops';
 export async function recordLeadCapture(email: string, source = 'free_download'): Promise<void> {
   const normalized = normalizeEmail(email);
   const id = randomUUID();
-  await db.insert(emailCaptures).values({ id, email: normalized, packId: null });
+  await db.insert(emailCaptures).values({ id, email: normalized, packId: null, source });
   const { synced } = await syncContact({ email: normalized, source });
   await db.update(emailCaptures).set({ loopsSynced: synced }).where(eq(emailCaptures.id, id));
 }

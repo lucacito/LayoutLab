@@ -107,6 +107,14 @@ export const PLUGIN_MENU: PluginMenuItem[] = [
     tone: 'green',
   },
   {
+    name: 'Beaver Builder → Divi 5',
+    desc: 'Check a page, convert it, undo any run. Whole sites with Pro.',
+    href: '/plugins/beaver-builder-to-divi-5',
+    icon: 'sync_alt',
+    chip: 'Free · Pro $25/yr',
+    tone: 'green',
+  },
+  {
     name: 'Divi → Elementor',
     desc: 'Batch-convert Divi sites the other way.',
     href: '/plugins/divi-to-elementor',

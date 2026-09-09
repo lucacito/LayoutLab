@@ -61,7 +61,7 @@ export function PrimaryNav({ inverted = false }: { inverted?: boolean }) {
 
       {/* Plugins panel */}
       <MegaPanel visible={open === 'plugins'} width="w-[620px]">
-        <div className="grid grid-cols-1 gap-1 sm:grid-cols-3">
+        <div className="grid grid-cols-1 gap-1 sm:grid-cols-2">
           {PLUGIN_MENU.map((p) => (
             <Link
               key={p.href}

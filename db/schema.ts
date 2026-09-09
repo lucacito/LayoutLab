@@ -201,6 +201,9 @@ export const emailCaptures = pgTable('email_captures', {
   id: text('id').primaryKey(),
   email: text('email').notNull(),
   packId: text('pack_id').references(() => packs.id, { onDelete: 'set null' }),
+  // Where the capture came from (homepage_free_band, next_converter_wpbakery, …).
+  // Loops also receives it, but it is only durable here.
+  source: text('source'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   loopsSynced: boolean('loops_synced').notNull().default(false),
 });

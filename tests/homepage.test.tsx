@@ -5,12 +5,13 @@ import { render, screen } from '@testing-library/react';
 import HomePage from '@/app/(marketing)/page';
 
 describe('homepage (validator spine)', () => {
-  it('leads with the never-broken promise and links all three products', async () => {
+  it('leads with the never-broken promise and links all four products', async () => {
     render(await HomePage());
     const h1 = screen.getByRole('heading', { level: 1 });
     expect(h1.textContent).toMatch(/broken layout/i);
     const links = Array.from(document.querySelectorAll('a')).map((a) => a.getAttribute('href'));
     expect(links).toContain('/plugins/elementor-to-divi-5');
+    expect(links).toContain('/plugins/beaver-builder-to-divi-5');
     expect(links).toContain('/plugins/divi-to-elementor');
     expect(links).toContain('/plugins/divi-5-ai-editor');
   });
@@ -28,6 +29,11 @@ describe('homepage (validator spine)', () => {
   it('has no services-funnel remnants', async () => {
     render(await HomePage());
     expect(screen.queryByText(/free quote|work with us|brings in work/i)).toBeNull();
+  });
+  it('asks which builder to convert next', async () => {
+    render(await HomePage());
+    expect(screen.getByText(/which builder should we convert next/i)).toBeTruthy();
+    expect(screen.getByLabelText('WPBakery')).toBeTruthy();
   });
   it('keeps a free-layouts band', async () => {
     render(await HomePage());

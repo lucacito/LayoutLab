@@ -20,6 +20,7 @@ describe('recordLeadCapture', () => {
     expect(row).toBeDefined();
     expect(row.email).toBe('buyer@example.com');
     expect(row.packId ?? null).toBeNull();
+    expect(row.source).toBe('free_download');
     expect(syncContact).toHaveBeenCalledWith(expect.objectContaining({ email: 'buyer@example.com', source: 'free_download' }));
     expect(update).toHaveBeenCalled();
   });
@@ -32,6 +33,7 @@ describe('recordLeadCapture', () => {
     const { recordLeadCapture } = await import('@/lib/capture/lead');
     await recordLeadCapture('x@y.com', 'ai_editor_waitlist');
     expect(syncContact).toHaveBeenCalledWith(expect.objectContaining({ source: 'ai_editor_waitlist' }));
+    expect(((values.mock.calls as any[])[0]?.[0] as any).source).toBe('ai_editor_waitlist');
   });
   it('defaults source to free_download', async () => {
     const { recordLeadCapture } = await import('@/lib/capture/lead');

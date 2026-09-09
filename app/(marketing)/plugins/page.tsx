@@ -7,6 +7,7 @@ import { SectionShell, EDGE } from '@/components/ui/SectionShell';
 import { PageHero } from '@/components/marketing/PageHero';
 import { ProductDoors } from '@/components/marketing/ProductDoors';
 import { CtaBand } from '@/components/marketing/CtaBand';
+import { NextConverterBand } from '@/components/marketing/NextConverterBand';
 
 export const metadata: Metadata = {
   title: 'WordPress Plugins by Divi5Lab: converters & AI tools',
@@ -38,6 +39,12 @@ const DECISIONS = [
     situation: 'I already run Divi 5 and want AI to edit it safely.',
     answer: 'AI Editor for Divi 5',
     href: '/plugins/divi-5-ai-editor',
+  },
+  {
+    icon: 'how_to_vote',
+    situation: "I'm on WPBakery, Bricks, Oxygen or another builder.",
+    answer: 'Vote for the next converter',
+    href: '#next-converter',
   },
 ];
 
@@ -75,6 +82,8 @@ export default function PluginsHub() {
           </Card>
         </Container>
       </SectionShell>
+
+      <NextConverterBand />
 
       <CtaBand
         eyebrow="Start free"

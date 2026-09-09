@@ -15,6 +15,7 @@ import { ValidatorChatDemo, type ChatStep } from '@/components/marketing/Validat
 import { ProductDoors } from '@/components/marketing/ProductDoors';
 import { CtaBand } from '@/components/marketing/CtaBand';
 import { FreeLayoutsBand } from '@/components/marketing/FreeLayoutsBand';
+import { NextConverterBand } from '@/components/marketing/NextConverterBand';
 
 const DEMO_STEPS: ChatStep[] = [
   { role: 'user', text: 'Change the hero headline to “Spring sale: 20% off everything” and center the button.' },
@@ -45,25 +46,36 @@ export default async function HomePage() {
       {/* `bottom="xl"` keeps the floating stack clear of the curved seam. */}
       <SectionShell tone="hero" underHeader bottom="xl" blooms curveBottom={EDGE.paper}>
         <Container className="text-center">
-          <Eyebrow tone="dark" className="mb-5">Validated Divi 5 tooling</Eyebrow>
-          <h1 className="mx-auto max-w-4xl text-display text-paper">Divi 5 tools that never ship a broken layout.</h1>
+          <Eyebrow tone="dark" className="mb-5">Divi 5 migration tools</Eyebrow>
+          <h1 className="mx-auto max-w-4xl text-display text-paper">Move your site to Divi 5. Never ship a broken layout.</h1>
           <p className="mx-auto mt-6 max-w-2xl text-lead text-paper/80">
-            Converters and an AI editor built on a deterministic validator. Every block, attribute, and nesting
-            rule is checked before anything touches your site. If it imports, it works.
+            Converters for Elementor and Beaver Builder, plus an AI editor, all built on one deterministic
+            validator. Every block, attribute and nesting rule is checked before anything touches your site.
+            If it imports, it works.
           </p>
           <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
             <Button href="/plugins/elementor-to-divi-5" size="lg" variant="primary">Convert Elementor to Divi 5</Button>
-            <Button href="/plugins/divi-5-ai-editor" size="lg" variant="onDark">Meet the AI Editor</Button>
+            <Button href="/plugins/beaver-builder-to-divi-5" size="lg" variant="onDark">Convert Beaver Builder to Divi 5</Button>
           </div>
+          <p className="mt-5 text-small text-paper/70">
+            Going the other way?{' '}
+            <Link href="/plugins/divi-to-elementor" className="font-semibold text-paper underline underline-offset-2 hover:text-g-pink">Divi → Elementor</Link>
+            <span className="mx-2">·</span>
+            Already on Divi 5?{' '}
+            <Link href="/plugins/divi-5-ai-editor" className="font-semibold text-paper underline underline-offset-2 hover:text-g-pink">Meet the AI Editor</Link>
+            <span className="mx-2">·</span>
+            Another builder?{' '}
+            <a href="#next-converter" className="font-semibold text-paper underline underline-offset-2 hover:text-g-pink">Vote for the next converter</a>
+          </p>
 
           <StatStrip
             className="mt-14"
             tone="dark"
             stats={[
-              { value: String(STATS.elementorWidgetsMapped), label: 'widget types mapped' },
+              { value: String(STATS.elementorWidgetsMapped), label: 'Elementor widget types mapped' },
+              { value: String(STATS.beaverModulesMapped), label: 'Beaver Builder module types mapped' },
               { value: String(STATS.validatorBlockTypes), label: 'Divi 5 block types modeled' },
               { value: String(STATS.validatorViolationClasses), label: 'violation classes checked' },
-              { value: `${STATS.freeLayoutsPublished}+`, label: 'free layouts shipped' },
             ]}
           />
 
@@ -82,15 +94,15 @@ export default async function HomePage() {
               />
             }
             left={
-              <MiniPanel label="Converting">
+              <MiniPanel label="Elementor → Divi 5">
                 <p>home ✓ · about ✓</p>
                 <p>pricing <span className="text-g-pink">converting…</span></p>
               </MiniPanel>
             }
             right={
-              <MiniPanel label="AI edit">
-                <p>“Center the hero button”</p>
-                <p className="text-g-cyan">✓ validated · saved</p>
+              <MiniPanel label="Beaver Builder → Divi 5">
+                <p>Check this page <span className="text-g-cyan">✓ 76 modules</span></p>
+                <p>Convert → draft · Undo</p>
               </MiniPanel>
             }
           />
@@ -147,7 +159,7 @@ export default async function HomePage() {
       {/* 4. Three doors */}
       <SectionShell tone="mist" pad="lg" curveTop={EDGE.deepBottom}>
         <Container>
-          <SectionTitle eyebrow="Pick your door" title="Three tools, one guarantee">
+          <SectionTitle eyebrow="Pick your door" title="Four tools, one guarantee">
             Different jobs, same validator underneath.
           </SectionTitle>
           <div className="mt-16">
@@ -156,10 +168,13 @@ export default async function HomePage() {
         </Container>
       </SectionShell>
 
-      {/* 5. Free layouts (lead capture) */}
+      {/* 5. Vote for the next converter (lead capture) */}
+      <NextConverterBand />
+
+      {/* 6. Free layouts (lead capture) */}
       <FreeLayoutsBand />
 
-      {/* 6. Guides strip */}
+      {/* 7. Guides strip */}
       <SectionShell tone="mist" pad="md">
         <Container>
           <div className="flex flex-wrap items-end justify-between gap-4">
@@ -185,7 +200,7 @@ export default async function HomePage() {
         </Container>
       </SectionShell>
 
-      {/* 7. Closing CTA, straight into the footer's canvas */}
+      {/* 8. Closing CTA, straight into the footer's canvas */}
       <CtaBand
         eyebrow="Ready when you are"
         title="Stop rebuilding. Start shipping."
