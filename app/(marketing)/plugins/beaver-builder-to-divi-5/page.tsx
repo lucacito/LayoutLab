@@ -16,7 +16,11 @@ import { ComparisonTable } from '@/components/marketing/ComparisonTable';
 import { CtaBand } from '@/components/marketing/CtaBand';
 import { UseCaseVignettes } from '@/components/marketing/UseCaseVignettes';
 
-const WP_ORG_URL = 'https://wordpress.org/plugins/jhmg-converter-for-beaver-builder-to-divi/';
+// Direct download while the wordpress.org listing is under review. Once approved, point
+// these at https://wordpress.org/plugins/jhmg-converter-for-beaver-builder-to-divi/ and
+// delete public/downloads/.
+const FREE_PLUGIN_PATH = '/downloads/jhmg-converter-for-beaver-builder-to-divi.zip';
+const FREE_PLUGIN_URL = `${env.NEXT_PUBLIC_SITE_URL}${FREE_PLUGIN_PATH}`;
 
 const PRODUCT_NAME = 'Beaver Builder to Divi 5 Converter';
 const PRODUCT_DESCRIPTION =
@@ -120,7 +124,7 @@ const FAQ = [
   },
   {
     question: 'Do I need the free plugin?',
-    answer: 'Yes. Pro is a license that extends the free plugin. Install the free plugin from wordpress.org first, then activate Pro.',
+    answer: 'Yes. Pro is a license that extends the free plugin. Install the free plugin first (download it from this page while the wordpress.org listing is under review), then activate Pro.',
   },
   {
     question: 'Is there a refund policy?',
@@ -168,14 +172,16 @@ export default function PluginPage() {
         <div className="flex flex-wrap items-center gap-3">
           <BuyProButton product="beaver-to-divi5-pro" label="Get Pro · $25/yr" />
           <a
-            href={WP_ORG_URL}
-            target="_blank"
-            rel="noopener noreferrer"
+            href={FREE_PLUGIN_PATH}
+            download
             className="inline-flex h-12 items-center justify-center rounded-pill border border-paper/35 bg-paper/10 px-8 text-body font-semibold text-paper backdrop-blur transition hover:-translate-y-0.5 hover:border-paper/70 hover:bg-paper/20"
           >
-            Get the free plugin
+            Download the free plugin (.zip)
           </a>
         </div>
+        <p className="mt-3 text-small text-paper/70">
+          Direct download while the wordpress.org listing is under review. Install it from Plugins → Add New → Upload Plugin.
+        </p>
         <StatStrip
           className="mt-12 !mx-0"
           tone="dark"
@@ -279,8 +285,8 @@ export default function PluginPage() {
           />
           <div className="mt-8 flex flex-wrap items-center gap-3">
             <BuyProButton product="beaver-to-divi5-pro" label="Get Pro · $25/yr" />
-            <a href={WP_ORG_URL} target="_blank" rel="noopener noreferrer" className="text-body font-semibold text-action hover:underline">
-              Start with the free plugin
+            <a href={FREE_PLUGIN_PATH} download className="text-body font-semibold text-action hover:underline">
+              Start with the free plugin (.zip)
             </a>
           </div>
         </Container>
@@ -341,7 +347,7 @@ export default function PluginPage() {
         title="Ship your migration this week."
         body="Whole sites, Themer headers and footers, converted into validated Divi 5 markup and reviewed by you."
         cta={{ label: 'Get Pro · $25/yr', href: '/pricing' }}
-        secondary={{ label: 'Try the free plugin first', href: WP_ORG_URL }}
+        secondary={{ label: 'Try the free plugin first', href: FREE_PLUGIN_URL }}
       />
     </main>
   );
