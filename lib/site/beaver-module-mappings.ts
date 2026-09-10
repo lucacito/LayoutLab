@@ -2,7 +2,7 @@
 // Source of truth: tests/DocumentedModulesTest.php (Beaver Builder's own module
 // reference, docs.wpbeaverbuilder.com → Layouts → Modules) plus the add-on
 // handlers in includes/converter/handlers/ of
-// jhmg-beaver-to-divi5/plugin/jhmg-converter-for-beaver-builder-to-divi/.
+// jhmg-beaver-to-divi5/plugin/jhmg-converter-for-beaver-builder-to-divi-5/.
 
 export type ModuleMappingGroup = { group: string; modules: string[] };
 

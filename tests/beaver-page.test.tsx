@@ -10,7 +10,7 @@ describe('/plugins/beaver-builder-to-divi-5', () => {
     expect(screen.getAllByRole('button', { name: /get pro · \$25\/yr/i }).length).toBeGreaterThan(0);
     const free = screen.getAllByRole('link', { name: /free plugin/i });
     expect(free.length).toBeGreaterThan(0);
-    expect(free[0]!.getAttribute('href')).toBe('/downloads/jhmg-converter-for-beaver-builder-to-divi.zip');
+    expect(free[0]!.getAttribute('href')).toBe('/downloads/jhmg-converter-for-beaver-builder-to-divi-5.zip');
     expect(free[0]!.hasAttribute('download')).toBe(true);
     expect(screen.queryByText(/coming soon/i)).toBeNull();
   });

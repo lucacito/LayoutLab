@@ -17,9 +17,9 @@ import { CtaBand } from '@/components/marketing/CtaBand';
 import { UseCaseVignettes } from '@/components/marketing/UseCaseVignettes';
 
 // Direct download while the wordpress.org listing is under review. Once approved, point
-// these at https://wordpress.org/plugins/jhmg-converter-for-beaver-builder-to-divi/ and
+// these at https://wordpress.org/plugins/jhmg-converter-for-beaver-builder-to-divi-5/ and
 // delete public/downloads/.
-const FREE_PLUGIN_PATH = '/downloads/jhmg-converter-for-beaver-builder-to-divi.zip';
+const FREE_PLUGIN_PATH = '/downloads/jhmg-converter-for-beaver-builder-to-divi-5.zip';
 const FREE_PLUGIN_URL = `${env.NEXT_PUBLIC_SITE_URL}${FREE_PLUGIN_PATH}`;
 
 const PRODUCT_NAME = 'Beaver Builder to Divi 5 Converter';
@@ -155,7 +155,7 @@ export default function PluginPage() {
         data={productJsonLd({
           name: PRODUCT_NAME,
           description: PRODUCT_DESCRIPTION,
-          image: 'https://ps.w.org/jhmg-converter-for-beaver-builder-to-divi/assets/banner-772x250.png',
+          image: 'https://ps.w.org/jhmg-converter-for-beaver-builder-to-divi-5/assets/banner-772x250.png',
           url,
           offer: { priceCents: 2500, currency: 'USD' },
         })}
