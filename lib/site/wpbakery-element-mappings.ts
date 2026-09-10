@@ -5,8 +5,10 @@
 //   Registered WPBakery tags mapped   75 / 75   (38 exact, 31 approximate, 6 read by their parent element)
 //   Template-only and vendor tags     23 / 23
 //   Theme / add-on handlers shipped   31        (Ronneby x 23, Sliders x 2, Ultimate Addons x 6)
-// The two Sliders bridges (rev_slider, layerslider) are counted with the
-// template-only tags on this page, where a reader looks for them.
+// The three add-on families are their own groups below, so 75 + 23 + 31 = 129
+// tags with a handler. `rev_slider_vc` / `layerslider_vc` (WPBakery's own
+// bridge tags, counted in the 23) and `rev_slider` / `layerslider` (the
+// sliders' native tags, the Sliders family of 2) are four distinct tags.
 
 export type ElementMappingGroup = {
   group: string;
@@ -77,6 +79,13 @@ export const WPBAKERY_ELEMENT_GROUPS: ElementMappingGroup[] = [
       'bsf-info-box', 'just_icon', 'stat_counter', 'ult_content_box', 'ultimate_pricing',
       'ultimate_video',
     ],
+  },
+  {
+    group: 'Sliders',
+    registered: false,
+    // The sliders' own tags. WPBakery's bridge tags for the same two decks,
+    // `rev_slider_vc` and `layerslider_vc`, are in the template-only group.
+    elements: ['rev_slider', 'layerslider'],
   },
   {
     group: 'Ronneby (DFD)',

@@ -332,8 +332,13 @@ export default function PluginPage() {
           <p className="mt-4 max-w-2xl text-lead text-muted">
             All {WPBAKERY_ELEMENT_TYPES_MAPPED} element tags with a dedicated converter, straight from the
             plugin&apos;s registry. The first four groups are the {WPBAKERY_REGISTERED_ELEMENTS} tags WPBakery
-            itself registers; the rest are add-on and theme elements that reach a real Divi module rather than a
-            static copy. Approximate mappings are marked as such in the report, for you to check.
+            itself registers. Ultimate Addons and Ronneby are the add-on and theme families whose elements
+            become real Divi 5 modules rather than a static copy. The template-only, vendor and slider tags
+            mostly keep working instead of becoming one: WooCommerce&apos;s eighteen shortcodes stay inside a
+            Divi code module that still runs them, and a Revolution Slider or LayerSlider deck becomes a code
+            module naming the deck. Contact Form 7 and <code className="font-mono">vc_custom_field</code> are
+            the two in that group that reach a Divi module of their own. Approximate mappings are marked as
+            such in the report, for you to check.
           </p>
           <div className="mt-8 space-y-4">
             {WPBAKERY_ELEMENT_GROUPS.map((g) => (

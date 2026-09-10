@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import WPBakeryPage, { metadata } from '@/app/(marketing)/plugins/wpbakery-to-divi-5/page';
 import {
@@ -17,11 +17,16 @@ describe('lib/site/wpbakery-element-mappings', () => {
     expect(registered).toBe(WPBAKERY_REGISTERED_ELEMENTS);
   });
 
-  it('ships the add-on and theme groups the coverage script reports', () => {
+  it('ships every add-on family the coverage script reports, at its count', () => {
     const byGroup = Object.fromEntries(WPBAKERY_ELEMENT_GROUPS.map((g) => [g.group, g.elements.length]));
     expect(byGroup['Template-only and vendor tags']).toBe(23);
-    expect(byGroup['Ultimate Addons for WPBakery']).toBe(6);
+    // "Theme / add-on handlers shipped 31 (Ronneby x 23, Sliders x 2, Ultimate Addons x 6)".
     expect(byGroup['Ronneby (DFD)']).toBe(23);
+    expect(byGroup['Sliders']).toBe(2);
+    expect(byGroup['Ultimate Addons for WPBakery']).toBe(6);
+    expect(byGroup['Ronneby (DFD)'] + byGroup['Sliders'] + byGroup['Ultimate Addons for WPBakery']).toBe(31);
+    // 75 registered + 23 template-only/vendor + 31 add-on handlers.
+    expect(WPBAKERY_ELEMENT_TYPES_MAPPED).toBe(129);
     expect(WPBAKERY_ELEMENT_TYPES_MAPPED).toBe(
       WPBAKERY_ELEMENT_GROUPS.reduce((n, g) => n + g.elements.length, 0),
     );
@@ -63,6 +68,7 @@ describe('/plugins/wpbakery-to-divi-5', () => {
       'Deprecated elements',
       'Template-only and vendor tags',
       'Ultimate Addons for WPBakery',
+      'Sliders',
       'Ronneby (DFD)',
     ]) {
       expect(screen.getByText(group), group).toBeTruthy();
@@ -97,7 +103,21 @@ describe('/plugins/wpbakery-to-divi-5', () => {
 
   it('sells the Pro features Pro actually ships', () => {
     render(<WPBakeryPage />);
-    expect(screen.getAllByText(/WPBakery templates → Divi Library/i).length).toBeGreaterThan(0);
+    // Named twice on purpose: once as a Pro card, once as a Pro-only table row.
+    expect(screen.getByRole('heading', { name: 'WPBakery templates → Divi Library' })).toBeTruthy();
+    const row = screen.getByRole('rowheader', { name: 'WPBakery templates → Divi Library' }).closest('tr');
+    expect(row).toBeTruthy();
+    expect(within(row!).getByText('Not included')).toBeTruthy();
+    expect(within(row!).getByText('Included')).toBeTruthy();
+  });
+
+  it('does not promise a native module for the tags that keep their shortcode', () => {
+    render(<WPBakeryPage />);
+    const reference = screen.getByText(/All 129 element tags with a dedicated converter/i).textContent ?? '';
+    // WooCommerce and the slider decks land in a Divi code module, not a native
+    // one, and the page has to say so where it lists them.
+    expect(reference).toMatch(/code module/i);
+    expect(reference).toMatch(/Ultimate Addons and Ronneby are the add-on and theme families/i);
   });
 
   it('never claims the original site is modified and has canonical metadata', () => {
