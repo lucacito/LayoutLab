@@ -115,6 +115,14 @@ export const PLUGIN_MENU: PluginMenuItem[] = [
     tone: 'green',
   },
   {
+    name: 'WPBakery → Divi 5',
+    desc: 'Every element WPBakery registers, plus the theme add-ons, into Divi 5.',
+    href: '/plugins/wpbakery-to-divi-5',
+    icon: 'sync_alt',
+    chip: 'Free · Pro $25/yr',
+    tone: 'green',
+  },
+  {
     name: 'Divi → Elementor',
     desc: 'Batch-convert Divi sites the other way.',
     href: '/plugins/divi-to-elementor',

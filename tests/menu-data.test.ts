@@ -21,13 +21,17 @@ describe('menu-data', () => {
     expect(PRIMARY_NAV.find((m) => m.key === 'browse')).toBeUndefined();
   });
 
-  it('lists all four plugins in the plugins mega-menu', () => {
+  it('lists all five plugins in the plugins mega-menu', () => {
     expect(PLUGIN_MENU.map((p) => p.href)).toEqual([
       '/plugins/elementor-to-divi-5',
       '/plugins/beaver-builder-to-divi-5',
+      '/plugins/wpbakery-to-divi-5',
       '/plugins/divi-to-elementor',
       '/plugins/divi-5-ai-editor',
     ]);
+    const wpbakery = PLUGIN_MENU.find((p) => p.href === '/plugins/wpbakery-to-divi-5');
+    expect(wpbakery?.name).toBe('WPBakery → Divi 5');
+    expect(wpbakery?.chip).toBe('Free · Pro $25/yr');
   });
 
   it('builds taxonomy columns with valid /type, /niche, /style hrefs', () => {

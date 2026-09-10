@@ -2,6 +2,7 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Icon } from '@/components/ui/Icon';
 import { STATS } from '@/lib/site/stats';
+import { WPBAKERY_REGISTERED_ELEMENTS } from '@/lib/site/wpbakery-element-mappings';
 
 type Door = {
   headline: string;
@@ -48,6 +49,17 @@ function MotifChat() {
   );
 }
 
+function MotifShortcode() {
+  return (
+    <div className="space-y-1.5 font-mono text-small" aria-hidden>
+      <p className="text-muted">[vc_row][vc_column][vc_custom_heading]</p>
+      <p className="text-muted">
+        <Icon name="arrow_forward" size={14} className="text-action" /> divi/section › divi/row › divi/heading
+      </p>
+    </div>
+  );
+}
+
 function MotifCheck() {
   return (
     <div className="space-y-1.5 font-mono text-small" aria-hidden>
@@ -77,6 +89,16 @@ const DOORS: Door[] = [
     href: '/plugins/beaver-builder-to-divi-5',
     cta: 'See the Beaver converter',
     motif: <MotifCheck />,
+  },
+  {
+    headline: 'Leave WPBakery without rebuilding',
+    name: 'WPBakery → Divi 5 Converter',
+    chip: { label: 'Free plugin · Pro $25/yr', tone: 'green' },
+    body: `Shortcodes in, native Divi 5 modules out. All ${WPBAKERY_REGISTERED_ELEMENTS} elements WPBakery registers have a handler, and the theme elements your ThemeForest theme added are kept, never dropped.`,
+    stats: `${STATS.wpbakeryElementsMapped} element types mapped · nothing dropped in silence`,
+    href: '/plugins/wpbakery-to-divi-5',
+    cta: 'See the WPBakery converter',
+    motif: <MotifShortcode />,
   },
   {
     headline: 'Going the other way? Also covered.',

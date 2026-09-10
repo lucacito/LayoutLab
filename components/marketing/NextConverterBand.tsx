@@ -12,8 +12,8 @@ export function NextConverterBand() {
       <SectionShell tone="paper" pad="lg">
         <Container>
           <SectionTitle eyebrow="You decide what ships next" title="Which builder should we convert next?">
-            Elementor and Beaver Builder are done. WPBakery, Bricks, Oxygen, Breakdance and block builders are on the
-            bench. Your vote picks the order, and you hear the day yours ships.
+            Elementor, Beaver Builder and WPBakery are done. Bricks, Oxygen, Breakdance and block builders are on
+            the bench. Your vote picks the order, and you hear the day yours ships.
           </SectionTitle>
           <Card className="mx-auto mt-12 max-w-3xl p-8">
             <NextConverterForm />

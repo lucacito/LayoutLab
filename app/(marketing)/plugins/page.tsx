@@ -12,7 +12,7 @@ import { NextConverterBand } from '@/components/marketing/NextConverterBand';
 export const metadata: Metadata = {
   title: 'WordPress Plugins by Divi5Lab: converters & AI tools',
   description:
-    'WordPress plugins for Divi 5: convert Elementor or Beaver Builder pages to Divi 5, convert Divi to Elementor, and edit Divi 5 pages with a validated AI editor.',
+    'WordPress plugins for Divi 5: convert Elementor, Beaver Builder or WPBakery pages to Divi 5, convert Divi to Elementor, and edit Divi 5 pages with a validated AI editor.',
 };
 
 const DECISIONS = [
@@ -29,6 +29,12 @@ const DECISIONS = [
     href: '/plugins/beaver-builder-to-divi-5',
   },
   {
+    icon: 'sync_alt',
+    situation: 'I have a WPBakery site and want Divi 5.',
+    answer: 'WPBakery → Divi 5 Converter',
+    href: '/plugins/wpbakery-to-divi-5',
+  },
+  {
     icon: 'u_turn_left',
     situation: 'I have a Divi site and need Elementor.',
     answer: 'Divi → Elementor Converter',
@@ -42,7 +48,7 @@ const DECISIONS = [
   },
   {
     icon: 'how_to_vote',
-    situation: "I'm on WPBakery, Bricks, Oxygen or another builder.",
+    situation: "I'm on Bricks, Oxygen or another builder.",
     answer: 'Vote for the next converter',
     href: '#next-converter',
   },
@@ -87,7 +93,7 @@ export default function PluginsHub() {
 
       <CtaBand
         eyebrow="Start free"
-        title="One validator. Four ways to use it."
+        title="One validator. Five ways to use it."
         body="Free tiers on everything. Try a conversion or an AI edit before you spend a cent."
         cta={{ label: 'See pricing', href: '/pricing' }}
         curveTop={EDGE.paper}
