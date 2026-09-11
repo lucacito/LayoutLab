@@ -2,6 +2,7 @@ import type { MetadataRoute } from 'next';
 import { AXIS_VALUES } from '@/lib/catalog/filters';
 import { listKeywordPages } from '@/lib/seo/keyword-pages';
 import { listGuides } from '@/lib/guides';
+import { PLUGIN_MENU } from '@/lib/nav/menu-data';
 
 export function sitemapEntries(i: {
   siteUrl: string;
@@ -17,16 +18,22 @@ export function sitemapEntries(i: {
     // omitted from the sitemap, hiding a top-level section from Google.
     { url: `${base}/packs`, changeFrequency: 'daily', priority: 0.9 },
     { url: `${base}/pricing`, changeFrequency: 'weekly', priority: 0.8 },
-    // WordPress plugins section: the hub and both converters are the money
-    // pages here; the AI Editor ranks lower until it has directory presence.
+    // WordPress plugins section: the hub, plus one entry per product derived
+    // from PLUGIN_MENU below, so adding a converter never leaves it out of the
+    // sitemap (Beaver Builder and WPBakery were missing until 2026-09-11).
     { url: `${base}/plugins`, changeFrequency: 'weekly', priority: 0.9 },
-    { url: `${base}/plugins/elementor-to-divi-5`, changeFrequency: 'weekly', priority: 0.9 },
-    { url: `${base}/plugins/divi-to-elementor`, changeFrequency: 'weekly', priority: 0.9 },
-    { url: `${base}/plugins/divi-5-ai-editor`, changeFrequency: 'weekly', priority: 0.6 },
     { url: `${base}/about`, changeFrequency: 'yearly', priority: 0.3 },
     { url: `${base}/contact`, changeFrequency: 'yearly', priority: 0.3 },
     { url: `${base}/license`, changeFrequency: 'yearly', priority: 0.3 },
   ];
+  // One entry per plugin page, from the same list the nav renders. The
+  // converters are money pages; the AI Editor ranks lower until it has
+  // directory presence.
+  const pluginEntries: MetadataRoute.Sitemap = PLUGIN_MENU.map((p) => ({
+    url: `${base}${p.href}`,
+    changeFrequency: 'weekly' as const,
+    priority: p.href === '/plugins/divi-5-ai-editor' ? 0.6 : 0.9,
+  }));
   // Broad-keyword landing pages (/divi-layouts, /divi-templates, …): money
   // pages for head terms, prioritized just under /browse.
   const keywordEntries: MetadataRoute.Sitemap = listKeywordPages().map((p) => ({
@@ -62,5 +69,5 @@ export function sitemapEntries(i: {
     changeFrequency: 'monthly',
     priority: 0.6,
   }));
-  return [...staticPages, ...keywordEntries, ...guideEntries, ...taxonomyEntries, ...packEntries, ...layoutEntries];
+  return [...staticPages, ...pluginEntries, ...keywordEntries, ...guideEntries, ...taxonomyEntries, ...packEntries, ...layoutEntries];
 }
