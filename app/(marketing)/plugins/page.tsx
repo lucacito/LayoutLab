@@ -10,9 +10,9 @@ import { CtaBand } from '@/components/marketing/CtaBand';
 import { NextConverterBand } from '@/components/marketing/NextConverterBand';
 
 export const metadata: Metadata = {
-  title: 'WordPress Plugins by Divi5Lab: converters & AI tools',
+  title: 'Convert anything into Divi 5: WordPress plugins by Divi5Lab',
   description:
-    'WordPress plugins for Divi 5: convert Elementor, Beaver Builder or WPBakery pages to Divi 5, convert Divi to Elementor, and edit Divi 5 pages with a validated AI editor.',
+    'Converters that bring Elementor, Beaver Builder and WPBakery pages to Divi 5, a Divi to Elementor converter for the other direction, and a validated AI editor for Divi 5. Free tiers on all of them.',
 };
 
 const DECISIONS = [
@@ -59,8 +59,8 @@ export default function PluginsHub() {
     <main>
       <PageHero
         eyebrow="WordPress plugins"
-        title="Plugins"
-        lead="Migration converters and an AI editor for Divi 5, every one built on the same deterministic validator, so the output is real, importable markup. Never a guess."
+        title="Convert anything into Divi 5"
+        lead="Pick the builder your site runs on. Every converter checks what it will produce before it writes, converts into real, validated Divi 5 modules, and can undo the run. The AI editor takes over once you are there."
       />
 
       <SectionShell tone="paper" pad="lg" bottom="sm">
@@ -93,8 +93,8 @@ export default function PluginsHub() {
 
       <CtaBand
         eyebrow="Start free"
-        title="One validator. Five ways to use it."
-        body="Free tiers on everything. Try a conversion or an AI edit before you spend a cent."
+        title="Free to try on every builder."
+        body="Free tiers on everything. Convert a page or make an AI edit before you spend a cent."
         cta={{ label: 'See pricing', href: '/pricing' }}
         curveTop={EDGE.paper}
       />

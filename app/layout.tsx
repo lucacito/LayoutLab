@@ -13,6 +13,7 @@ import { Footer } from '@/components/site/Footer';
 import { AnnouncementBar } from '@/components/site/AnnouncementBar';
 import { BookmarksProvider } from '@/components/bookmarks/BookmarksProvider';
 import { env } from '@/lib/env';
+import { SITE_TITLE, SITE_DESCRIPTION, SOCIAL_DESCRIPTION } from '@/lib/site/brand';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-sans', display: 'swap' });
 // Display face for headings/eyebrows only. Body copy stays on Inter, which
@@ -21,13 +22,11 @@ const poppins = Poppins({ subsets: ['latin'], weight: ['600', '700', '800'], var
 
 const GA_ID = env.NEXT_PUBLIC_GA_ID ?? 'G-YCK6MN99PR';
 
-// Homepage title deliberately differs from /browse ("Free Divi 5 Layouts &
-// Sections: Download & Import") so the two top pages don't compete for the same
-// SERP label. The home/hub title names all three primary sections (layouts,
-// sections, packs), the exact set we want Google to surface as sitelinks.
-const TITLE = 'Free & Premium Divi 5 Layouts, Sections & Theme Packs';
-const DESCRIPTION =
-  'Browse a growing library of free, validated Divi 5 layouts and sections: heroes, pricing tables, CTAs and full landing pages. Download the JSON and import into Divi 5 in seconds. Commercial license included.';
+// Site-wide title and description come from lib/site/brand.ts (converter-first);
+// /browse keeps its own layouts-focused title so the two pages do not compete
+// for the same SERP label.
+const TITLE = SITE_TITLE;
+const DESCRIPTION = SITE_DESCRIPTION;
 
 // Site-wide brand entity + sitelinks search box (entity SEO). Add real social
 // profile URLs to `sameAs` as they go live to strengthen the brand entity.
@@ -50,6 +49,7 @@ const SITE_JSONLD = [
   // The canonical set of sections we want Google to consider for sitelinks,
   // identical to the primary nav so on-page links and structured data agree.
   siteNavigationJsonLd([
+    { name: 'Converters', url: `${SITE_URL}/plugins` },
     { name: 'Browse layouts', url: `${SITE_URL}/browse` },
     { name: 'Themes & Packs', url: `${SITE_URL}/packs` },
     { name: 'Guides', url: `${SITE_URL}/guides` },
@@ -63,11 +63,11 @@ export const metadata: Metadata = {
   metadataBase: new URL(env.NEXT_PUBLIC_SITE_URL),
   title: { default: `${TITLE} | Divi5Lab`, template: '%s | Divi5Lab' },
   description: DESCRIPTION,
-  keywords: ['divi 5 layouts', 'free divi layouts', 'divi sections', 'divi templates', 'divi layout pack', 'divi 5'],
+  keywords: ['elementor to divi 5', 'beaver builder to divi 5', 'wpbakery to divi 5', 'divi 5 converter', 'divi 5 layouts', 'free divi layouts', 'divi sections', 'divi 5'],
   alternates: { canonical: '/' },
   icons: { icon: '/favicon.png', shortcut: '/favicon.png', apple: '/favicon.png' },
   openGraph: { type: 'website', siteName: 'Divi5Lab', url: '/', title: TITLE, description: DESCRIPTION },
-  twitter: { card: 'summary_large_image', title: TITLE, description: 'Free, validated Divi 5 layouts & sections, import-ready JSON.' },
+  twitter: { card: 'summary_large_image', title: TITLE, description: SOCIAL_DESCRIPTION },
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {

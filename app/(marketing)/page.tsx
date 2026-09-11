@@ -46,16 +46,17 @@ export default async function HomePage() {
       {/* `bottom="xl"` keeps the floating stack clear of the curved seam. */}
       <SectionShell tone="hero" underHeader bottom="xl" blooms curveBottom={EDGE.paper}>
         <Container className="text-center">
-          <Eyebrow tone="dark" className="mb-5">Divi 5 migration tools</Eyebrow>
-          <h1 className="mx-auto max-w-4xl text-display text-paper">Move your site to Divi 5. Never ship a broken layout.</h1>
+          <Eyebrow tone="dark" className="mb-5">Convert anything into Divi 5</Eyebrow>
+          <h1 className="mx-auto max-w-4xl text-display text-paper">Bring any site to Divi 5. Without rebuilding it.</h1>
           <p className="mx-auto mt-6 max-w-2xl text-lead text-paper/80">
-            Converters for Elementor and Beaver Builder, plus an AI editor, all built on one deterministic
-            validator. Every block, attribute and nesting rule is checked before anything touches your site.
-            If it imports, it works.
+            Converters for Elementor, Beaver Builder and WPBakery, an AI editor for the pages that land, and
+            one deterministic validator underneath all of it. Check what a conversion will produce, convert,
+            undo if you like. If it imports, it works.
           </p>
           <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
             <Button href="/plugins/elementor-to-divi-5" size="lg" variant="primary">Convert Elementor to Divi 5</Button>
             <Button href="/plugins/beaver-builder-to-divi-5" size="lg" variant="onDark">Convert Beaver Builder to Divi 5</Button>
+            <Button href="/plugins/wpbakery-to-divi-5" size="lg" variant="onDark">Convert WPBakery to Divi 5</Button>
           </div>
           <p className="mt-5 text-small text-paper/70">
             Going the other way?{' '}
@@ -74,6 +75,7 @@ export default async function HomePage() {
             stats={[
               { value: String(STATS.elementorWidgetsMapped), label: 'Elementor widget types mapped' },
               { value: String(STATS.beaverModulesMapped), label: 'Beaver Builder module types mapped' },
+              { value: String(STATS.wpbakeryElementsMapped), label: 'WPBakery element types mapped' },
               { value: String(STATS.validatorBlockTypes), label: 'Divi 5 block types modeled' },
               { value: String(STATS.validatorViolationClasses), label: 'violation classes checked' },
             ]}
@@ -159,8 +161,8 @@ export default async function HomePage() {
       {/* 4. Three doors */}
       <SectionShell tone="mist" pad="lg" curveTop={EDGE.deepBottom}>
         <Container>
-          <SectionTitle eyebrow="Pick your door" title="Four tools, one guarantee">
-            Different jobs, same validator underneath.
+          <SectionTitle eyebrow="Pick your builder" title="Coming from anywhere. Landing on Divi 5.">
+            Three converters in, one converter out, an AI editor for what lands, and the same validator under every one of them.
           </SectionTitle>
           <div className="mt-16">
             <ProductDoors />

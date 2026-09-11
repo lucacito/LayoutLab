@@ -16,4 +16,10 @@ describe('/plugins hub', () => {
     expect(screen.getByText(/which tool do i need/i)).toBeTruthy();
   });
   it('has metadata', () => { expect(String(metadata.title)).toMatch(/plugins/i); });
+  it('positions the hub as the place to convert anything into Divi 5', async () => {
+    render(await PluginsHub());
+    expect(screen.getByRole('heading', { level: 1 }).textContent).toMatch(/convert anything into divi 5/i);
+    expect(screen.getByText(/free to try on every builder/i)).toBeTruthy();
+    expect(String(metadata.description)).toMatch(/wpbakery/i);
+  });
 });

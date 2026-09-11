@@ -15,11 +15,12 @@ import { MappingPanel } from '@/components/marketing/MappingPanel';
 import { ComparisonTable } from '@/components/marketing/ComparisonTable';
 import { CtaBand } from '@/components/marketing/CtaBand';
 import { UseCaseVignettes } from '@/components/marketing/UseCaseVignettes';
+import { FREE_PLUGIN_LINKS } from '@/lib/site/free-downloads';
 
 // Direct download while the wordpress.org listing is under review. Once approved, point
 // these at https://wordpress.org/plugins/jhmg-converter-for-beaver-builder-to-divi-5/ and
 // delete public/downloads/.
-const FREE_PLUGIN_PATH = '/downloads/jhmg-converter-for-beaver-builder-to-divi-5.zip';
+const FREE_PLUGIN_PATH = FREE_PLUGIN_LINKS['beaver-to-divi5'].href;
 const FREE_PLUGIN_URL = `${env.NEXT_PUBLIC_SITE_URL}${FREE_PLUGIN_PATH}`;
 
 const PRODUCT_NAME = 'Beaver Builder to Divi 5 Converter';

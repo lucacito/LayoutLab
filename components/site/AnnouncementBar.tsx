@@ -5,7 +5,7 @@ import { Icon } from '@/components/ui/Icon';
 
 // Dismissible site-wide banner above the (sticky) header. Bump the version in the
 // key to re-show after dismissal when the message changes.
-const KEY = 'll_announce_dismissed_v4';
+const KEY = 'll_announce_dismissed_v5';
 
 export function AnnouncementBar() {
   const [show, setShow] = useState(false);
@@ -33,8 +33,8 @@ export function AnnouncementBar() {
     <div className="relative bg-navy bg-[linear-gradient(90deg,#0B3558_0%,#3D2F9B_55%,#635BFF_100%)] text-paper">
       <div className="mx-auto flex max-w-7xl items-center justify-center gap-2 px-10 py-2.5 text-small">
         <Icon name="bolt" size={16} className="text-g-amber" />
-        <span className="text-paper/90">New: the Beaver Builder → Divi 5 converter, free to download.</span>
-        <Link href="/plugins/beaver-builder-to-divi-5" className="font-semibold text-paper underline underline-offset-2 hover:text-g-pink">
+        <span className="text-paper/90">New: the WPBakery → Divi 5 converter, free to download.</span>
+        <Link href="/plugins/wpbakery-to-divi-5" className="font-semibold text-paper underline underline-offset-2 hover:text-g-pink">
           Get the plugin
         </Link>
       </div>
