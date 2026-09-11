@@ -3,9 +3,9 @@ import { render } from '@testing-library/react';
 import { PrimaryNav } from '@/components/site/PrimaryNav';
 
 describe('PrimaryNav', () => {
-  it('renders Plugins, Free layouts (→/browse) and Guides, with no standalone Browse item', () => {
+  it('renders Converters, Free layouts (→/browse) and Guides, with no standalone Browse item', () => {
     const { getByText, queryAllByText } = render(<PrimaryNav />);
-    const plugins = getByText('Plugins').closest('a');
+    const plugins = getByText('Converters').closest('a');
     const layouts = getByText('Free layouts').closest('a');
     const guides = getByText('Guides').closest('a');
     expect(plugins?.getAttribute('href')).toBe('/plugins');

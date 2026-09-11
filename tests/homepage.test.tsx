@@ -8,10 +8,11 @@ describe('homepage (validator spine)', () => {
   it('leads with the never-broken promise and links all four products', async () => {
     render(await HomePage());
     const h1 = screen.getByRole('heading', { level: 1 });
-    expect(h1.textContent).toMatch(/broken layout/i);
+    expect(h1.textContent).toMatch(/bring any site to divi 5/i);
     const links = Array.from(document.querySelectorAll('a')).map((a) => a.getAttribute('href'));
     expect(links).toContain('/plugins/elementor-to-divi-5');
     expect(links).toContain('/plugins/beaver-builder-to-divi-5');
+    expect(links).toContain('/plugins/wpbakery-to-divi-5');
     expect(links).toContain('/plugins/divi-to-elementor');
     expect(links).toContain('/plugins/divi-5-ai-editor');
   });
@@ -43,5 +44,14 @@ describe('homepage (validator spine)', () => {
     render(await HomePage());
     const links = Array.from(document.querySelectorAll('a')).map((a) => a.getAttribute('href'));
     expect(links.some((h) => h?.startsWith('/guides/'))).toBe(true);
+  });
+  it('leads with a converter for each of the three builders and the WPBakery count', async () => {
+    render(await HomePage());
+    expect(screen.getAllByText(/convert anything into divi 5/i).length).toBeGreaterThan(0);
+    for (const name of [/convert elementor to divi 5/i, /convert beaver builder to divi 5/i, /convert wpbakery to divi 5/i]) {
+      expect(screen.getAllByRole('link', { name }).length).toBeGreaterThan(0);
+    }
+    expect(screen.getAllByText(/element types mapped/i).length).toBeGreaterThan(0);
+    expect(screen.getByText(/coming from anywhere\. landing on divi 5\./i)).toBeTruthy();
   });
 });

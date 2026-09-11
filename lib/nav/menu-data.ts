@@ -82,7 +82,7 @@ export type NavLinkMenu = { key: string; label: string; href: string; mega?: Meg
 // Primary navigation (plugins-first). "Plugins" and "Free layouts" open
 // mega-menus; "Free layouts" itself lands on the full /browse catalog.
 export const PRIMARY_NAV: NavLinkMenu[] = [
-  { key: 'plugins', label: 'Plugins', href: '/plugins', mega: 'plugins' },
+  { key: 'plugins', label: 'Converters', href: '/plugins', mega: 'plugins' },
   { key: 'layouts', label: 'Free layouts', href: '/browse', mega: 'layouts' },
   { key: 'guides', label: 'Guides', href: '/guides' },
 ];

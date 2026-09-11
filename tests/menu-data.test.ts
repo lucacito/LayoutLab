@@ -14,7 +14,7 @@ describe('menu-data', () => {
 
   it('defines the mega-menu PRIMARY_NAV contract (Free layouts → /browse, no standalone Browse)', () => {
     expect(PRIMARY_NAV).toEqual([
-      { key: 'plugins', label: 'Plugins', href: '/plugins', mega: 'plugins' },
+      { key: 'plugins', label: 'Converters', href: '/plugins', mega: 'plugins' },
       { key: 'layouts', label: 'Free layouts', href: '/browse', mega: 'layouts' },
       { key: 'guides', label: 'Guides', href: '/guides' },
     ]);

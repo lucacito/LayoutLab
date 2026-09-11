@@ -12,6 +12,7 @@ import { faqJsonLd } from '@/lib/seo/jsonld';
 import { BuyProButton } from '@/components/plugins/BuyProButton';
 import { STATS } from '@/lib/site/stats';
 import { CtaBand } from '@/components/marketing/CtaBand';
+import { FREE_PLUGIN_LINKS, freePluginAnchorProps } from '@/lib/site/free-downloads';
 
 export const metadata: Metadata = {
   title: 'Pricing: Pro plugin licenses',
@@ -74,6 +75,7 @@ const TOOLKIT = [
     proTier: 'Pro: full kit ZIP import, Theme Builder headers/footers, global colors & typography.',
     action: <BuyProButton product="elementor-to-divi5-pro" label="Get Pro · $25/yr" />,
     href: '/plugins/elementor-to-divi-5',
+    free: FREE_PLUGIN_LINKS['elementor-to-divi5'],
     highlight: true,
   },
   {
@@ -96,6 +98,7 @@ const TOOLKIT = [
     proTier: 'Pro: unlimited pages per run, WPBakery templates into the Divi Library.',
     action: <BuyProButton product="wpbakery-to-divi5-pro" label="Get Pro · $25/yr" />,
     href: '/plugins/wpbakery-to-divi-5',
+    free: FREE_PLUGIN_LINKS['wpbakery-to-divi5'],
     highlight: false,
   },
   {
@@ -107,6 +110,7 @@ const TOOLKIT = [
     proTier: 'Pro: Divi Theme Builder templates and WooCommerce module → widget mapping.',
     action: <BuyProButton product="divi-to-elementor-pro" label="Get Pro · $25/yr" />,
     href: '/plugins/divi-to-elementor',
+    free: FREE_PLUGIN_LINKS['divi-to-elementor'],
     highlight: false,
   },
   {
@@ -118,6 +122,7 @@ const TOOLKIT = [
     proTier: 'Pro: unlimited pages per run, Beaver Themer headers/footers into the Divi Theme Builder.',
     action: <BuyProButton product="beaver-to-divi5-pro" label="Get Pro · $25/yr" />,
     href: '/plugins/beaver-builder-to-divi-5',
+    free: FREE_PLUGIN_LINKS['beaver-to-divi5'],
     highlight: false,
   },
 ];
@@ -160,6 +165,11 @@ export default async function PricingPage() {
                 </ul>
                 <div className="mt-8 flex flex-col gap-2">
                   {p.action}
+                  {'free' in p && p.free && (
+                    <a href={p.free.href} {...freePluginAnchorProps(p.free)} className="text-center text-small font-semibold text-action hover:underline">
+                      {p.free.label}
+                    </a>
+                  )}
                   <Link href={p.href} className="text-center text-small font-semibold text-action hover:underline">
                     Full details
                   </Link>

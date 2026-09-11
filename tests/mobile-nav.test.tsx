@@ -11,7 +11,7 @@ describe('MobileNav', () => {
     useSession.mockReturnValue({ data: null, status: 'unauthenticated' });
     const { getByLabelText, getByText, queryByText } = render(<MobileNav />);
     fireEvent.click(getByLabelText('Toggle menu'));
-    expect(getByText('Plugins').closest('a')?.getAttribute('href')).toBe('/plugins');
+    expect(getByText('Converters').closest('a')?.getAttribute('href')).toBe('/plugins');
     expect(getByText('Free layouts').closest('a')?.getAttribute('href')).toBe('/browse');
     expect(getByText('Guides').closest('a')?.getAttribute('href')).toBe('/guides');
     expect(getByText('Get Pro').closest('a')?.getAttribute('href')).toBe('/pricing');

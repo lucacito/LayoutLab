@@ -4,6 +4,7 @@ import { Wordmark } from '@/components/ui/Wordmark';
 import { Icon } from '@/components/ui/Icon';
 import { AXIS_VALUES } from '@/lib/catalog/filters';
 import { TYPE_LABELS, NICHE_LABELS } from '@/lib/nav/menu-data';
+import { SITE_TAGLINE } from '@/lib/site/brand';
 
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
@@ -64,7 +65,7 @@ export function Footer() {
         <div className="col-span-2">
           <Wordmark inverted />
           <p className="mt-4 max-w-xs text-small text-paper/70">
-            Free, validated Divi 5 layouts and migration plugins for WordPress builders.
+            {SITE_TAGLINE}
           </p>
           <ul className="mt-6 space-y-2">
             {TRUST.map((t) => (

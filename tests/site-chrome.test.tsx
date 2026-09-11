@@ -6,6 +6,7 @@ vi.mock('next-auth/react', () => ({ useSession: () => ({ data: null, status: 'un
 
 import { Header } from '@/components/site/Header';
 import { Footer } from '@/components/site/Footer';
+import { AnnouncementBar } from '@/components/site/AnnouncementBar';
 import { BookmarksProvider } from '@/components/bookmarks/BookmarksProvider';
 
 describe('site chrome', () => {
@@ -38,6 +39,11 @@ describe('site chrome', () => {
     expect(getAllByText('Pricing').length).toBeGreaterThan(0);
     expect(queryByText(/Pricing & all-access/)).toBeNull();
     expect(container.querySelector('a[href="/contact"]')).not.toBeNull();
-    expect(getByText(/migration plugins for WordPress builders/)).toBeTruthy();
+    expect(getByText(/bring Elementor, Beaver Builder and WPBakery sites to Divi 5/)).toBeTruthy();
+  });
+  it('AnnouncementBar announces the newest converter, WPBakery, with a link to its page', () => {
+    const { getByText, container } = render(<AnnouncementBar />);
+    expect(getByText(/WPBakery → Divi 5 converter/)).toBeTruthy();
+    expect(container.querySelector('a[href="/plugins/wpbakery-to-divi-5"]')).not.toBeNull();
   });
 });

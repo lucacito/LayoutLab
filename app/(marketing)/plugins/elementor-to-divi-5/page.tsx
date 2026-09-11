@@ -16,8 +16,9 @@ import { MappingPanel } from '@/components/marketing/MappingPanel';
 import { ComparisonTable } from '@/components/marketing/ComparisonTable';
 import { CtaBand } from '@/components/marketing/CtaBand';
 import { UseCaseVignettes } from '@/components/marketing/UseCaseVignettes';
+import { FREE_PLUGIN_LINKS } from '@/lib/site/free-downloads';
 
-const WP_ORG_URL = 'https://wordpress.org/plugins/jhmg-converter-for-elementor-to-divi/';
+const WP_ORG_URL = FREE_PLUGIN_LINKS['elementor-to-divi5'].href;
 
 const PRODUCT_NAME = 'Elementor to Divi 5 Converter';
 const PRODUCT_DESCRIPTION =

@@ -13,8 +13,9 @@ import { StatStrip } from '@/components/marketing/StatStrip';
 import { ComparisonTable } from '@/components/marketing/ComparisonTable';
 import { CtaBand } from '@/components/marketing/CtaBand';
 import { UseCaseVignettes } from '@/components/marketing/UseCaseVignettes';
+import { FREE_PLUGIN_LINKS } from '@/lib/site/free-downloads';
 
-const WP_ORG_URL = 'https://wordpress.org/plugins/jhmg-converter-for-divi-to-elementor/';
+const WP_ORG_URL = FREE_PLUGIN_LINKS['divi-to-elementor'].href;
 
 const PRODUCT_NAME = 'Divi to Elementor Converter';
 const PRODUCT_DESCRIPTION =
