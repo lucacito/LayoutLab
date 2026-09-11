@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   generateLicenseKey, normalizeSiteUrl, effectiveStatus, isLicenseUsable,
-  isNewerVersion, PAST_DUE_GRACE_MS, PLUGIN_PRODUCTS,
+  isNewerVersion, PAST_DUE_GRACE_MS, PLUGIN_PRODUCTS, PRODUCT_TITLES,
 } from '@/lib/license-server/core';
 
 describe('generateLicenseKey', () => {
@@ -72,12 +72,20 @@ describe('isNewerVersion', () => {
 });
 
 describe('PLUGIN_PRODUCTS', () => {
-  it('lists the three converter Pro slugs plus the AI Editor Pro slug', () => {
+  it('lists the four converter Pro slugs plus the AI Editor Pro slug', () => {
     expect([...PLUGIN_PRODUCTS]).toEqual([
       'elementor-to-divi5-pro',
       'divi-to-elementor-pro',
       'ai-editor-divi5-pro',
       'beaver-to-divi5-pro',
+      'wpbakery-to-divi5-pro',
     ]);
+  });
+
+  it('titles every product, including the WPBakery converter Pro', () => {
+    for (const slug of PLUGIN_PRODUCTS) {
+      expect(PRODUCT_TITLES[slug]?.length).toBeGreaterThan(0);
+    }
+    expect(PRODUCT_TITLES['wpbakery-to-divi5-pro']).toBe('JHMG Converter For WPBakery to Divi 5 Pro');
   });
 });

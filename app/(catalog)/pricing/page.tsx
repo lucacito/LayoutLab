@@ -58,6 +58,10 @@ const FAQ = [
     question: 'Is the Beaver Builder → Divi 5 converter available?',
     answer: 'Yes. The free plugin converts one page per run and Pro is $25/yr, adding whole-site runs and Beaver Themer headers and footers in the Divi Theme Builder.',
   },
+  {
+    question: 'Is the WPBakery → Divi 5 converter available?',
+    answer: 'Yes. The free plugin converts one page per run and Pro is $25/yr, adding whole-site runs and WPBakery templates converted into the Divi Library.',
+  },
 ];
 
 const TOOLKIT = [
@@ -81,6 +85,17 @@ const TOOLKIT = [
     proTier: 'Pro: create pages from scratch, front page, menus, site-wide CSS, reviewed PHP.',
     action: <BuyProButton product="ai-editor-divi5-pro" label="Start 45-day free trial" />,
     href: '/plugins/divi-5-ai-editor',
+    highlight: false,
+  },
+  {
+    name: 'WPBakery → Divi 5 Pro',
+    price: '$25',
+    per: '/yr',
+    tagline: 'Move a whole WPBakery site to Divi 5, templates and all.',
+    freeTier: `Free plugin: one page per run, ${STATS.wpbakeryElementsMapped} element mappings, check-before-convert report, one-click undo.`,
+    proTier: 'Pro: unlimited pages per run, WPBakery templates into the Divi Library.',
+    action: <BuyProButton product="wpbakery-to-divi5-pro" label="Get Pro · $25/yr" />,
+    href: '/plugins/wpbakery-to-divi-5',
     highlight: false,
   },
   {

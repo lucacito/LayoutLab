@@ -15,6 +15,7 @@ const COLUMNS: { title: string; links: { href: string; label: string }[] }[] = [
       { href: '/plugins/divi-5-ai-editor', label: 'Divi 5 AI Editor' },
       { href: '/plugins/elementor-to-divi-5', label: 'Elementor to Divi 5' },
       { href: '/plugins/beaver-builder-to-divi-5', label: 'Beaver Builder to Divi 5' },
+      { href: '/plugins/wpbakery-to-divi-5', label: 'WPBakery to Divi 5' },
       { href: '/plugins/divi-to-elementor', label: 'Divi to Elementor' },
     ],
   },
