@@ -111,7 +111,7 @@ export const PLUGIN_MENU: PluginMenuItem[] = [
     desc: 'Check a page, convert it, undo any run. Whole sites with Pro.',
     href: '/plugins/beaver-builder-to-divi-5',
     icon: 'sync_alt',
-    chip: 'Free · Pro $25/yr',
+    chip: 'Free on wordpress.org · Pro $25/yr',
     tone: 'green',
   },
   {

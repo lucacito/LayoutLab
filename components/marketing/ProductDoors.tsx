@@ -87,7 +87,7 @@ const DOORS: Door[] = [
   {
     headline: 'Leave Beaver Builder without rebuilding',
     name: 'Beaver Builder → Divi 5 Converter',
-    chip: { label: 'Free plugin · Pro $25/yr', tone: 'green' },
+    chip: { label: 'Free on wordpress.org · Pro $25/yr', tone: 'green' },
     body: "Pick a page on your site, check what the conversion will produce, convert. Every module in Beaver Builder's reference lands as a native, validated Divi 5 module.",
     stats: `${STATS.beaverModulesMapped} module types mapped · check first, undo any run`,
     href: '/plugins/beaver-builder-to-divi-5',

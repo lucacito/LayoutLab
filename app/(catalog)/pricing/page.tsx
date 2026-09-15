@@ -118,7 +118,7 @@ const TOOLKIT = [
     price: '$25',
     per: '/yr',
     tagline: 'Move whole Beaver Builder sites to Divi 5, Themer headers and footers included.',
-    freeTier: `Free plugin: one page per run, ${STATS.beaverModulesMapped} module mappings, check-before-convert report, one-click undo.`,
+    freeTier: `Free plugin on wordpress.org: one page per run, ${STATS.beaverModulesMapped} module mappings, check-before-convert report, one-click undo.`,
     proTier: 'Pro: unlimited pages per run, Beaver Themer headers/footers into the Divi Theme Builder.',
     action: <BuyProButton product="beaver-to-divi5-pro" label="Get Pro · $25/yr" />,
     href: '/plugins/beaver-builder-to-divi-5',

@@ -21,13 +21,17 @@ describe('ProductDoors', () => {
     expect(screen.getAllByText(/free on wordpress\.org/i).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/free/i).length).toBeGreaterThan(0);
   });
-  it('offers the two plugins under wordpress.org review as a direct download beside the door CTA', () => {
+  it('offers the plugin still under wordpress.org review as a direct download beside the door CTA', () => {
     render(<ProductDoors />);
     const downloads = screen.getAllByRole('link', { name: /download the free plugin/i });
     const hrefs = downloads.map((a) => a.getAttribute('href'));
-    expect(hrefs).toContain('/downloads/jhmg-converter-for-wpbakery-to-divi.zip');
-    expect(hrefs).toContain('/downloads/jhmg-converter-for-beaver-builder-to-divi-5.zip');
+    expect(hrefs).toEqual(['/downloads/jhmg-converter-for-wpbakery-to-divi.zip']);
     expect(downloads.every((a) => a.hasAttribute('download'))).toBe(true);
-    expect(hrefs.some((h) => h?.includes('elementor'))).toBe(false);
+  });
+  it('sends the approved Beaver Builder converter to its wordpress.org listing', () => {
+    render(<ProductDoors />);
+    const wporg = screen.getAllByRole('link', { name: /get the free plugin on wordpress\.org/i });
+    expect(wporg.map((a) => a.getAttribute('href'))).toContain('https://wordpress.org/plugins/jhmg-converter-for-beaver-builder-to-divi-5/');
+    expect(screen.getAllByText(/free on wordpress\.org · pro \$25\/yr/i).length).toBe(3);
   });
 });

@@ -21,9 +21,9 @@ export const FREE_PLUGIN_LINKS: Record<FreePluginProduct, FreePluginLink> = {
     label: WPORG_LABEL,
   },
   'beaver-to-divi5': {
-    href: '/downloads/jhmg-converter-for-beaver-builder-to-divi-5.zip',
-    download: true,
-    label: ZIP_LABEL,
+    href: 'https://wordpress.org/plugins/jhmg-converter-for-beaver-builder-to-divi-5/',
+    download: false,
+    label: WPORG_LABEL,
   },
   'wpbakery-to-divi5': {
     href: '/downloads/jhmg-converter-for-wpbakery-to-divi.zip',
