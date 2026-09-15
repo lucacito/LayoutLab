@@ -34,7 +34,7 @@ describe('homepage (validator spine)', () => {
   it('asks which builder to convert next', async () => {
     render(await HomePage());
     expect(screen.getByText(/which builder should we convert next/i)).toBeTruthy();
-    expect(screen.getByLabelText('WPBakery')).toBeTruthy();
+    expect(screen.getByLabelText('Bricks')).toBeTruthy();
   });
   it('keeps a free-layouts band', async () => {
     render(await HomePage());

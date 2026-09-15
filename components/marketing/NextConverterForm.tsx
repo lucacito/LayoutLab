@@ -6,7 +6,6 @@ import { Icon } from '@/components/ui/Icon';
 // (next_converter_<builder>), which email_captures stores, so demand can be
 // counted with one GROUP BY and nothing new had to be built to hold it.
 export const NEXT_CONVERTER_OPTIONS = [
-  { key: 'wpbakery', label: 'WPBakery' },
   { key: 'bricks', label: 'Bricks' },
   { key: 'oxygen', label: 'Oxygen' },
   { key: 'breakdance', label: 'Breakdance' },
