@@ -13,9 +13,10 @@
 set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
 
-VERSION="1.2.0"
+VERSION="1.2.1"
 PRODUCT="elementor-to-divi5-pro"
-PLUGIN_DIR="/Users/Lucas/Documents/JHMG-Local/jhmg-elementor-to-divi5/plugin/jhmg-converter-for-elementor-to-divi-pro"
+# Override with PLUGIN_DIR=… to ship from another checkout (a git worktree with the release commit).
+PLUGIN_DIR="${PLUGIN_DIR:-/Users/Lucas/Documents/JHMG-Local/jhmg-elementor-to-divi5/plugin/jhmg-converter-for-elementor-to-divi-pro}"
 CONFIRM="${1:-}"
 
 if [ ! -f .env.prod ]; then echo "ERROR: .env.prod not found" >&2; exit 1; fi
@@ -70,7 +71,7 @@ if ! npx tsx scripts/check-prod-db.ts; then
   exit 1
 fi
 
-CHANGELOG='Theme Builder headers and footers now update in place instead of stacking duplicate layouts and default templates on every re-import. Requires Divi 5.0 or newer — the converter now checks and explains itself instead of writing pages that render blank. Global colours and fonts are read from your own Elementor kit, including typography, and an unresolved global is reported rather than replaced with a built-in value. Nested accordion and nested tabs are supported. Pro admin screens are styled. Translation template included.'
+CHANGELOG='Header and footer imports now share one default Theme Builder template with the page body enabled, so both areas show and the page content no longer disappears. Header Footer Elementor templates can be picked from the installed-page list and uploaded header or footer JSON goes to the slot you chose. The button theme style of your Elementor kit is applied to converted buttons. Requires the free JHMG Converter 3.0.2, whose converted pages now render as designed in Divi 5.7.4.'
 
 if [ "$CONFIRM" != "--confirm" ]; then
   echo
