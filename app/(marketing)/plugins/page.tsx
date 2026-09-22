@@ -49,7 +49,7 @@ const DECISIONS = [
   {
     icon: 'how_to_vote',
     situation: "I'm on Bricks, Oxygen or another builder.",
-    answer: 'Vote for the next converter',
+    answer: 'Bricks is in the works · vote for the next',
     href: '#next-converter',
   },
 ];

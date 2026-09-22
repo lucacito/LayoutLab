@@ -31,7 +31,7 @@ describe('menu-data', () => {
     ]);
     const wpbakery = PLUGIN_MENU.find((p) => p.href === '/plugins/wpbakery-to-divi-5');
     expect(wpbakery?.name).toBe('WPBakery → Divi 5');
-    expect(wpbakery?.chip).toBe('Free · Pro $25/yr');
+    expect(wpbakery?.chip).toBe('Free on wordpress.org · Pro $25/yr');
   });
 
   it('builds taxonomy columns with valid /type, /niche, /style hrefs', () => {

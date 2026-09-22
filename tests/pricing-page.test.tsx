@@ -47,16 +47,13 @@ describe('/pricing (plugin licenses)', () => {
   });
   it('puts the free tier one click away on every plugin card', async () => {
     render(await PricingPage());
-    const zips = screen.getAllByRole('link', { name: /download the free plugin \(\.zip\)/i });
-    expect(zips.map((a) => a.getAttribute('href')).sort()).toEqual([
-      '/downloads/jhmg-converter-for-wpbakery-to-divi.zip',
-    ]);
-    expect(zips.every((a) => a.hasAttribute('download'))).toBe(true);
+    expect(screen.queryByRole('link', { name: /download the free plugin \(\.zip\)/i })).toBeNull();
     const wporg = screen.getAllByRole('link', { name: /get the free plugin on wordpress\.org/i });
     expect(wporg.map((a) => a.getAttribute('href')).sort()).toEqual([
       'https://wordpress.org/plugins/jhmg-converter-for-beaver-builder-to-divi-5/',
       'https://wordpress.org/plugins/jhmg-converter-for-divi-to-elementor/',
       'https://wordpress.org/plugins/jhmg-converter-for-elementor-to-divi/',
+      'https://wordpress.org/plugins/jhmg-converter-for-wpbakery-to-divi-5/',
     ]);
   });
 });

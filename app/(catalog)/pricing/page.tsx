@@ -61,7 +61,7 @@ const FAQ = [
   },
   {
     question: 'Is the WPBakery → Divi 5 converter available?',
-    answer: 'Yes. The free plugin converts one page per run and Pro is $25/yr, adding whole-site runs and WPBakery templates converted into the Divi Library.',
+    answer: 'Yes, on wordpress.org. The free plugin converts any number of pages per run, from your site or from an export, and Pro is $25/yr, adding WPBakery templates converted into the Divi Library, a year of updates and priority support.',
   },
 ];
 
@@ -94,8 +94,8 @@ const TOOLKIT = [
     price: '$25',
     per: '/yr',
     tagline: 'Move a whole WPBakery site to Divi 5, templates and all.',
-    freeTier: `Free plugin: one page per run, ${STATS.wpbakeryElementsMapped} element mappings, check-before-convert report, one-click undo.`,
-    proTier: 'Pro: unlimited pages per run, WPBakery templates into the Divi Library.',
+    freeTier: `Free plugin on wordpress.org: any number of pages per run, ${STATS.wpbakeryElementsMapped} element mappings, check-before-convert report, one-click undo.`,
+    proTier: 'Pro: WPBakery templates into the Divi Library, a year of updates, priority support.',
     action: <BuyProButton product="wpbakery-to-divi5-pro" label="Get Pro · $25/yr" />,
     href: '/plugins/wpbakery-to-divi-5',
     free: FREE_PLUGIN_LINKS['wpbakery-to-divi5'],

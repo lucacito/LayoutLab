@@ -22,15 +22,11 @@ import { CtaBand } from '@/components/marketing/CtaBand';
 import { UseCaseVignettes } from '@/components/marketing/UseCaseVignettes';
 import { FREE_PLUGIN_LINKS } from '@/lib/site/free-downloads';
 
-// Direct download while the wordpress.org listing is under review. Once approved, point
-// these at https://wordpress.org/plugins/jhmg-converter-for-wpbakery-to-divi/ and
-// delete public/downloads/.
-const FREE_PLUGIN_PATH = FREE_PLUGIN_LINKS['wpbakery-to-divi5'].href;
-const FREE_PLUGIN_URL = `${env.NEXT_PUBLIC_SITE_URL}${FREE_PLUGIN_PATH}`;
+const WP_ORG_URL = FREE_PLUGIN_LINKS['wpbakery-to-divi5'].href;
 
 const PRODUCT_NAME = 'WPBakery to Divi 5 Converter';
 const PRODUCT_DESCRIPTION =
-  'Convert WPBakery Page Builder pages into real, validated Divi 5 layouts. The free plugin converts one page per run, straight from your site or from an export; Pro converts the whole site in one run and turns WPBakery templates into Divi Library layouts.';
+  'Convert WPBakery Page Builder pages into real, validated Divi 5 layouts. The free plugin converts any number of pages per run, straight from your site or from an export; Pro turns WPBakery templates into Divi Library layouts and adds a year of updates and priority support.';
 
 // The one coverage sentence the whole page is built on, straight from
 // `scripts/element-coverage.php` at the 1.0.0 release commit. Never quoted as a
@@ -48,7 +44,7 @@ export const metadata: Metadata = {
   // Root layout's title.template appends "| Divi5Lab".
   title: 'WPBakery to Divi 5 Converter: Free plugin + Pro',
   description:
-    `Convert WPBakery Page Builder pages to Divi 5 in minutes. ${COVERAGE_LINE}, mapped to native, validated Divi 5 modules. Free plugin, one page per run; Pro converts whole sites and WPBakery templates, at $25/yr on unlimited sites.`,
+    `Convert WPBakery Page Builder pages to Divi 5 in minutes. ${COVERAGE_LINE}, mapped to native, validated Divi 5 modules. Free plugin on wordpress.org, any number of pages per run; Pro converts WPBakery templates into the Divi Library, at $25/yr on unlimited sites.`,
   alternates: { canonical: `${env.NEXT_PUBLIC_SITE_URL}/plugins/wpbakery-to-divi-5` },
 };
 
@@ -72,16 +68,16 @@ const REPORT_ROWS = [
 
 const PRO_WHY = [
   {
-    title: 'The whole site in one run',
-    body: 'Pick every WPBakery page on the site, or upload one WordPress export, and convert them together. Free does the same work one page at a time.',
-  },
-  {
     title: 'WPBakery templates → Divi Library',
     body: 'Saved WPBakery templates (vc4_templates and Templatera) become Divi Library layouts instead of loose pages. Converting the same template again updates the layout instead of adding another.',
   },
   {
-    title: 'Priority support + a year of updates',
-    body: 'WPBakery and Divi both move fast, and every ThemeForest theme adds its own elements. Updates keep the mappings current; priority support gets you unstuck mid-migration.',
+    title: 'A year of updates',
+    body: 'WPBakery and Divi both move fast, and every ThemeForest theme adds its own elements. Updates keep the mappings current for the sites you have not moved yet.',
+  },
+  {
+    title: 'Priority support',
+    body: 'A real migration turns up a real theme with real quirks. Priority support gets you unstuck mid-move, on as many sites as you run.',
   },
 ];
 
@@ -94,7 +90,7 @@ const USE_CASES = [
   {
     icon: 'storefront',
     title: 'The site owner',
-    body: 'One ThemeForest theme, one move. Free plugin, page by page, zero cost. Upgrade only when the saved templates should come along.',
+    body: 'One ThemeForest theme, one move. Free plugin, every page, zero cost. Upgrade only when the saved templates should come along.',
   },
   {
     icon: 'handyman',
@@ -110,7 +106,7 @@ const FAQ = [
   },
   {
     question: 'Will this change my WPBakery pages?',
-    answer: 'No. Converting always creates a new Divi draft. The original page is never modified, and every run can be undone with one click from the Recent conversions list.',
+    answer: 'Only the ones you convert, and never for good. Converting rebuilds the page in Divi 5 so it keeps its address, its publish date, its custom fields and every link pointing at it. The WPBakery version is kept beside it and comes back with one click from the Recent conversions list. Prefer a copy? Tick one box and you get a separate Divi draft with the original left exactly as it is.',
   },
   {
     question: 'Which elements convert?',
@@ -146,7 +142,7 @@ const FAQ = [
   },
   {
     question: 'Do I need the free plugin?',
-    answer: 'Yes. Pro is a license that extends the free plugin. Install the free plugin first (download it from this page while the wordpress.org listing is under review), then activate Pro.',
+    answer: 'Yes. Pro is a license that extends the free plugin. Install the free plugin from wordpress.org first, then activate Pro.',
   },
   {
     question: 'Is there a refund policy?',
@@ -177,7 +173,7 @@ export default function PluginPage() {
         data={productJsonLd({
           name: PRODUCT_NAME,
           description: PRODUCT_DESCRIPTION,
-          image: 'https://ps.w.org/jhmg-converter-for-wpbakery-to-divi/assets/banner-772x250.png',
+          image: 'https://ps.w.org/jhmg-converter-for-wpbakery-to-divi-5/assets/banner-772x250.png',
           url,
           offer: { priceCents: 2500, currency: 'USD' },
         })}
@@ -189,20 +185,21 @@ export default function PluginPage() {
         align="left"
         eyebrow="WPBakery → Divi 5 Converter"
         title="Convert WPBakery to Divi 5 without rebuilding a thing."
-        lead="Pick a page on your site, read the report, convert. WPBakery shortcodes become native Divi 5 modules, checked against the Divi 5 schema before anything is written, and every run can be undone. Free for one page per run; Pro moves the whole site."
+        lead="Pick a page on your site, read the report, convert. WPBakery shortcodes become native Divi 5 modules, checked against the Divi 5 schema before anything is written, and every run can be undone. Free on wordpress.org for any number of pages; Pro brings the saved templates along."
       >
         <div className="flex flex-wrap items-center gap-3">
           <BuyProButton product="wpbakery-to-divi5-pro" label="Get Pro · $25/yr" />
           <a
-            href={FREE_PLUGIN_PATH}
-            download
+            href={WP_ORG_URL}
+            target="_blank"
+            rel="noopener noreferrer"
             className="inline-flex h-12 items-center justify-center rounded-pill border border-paper/35 bg-paper/10 px-8 text-body font-semibold text-paper backdrop-blur transition hover:-translate-y-0.5 hover:border-paper/70 hover:bg-paper/20"
           >
-            Download the free plugin (.zip)
+            Get the free plugin on wordpress.org
           </a>
         </div>
         <p className="mt-3 text-small text-paper/70">
-          Direct download while the wordpress.org listing is under review. Install it from Plugins → Add New → Upload Plugin.
+          Free in the WordPress plugin directory. Install it from Plugins → Add New and search for “WPBakery to Divi 5”.
         </p>
         <StatStrip
           className="mt-12 !mx-0"
@@ -236,8 +233,8 @@ export default function PluginPage() {
               <h2 className="text-h2 text-navy">Check first, then convert</h2>
               <p className="mt-4 max-w-xl text-lead text-muted">
                 Click Check this page and you get the structure the conversion will produce and everything that
-                will not carry over, by name, before anything is written. Convert creates a new Divi draft; your
-                WPBakery page is never touched.
+                will not carry over, by name, before anything is written. Convert rebuilds the page in Divi 5 and
+                keeps the WPBakery version for a one-click undo; tick one box for a separate draft instead.
               </p>
               <Card className="mt-8 p-6">
                 <p className="eyebrow text-muted">Conversion report · Home</p>
@@ -261,7 +258,7 @@ export default function PluginPage() {
             {[
               { title: 'Pick the page', body: 'Choose a WPBakery page from the list on your site, or upload a WordPress export, or a .txt file of shortcodes from another site.' },
               { title: 'Check it', body: 'Read the report: the structure the conversion will produce, and what will not carry over. Nothing has been written yet.' },
-              { title: 'Convert & review', body: 'A new Divi 5 draft appears with every element native and a per-page report. Review it in the Divi Builder, publish when ready, or undo with one click.' },
+              { title: 'Convert & review', body: 'The page comes back built in Divi 5, every element native, with a per-page report. Review it in the Divi Builder, or undo with one click and the WPBakery version is back.' },
             ].map((s, i) => (
               <div key={s.title}>
                 <div className="flex h-10 w-10 items-center justify-center rounded-button bg-fog font-semibold text-action">{i + 1}</div>
@@ -301,7 +298,7 @@ export default function PluginPage() {
               { label: 'Upload a WordPress export, or a .txt file of shortcodes', values: [true, true] },
               { label: `${WPBAKERY_ELEMENT_TYPES_MAPPED} element-tag mappings`, values: [true, true] },
               { label: 'Check-before-convert report and one-click undo', values: [true, true] },
-              { label: 'Pages per run', values: ['1', 'Unlimited'] },
+              { label: 'Pages per run', values: ['Unlimited', 'Unlimited'] },
               { label: 'WPBakery templates → Divi Library', values: [false, true] },
               { label: 'Updates', values: ['n/a', '1 year'] },
               { label: 'Support', values: ['Community', 'Priority'] },
@@ -311,8 +308,8 @@ export default function PluginPage() {
           />
           <div className="mt-8 flex flex-wrap items-center gap-3">
             <BuyProButton product="wpbakery-to-divi5-pro" label="Get Pro · $25/yr" />
-            <a href={FREE_PLUGIN_PATH} download className="text-body font-semibold text-action hover:underline">
-              Start with the free plugin (.zip)
+            <a href={WP_ORG_URL} target="_blank" rel="noopener noreferrer" className="text-body font-semibold text-action hover:underline">
+              Start with the free plugin
             </a>
           </div>
         </Container>
@@ -379,7 +376,7 @@ export default function PluginPage() {
         title="Ship your migration this week."
         body="Whole WPBakery sites and saved templates, converted into validated Divi 5 markup and reviewed by you."
         cta={{ label: 'Get Pro · $25/yr', href: '/pricing' }}
-        secondary={{ label: 'Try the free plugin first', href: FREE_PLUGIN_URL }}
+        secondary={{ label: 'Try the free plugin first', href: WP_ORG_URL }}
       />
     </main>
   );
