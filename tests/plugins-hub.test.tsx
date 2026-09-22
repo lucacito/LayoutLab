@@ -11,9 +11,10 @@ describe('/plugins hub', () => {
     expect(screen.getByText(/\$30\/yr/i)).toBeTruthy();
     expect(screen.getAllByText(/\$25\/yr/i).length).toBeGreaterThan(0);
   });
-  it('has a which-tool decision strip', async () => {
+  it('has a which-tool decision strip that says Bricks is in the works', async () => {
     render(await PluginsHub());
     expect(screen.getByText(/which tool do i need/i)).toBeTruthy();
+    expect(screen.getAllByText(/bricks .*in the works/i).length).toBeGreaterThan(0);
   });
   it('has metadata', () => { expect(String(metadata.title)).toMatch(/plugins/i); });
   it('positions the hub as the place to convert anything into Divi 5', async () => {

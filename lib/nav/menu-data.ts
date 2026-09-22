@@ -119,7 +119,7 @@ export const PLUGIN_MENU: PluginMenuItem[] = [
     desc: 'Every element WPBakery registers, plus the theme add-ons, into Divi 5.',
     href: '/plugins/wpbakery-to-divi-5',
     icon: 'sync_alt',
-    chip: 'Free · Pro $25/yr',
+    chip: 'Free on wordpress.org · Pro $25/yr',
     tone: 'green',
   },
   {

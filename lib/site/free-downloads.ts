@@ -1,7 +1,7 @@
-// Where "get the free plugin" points for each converter. A plugin still under
-// wordpress.org review is served as a direct download of the exact zip that was
-// submitted; once the listing is approved, swap its entry to the wordpress.org
-// URL with `download: false` and delete the zip from public/downloads/.
+// Where "get the free plugin" points for each converter. Every listing is
+// approved, so each entry is its wordpress.org URL. A plugin still under review
+// would be served as a direct download of the exact zip that was submitted
+// (`download: true`, a zip in public/downloads/) until its listing is approved.
 export type FreePluginProduct = 'elementor-to-divi5' | 'beaver-to-divi5' | 'wpbakery-to-divi5' | 'divi-to-elementor';
 
 export type FreePluginLink = {
@@ -26,9 +26,9 @@ export const FREE_PLUGIN_LINKS: Record<FreePluginProduct, FreePluginLink> = {
     label: WPORG_LABEL,
   },
   'wpbakery-to-divi5': {
-    href: '/downloads/jhmg-converter-for-wpbakery-to-divi.zip',
-    download: true,
-    label: ZIP_LABEL,
+    href: 'https://wordpress.org/plugins/jhmg-converter-for-wpbakery-to-divi-5/',
+    download: false,
+    label: WPORG_LABEL,
   },
   'divi-to-elementor': {
     href: 'https://wordpress.org/plugins/jhmg-converter-for-divi-to-elementor/',

@@ -2,15 +2,12 @@ import { describe, expect, it } from 'vitest';
 import { FREE_PLUGIN_LINKS } from '@/lib/site/free-downloads';
 
 describe('free plugin links', () => {
-  it('serves the plugin still under wordpress.org review as a direct zip download', () => {
+  it('sends every approved plugin to its wordpress.org listing, WPBakery included', () => {
     expect(FREE_PLUGIN_LINKS['wpbakery-to-divi5']).toEqual({
-      href: '/downloads/jhmg-converter-for-wpbakery-to-divi.zip',
-      download: true,
-      label: 'Download the free plugin (.zip)',
+      href: 'https://wordpress.org/plugins/jhmg-converter-for-wpbakery-to-divi-5/',
+      download: false,
+      label: 'Get the free plugin on wordpress.org',
     });
-  });
-
-  it('sends the approved plugins to their wordpress.org listing', () => {
     expect(FREE_PLUGIN_LINKS['elementor-to-divi5']).toEqual({
       href: 'https://wordpress.org/plugins/jhmg-converter-for-elementor-to-divi/',
       download: false,

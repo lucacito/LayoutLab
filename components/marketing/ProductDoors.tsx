@@ -98,7 +98,7 @@ const DOORS: Door[] = [
   {
     headline: 'Leave WPBakery without rebuilding',
     name: 'WPBakery → Divi 5 Converter',
-    chip: { label: 'Free plugin · Pro $25/yr', tone: 'green' },
+    chip: { label: 'Free on wordpress.org · Pro $25/yr', tone: 'green' },
     body: `Shortcodes in, native Divi 5 modules out. All ${WPBAKERY_REGISTERED_ELEMENTS} elements WPBakery registers have a handler, and the theme elements your ThemeForest theme added are kept, never dropped.`,
     stats: `${STATS.wpbakeryElementsMapped} element types mapped · nothing dropped in silence`,
     href: '/plugins/wpbakery-to-divi-5',

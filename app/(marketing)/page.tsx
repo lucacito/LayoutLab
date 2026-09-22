@@ -65,8 +65,8 @@ export default async function HomePage() {
             Already on Divi 5?{' '}
             <Link href="/plugins/divi-5-ai-editor" className="font-semibold text-paper underline underline-offset-2 hover:text-g-pink">Meet the AI Editor</Link>
             <span className="mx-2">·</span>
-            Another builder?{' '}
-            <a href="#next-converter" className="font-semibold text-paper underline underline-offset-2 hover:text-g-pink">Vote for the next converter</a>
+            On Bricks?{' '}
+            <a href="#next-converter" className="font-semibold text-paper underline underline-offset-2 hover:text-g-pink">Bricks → Divi 5 is in the works</a>
           </p>
 
           <StatStrip

@@ -39,14 +39,25 @@ describe('lib/site/wpbakery-element-mappings', () => {
 });
 
 describe('/plugins/wpbakery-to-divi-5', () => {
-  it('sells Pro at $25/yr and offers the free plugin as a direct download', () => {
+  it('sells Pro at $25/yr and sends the free plugin to its wordpress.org listing', () => {
     render(<WPBakeryPage />);
     expect(screen.getAllByRole('button', { name: /get pro · \$25\/yr/i }).length).toBeGreaterThan(0);
     const free = screen.getAllByRole('link', { name: /free plugin/i });
     expect(free.length).toBeGreaterThan(0);
-    expect(free[0]!.getAttribute('href')).toBe('/downloads/jhmg-converter-for-wpbakery-to-divi.zip');
-    expect(free[0]!.hasAttribute('download')).toBe(true);
+    for (const link of free) {
+      expect(link.getAttribute('href')).toBe('https://wordpress.org/plugins/jhmg-converter-for-wpbakery-to-divi-5/');
+      expect(link.hasAttribute('download')).toBe(false);
+    }
     expect(screen.queryByText(/coming soon/i)).toBeNull();
+    expect(screen.queryByText(/under review/i)).toBeNull();
+    expect(screen.queryByText(/\.zip/i)).toBeNull();
+  });
+
+  it('never claims free is limited per run: nothing in the free plugin is capped', () => {
+    render(<WPBakeryPage />);
+    expect(screen.queryByText(/one page per run|one page at a time|page by page/i)).toBeNull();
+    const row = screen.getByRole('rowheader', { name: 'Pages per run' }).closest('tr');
+    expect(within(row!).getAllByText('Unlimited').length).toBe(2);
   });
 
   it('quotes the coverage totals with their parenthetical, never a bare fraction', () => {
@@ -120,9 +131,13 @@ describe('/plugins/wpbakery-to-divi-5', () => {
     expect(reference).toMatch(/Ultimate Addons and Ronneby are the add-on and theme families/i);
   });
 
-  it('never claims the original site is modified and has canonical metadata', () => {
+  it('tells the truth about the rewrite (undo restores, a draft is one tick away) and has canonical metadata', () => {
     render(<WPBakeryPage />);
-    expect(screen.getAllByText(/never modified|never touched/i).length).toBeGreaterThan(0);
+    const answer = screen.getByText(/Will this change my WPBakery pages/i).nextElementSibling?.textContent ?? '';
+    expect(answer).toMatch(/keeps its address/i);
+    expect(answer).toMatch(/one click/i);
+    expect(answer).toMatch(/separate Divi draft/i);
+    expect(screen.queryByText(/never modified|never touched/i)).toBeNull();
     expect(String(metadata.title)).toMatch(/wpbakery to divi 5/i);
     expect(String(metadata.alternates?.canonical)).toMatch(/\/plugins\/wpbakery-to-divi-5$/);
   });

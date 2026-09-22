@@ -41,9 +41,10 @@ describe('site chrome', () => {
     expect(container.querySelector('a[href="/contact"]')).not.toBeNull();
     expect(getByText(/bring Elementor, Beaver Builder and WPBakery sites to Divi 5/)).toBeTruthy();
   });
-  it('AnnouncementBar announces the newest converter, WPBakery, with a link to its page', () => {
+  it('AnnouncementBar announces the WPBakery converter on wordpress.org, names Bricks as next, and links the page', () => {
     const { getByText, container } = render(<AnnouncementBar />);
-    expect(getByText(/WPBakery → Divi 5 converter/)).toBeTruthy();
+    expect(getByText(/WPBakery → Divi 5 converter is now on wordpress\.org/)).toBeTruthy();
+    expect(getByText(/Bricks → Divi 5/)).toBeTruthy();
     expect(container.querySelector('a[href="/plugins/wpbakery-to-divi-5"]')).not.toBeNull();
   });
 });
