@@ -66,6 +66,24 @@ export const WIDGET_MAPPING_GROUPS: WidgetMappingGroup[] = [
       'premium-addon-blog', 'retina', 'woo-product-grid',
     ],
   },
+  {
+    group: 'Animation Addons for Elementor (wcf-*/aae-*)',
+    widgets: [
+      'aae--advanced-button', 'aae--clickdrop', 'aae--image-hotspot', 'aae--notification',
+      'wcf--a-accordion', 'wcf--a-pricing-table', 'wcf--a-testimonial', 'wcf--animated-heading',
+      'wcf--author-box', 'wcf--blog--post--comment', 'wcf--blog--post--paginate',
+      'wcf--blog--post--title', 'wcf--blog--search--form', 'wcf--brand-slider',
+      'wcf--breadcrumbs', 'wcf--button', 'wcf--contact-form-7', 'wcf--content-slider',
+      'wcf--countdown', 'wcf--counter', 'wcf--event-slider', 'wcf--filterable-slider',
+      'wcf--floating-elements', 'wcf--icon-box', 'wcf--image', 'wcf--image-accordion',
+      'wcf--image-box', 'wcf--image-box-slider', 'wcf--image-compare', 'wcf--image-gallery',
+      'wcf--nav-menu', 'wcf--nested-slider', 'wcf--one-page-nav', 'wcf--progressbar',
+      'wcf--services-tab', 'wcf--site-logo', 'wcf--social-icons', 'wcf--t-h-image',
+      'wcf--tabs', 'wcf--team', 'wcf--testimonial', 'wcf--testimonial2', 'wcf--testimonial3',
+      'wcf--text', 'wcf--theme-post-content', 'wcf--timeline', 'wcf--title',
+      'wcf--toggle-switch', 'wcf--typewriter', 'wfc--team-slider',
+    ],
+  },
 ];
 
 export const WIDGET_TYPES_MAPPED = WIDGET_MAPPING_GROUPS.reduce((n, g) => n + g.widgets.length, 0);

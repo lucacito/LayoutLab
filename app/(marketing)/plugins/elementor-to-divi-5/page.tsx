@@ -118,7 +118,7 @@ const FAQ = [
   },
   {
     question: 'Which page-builder add-ons are covered?',
-    answer: 'Elementor core plus Essential Addons, ElementsKit, Header Footer Elementor, and popular Woo widgets. See the full mapping reference on this page.',
+    answer: 'Elementor core plus Essential Addons, ElementsKit, Header Footer Elementor, Animation Addons for Elementor, and popular Woo widgets. See the full mapping reference on this page.',
   },
   {
     question: 'Is there a refund policy?',
