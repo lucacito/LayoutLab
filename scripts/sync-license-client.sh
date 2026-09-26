@@ -25,6 +25,15 @@ sed \
   "$SRC" > "$DEST_D2E"
 echo "synced -> $DEST_D2E (transformed: namespace + text domain)"
 
+# B2D5 destination: rewrite the namespace and text domain to bricks-to-divi5's own.
+DEST_B2D5="/Users/Lucas/Documents/JHMG-Local/jhmg-bricks-to-divi5/plugin/jhmg-converter-for-bricks-to-divi-pro/includes/licensing/class-license-client.php"
+mkdir -p "$(dirname "$DEST_B2D5")"
+sed \
+  -e 's/ElementorDivi5Converter\\Pro\\Licensing/BricksDivi5Converter\\Pro\\Licensing/g' \
+  -e 's/jhmg-converter-for-elementor-to-divi-pro/jhmg-converter-for-bricks-to-divi-pro/g' \
+  "$SRC" > "$DEST_B2D5"
+echo "synced -> $DEST_B2D5 (transformed: namespace + text domain)"
+
 # AI Editor destination: single plugin (not a Pro companion). Rewrites namespace,
 # text domain, user-facing product name in notices, and the admin link shape
 # (top-level admin.php page, license UI lives on the "upgrade" tab).
