@@ -2,7 +2,7 @@
 // approved, so each entry is its wordpress.org URL. A plugin still under review
 // would be served as a direct download of the exact zip that was submitted
 // (`download: true`, a zip in public/downloads/) until its listing is approved.
-export type FreePluginProduct = 'elementor-to-divi5' | 'beaver-to-divi5' | 'wpbakery-to-divi5' | 'divi-to-elementor';
+export type FreePluginProduct = 'elementor-to-divi5' | 'beaver-to-divi5' | 'wpbakery-to-divi5' | 'divi-to-elementor' | 'ai-editor-divi5';
 
 export type FreePluginLink = {
   href: string;
@@ -15,6 +15,14 @@ const ZIP_LABEL = 'Download the free plugin (.zip)';
 const WPORG_LABEL = 'Get the free plugin on wordpress.org';
 
 export const FREE_PLUGIN_LINKS: Record<FreePluginProduct, FreePluginLink> = {
+  // JHMG AI Editor for Divi 5 4.0.0: submitted to wordpress.org and awaiting approval, so it is
+  // served as the exact submitted zip from public/downloads/. When the listing is approved, swap
+  // this entry to its wordpress.org URL (download: false) like the converters below.
+  'ai-editor-divi5': {
+    href: '/downloads/jhmg-ai-editor-for-divi-5.zip',
+    download: true,
+    label: ZIP_LABEL,
+  },
   'elementor-to-divi5': {
     href: 'https://wordpress.org/plugins/jhmg-converter-for-elementor-to-divi/',
     download: false,

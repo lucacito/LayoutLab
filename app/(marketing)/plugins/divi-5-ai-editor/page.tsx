@@ -7,7 +7,7 @@ import { Card } from '@/components/ui/Card';
 import { JsonLd } from '@/components/JsonLd';
 import { productJsonLd, faqJsonLd } from '@/lib/seo/jsonld';
 import { BuyProButton } from '@/components/plugins/BuyProButton';
-import { FreeDownloadForm } from '@/components/plugins/FreeDownloadForm';
+import { FREE_PLUGIN_LINKS, freePluginAnchorProps } from '@/lib/site/free-downloads';
 import { STATS } from '@/lib/site/stats';
 import { StatStrip } from '@/components/marketing/StatStrip';
 import { ValidatorChatDemo, type ChatStep } from '@/components/marketing/ValidatorChatDemo';
@@ -209,9 +209,19 @@ export default function AiEditorPage() {
           <div className="mt-10 grid items-start gap-6 lg:grid-cols-2">
             <Card className="p-8">
               <h3 className="text-section text-navy">Start free</h3>
-              <p className="mt-2 text-body text-muted">Edit and validate existing pages, all guides included. Direct download, no account needed.</p>
+              <p className="mt-2 text-body text-muted">
+                JHMG AI Editor for Divi 5 4.0.0: edit, validate and create pages (as drafts), undo AI edits, and a
+                built-in image pack that also reads your Media Library. Direct download, no account needed.
+              </p>
               <div className="mt-6">
-                <FreeDownloadForm product="ai-editor-divi5-pro" />
+                <a
+                  href={FREE_PLUGIN_LINKS['ai-editor-divi5'].href}
+                  {...freePluginAnchorProps(FREE_PLUGIN_LINKS['ai-editor-divi5'])}
+                  className="inline-flex h-12 items-center justify-center rounded-pill bg-action px-8 text-body font-semibold text-paper transition hover:-translate-y-0.5"
+                >
+                  {FREE_PLUGIN_LINKS['ai-editor-divi5'].label}
+                </a>
+                <p className="mt-3 text-small text-muted">Version 4.0.0 · requires Divi 5, WordPress 6.0+ and PHP 8.1+. It is also pending review on wordpress.org.</p>
               </div>
             </Card>
             <Card className="relative border-action p-8 shadow-lg ring-1 ring-action">
