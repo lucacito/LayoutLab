@@ -5,12 +5,12 @@ date: 2026-07-12
 keywords: chatgpt divi, divi 5 custom gpt, chatgpt actions wordpress, openapi divi editor
 ---
 
-Claude Desktop and Cursor connect to the [AI Editor for Divi 5](/plugins/divi-5-ai-editor) plugin over **MCP**, but ChatGPT doesn't speak that protocol yet. It uses **Actions**, which call an HTTP API described by an **OpenAPI spec**. The plugin exposes both interfaces from the same backend, so a Custom GPT with Actions gets most of the same tools (list pages, read layouts, propose edits, all gated by the same deterministic validator) just wired up a different way. A couple of Pro tools (site-wide custom CSS and PHP snippet proposals) are MCP-only and aren't exposed over Actions; see "Free vs. Pro" below. This guide walks through that setup.
+Claude Desktop and Cursor connect to the [AI Editor for Divi 5](/plugins/divi-5-ai-editor) plugin over **MCP**, but ChatGPT doesn't speak that protocol yet. It uses **Actions**, which call an HTTP API described by an **OpenAPI spec**. The plugin exposes both interfaces from the same backend, so a Custom GPT with Actions gets the same tools (list pages, read layouts, propose edits, create drafts, undo, all gated by the same deterministic validator) just wired up a different way. This guide walks through that setup.
 
 ## Prerequisites
 
 - Divi 5 (not Divi 4) on WordPress 6.0+ and PHP 8.1+.
-- The [AI Editor for Divi 5](/plugins/divi-5-ai-editor) plugin installed and active.
+- The free [AI Editor for Divi 5](/plugins/divi-5-ai-editor) plugin (listed in WordPress as JHMG AI Editor for Divi 5) installed and active.
 - Your site reachable over **public HTTPS**. This is the one hard requirement that's different from the Claude/Cursor setup: ChatGPT calls your site's API from OpenAI's servers, not from your own machine, so `localhost` or an unreachable staging box won't work. A real domain with a valid SSL certificate is required.
 - A ChatGPT plan that supports Custom GPTs with Actions.
 
@@ -24,7 +24,7 @@ In ChatGPT, go to **Explore GPTs → Create** (or **My GPTs → Create a GPT**).
 
 ## Step 3: Add the Action
 
-In the GPT editor, scroll to **Actions** and click **Create new action**. Rather than pasting the schema by hand, use **Import from URL** and paste the OpenAPI spec URL from your connection panel. ChatGPT fetches the spec and populates every available operation automatically (listing pages, reading layouts, updating pages, and so on, matching whatever tier your license unlocks).
+In the GPT editor, scroll to **Actions** and click **Create new action**. Rather than pasting the schema by hand, use **Import from URL** and paste the OpenAPI spec URL from your connection panel. ChatGPT fetches the spec and populates every available operation automatically (listing pages, reading layouts, updating pages, creating drafts, undo, the guides, and so on).
 
 ## Step 4: Set authentication
 
@@ -44,11 +44,13 @@ If the first call fails, ChatGPT will usually show you the raw HTTP error, which
 
 Actions and MCP are just two doors into the same house. Whether the request comes from Claude over MCP or from your Custom GPT over an Action, every proposed layout change passes through the plugin's **deterministic validator** before anything is saved. An invalid change (a malformed attribute, impossible nesting, a missing required field against Divi 5's real module schema) gets rejected with the exact violation message, and the GPT can use that to retry rather than leaving your page half-broken. This is the identical validator that gates every layout in [our catalog](/browse) before it goes live; see [Divi 5 Design Tips](/guides/divi-5-design-tips) for the design conventions layered on top of raw structural correctness. The transport changes; the safety net doesn't.
 
-## Free vs. Pro
+## What the free plugin includes
 
-The **free tier** gives your Custom GPT the ability to list pages, read layouts, update existing ones, run dry-run validation, and pull the plugin's built-in style, site, and section guides, which is enough to have ChatGPT genuinely maintain a site that already exists.
+The plugin is free, and everything in it is available to your Custom GPT over Actions. It can list pages, read layouts, update existing ones, change a single piece of text without rebuilding the page, run dry-run validation, and create new pages. New pages are always saved as **drafts**, so you review and publish them yourself. Every page the GPT changes keeps its previous version (the last 10), so the GPT can restore an earlier one, or you can undo an edit from the plugin's Dashboard.
 
-**Pro** ($30/yr, one license across unlimited sites) adds the Actions for creating new pages, setting the front page, and building the primary menu. If your GPT needs to spin up a whole new page rather than edit an existing one, that's the Pro line. Two other Pro tools, site-wide custom CSS and reviewed PHP snippet proposals, are MCP-only for now and aren't available over Actions, so they need an MCP-based assistant like Claude or Cursor instead; details on the [plugin page](/plugins/divi-5-ai-editor).
+It also includes a built-in pack of 44 original images, read-only access to your Media Library, and the style, landing-page, site and image guides plus 17 section recipes. It doesn't set your front page, edit menus, or save custom CSS or PHP. Details are on the [plugin page](/plugins/divi-5-ai-editor).
+
+A separate Pro add-on for live stock-photo sourcing is planned, but it is not available yet and the free plugin is complete without it.
 
 ## Troubleshooting
 
@@ -58,4 +60,4 @@ The **free tier** gives your Custom GPT the ability to list pages, read layouts,
 
 **The GPT describes a change instead of making it.** Confirm the Action actually saved (re-open the GPT editor and check the Actions tab shows operations imported) rather than the conversation silently falling back to a plain-text answer.
 
-Ready to try it? [Get the AI Editor for Divi 5](/plugins/divi-5-ai-editor). The free tier edits existing pages; Pro builds whole sites.
+Ready to try it? [Get the free AI Editor for Divi 5](/plugins/divi-5-ai-editor), set up your Custom GPT, and make your first validated edit.
