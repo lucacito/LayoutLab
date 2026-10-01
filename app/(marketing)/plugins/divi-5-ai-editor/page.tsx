@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
 import { env } from '@/lib/env';
 import { Container } from '@/components/ui/Container';
 import { SectionShell, EDGE } from '@/components/ui/SectionShell';
@@ -170,12 +171,12 @@ export default function AiEditorPage() {
                 >
                   Get the free plugin
                 </a>
-                <a
+                <Link
                   href="/guides"
                   className="inline-flex h-12 items-center justify-center rounded-pill border border-paper/35 bg-paper/10 px-8 text-body font-semibold text-paper backdrop-blur transition hover:-translate-y-0.5 hover:border-paper/70 hover:bg-paper/20"
                 >
                   Read the setup guides
-                </a>
+                </Link>
               </div>
               <p className="mt-6 text-small font-medium text-paper/60">
                 Works with: {ASSISTANTS.join(' · ')}
