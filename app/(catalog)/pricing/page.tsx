@@ -17,14 +17,19 @@ import { FREE_PLUGIN_LINKS, freePluginAnchorProps } from '@/lib/site/free-downlo
 export const metadata: Metadata = {
   title: 'Pricing: Pro plugin licenses',
   description:
-    'Simple pricing for the Divi 5 plugin toolkit. Free plugins and free layouts to start; Pro licenses from $25/yr on unlimited sites, and nothing breaks if you stop paying.',
+    'Simple pricing for the Divi 5 plugin toolkit. Free plugins and free layouts to start; converter Pro licenses from $25/yr on unlimited sites, and nothing breaks if you stop paying.',
 };
 
 const FAQ = [
   {
     question: 'What does Pro include?',
     answer:
-      'Each plugin has its own Pro: the Elementor→Divi 5 converter adds full kit ZIP import, Theme Builder headers/footers, and global styles; the AI Editor adds page creation, menus, and site-wide styling. Both include a year of updates and priority support.',
+      'Each converter has its own Pro tier, shown on its card above: for example the Elementor→Divi 5 converter adds full kit ZIP import, Theme Builder headers/footers, and global styles. Every Pro includes a year of updates and priority support. The AI Editor has no paid plan today.',
+  },
+  {
+    question: 'Is the AI Editor free?',
+    answer:
+      'Yes. The whole plugin is free: editing and validating pages, creating pages as drafts, undo, the built-in image pack and Media Library access. A separate Pro add-on for live stock photos is planned, with no price or release date yet.',
   },
   {
     question: 'Do licenses cover client sites?',
@@ -40,7 +45,7 @@ const FAQ = [
   },
   {
     question: 'Can I try before buying?',
-    answer: 'Always. Every product has a working free tier: free single-page conversions, a free AI Editor download, and a fully free layout catalog.',
+    answer: 'Always. Every converter has a working free tier, the AI Editor is a free plugin, and the whole layout catalog is free.',
   },
   {
     question: 'Is there a refund policy?',
@@ -79,14 +84,22 @@ const TOOLKIT = [
     highlight: true,
   },
   {
-    name: 'AI Editor for Divi 5 Pro',
-    price: '$30',
-    per: '/yr',
-    tagline: 'Let your AI assistant build pages, menus and site-wide styling, with every change validated. Start with a 45-day free trial, no card required.',
-    freeTier: 'Free download: edit and validate existing pages, all guides and recipes included.',
-    proTier: 'Pro: create pages from scratch, front page, menus, site-wide CSS, reviewed PHP.',
-    action: <BuyProButton product="ai-editor-divi5-pro" label="Start 45-day free trial" />,
+    name: 'AI Editor for Divi 5',
+    price: 'Free',
+    per: '',
+    tagline: 'Let your AI assistant edit Divi 5 pages in plain English, with every change validated before it is saved.',
+    freeTier: 'The whole plugin is free: edit and create pages (as drafts), undo any AI edit, built-in image pack and Media Library access.',
+    proTier: 'Pro add-on coming soon: live stock-photo sourcing for each section. Not available yet.',
+    action: (
+      <Link
+        href="/plugins/divi-5-ai-editor"
+        className="inline-flex h-12 items-center justify-center rounded-full bg-action px-8 text-body font-semibold text-paper transition hover:brightness-110"
+      >
+        Get the free AI Editor
+      </Link>
+    ),
     href: '/plugins/divi-5-ai-editor',
+    hideDetails: true,
     highlight: false,
   },
   {
@@ -133,7 +146,7 @@ export default async function PricingPage() {
       <PageHero
         eyebrow="Pricing"
         title="Licenses that respect you"
-        lead="Free tiers on everything. Pro from $25/yr on unlimited sites, and when a license lapses nothing breaks: activated sites keep working. Renewal buys updates and support, not hostage access."
+        lead="Free tiers on everything, and the AI Editor is entirely free. Converter Pro licenses start at $25/yr on unlimited sites, and when a license lapses nothing breaks: activated sites keep working. Renewal buys updates and support, not hostage access."
       />
 
       <SectionShell tone="paper" pad="lg">
@@ -170,9 +183,11 @@ export default async function PricingPage() {
                       {p.free.label}
                     </a>
                   )}
-                  <Link href={p.href} className="text-center text-small font-semibold text-action hover:underline">
-                    Full details
-                  </Link>
+                  {!('hideDetails' in p && p.hideDetails) && (
+                    <Link href={p.href} className="text-center text-small font-semibold text-action hover:underline">
+                      Full details
+                    </Link>
+                  )}
                 </div>
               </Card>
             ))}

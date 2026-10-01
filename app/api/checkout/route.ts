@@ -5,6 +5,7 @@ import { env } from '@/lib/env';
 import { stripe } from '@/lib/stripe/client';
 import { buildCheckoutSessionParams, type CheckoutInput, type CheckoutContext } from '@/lib/stripe/checkout';
 import { PLUGIN_PRODUCTS, type PluginProduct } from '@/lib/license-server/core';
+import { isProductPaused } from '@/lib/site/pro-status';
 
 // Marketplace demotion (Task 6): layouts/packs are free-with-capture now, so only the
 // shipped WordPress plugin is still sold through this route. `pack` and `membership`
@@ -25,6 +26,8 @@ export async function POST(req: Request): Promise<Response> {
   const parsed = bodySchema.safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: 'invalid_request' }, { status: 400 });
   const input: Extract<CheckoutInput, { kind: 'plugin' }> = parsed.data;
+  // Paused product (lib/site/pro-status.ts): refuse before any Stripe call.
+  if (isProductPaused(input.product)) return NextResponse.json({ error: 'This product is not currently available.' }, { status: 410 });
 
   // Built per-request (not module-level) so it always reflects the live `env`
   // singleton, which keeps the next product a one-line addition.

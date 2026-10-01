@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
 import { env } from '@/lib/env';
 import { Container } from '@/components/ui/Container';
 import { SectionShell, EDGE } from '@/components/ui/SectionShell';
@@ -6,24 +7,24 @@ import { Eyebrow } from '@/components/ui/Eyebrow';
 import { Card } from '@/components/ui/Card';
 import { JsonLd } from '@/components/JsonLd';
 import { productJsonLd, faqJsonLd } from '@/lib/seo/jsonld';
-import { BuyProButton } from '@/components/plugins/BuyProButton';
+import { WaitlistForm } from '@/components/plugins/WaitlistForm';
+import { Icon } from '@/components/ui/Icon';
 import { FREE_PLUGIN_LINKS, freePluginAnchorProps } from '@/lib/site/free-downloads';
 import { STATS } from '@/lib/site/stats';
 import { StatStrip } from '@/components/marketing/StatStrip';
 import { ValidatorChatDemo, type ChatStep } from '@/components/marketing/ValidatorChatDemo';
-import { ComparisonTable } from '@/components/marketing/ComparisonTable';
 import { CtaBand } from '@/components/marketing/CtaBand';
 import { UseCaseVignettes } from '@/components/marketing/UseCaseVignettes';
 
 const PRODUCT_NAME = 'AI Editor for Divi 5';
 const PRODUCT_DESCRIPTION =
-  'Connect Claude, Cursor, or ChatGPT to your Divi 5 site and edit pages in plain English. Every change passes a deterministic validator before it touches your database, so broken layouts are impossible. Free tier edits existing pages; Pro unlocks page creation, menus, and site-wide styling.';
+  'Connect Claude, Cursor, or ChatGPT to your Divi 5 site and edit pages in plain English. Every change passes a deterministic validator before it is saved, so a broken page is never saved by an AI edit. Free plugin: edit, create pages as drafts, undo, and use the built-in image pack.';
 
 export const metadata: Metadata = {
   // Root layout's title.template appends "| Divi5Lab".
   title: 'AI Editor for Divi 5: edit Divi with AI, validated',
   description:
-    'Connect Claude, Cursor, or ChatGPT to your Divi 5 site and edit pages in plain English. Every change passes a deterministic validator before it touches your database, so broken layouts are impossible.',
+    'Free plugin: connect Claude, Cursor, or ChatGPT to your Divi 5 site and edit pages in plain English. Every change is validated before it is saved, so a broken page is never saved by an AI edit.',
   alternates: { canonical: `${env.NEXT_PUBLIC_SITE_URL}/plugins/divi-5-ai-editor` },
 };
 
@@ -55,6 +56,41 @@ const USE_CASES = [
   },
 ];
 
+// What the free plugin's tools actually do (JHMG AI Editor for Divi 5 4.0.0).
+// It does not set the front page, edit menus, or save custom CSS or PHP.
+const FREE_CAPABILITIES = [
+  {
+    icon: 'manage_search',
+    title: 'List, read and validate',
+    body: 'See every Divi 5 page on your site, read its current layout, and check a layout against the validator without saving anything.',
+  },
+  {
+    icon: 'edit_note',
+    title: 'Update and edit surgically',
+    body: 'Save a new layout once the validator approves it, or change one phone number, price or sentence without rebuilding the page.',
+  },
+  {
+    icon: 'note_add',
+    title: 'Create pages as drafts',
+    body: 'New pages are always saved as drafts, so you review and publish them yourself.',
+  },
+  {
+    icon: 'undo',
+    title: 'Undo any AI edit',
+    body: 'The previous version of each page the AI changes is kept (the last 10). Restore one from the plugin Dashboard, or ask your assistant to undo.',
+  },
+  {
+    icon: 'image',
+    title: 'Images built in',
+    body: 'A pack of 44 original images ships with the plugin, and your assistant can look through your Media Library first. Nothing is uploaded or changed there.',
+  },
+  {
+    icon: 'menu_book',
+    title: 'Guides and section recipes',
+    body: 'Style, landing-page, site and image guides plus 17 proven section recipes steer the assistant toward real, good-looking Divi 5 pages.',
+  },
+];
+
 const FAQ = [
   {
     question: 'Which AI assistants work?',
@@ -68,7 +104,7 @@ const FAQ = [
   },
   {
     question: 'Can the AI break my site?',
-    answer: `No layout reaches your database without a passing verdict: ${STATS.validatorViolationClasses} violation classes checked across ${STATS.validatorBlockTypes} Divi 5 block types. An edit either validates or it doesn't save.`,
+    answer: `No layout is saved without a passing verdict: ${STATS.validatorViolationClasses} violation classes checked across ${STATS.validatorBlockTypes} Divi 5 block types. An edit either validates or it does not save, so a broken page is never saved by an AI edit. If a change passes but you do not like it, you can undo it.`,
   },
   {
     question: 'What does the validator actually check?',
@@ -76,21 +112,27 @@ const FAQ = [
       'Block types, required attributes, attribute shapes, and nesting rules, the full Divi 5 schema, derived from real exports. Same input, same verdict, every time.',
   },
   {
-    question: 'What can the free version do?',
+    question: 'What can the free plugin do?',
     answer:
-      'Read and update existing pages, dry-run validation, and all the guides (style, landing, image, site) plus section recipes. Pro adds page creation, menus, front-page control, site-wide CSS, and reviewed PHP proposals.',
+      'All of it is free. Your assistant can list and read your Divi 5 pages, validate a layout without saving, update a page or change a single piece of text, create new pages (always saved as drafts for you to review and publish), and undo any AI edit. It also includes a built-in image pack, read-only access to your Media Library, the style, landing, site and image guides, and the section recipes. It does not set your front page, edit menus, or save custom CSS or PHP.',
   },
   {
-    question: "What happens if I don't renew?",
-    answer: 'Premium features keep working on sites where Pro is already activated. Renewal covers updates and support.',
+    question: 'Can I undo an AI edit?',
+    answer:
+      'Yes. The plugin keeps the previous version of each page the AI changes (the last 10). Restore one from the AI Editor Dashboard in wp-admin, or ask your assistant to undo.',
+  },
+  {
+    question: 'Is there a Pro version?',
+    answer:
+      'Not yet. A separate Pro add-on that sources live stock photos for each section is planned. It is not built yet and has no release date. The free plugin is complete without it.',
   },
   {
     question: 'How many sites?',
-    answer: 'Unlimited. One Pro license activates on as many sites as you own or build for clients.',
+    answer: 'Unlimited. Install the free plugin on every Divi 5 site you own or build for clients.',
   },
   {
     question: 'Is my site data sent to Divi5Lab?',
-    answer: 'No. Your assistant talks directly to your WordPress site over its API. We never see your content; the license server only checks activation.',
+    answer: 'No. Your assistant talks directly to your WordPress site over its API. The plugin uses no third-party services, and we never see your content.',
   },
 ];
 
@@ -105,7 +147,7 @@ export default function AiEditorPage() {
           name: PRODUCT_NAME,
           description: PRODUCT_DESCRIPTION,
           url,
-          offer: { priceCents: 3000, currency: 'USD' },
+          offer: { priceCents: 0, currency: 'USD' },
         })}
       />
       <JsonLd data={faqJsonLd(FAQ)} />
@@ -119,16 +161,22 @@ export default function AiEditorPage() {
               <h1 className="text-h1 text-paper">The AI Editor for Divi 5</h1>
               <p className="mt-6 max-w-xl text-lead text-paper/80">
                 Connect Claude, Cursor, or ChatGPT to your site and edit pages in plain English. Every change
-                passes a deterministic validator before it touches your database, so broken layouts are impossible.
+                passes a deterministic validator before it is saved, so a broken page is never saved by an AI
+                edit. The plugin is free.
               </p>
               <div className="mt-10 flex flex-wrap items-center gap-3">
-                <BuyProButton product="ai-editor-divi5-pro" label="Start 45-day free trial" />
                 <a
                   href="#free"
+                  className="inline-flex h-12 items-center justify-center rounded-pill bg-action px-8 text-body font-semibold text-paper transition hover:brightness-110"
+                >
+                  Get the free plugin
+                </a>
+                <Link
+                  href="/guides"
                   className="inline-flex h-12 items-center justify-center rounded-pill border border-paper/35 bg-paper/10 px-8 text-body font-semibold text-paper backdrop-blur transition hover:-translate-y-0.5 hover:border-paper/70 hover:bg-paper/20"
                 >
-                  Try it free
-                </a>
+                  Read the setup guides
+                </Link>
               </div>
               <p className="mt-6 text-small font-medium text-paper/60">
                 Works with: {ASSISTANTS.join(' · ')}
@@ -168,7 +216,7 @@ export default function AiEditorPage() {
           <h2 className="text-h2 text-navy">Three steps to your first AI edit</h2>
           <div className="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-3">
             {[
-              { title: 'Connect', body: "Paste the API key from the AI Editor menu in wp-admin into your assistant's MCP config. Two minutes, once." },
+              { title: 'Connect', body: "Copy the connection details from the AI Editor menu in wp-admin (Settings tab) into your assistant's MCP config. Two minutes, once." },
               { title: 'Instruct', body: '“Change the hero heading on Home to…”, describing the change the way you would to a colleague.' },
               { title: 'Validated & saved', body: 'The validator checks every block, attribute, and nesting rule. Invalid? Exact violations come back and the AI self-corrects.' },
             ].map((s, i) => (
@@ -182,30 +230,24 @@ export default function AiEditorPage() {
         </Container>
       </SectionShell>
 
-      {/* Free vs Pro */}
+      {/* What the free plugin does */}
       <SectionShell tone="paper" pad="lg" className="scroll-mt-24" id="free">
         <Container>
-          <h2 className="text-h2 text-navy">What your assistant can do, today vs. with Pro</h2>
-          <ComparisonTable
-            className="mt-8"
-            caption="AI Editor for Divi 5: Free vs Pro"
-            columns={['Free', 'Pro · $30/yr']}
-            rows={[
-              { label: 'List pages & read layouts', values: [true, true] },
-              { label: 'Update existing pages', values: [true, true] },
-              { label: 'Dry-run validation', values: [true, true] },
-              { label: 'Style, landing, image & site guides', values: [true, true] },
-              { label: 'Section recipes', values: [true, true] },
-              { label: 'Create pages from scratch', values: [false, true] },
-              { label: 'Set the front page', values: [false, true] },
-              { label: 'Build the primary menu', values: [false, true] },
-              { label: 'Site-wide custom CSS', values: [false, true] },
-              { label: 'Reviewed PHP proposals', values: [false, true] },
-              { label: 'Updates & support', values: ['n/a', 'WP-native updates + priority'] },
-              { label: 'Sites', values: ['Unlimited', 'Unlimited'] },
-            ]}
-            footnote="Pro keeps working on activated sites even if the license lapses. Renewal covers updates and support."
-          />
+          <h2 className="text-h2 text-navy">What the free plugin does</h2>
+          <p className="mt-3 max-w-2xl text-lead text-muted">
+            Everything below is in the free plugin. This is what an AI assistant can do on your site today.
+          </p>
+          <div className="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {FREE_CAPABILITIES.map((c) => (
+              <Card key={c.title} className="p-7">
+                <div className="flex h-11 w-11 items-center justify-center rounded-button bg-fog text-action">
+                  <Icon name={c.icon} size={22} />
+                </div>
+                <h3 className="mt-4 text-body font-semibold text-navy">{c.title}</h3>
+                <p className="mt-2 text-body text-muted">{c.body}</p>
+              </Card>
+            ))}
+          </div>
           <div className="mt-10 grid items-start gap-6 lg:grid-cols-2">
             <Card className="p-8">
               <h3 className="text-section text-navy">Start free</h3>
@@ -224,17 +266,17 @@ export default function AiEditorPage() {
                 <p className="mt-3 text-small text-muted">Version 4.0.0 · requires Divi 5, WordPress 6.0+ and PHP 8.1+. It is also pending review on wordpress.org.</p>
               </div>
             </Card>
-            <Card className="relative border-action p-8 shadow-lg ring-1 ring-action">
-              <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-pill bg-action px-4 py-1.5 text-small font-semibold text-paper shadow-glow">
-                One license, unlimited sites
-              </span>
-              <h3 className="text-section text-navy">Go Pro</h3>
+            <Card className="border-dashed p-8">
+              <p className="text-small font-semibold uppercase tracking-wide text-muted">Pro add-on: coming soon</p>
+              <h3 className="mt-2 text-section text-navy">Live stock photos for each section</h3>
               <p className="mt-2 text-body text-muted">
-                Whole-page creation, menus, front-page control, and site-wide styling: the full toolset for
-                building with AI, not just editing.
+                A separate Pro add-on is planned. It will source live stock photos for each section your
+                assistant builds, with more site tools to follow. It is not available yet and has no release
+                date. The free plugin stays complete without it.
               </p>
-              <div className="mt-6">
-                <BuyProButton product="ai-editor-divi5-pro" label="Start 45-day free trial" />
+              <p className="mt-4 text-body text-navy">Want a note when it is ready?</p>
+              <div className="mt-3">
+                <WaitlistForm source="ai_editor_pro_waitlist" cta="Notify me" />
               </div>
             </Card>
           </div>
@@ -266,8 +308,8 @@ export default function AiEditorPage() {
 
       <CtaBand
         title="Your assistant already knows Divi. Now it can prove it."
-        body="Free to try on any Divi 5 site. Pro when you want it building pages, menus, and site-wide styles."
-        cta={{ label: 'Start 45-day free trial', href: '/pricing' }}
+        body="The plugin is free on any Divi 5 site. Download it, connect your assistant and make your first validated edit."
+        cta={{ label: 'Get the free plugin', href: '#free' }}
         secondary={{ label: 'Read the setup guides', href: '/guides' }}
       />
     </main>

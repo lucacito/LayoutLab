@@ -16,7 +16,15 @@ vi.mock('@/lib/env', async (importOriginal) => {
   return { ...actual, env: { ...actual.env } };
 });
 
+// The AI Editor Pro product is paused by default (lib/site/pro-status.ts). Wrap the
+// real helper so individual tests can simulate the paused / re-enabled state.
+vi.mock('@/lib/site/pro-status', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/lib/site/pro-status')>();
+  return { ...actual, isProductPaused: vi.fn(actual.isProductPaused) };
+});
+
 import { POST } from '@/app/api/checkout/route';
+import { isProductPaused } from '@/lib/site/pro-status';
 import { stripe } from '@/lib/stripe/client';
 import { env as mockEnv } from '@/lib/env';
 
@@ -141,9 +149,34 @@ describe('POST /api/checkout — validation (no Stripe/DB)', () => {
   });
 });
 
-describe('POST /api/checkout — ai-editor-divi5-pro (plugin, subscription)', () => {
+describe('POST /api/checkout — ai-editor-divi5-pro is paused', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockEnv.STRIPE_PRICE_AI_EDITOR_PRO = 'price_aied_test';
+  });
+
+  it('410s before any Stripe call, even when the price is configured', async () => {
+    const res = await POST(post({ kind: 'plugin', product: 'ai-editor-divi5-pro' }));
+    expect(res.status).toBe(410);
+    expect(await res.json()).toEqual({ error: 'This product is not currently available.' });
+    expect(stripe.checkout.sessions.create).not.toHaveBeenCalled();
+  });
+
+  it('still sells the other plugins', async () => {
+    mockEnv.STRIPE_PRICE_ELEM2DIVI_PRO = 'price_e2d_test';
+    vi.mocked(stripe.checkout.sessions.create).mockResolvedValue({
+      id: 'cs_test', url: 'https://checkout.stripe.com/pay/cs_test',
+    } as never);
+    const res = await POST(post({ kind: 'plugin', product: 'elementor-to-divi5-pro' }));
+    expect(res.status).toBe(200);
+    expect(stripe.checkout.sessions.create).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('POST /api/checkout — ai-editor-divi5-pro (plugin, subscription) once re-enabled', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(isProductPaused).mockReturnValue(false);
     delete (mockEnv as Record<string, unknown>).STRIPE_PRICE_AI_EDITOR_PRO;
   });
 

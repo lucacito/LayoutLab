@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 
 vi.mock('@/components/plugins/BuyProButton', () => ({
   BuyProButton: ({ product }: { product: string }) => <div data-testid={`buy-${product}`} />,
@@ -19,7 +19,10 @@ describe('/pricing (plugin licenses)', () => {
     render(await PricingPage());
     expect(screen.getByText(/Divi → Elementor Pro/i)).toBeTruthy();
     expect(screen.getByTestId('buy-divi-to-elementor-pro')).toBeTruthy();
-    expect(screen.queryByText(/coming soon/i)).toBeNull();
+    // "coming soon" is now expected, but only for the AI Editor's Pro add-on note
+    const soon = screen.getAllByText(/coming soon/i);
+    expect(soon.length).toBe(1);
+    expect(soon[0]!.textContent).toMatch(/pro add-on coming soon/i);
   });
   it('mentions free layouts but sells no packs or membership', async () => {
     render(await PricingPage());
@@ -40,10 +43,22 @@ describe('/pricing (plugin licenses)', () => {
     expect(screen.getByText(/licenses that respect you/i)).toBeTruthy();
     expect(screen.getByText(/nothing breaks/i)).toBeTruthy();
   });
-  it('shows the AI Editor at $30', async () => {
+  it('shows the AI Editor as free, with no price, no buy button and a Pro add-on note', async () => {
+    const { container } = render(await PricingPage());
+    expect(screen.getByText(/AI Editor for Divi 5$/)).toBeTruthy();
+    expect(screen.queryByTestId('buy-ai-editor-divi5-pro')).toBeNull();
+    expect(container.textContent).not.toMatch(/\$30|45-day|free trial/i);
+    const card = screen.getByText(/AI Editor for Divi 5$/).closest('div.relative, .flex-col') as HTMLElement;
+    expect(card.textContent).toMatch(/Free/);
+    expect(card.textContent).toMatch(/pro add-on coming soon/i);
+    const link = within(card).getByRole('link', { name: /get the free ai editor/i });
+    expect(link.getAttribute('href')).toBe('/plugins/divi-5-ai-editor');
+  });
+  it('answers the AI Editor FAQ truthfully', async () => {
     render(await PricingPage());
-    expect(screen.getAllByText(/\$30/).length).toBeGreaterThan(0);
-    expect(screen.getByTestId('buy-ai-editor-divi5-pro')).toBeTruthy();
+    expect(screen.getByText(/is the ai editor free\?/i)).toBeTruthy();
+    expect(screen.getByText(/the ai editor has no paid plan today/i)).toBeTruthy();
+    expect(screen.queryByText(/page creation, menus, and site-wide styling/i)).toBeNull();
   });
   it('puts the free tier one click away on every plugin card', async () => {
     render(await PricingPage());
