@@ -8,7 +8,8 @@ describe('/plugins hub', () => {
     render(await PluginsHub());
     expect(screen.getAllByText(/beaver builder → divi 5 converter/i).length).toBeGreaterThan(0);
     expect(screen.queryByText(/pending wordpress\.org review/i)).toBeNull();
-    expect(screen.getByText(/\$30\/yr/i)).toBeTruthy();
+    expect(screen.queryByText(/\$30/)).toBeNull();
+    expect(screen.getByText(/^free plugin$/i)).toBeTruthy();
     expect(screen.getAllByText(/\$25\/yr/i).length).toBeGreaterThan(0);
   });
   it('has a which-tool decision strip that says Bricks is in the works', async () => {

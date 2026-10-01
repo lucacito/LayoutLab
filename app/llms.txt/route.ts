@@ -17,7 +17,7 @@ export function GET(): Response {
 - [Beaver Builder to Divi 5](${base}/plugins/beaver-builder-to-divi-5): Convert Beaver Builder pages and Themer layouts into Divi 5.
 - [WPBakery to Divi 5](${base}/plugins/wpbakery-to-divi-5): Convert WPBakery shortcode pages and templates into Divi 5.
 - [Divi to Elementor](${base}/plugins/divi-to-elementor): Batch-convert Divi sites into Elementor.
-- [AI Editor for Divi 5](${base}/plugins/divi-5-ai-editor): Let an AI assistant edit Divi 5 pages, validated on every save.
+- [AI Editor for Divi 5](${base}/plugins/divi-5-ai-editor): Free plugin that lets an AI assistant edit Divi 5 pages, validated on every save.
 - [Browse the catalog](${base}/browse): Every published Divi 5 layout and section, filterable by type, industry/niche, style and color.
 - [Pricing](${base}/pricing): Pro plugin licenses for the WordPress migration toolkit. Every layout in the catalog is free.
 - [License & refunds](${base}/license): The commercial license bundled with every download, plus the digital-goods (no-refund) policy.

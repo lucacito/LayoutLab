@@ -1,4 +1,5 @@
-// The AI Editor is distributed as a single zip whose premium tools are
+// Legacy (the AI Editor Pro plan is paused, see lib/site/pro-status.ts). The AI Editor
+// was distributed as a single zip whose premium tools were
 // license-gated at runtime, so the zip itself is free to download (the email
 // capture on the product page is a soft gate, same as free layouts). Converter
 // Pro zips are NOT free. They stay behind the key-authenticated download route.
