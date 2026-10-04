@@ -53,6 +53,8 @@ export interface LicenseRecord {
   currentPeriodEnd: Date | null;
   tier: string | null; // 'personal' | 'freelancer' | 'agency' for ai-editor-divi5-pro; null for others
   founding: boolean;
+  /** In the free trial (no card): it does not renew, so it gets no renewal reminders. */
+  trial?: boolean;
   lifetime: boolean;
 }
 

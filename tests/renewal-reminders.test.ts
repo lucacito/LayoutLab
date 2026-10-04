@@ -1,123 +1,85 @@
 import { describe, it, expect } from 'vitest';
 import { dueReminders, type LicenseWithReminders } from '@/lib/license-server/reminders';
+import { renewalReminderEmail } from '@/lib/email/renewal-reminder';
 import { PRICING } from '@/lib/pricing/config';
 
+const DAY = 24 * 60 * 60 * 1000;
+const now = new Date('2026-10-04T12:00:00Z');
+const endIn = (days: number) => new Date(now.getTime() + days * DAY);
+
+const lic = (over: Partial<LicenseWithReminders> = {}): LicenseWithReminders => ({
+  id: 'lic_1', userId: 'u1', productSlug: PRICING.product, licenseKey: 'JHMG-AAAA-BBBB-CCCC-DDDD',
+  status: 'active', currentPeriodEnd: endIn(200), tier: 'personal', founding: false, lifetime: false, trial: false,
+  recordedDays: [], ...over,
+});
+
 describe('dueReminders', () => {
-  const baseDate = new Date('2026-10-04T12:00:00Z');
-  const expiryDate30 = new Date('2026-11-03T00:00:00Z'); // 30 days from base
-  const expiryDate7 = new Date('2026-10-11T00:00:00Z'); // 7 days from base
-
-  const createLicense = (
-    override: Partial<LicenseWithReminders> = {},
-  ): LicenseWithReminders => ({
-    id: 'lic_1',
-    userId: 'u1',
-    productSlug: PRICING.product,
-    licenseKey: 'JHMG-AAAA-BBBB-CCCC-DDDD',
-    status: 'active',
-    currentPeriodEnd: expiryDate30,
-    tier: 'personal',
-    founding: false,
-    lifetime: false,
-    recordedDays: [],
-    ...override,
+  it('sends nothing when no window has been reached', () => {
+    expect(dueReminders([lic()], now)).toEqual([]);
   });
 
-  it('returns no reminders when no licenses are provided', () => {
-    const result = dueReminders([], baseDate);
-    expect(result).toEqual([]);
+  it('sends the longest window once it is reached', () => {
+    const [d] = dueReminders([lic({ currentPeriodEnd: endIn(29) })], now);
+    expect(d).toMatchObject({ send: 30, settle: [] });
   });
 
-  it('skips non-AI-Editor product licenses', () => {
-    const lic = createLicense({ productSlug: 'elementor-to-divi5-pro' });
-    const result = dueReminders([lic], baseDate);
-    expect(result).toEqual([]);
+  it('sends the short window when only it is open', () => {
+    const [d] = dueReminders([lic({ currentPeriodEnd: endIn(6), recordedDays: [30] })], now);
+    expect(d).toMatchObject({ send: 7, settle: [] });
   });
 
-  it('skips non-active licenses', () => {
-    const lic = createLicense({ status: 'canceled' });
-    const result = dueReminders([lic], baseDate);
-    expect(result).toEqual([]);
+  it('never sends the same window twice for the same period', () => {
+    expect(dueReminders([lic({ currentPeriodEnd: endIn(29), recordedDays: [30] })], now)).toEqual([]);
   });
 
-  it('skips lifetime licenses', () => {
-    const lic = createLicense({ lifetime: true });
-    const result = dueReminders([lic], baseDate);
-    expect(result).toEqual([]);
+  it('a late start sends ONE email for the smallest window and settles the larger one silently', () => {
+    const [d] = dueReminders([lic({ currentPeriodEnd: endIn(5) })], now);
+    expect(d).toMatchObject({ send: 7, settle: [30] });
   });
 
-  it('skips licenses with no period end', () => {
-    const lic = createLicense({ currentPeriodEnd: null });
-    const result = dueReminders([lic], baseDate);
-    expect(result).toEqual([]);
+  it('a missed cron day does not lose the reminder: it fires the next day it runs', () => {
+    const [d] = dueReminders([lic({ currentPeriodEnd: endIn(28.5) })], now);
+    expect(d?.send).toBe(30);
   });
 
-  it('returns a 30-day reminder when within the window', () => {
-    const lic = createLicense({ currentPeriodEnd: expiryDate30 });
-    // Expiry: Nov 3, so 30-day window is Oct 4-5
-    const now = new Date('2026-10-04T12:00:00Z'); // Within 30-day window
-    const result = dueReminders([lic], now, [30]);
-    expect(result).toHaveLength(1);
-    expect(result[0]).toMatchObject({
-      days: 30,
-      periodEnd: expiryDate30,
-      license: expect.objectContaining({ id: 'lic_1' }),
-    });
+  it('once the short window is already recorded, a stale larger window only settles, never emails', () => {
+    const [d] = dueReminders([lic({ currentPeriodEnd: endIn(3), recordedDays: [7] })], now);
+    expect(d).toMatchObject({ send: null, settle: [30] });
   });
 
-  it('returns a 7-day reminder when within the window', () => {
-    const lic = createLicense({ currentPeriodEnd: expiryDate7 });
-    // Expiry: Oct 11, so 7-day window is Oct 4-5
-    const now = new Date('2026-10-04T12:00:00Z'); // Within 7-day window
-    const result = dueReminders([lic], now, [7]);
-    expect(result).toHaveLength(1);
-    expect(result[0]).toMatchObject({
-      days: 7,
-      periodEnd: expiryDate7,
-    });
+  it('a renewed period (new end date, nothing recorded for it) is eligible again', () => {
+    expect(dueReminders([lic({ currentPeriodEnd: endIn(29), recordedDays: [] })], now)).toHaveLength(1);
   });
 
-  it('skips reminders already recorded', () => {
-    const lic = createLicense({
-      currentPeriodEnd: expiryDate30,
-      recordedDays: [30],
-    });
-    const now = new Date('2026-11-02T00:00:00Z');
-    const result = dueReminders([lic], now, [30]);
-    expect(result).toEqual([]);
+  it.each([
+    ['another product', { productSlug: 'elementor-to-divi5-pro' }],
+    ['a lifetime licence', { lifetime: true }],
+    ['a free trial', { trial: true }],
+    ['a cancelled licence', { status: 'canceled' as const }],
+    ['an expired licence', { status: 'expired' as const }],
+    ['a revoked licence', { status: 'revoked' as const }],
+    ['a past-due licence', { status: 'past_due' as const }],
+    ['a licence with no period end', { currentPeriodEnd: null }],
+    ['a licence whose period already ended', { currentPeriodEnd: endIn(-1) }],
+  ])('skips %s', (_n, over) => {
+    expect(dueReminders([lic({ currentPeriodEnd: endIn(5), ...over })], now)).toEqual([]);
   });
+});
 
-  it('does not return a reminder outside the window', () => {
-    const lic = createLicense({ currentPeriodEnd: expiryDate30 });
-    const now = new Date('2026-10-01T00:00:00Z'); // Too early (>30 days away from Nov 3)
-    const result = dueReminders([lic], now, [30]);
-    expect(result).toEqual([]);
+describe('renewalReminderEmail', () => {
+  const mail = renewalReminderEmail({ email: 'a@b.c', tierLabel: 'Freelancer', renewalDate: new Date('2027-01-15T00:00:00Z'), manageUrl: 'https://divi5lab.com/account/licenses' });
+  it('names the date, the tier, the automatic charge and the manage link', () => {
+    expect(mail.subject).toContain('January 15, 2027');
+    expect(mail.text).toContain('Freelancer');
+    expect(mail.text).toContain('charged automatically');
+    expect(mail.text).toContain('https://divi5lab.com/account/licenses');
+    expect(mail.html).toContain('href="https://divi5lab.com/account/licenses"');
   });
-
-  it('returns both 30-day and 7-day reminders for a license with two expiry dates', () => {
-    const lic1 = createLicense({
-      id: 'lic_1',
-      currentPeriodEnd: expiryDate30,
-    });
-    const lic2 = createLicense({
-      id: 'lic_2',
-      currentPeriodEnd: expiryDate7,
-    });
-    const now = new Date('2026-10-04T12:00:00Z'); // Within both windows
-    const result = dueReminders([lic1, lic2], now, [30, 7]);
-    expect(result).toHaveLength(2);
-    expect(result[0]?.days).toBe(30);
-    expect(result[1]?.days).toBe(7);
+  it('promises that nothing stops working if the licence ends, and states no price', () => {
+    expect(mail.text).toContain('everything keeps working');
+    expect(mail.text + mail.html).not.toMatch(/\$\s?\d/);
   });
-
-  it('handles multiple licenses', () => {
-    const lic1 = createLicense({ id: 'lic_1' });
-    const lic2 = createLicense({ id: 'lic_2', currentPeriodEnd: expiryDate7 });
-    const now = new Date('2026-10-04T12:00:00Z'); // Within both 30-day and 7-day windows
-    const result = dueReminders([lic1, lic2], now, [30, 7]);
-    // Both licenses should have reminders due
-    expect(result).toHaveLength(2);
-    const ids = result.map((r) => r.license.id).sort();
-    expect(ids).toEqual(['lic_1', 'lic_2']);
+  it('escapes the tier label in the HTML', () => {
+    expect(renewalReminderEmail({ email: 'a@b.c', tierLabel: '<b>x</b>', renewalDate: new Date(), manageUrl: 'https://x.y' }).html).not.toContain('<b>x</b>');
   });
 });

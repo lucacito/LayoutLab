@@ -249,6 +249,8 @@ export const licenses = pgTable('licenses', {
   tier: text('tier'), // 'personal' | 'freelancer' | 'agency' | null for legacy/unlimited
   founding: boolean('founding').notNull().default(false),
   lifetime: boolean('lifetime').notNull().default(false),
+  // True while the Stripe subscription is in its free trial (no card). Trial licences get no renewal reminders.
+  trial: boolean('trial').notNull().default(false),
   createdAt: timestamp('created_at').notNull().defaultNow(),
 }, (t) => ({
   stripeSubUq: uniqueIndex('licenses_stripe_sub_uq').on(t.stripeSubscriptionId),

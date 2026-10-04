@@ -1,10 +1,11 @@
 import type Stripe from 'stripe';
 import type { PluginProduct } from '@/lib/license-server/core';
+import { PRICING } from '@/lib/pricing/config';
 
 export type CheckoutInput =
   | { kind: 'pack'; packId: string }
   | { kind: 'membership'; plan: 'monthly' | 'yearly' }
-  | { kind: 'plugin'; product: PluginProduct; tier?: string; lifetime?: boolean };
+  | { kind: 'plugin'; product: PluginProduct; tier?: string; lifetime?: boolean; trial?: boolean };
 
 export interface CheckoutContext {
   siteUrl: string;
@@ -24,9 +25,8 @@ export interface CheckoutContext {
    * `${siteUrl}/license`.
    */
   requireTermsConsent?: boolean;
-  tier?: string;
+  /** AI Editor only: apply the founding coupon (the route has already checked the cap). Never combined with a trial. */
   founding?: boolean;
-  lifetime?: boolean;
   foundingCouponId?: string;
 }
 
@@ -69,53 +69,15 @@ export function buildCheckoutSessionParams(
     };
   }
   if (input.kind === 'plugin') {
-    const isAiEditor = input.product === 'ai-editor-divi5-pro';
-    const isLifetime = input.lifetime || false;
-    const tier = input.tier || (isAiEditor && isLifetime ? 'agency' : undefined);
-    const isTrial = isAiEditor && !isLifetime && !tier; // Trial only on personal tier with no lifetime
-
-    const metadata: Record<string, string> = {
-      kind: 'plugin',
-      product: input.product,
-      tier: tier || '0',
-      founding: ctx.founding ? '1' : '0',
-      lifetime: isLifetime ? '1' : '0',
-    };
-
-    // For lifetime, use one-time payment mode
-    if (isLifetime) {
-      return {
-        ...common,
-        mode: 'payment',
-        line_items: [{ price: ctx.pluginPriceId, quantity: 1 }],
-        metadata,
-        allow_promotion_codes: !ctx.founding, // Don't combine founding with allow_promotion_codes
-        ...(ctx.founding ? {} : {}), // No subscription_data for payment mode
-      };
-    }
-
-    // For subscription mode (yearly tiers + trial)
-    const discounts = [];
-    if (ctx.founding && ctx.foundingCouponId) {
-      discounts.push({ coupon: ctx.foundingCouponId });
-    }
-
+    if (input.product === PRICING.product) return aiEditorParams(input, ctx, common);
     return {
       ...common,
       mode: 'subscription',
-      allow_promotion_codes: !ctx.founding, // Don't combine founding with allow_promotion_codes
-      ...(isTrial ? { payment_method_collection: 'if_required' } : {}),
+      allow_promotion_codes: true,
       line_items: [{ price: ctx.pluginPriceId, quantity: 1 }],
-      metadata,
-      ...(discounts.length > 0 ? { discounts } : {}),
+      metadata: { kind: 'plugin', product: input.product },
       subscription_data: {
-        metadata,
-        ...(isTrial
-          ? {
-              trial_period_days: 45,
-              trial_settings: { end_behavior: { missing_payment_method: 'cancel' } },
-            }
-          : {}),
+        metadata: { kind: 'plugin', product: input.product },
       },
     };
   }
@@ -124,5 +86,55 @@ export function buildCheckoutSessionParams(
     mode: 'subscription',
     line_items: [{ price: ctx.membershipPriceId, quantity: 1 }],
     metadata: { kind: 'membership', plan: input.plan },
+  };
+}
+
+/**
+ * The AI Editor Pro sessions. The route has validated the combination: either `lifetime`, or a `tier`
+ * (and `trial` only on PRICING.trial.tier). Tier is stored on the licence from the metadata.
+ */
+function aiEditorParams(
+  input: Extract<CheckoutInput, { kind: 'plugin' }>,
+  ctx: CheckoutContext,
+  common: Stripe.Checkout.SessionCreateParams,
+): Stripe.Checkout.SessionCreateParams {
+  if (input.lifetime) {
+    const metadata = { kind: 'plugin', product: input.product, tier: PRICING.lifetime.tier, founding: '0', lifetime: '1', trial: '0' };
+    return {
+      ...common,
+      mode: 'payment',
+      customer_creation: 'always',
+      allow_promotion_codes: true,
+      line_items: [{ price: ctx.pluginPriceId, quantity: 1 }],
+      metadata,
+    };
+  }
+
+  const tier = input.tier ?? '';
+  const trial = input.trial === true && tier === PRICING.trial.tier;
+  // A trial never takes the founding coupon: a no-card trial must not use up one of the limited redemptions.
+  const founding = !trial && ctx.founding === true && !!ctx.foundingCouponId;
+  const metadata = {
+    kind: 'plugin', product: input.product, tier,
+    founding: founding ? '1' : '0', lifetime: '0', trial: trial ? '1' : '0',
+  };
+
+  return {
+    ...common,
+    mode: 'subscription',
+    // Stripe rejects discounts together with allow_promotion_codes.
+    ...(founding ? { discounts: [{ coupon: ctx.foundingCouponId as string }] } : { allow_promotion_codes: true }),
+    ...(trial && !PRICING.trial.requireCard ? { payment_method_collection: 'if_required' as const } : {}),
+    line_items: [{ price: ctx.pluginPriceId, quantity: 1 }],
+    metadata,
+    subscription_data: {
+      metadata,
+      ...(trial
+        ? {
+            trial_period_days: PRICING.trial.days,
+            ...(PRICING.trial.requireCard ? {} : { trial_settings: { end_behavior: { missing_payment_method: 'cancel' as const } } }),
+          }
+        : {}),
+    },
   };
 }

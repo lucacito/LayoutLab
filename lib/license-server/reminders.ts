@@ -1,23 +1,30 @@
 /**
- * Renewal reminder logic: find licenses due for reminder emails
+ * Renewal reminders: which subscription licences are due an email, and which reminder windows that email settles.
  */
 import type { LicenseRecord } from './core';
 import { PRICING } from '@/lib/pricing/config';
 
-export interface ReminderDue {
-  license: LicenseRecord;
-  days: number;
-  periodEnd: Date;
-}
-
 export interface LicenseWithReminders extends LicenseRecord {
+  /** Reminder windows (days) already recorded for the licence's CURRENT period end. */
   recordedDays: number[];
 }
 
+export interface ReminderDue {
+  license: LicenseRecord;
+  periodEnd: Date;
+  /** The window to email for: the smallest one reached, when it is not yet recorded. null = nothing to email. */
+  send: number | null;
+  /** Other reached windows not yet recorded (a late start or a missed cron day): record them, never email them. */
+  settle: number[];
+}
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+
 /**
- * Find licenses due for renewal reminders.
- * Only returns active subscription licenses of PRICING.product whose period end
- * is within each reminder window and not yet recorded in license_reminders.
+ * A window is reached once `now >= periodEnd - days` and the period has not ended. A licence gets at most ONE email per
+ * run (for the smallest reached window), so a cron outage or a licence bought late never sends two emails at once, and a
+ * missed day does not lose the reminder. Only running, paid, renewing subscription licences of PRICING.product qualify:
+ * never lifetime, never a free trial (it does not renew), never cancelled, expired or revoked ones.
  */
 export function dueReminders(
   licenses: LicenseWithReminders[],
@@ -25,37 +32,21 @@ export function dueReminders(
   days: number[] = PRICING.renewalReminderDays,
 ): ReminderDue[] {
   const result: ReminderDue[] = [];
+  const windows = [...days].sort((a, b) => a - b);
 
   for (const license of licenses) {
-    // Skip non-AI Editor licenses
     if (license.productSlug !== PRICING.product) continue;
-
-    // Skip non-active or lifetime licenses
-    if (license.status !== 'active' || license.lifetime) continue;
-
-    // Get the period end date
+    if (license.status !== 'active' || license.lifetime || license.trial) continue;
     const periodEnd = license.currentPeriodEnd;
-    if (!periodEnd) continue;
+    if (!periodEnd || periodEnd.getTime() <= now.getTime()) continue;
 
-    // For each reminder window (e.g., 30 days, 7 days before expiry)
-    for (const daysBefore of days) {
-      // Skip if already recorded for this days/periodEnd combination
-      if (license.recordedDays.includes(daysBefore)) continue;
+    const reached = windows.filter((d) => now.getTime() >= periodEnd.getTime() - d * DAY_MS);
+    const open = reached.filter((d) => !license.recordedDays.includes(d));
+    if (open.length === 0) continue;
 
-      // Calculate the window: from (periodEnd - daysBefore days) to (periodEnd - (daysBefore - 1) days)
-      // For a 30-day reminder on Oct 4, expiry Nov 3: window is Oct 4 to Oct 5
-      const windowStart = new Date(periodEnd.getTime() - daysBefore * 24 * 60 * 60 * 1000);
-      const windowEnd = new Date(periodEnd.getTime() - (daysBefore - 1) * 24 * 60 * 60 * 1000);
-
-      // Check if now is within the reminder window
-      if (now.getTime() >= windowStart.getTime() && now.getTime() < windowEnd.getTime()) {
-        result.push({
-          license,
-          days: daysBefore,
-          periodEnd,
-        });
-      }
-    }
+    const smallestReached = reached[0] as number;
+    const send = open.includes(smallestReached) ? smallestReached : null;
+    result.push({ license, periodEnd, send, settle: open.filter((d) => d !== send) });
   }
 
   return result;

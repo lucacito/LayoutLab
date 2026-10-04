@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { requireUser } from '@/lib/auth/admin';
+import { getUserIdByEmail } from '@/lib/account/queries';
 import { env } from '@/lib/env';
 import { db } from '@/db/client';
 import { licenses } from '@/db/schema';
@@ -31,8 +32,10 @@ export async function POST(req: Request): Promise<Response> {
   const license = await db.select().from(licenses).where(eq(licenses.id, licenseId)).limit(1);
   if (!license[0]) return NextResponse.json({ error: 'license_not_found' }, { status: 404 });
 
-  // Verify the user owns this license (session.user.id is set by auth middleware)
-  if (license[0].userId !== session.user?.id) {
+  // Verify the signed-in user owns this licence (the session carries the email, as on the account pages)
+  const email = session.user?.email;
+  const userId = email ? await getUserIdByEmail(email) : null;
+  if (!userId || license[0].userId !== userId) {
     return NextResponse.json({ error: 'forbidden' }, { status: 403 });
   }
 
@@ -50,8 +53,8 @@ export async function POST(req: Request): Promise<Response> {
     return NextResponse.json({ error: 'downgrade_not_allowed' }, { status: 400 });
   }
 
-  // Refuse upgrade on lifetime or cancelled licenses
-  if (currentLicense.lifetime || currentLicense.status === 'canceled') {
+  // Only a paying, running subscription can be upgraded: not lifetime, not a no-card trial, not lapsed.
+  if (currentLicense.lifetime || currentLicense.trial || currentLicense.status !== 'active') {
     return NextResponse.json({ error: 'license_not_upgradable' }, { status: 400 });
   }
 
@@ -68,7 +71,7 @@ export async function POST(req: Request): Promise<Response> {
     if (!sub.items.data[0]) return NextResponse.json({ error: 'subscription_item_not_found' }, { status: 400 });
 
     // Update the subscription with proration_behavior: 'always_invoice'
-    const updated = await stripe.subscriptions.update(currentLicense.stripeSubscriptionId, {
+    await stripe.subscriptions.update(currentLicense.stripeSubscriptionId, {
       items: [
         {
           id: sub.items.data[0].id,

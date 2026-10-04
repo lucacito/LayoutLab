@@ -16,6 +16,7 @@ describe('licensing schema', () => {
     expect(licenses.tier).toBeDefined();
     expect(licenses.founding).toBeDefined();
     expect(licenses.lifetime).toBeDefined();
+    expect(licenses.trial).toBeDefined();
   });
 
   it('defines license_activations keyed by license + site', () => {

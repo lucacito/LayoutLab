@@ -87,8 +87,8 @@ describe('plugin license checkout', () => {
     );
     expect(params.mode).toBe('subscription');
     expect(params.line_items).toEqual([{ price: 'price_pro_yearly', quantity: 1 }]);
-    expect(params.metadata).toEqual({ kind: 'plugin', product: 'elementor-to-divi5-pro', tier: '0', founding: '0', lifetime: '0' });
-    expect((params.subscription_data as any).metadata).toEqual({ kind: 'plugin', product: 'elementor-to-divi5-pro', tier: '0', founding: '0', lifetime: '0' });
+    expect(params.metadata).toEqual({ kind: 'plugin', product: 'elementor-to-divi5-pro' });
+    expect((params.subscription_data as any).metadata).toEqual({ kind: 'plugin', product: 'elementor-to-divi5-pro' });
     // The launch trial is scoped to the AI Editor only — other plugins pay now.
     expect((params.subscription_data as any).trial_period_days).toBeUndefined();
     expect(params.payment_method_collection).toBeUndefined();
@@ -96,27 +96,11 @@ describe('plugin license checkout', () => {
 
   it('plugin checkout sessions allow promotion codes', () => {
     const params = buildCheckoutSessionParams(
-      { kind: 'plugin', product: 'ai-editor-divi5-pro' },
+      { kind: 'plugin', product: 'elementor-to-divi5-pro' },
       { siteUrl: 'https://divi5lab.com', pluginPriceId: 'price_x', automaticTax: true },
     );
     expect(params.allow_promotion_codes).toBe(true);
     expect(params.mode).toBe('subscription');
-  });
-
-  // Launch offer: every plugin subscription starts with a 45-day free trial, and
-  // Checkout must NOT collect a card up front (`if_required`). Because no payment
-  // method is on file, the trial can't silently auto-charge — it ends by cancelling
-  // (missing_payment_method: 'cancel') so no tester is ever hit with a surprise
-  // invoice. The webhook mints the license on session.completed regardless of $0 due.
-  it('starts a 45-day free trial with no card required, cancelling at trial end', () => {
-    const params = buildCheckoutSessionParams(
-      { kind: 'plugin', product: 'ai-editor-divi5-pro' },
-      { siteUrl: 'https://divi5lab.com', pluginPriceId: 'price_x', automaticTax: true },
-    );
-    expect(params.payment_method_collection).toBe('if_required');
-    const subData = params.subscription_data as any;
-    expect(subData.trial_period_days).toBe(45);
-    expect(subData.trial_settings.end_behavior.missing_payment_method).toBe('cancel');
   });
 });
 
@@ -149,20 +133,22 @@ describe('POST /api/checkout — validation (no Stripe/DB)', () => {
   });
 });
 
-describe('POST /api/checkout — ai-editor-divi5-pro is paused', () => {
+describe('POST /api/checkout — a paused product', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockEnv.STRIPE_PRICE_AI_EDITOR_PRO = 'price_aied_test';
+    vi.mocked(isProductPaused).mockReturnValue(true);
+    mockEnv.STRIPE_PRICE_AI_EDITOR_PERSONAL = 'price_personal_test';
   });
 
   it('410s before any Stripe call, even when the price is configured', async () => {
-    const res = await POST(post({ kind: 'plugin', product: 'ai-editor-divi5-pro' }));
+    const res = await POST(post({ kind: 'plugin', product: 'ai-editor-divi5-pro', tier: 'personal' }));
     expect(res.status).toBe(410);
     expect(await res.json()).toEqual({ error: 'This product is not currently available.' });
     expect(stripe.checkout.sessions.create).not.toHaveBeenCalled();
   });
 
   it('still sells the other plugins', async () => {
+    vi.mocked(isProductPaused).mockImplementation((p: string) => p === 'ai-editor-divi5-pro');
     mockEnv.STRIPE_PRICE_ELEM2DIVI_PRO = 'price_e2d_test';
     vi.mocked(stripe.checkout.sessions.create).mockResolvedValue({
       id: 'cs_test', url: 'https://checkout.stripe.com/pay/cs_test',
@@ -173,31 +159,16 @@ describe('POST /api/checkout — ai-editor-divi5-pro is paused', () => {
   });
 });
 
-describe('POST /api/checkout — ai-editor-divi5-pro (plugin, subscription) once re-enabled', () => {
+describe('POST /api/checkout — converters take no tier, lifetime or trial', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(isProductPaused).mockReturnValue(false);
-    delete (mockEnv as Record<string, unknown>).STRIPE_PRICE_AI_EDITOR_PRO;
+    mockEnv.STRIPE_PRICE_ELEM2DIVI_PRO = 'price_e2d_test';
   });
-
-  it('accepts kind=plugin product=ai-editor-divi5-pro and uses STRIPE_PRICE_AI_EDITOR_PRO', async () => {
-    mockEnv.STRIPE_PRICE_AI_EDITOR_PRO = 'price_aied_test';
-    vi.mocked(stripe.checkout.sessions.create).mockResolvedValue({
-      id: 'cs_test', url: 'https://checkout.stripe.com/pay/cs_test',
-    } as never);
-
-    const res = await POST(post({ kind: 'plugin', product: 'ai-editor-divi5-pro' }));
-
-    expect(res.status).toBe(200);
-    expect(stripe.checkout.sessions.create).toHaveBeenCalledTimes(1);
-    const params = vi.mocked(stripe.checkout.sessions.create).mock.calls[0]![0] as { line_items: Array<{ price: string }> };
-    expect(params.line_items[0]!.price).toBe('price_aied_test');
-  });
-
-  it('returns plugin_unavailable when STRIPE_PRICE_AI_EDITOR_PRO is unset', async () => {
-    const res = await POST(post({ kind: 'plugin', product: 'ai-editor-divi5-pro' }));
+  it.each([{ tier: 'personal' }, { lifetime: true }, { trial: true }])('400 invalid_request for %o', async (extra) => {
+    const res = await POST(post({ kind: 'plugin', product: 'elementor-to-divi5-pro', ...extra }));
     expect(res.status).toBe(400);
-    expect(await res.json()).toEqual({ error: 'plugin_unavailable' });
+    expect(await res.json()).toEqual({ error: 'invalid_request' });
     expect(stripe.checkout.sessions.create).not.toHaveBeenCalled();
   });
 });

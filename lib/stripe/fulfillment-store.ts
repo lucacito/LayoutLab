@@ -84,6 +84,7 @@ export const dbStore: FulfillmentStore = {
       tier: l.tier ?? null,
       founding: l.founding ?? false,
       lifetime: l.lifetime ?? false,
+      trial: l.trial ?? false,
     }).onConflictDoNothing({ target: licenses.stripeSubscriptionId });
     // Idempotency: if this subscription already minted a key (webhook retry),
     // return the existing one instead of a dangling fresh key.
@@ -98,8 +99,7 @@ export const dbStore: FulfillmentStore = {
     const updates: Record<string, unknown> = { status: s.status };
     if (s.currentPeriodEnd) updates.currentPeriodEnd = s.currentPeriodEnd;
     if (s.tier !== undefined) updates.tier = s.tier;
-    if (s.founding !== undefined) updates.founding = s.founding;
-    if (s.lifetime !== undefined) updates.lifetime = s.lifetime;
+    if (s.trial !== undefined) updates.trial = s.trial;
 
     const rows = await db.update(licenses)
       .set(updates)

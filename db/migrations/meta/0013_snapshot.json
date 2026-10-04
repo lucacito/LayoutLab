@@ -1,5 +1,5 @@
 {
-  "id": "11cf4be1-e557-4209-a2fc-26921a7a7b0f",
+  "id": "afd7fa3d-f077-4ac1-9be5-3362373c6621",
   "prevId": "18bed7ba-7610-40c0-a629-ae707f28e218",
   "version": "7",
   "dialect": "postgresql",
@@ -858,6 +858,13 @@
         },
         "lifetime": {
           "name": "lifetime",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "trial": {
+          "name": "trial",
           "type": "boolean",
           "primaryKey": false,
           "notNull": true,

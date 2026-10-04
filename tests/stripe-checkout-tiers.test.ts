@@ -1,91 +1,69 @@
 import { describe, it, expect } from 'vitest';
-import { buildCheckoutSessionParams, type CheckoutInput, type CheckoutContext } from '@/lib/stripe/checkout';
+import { buildCheckoutSessionParams, type CheckoutContext } from '@/lib/stripe/checkout';
+import { PRICING } from '@/lib/pricing/config';
 
-describe('buildCheckoutSessionParams for tiers', () => {
-  const baseCtx: CheckoutContext = {
-    siteUrl: 'https://example.com',
-    pluginPriceId: 'price_personal',
-    automaticTax: false,
-    requireTermsConsent: false,
-  };
+const ctx: CheckoutContext = { siteUrl: 'https://divi5lab.com', pluginPriceId: 'price_x', automaticTax: false };
+const product = 'ai-editor-divi5-pro' as const;
 
-  it('builds a trial session for ai-editor-divi5-pro with no tier and no lifetime', () => {
-    const input: CheckoutInput = { kind: 'plugin', product: 'ai-editor-divi5-pro' };
-    const params = buildCheckoutSessionParams(input, baseCtx);
-
-    expect(params.mode).toBe('subscription');
-    expect(params.subscription_data?.trial_period_days).toBe(45);
-    expect(params.subscription_data?.trial_settings?.end_behavior.missing_payment_method).toBe('cancel');
-    expect(params.payment_method_collection).toBe('if_required');
-    expect(params.metadata).toMatchObject({
-      kind: 'plugin',
-      product: 'ai-editor-divi5-pro',
-      tier: '0',
-      founding: '0',
-      lifetime: '0',
-    });
-    expect(params.allow_promotion_codes).toBe(true);
+describe('AI Editor tier sessions', () => {
+  it('a plain Personal purchase is paid up front: no trial, card collected, promo codes allowed', () => {
+    const p = buildCheckoutSessionParams({ kind: 'plugin', product, tier: 'personal' }, ctx);
+    expect(p.mode).toBe('subscription');
+    expect(p.payment_method_collection).toBeUndefined();
+    expect((p.subscription_data as any).trial_period_days).toBeUndefined();
+    expect(p.allow_promotion_codes).toBe(true);
+    expect(p.metadata).toEqual({ kind: 'plugin', product, tier: 'personal', founding: '0', lifetime: '0', trial: '0' });
+    expect((p.subscription_data as any).metadata).toEqual(p.metadata);
   });
 
-  it('builds a yearly subscription for a specific tier (personal)', () => {
-    const input: CheckoutInput = { kind: 'plugin', product: 'ai-editor-divi5-pro', tier: 'personal' };
-    const params = buildCheckoutSessionParams(input, baseCtx);
-
-    expect(params.mode).toBe('subscription');
-    expect(params.subscription_data?.trial_period_days).toBeUndefined();
-    expect(params.payment_method_collection).toBeUndefined();
-    expect(params.metadata).toMatchObject({
-      kind: 'plugin',
-      product: 'ai-editor-divi5-pro',
-      tier: 'personal',
-      founding: '0',
-      lifetime: '0',
-    });
-    expect(params.allow_promotion_codes).toBe(true);
+  it('the trial is Personal only, lasts PRICING.trial.days and takes no card when the config says so', () => {
+    const p = buildCheckoutSessionParams({ kind: 'plugin', product, tier: 'personal', trial: true }, ctx);
+    const sub = p.subscription_data as any;
+    expect(sub.trial_period_days).toBe(PRICING.trial.days);
+    expect(PRICING.trial.requireCard).toBe(false);
+    expect(p.payment_method_collection).toBe('if_required');
+    expect(sub.trial_settings.end_behavior.missing_payment_method).toBe('cancel');
+    expect(p.metadata).toMatchObject({ tier: 'personal', trial: '1' });
   });
 
-  it('applies founding discount when founding is true and coupon is provided', () => {
-    const input: CheckoutInput = { kind: 'plugin', product: 'ai-editor-divi5-pro', tier: 'personal' };
-    const ctx: CheckoutContext = { ...baseCtx, founding: true, foundingCouponId: 'coupon_founding' };
-    const params = buildCheckoutSessionParams(input, ctx);
-
-    expect(params.mode).toBe('subscription');
-    expect(params.discounts).toEqual([{ coupon: 'coupon_founding' }]);
-    expect(params.metadata).toMatchObject({ founding: '1' });
-    expect(params.allow_promotion_codes).toBe(false);
+  it('a trial flag on another tier is ignored by the builder (the route rejects it earlier)', () => {
+    const p = buildCheckoutSessionParams({ kind: 'plugin', product, tier: 'agency', trial: true }, ctx);
+    expect((p.subscription_data as any).trial_period_days).toBeUndefined();
+    expect(p.metadata).toMatchObject({ trial: '0' });
   });
 
-  it('builds a lifetime payment session with mode:payment', () => {
-    const input: CheckoutInput = { kind: 'plugin', product: 'ai-editor-divi5-pro', lifetime: true };
-    const ctx: CheckoutContext = { ...baseCtx, lifetime: true };
-    const params = buildCheckoutSessionParams(input, ctx);
-
-    expect(params.mode).toBe('payment');
-    expect(params.subscription_data).toBeUndefined();
-    expect(params.payment_method_collection).toBeUndefined();
-    expect(params.metadata).toMatchObject({
-      kind: 'plugin',
-      product: 'ai-editor-divi5-pro',
-      tier: 'agency',
-      lifetime: '1',
-    });
+  it('founding adds the coupon, drops allow_promotion_codes and flags the licence', () => {
+    const p = buildCheckoutSessionParams({ kind: 'plugin', product, tier: 'freelancer' }, { ...ctx, founding: true, foundingCouponId: 'co_f' });
+    expect(p.discounts).toEqual([{ coupon: 'co_f' }]);
+    expect(p.allow_promotion_codes).toBeUndefined();
+    expect(p.metadata).toMatchObject({ founding: '1' });
   });
 
-  it('does not combine founding with allow_promotion_codes', () => {
-    const input: CheckoutInput = { kind: 'plugin', product: 'ai-editor-divi5-pro', tier: 'freelancer' };
-    const ctx: CheckoutContext = { ...baseCtx, founding: true, foundingCouponId: 'coupon_id' };
-    const params = buildCheckoutSessionParams(input, ctx);
-
-    expect(params.allow_promotion_codes).toBe(false);
+  it('a trial never takes the founding coupon, so a no-card trial cannot use up a limited redemption', () => {
+    const p = buildCheckoutSessionParams({ kind: 'plugin', product, tier: 'personal', trial: true }, { ...ctx, founding: true, foundingCouponId: 'co_f' });
+    expect(p.discounts).toBeUndefined();
+    expect(p.metadata).toMatchObject({ founding: '0', trial: '1' });
   });
 
-  it('handles other plugin products without tier/lifetime fields', () => {
-    const input: CheckoutInput = { kind: 'plugin', product: 'elementor-to-divi5-pro' };
-    const params = buildCheckoutSessionParams(input, baseCtx);
+  it('founding without a coupon id is not applied', () => {
+    const p = buildCheckoutSessionParams({ kind: 'plugin', product, tier: 'agency' }, { ...ctx, founding: true });
+    expect(p.discounts).toBeUndefined();
+    expect(p.metadata).toMatchObject({ founding: '0' });
+  });
 
-    expect(params.mode).toBe('subscription');
-    expect(params.payment_method_collection).toBeUndefined();
-    expect(params.allow_promotion_codes).toBe(true);
-    expect(params.metadata).toMatchObject({ kind: 'plugin', product: 'elementor-to-divi5-pro' });
+  it('lifetime is a one-time payment on the lifetime tier with no subscription data and no founding', () => {
+    const p = buildCheckoutSessionParams({ kind: 'plugin', product, lifetime: true }, { ...ctx, founding: true, foundingCouponId: 'co_f' });
+    expect(p.mode).toBe('payment');
+    expect((p as any).subscription_data).toBeUndefined();
+    expect(p.discounts).toBeUndefined();
+    expect(p.customer_creation).toBe('always');
+    expect(p.metadata).toEqual({ kind: 'plugin', product, tier: PRICING.lifetime.tier, founding: '0', lifetime: '1', trial: '0' });
+  });
+
+  it('other products keep the exact legacy session', () => {
+    const p = buildCheckoutSessionParams({ kind: 'plugin', product: 'wpbakery-to-divi5-pro' }, ctx);
+    expect(p.metadata).toEqual({ kind: 'plugin', product: 'wpbakery-to-divi5-pro' });
+    expect(p.allow_promotion_codes).toBe(true);
+    expect((p.subscription_data as any).trial_period_days).toBeUndefined();
   });
 });

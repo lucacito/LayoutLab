@@ -1,9 +1,10 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { requireUser } from '@/lib/auth/admin';
+import { getUserIdByEmail } from '@/lib/account/queries';
 import { db } from '@/db/client';
 import { licenses, licenseActivations } from '@/db/schema';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, isNull } from 'drizzle-orm';
 import { PRICING } from '@/lib/pricing/config';
 
 const bodySchema = z.object({
@@ -25,8 +26,10 @@ export async function POST(req: Request): Promise<Response> {
   const license = await db.select().from(licenses).where(eq(licenses.id, licenseId)).limit(1);
   if (!license[0]) return NextResponse.json({ error: 'license_not_found' }, { status: 404 });
 
-  // Verify the user owns this license
-  if (license[0].userId !== session.user?.id) {
+  // Verify the signed-in user owns this licence (the session carries the email, as on the account pages)
+  const email = session.user?.email;
+  const userId = email ? await getUserIdByEmail(email) : null;
+  if (!userId || license[0].userId !== userId) {
     return NextResponse.json({ error: 'forbidden' }, { status: 403 });
   }
 
@@ -43,6 +46,7 @@ export async function POST(req: Request): Promise<Response> {
         and(
           eq(licenseActivations.licenseId, licenseId),
           eq(licenseActivations.siteUrl, siteUrl),
+          isNull(licenseActivations.deactivatedAt),
         ),
       )
       .returning({ id: licenseActivations.id });

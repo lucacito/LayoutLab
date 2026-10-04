@@ -20,6 +20,7 @@ const bodySchema = z.object({
   product: z.enum(PLUGIN_PRODUCTS),
   tier: z.enum(['personal', 'freelancer', 'agency']).optional(),
   lifetime: z.boolean().optional(),
+  trial: z.boolean().optional(),
 });
 
 // TODO(§16): add rate limiting to this route.
@@ -34,47 +35,37 @@ export async function POST(req: Request): Promise<Response> {
   // Paused product (lib/site/pro-status.ts): refuse before any Stripe call.
   if (isProductPaused(input.product)) return NextResponse.json({ error: 'This product is not currently available.' }, { status: 410 });
 
-  // For ai-editor-divi5-pro, validate and select tier/lifetime
+  const isAiEditor = input.product === PRICING.product;
   let pluginPriceId: string | undefined;
-  let tier: string | undefined;
   let foundingFlag = false;
-  let lifetimeFlag = false;
 
-  if (input.product === 'ai-editor-divi5-pro') {
-    // Handle tier and lifetime selection for AI Editor
+  if (isAiEditor) {
+    // Exactly one of: lifetime, or a tier (trial only on the trial tier).
     if (input.lifetime) {
-      // Lifetime: use one-time price
+      if (input.tier || input.trial) return NextResponse.json({ error: 'invalid_request' }, { status: 400 });
       pluginPriceId = lifetimePriceId();
-      tier = 'agency';
-      lifetimeFlag = true;
-    } else if (input.tier) {
-      // Specific tier subscription
-      pluginPriceId = priceIdForTier(input.tier);
-      tier = input.tier;
+      if (!pluginPriceId) return NextResponse.json({ error: 'plugin_unavailable' }, { status: 400 });
+      const sold = await dbStore.countLicensesByCondition({ lifetime: true, productSlug: PRICING.product });
+      if (!lifetimeAvailable(sold)) return NextResponse.json({ error: 'sold_out' }, { status: 410 });
     } else {
-      // Trial (no tier specified, no lifetime): use legacy price or undefined
-      pluginPriceId = env.STRIPE_PRICE_AI_EDITOR_PRO;
-      tier = undefined;
-    }
-
-    if (!pluginPriceId) return NextResponse.json({ error: 'plugin_unavailable' }, { status: 400 });
-
-    // Check founding availability if doing a tier purchase
-    if (!lifetimeFlag && tier && tier !== undefined) {
-      const foundingCount = await dbStore.countLicensesByCondition({
-        founding: true,
-        productSlug: PRICING.product,
-      });
-      if (foundingAvailable(foundingCount)) {
-        foundingFlag = true;
+      if (!input.tier || (input.trial && input.tier !== PRICING.trial.tier)) {
+        return NextResponse.json({ error: 'invalid_request' }, { status: 400 });
+      }
+      pluginPriceId = priceIdForTier(input.tier);
+      if (!pluginPriceId) return NextResponse.json({ error: 'plugin_unavailable' }, { status: 400 });
+      if (!input.trial && foundingCouponId()) {
+        const taken = await dbStore.countLicensesByCondition({ founding: true, productSlug: PRICING.product });
+        foundingFlag = foundingAvailable(taken);
       }
     }
   } else {
-    // Non-AI-Editor products: use legacy price lookup
+    if (input.tier || input.lifetime || input.trial) return NextResponse.json({ error: 'invalid_request' }, { status: 400 });
+    // Built per-request (not module-level) so it always reflects the live `env`
+    // singleton, which keeps the next product a one-line addition.
     const PRICE_ENV: Record<PluginProduct, string | undefined> = {
       'elementor-to-divi5-pro': env.STRIPE_PRICE_ELEM2DIVI_PRO,
       'divi-to-elementor-pro': env.STRIPE_PRICE_DIVI2ELEM_PRO,
-      'ai-editor-divi5-pro': env.STRIPE_PRICE_AI_EDITOR_PRO, // Handled above
+      'ai-editor-divi5-pro': undefined, // sold by tier, handled above
       'beaver-to-divi5-pro': env.STRIPE_PRICE_BB2DIVI_PRO,
       'wpbakery-to-divi5-pro': env.STRIPE_PRICE_WPB2DIVI_PRO,
       'bricks-to-divi5-pro': env.STRIPE_PRICE_BRICKS2DIVI_PRO,
@@ -84,15 +75,13 @@ export async function POST(req: Request): Promise<Response> {
   }
 
   const requireTermsConsent = env.STRIPE_TERMS_CONSENT === '1' || env.STRIPE_TERMS_CONSENT === 'true';
-  const makeCtx = (automaticTax: boolean): CheckoutContext => ({
+  const makeCtx = (automaticTax: boolean, founding: boolean): CheckoutContext => ({
     siteUrl: env.NEXT_PUBLIC_SITE_URL,
     pluginPriceId,
     automaticTax,
     requireTermsConsent,
-    tier,
-    founding: foundingFlag,
-    lifetime: lifetimeFlag,
-    foundingCouponId: foundingFlag ? foundingCouponId() : undefined,
+    founding,
+    foundingCouponId: founding ? foundingCouponId() : undefined,
   });
 
   const urlOr500 = (session: Stripe.Checkout.Session) => {
@@ -109,18 +98,27 @@ export async function POST(req: Request): Promise<Response> {
     return NextResponse.json({ error: 'checkout_failed', detail }, { status: 502 });
   };
 
-  try {
-    return urlOr500(await stripe.checkout.sessions.create(buildCheckoutSessionParams(input, makeCtx(true))));
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
-    if (!/tax/i.test(msg)) return fail(err);
-    // automatic_tax failed (e.g. Stripe Tax not enabled), so retry without tax, and
-    // return a clean error if THAT also fails (previously this threw → 500 crash).
-    console.warn('[checkout] automatic_tax failed; retrying without tax:', msg);
+  // Two things can be retried without: a founding coupon Stripe refuses (e.g. its redemption limit is used up),
+  // and automatic tax (e.g. Stripe Tax not enabled). Anything else fails cleanly.
+  let tax = true;
+  let founding = foundingFlag;
+  for (let attempt = 0; attempt < 3; attempt++) {
     try {
-      return urlOr500(await stripe.checkout.sessions.create(buildCheckoutSessionParams(input, makeCtx(false))));
-    } catch (err2) {
-      return fail(err2);
+      return urlOr500(await stripe.checkout.sessions.create(buildCheckoutSessionParams(input, makeCtx(tax, founding))));
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      if (founding && /coupon|discount|promotion/i.test(msg)) {
+        console.warn('[checkout] founding coupon refused; retrying without it:', msg);
+        founding = false;
+        continue;
+      }
+      if (tax && /tax/i.test(msg)) {
+        console.warn('[checkout] automatic_tax failed; retrying without tax:', msg);
+        tax = false;
+        continue;
+      }
+      return fail(err);
     }
   }
+  return fail(new Error('checkout retries exhausted'));
 }
