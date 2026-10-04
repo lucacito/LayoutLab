@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { env } from '@/lib/env';
 import { rateLimit } from '@/lib/rate-limit';
 import { handleValidate } from '@/lib/license-server/handlers';
 import { dbLicenseStore } from '@/lib/license-server/store';
@@ -20,6 +21,6 @@ export async function POST(req: Request): Promise<Response> {
   const parsed = bodySchema.safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: 'invalid_request' }, { status: 400 });
   const { key, site_url, product } = parsed.data;
-  const result = await handleValidate({ key, siteUrl: site_url, product }, dbLicenseStore);
+  const result = await handleValidate({ key, siteUrl: site_url, product }, dbLicenseStore, { origin: env.NEXT_PUBLIC_SITE_URL });
   return NextResponse.json(result.body, { status: result.status });
 }

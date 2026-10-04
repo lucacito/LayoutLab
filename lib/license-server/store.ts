@@ -51,7 +51,7 @@ export const dbLicenseStore: LicenseStore = {
     return r ? { version: r.version, blobKey: r.blobKey, changelog: r.changelog } : null;
   },
   async countActiveActivations(licenseId) {
-    const rows = await db.select({ count: sql<number>`count(*)` })
+    const rows = await db.select({ count: sql<number>`count(*)::int` })
       .from(licenseActivations)
       .where(and(eq(licenseActivations.licenseId, licenseId), isNull(licenseActivations.deactivatedAt)));
     return rows[0]?.count ?? 0;
@@ -79,13 +79,14 @@ export const dbLicenseStore: LicenseStore = {
     return await db.transaction(async (tx) => {
       // Lock the license row to prevent concurrent updates
       const licenseRows = await tx.select().from(licenses)
-        .where(eq(licenses.id, a.licenseId));
+        .where(eq(licenses.id, a.licenseId))
+        .for('update');
       if (!licenseRows[0]) {
         return { ok: false, used: 0 };
       }
 
       // Count currently active activations
-      const countRows = await tx.select({ count: sql<number>`count(*)` })
+      const countRows = await tx.select({ count: sql<number>`count(*)::int` })
         .from(licenseActivations)
         .where(and(eq(licenseActivations.licenseId, a.licenseId), isNull(licenseActivations.deactivatedAt)));
       const activeCount = countRows[0]?.count ?? 0;
@@ -118,7 +119,7 @@ export const dbLicenseStore: LicenseStore = {
       });
 
       // Recount to get the new total
-      const newCountRows = await tx.select({ count: sql<number>`count(*)` })
+      const newCountRows = await tx.select({ count: sql<number>`count(*)::int` })
         .from(licenseActivations)
         .where(and(eq(licenseActivations.licenseId, a.licenseId), isNull(licenseActivations.deactivatedAt)));
       const newCount = newCountRows[0]?.count ?? 0;
