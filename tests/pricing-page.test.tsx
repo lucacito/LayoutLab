@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, beforeAll } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { PRICING, formatUsd } from '@/lib/pricing/config';
+import { PRICING, formatUsd, lowestTier } from '@/lib/pricing/config';
 
 // Set up environment variables needed for pricing page to show tier cards
 beforeAll(() => {
@@ -120,9 +120,12 @@ describe('/pricing (AI Editor Pro and converters)', () => {
   });
 
   it('has metadata for AI Editor Pro and converters', () => {
-    expect(String(metadata.title)).toMatch(/AI Editor Pro and converters/i);
-    expect(String(metadata.description)).toMatch(/personal.*freelancer.*agency/i);
+    expect(String(metadata.title)).toMatch(/AI Editor for Divi 5 Pro and Converters/i);
+    expect(String(metadata.title).length).toBeLessThanOrEqual(55);
+    expect(String(metadata.description)).toContain(`from ${formatUsd(lowestTier().priceCents)}/yr`);
+    expect(String(metadata.description)).toContain(`${PRICING.trial.days}-day free trial`);
     expect(String(metadata.description)).toMatch(/\$25/);
+    expect(metadata.alternates?.canonical).toBe('/pricing');
   });
 
   it('mentions free layouts to download', async () => {

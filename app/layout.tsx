@@ -13,7 +13,7 @@ import { Footer } from '@/components/site/Footer';
 import { AnnouncementBar } from '@/components/site/AnnouncementBar';
 import { BookmarksProvider } from '@/components/bookmarks/BookmarksProvider';
 import { env } from '@/lib/env';
-import { SITE_TITLE, SITE_DESCRIPTION, SOCIAL_DESCRIPTION } from '@/lib/site/brand';
+import { SITE_TITLE, SITE_DESCRIPTION, SITE_META_DESCRIPTION, SOCIAL_DESCRIPTION } from '@/lib/site/brand';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-sans', display: 'swap' });
 // Display face for headings/eyebrows only. Body copy stays on Inter, which
@@ -22,7 +22,7 @@ const poppins = Poppins({ subsets: ['latin'], weight: ['600', '700', '800'], var
 
 const GA_ID = env.NEXT_PUBLIC_GA_ID ?? 'G-YCK6MN99PR';
 
-// Site-wide title and description come from lib/site/brand.ts (converter-first);
+// Site-wide title and description come from lib/site/brand.ts (AI Editor first);
 // /browse keeps its own layouts-focused title so the two pages do not compete
 // for the same SERP label.
 const TITLE = SITE_TITLE;
@@ -49,7 +49,8 @@ const SITE_JSONLD = [
   // The canonical set of sections we want Google to consider for sitelinks,
   // identical to the primary nav so on-page links and structured data agree.
   siteNavigationJsonLd([
-    { name: 'Converters', url: `${SITE_URL}/plugins` },
+    { name: 'AI Editor for Divi 5', url: `${SITE_URL}/plugins/divi-5-ai-editor` },
+    { name: 'Plugins', url: `${SITE_URL}/plugins` },
     { name: 'Browse layouts', url: `${SITE_URL}/browse` },
     { name: 'Themes & Packs', url: `${SITE_URL}/packs` },
     { name: 'Guides', url: `${SITE_URL}/guides` },
@@ -62,11 +63,11 @@ const SITE_JSONLD = [
 export const metadata: Metadata = {
   metadataBase: new URL(env.NEXT_PUBLIC_SITE_URL),
   title: { default: `${TITLE} | Divi5Lab`, template: '%s | Divi5Lab' },
-  description: DESCRIPTION,
-  keywords: ['elementor to divi 5', 'beaver builder to divi 5', 'wpbakery to divi 5', 'divi 5 converter', 'divi 5 layouts', 'free divi layouts', 'divi sections', 'divi 5'],
+  description: SITE_META_DESCRIPTION,
+  keywords: ['divi 5 ai', 'ai editor for divi 5', 'divi 5 mcp', 'claude divi 5', 'chatgpt divi 5', 'edit divi with ai', 'divi 5 validator', 'elementor to divi 5', 'divi 5 layouts', 'divi 5'],
   alternates: { canonical: '/' },
   icons: { icon: '/favicon.png', shortcut: '/favicon.png', apple: '/favicon.png' },
-  openGraph: { type: 'website', siteName: 'Divi5Lab', url: '/', title: TITLE, description: DESCRIPTION },
+  openGraph: { type: 'website', siteName: 'Divi5Lab', url: '/', title: TITLE, description: SITE_META_DESCRIPTION },
   twitter: { card: 'summary_large_image', title: TITLE, description: SOCIAL_DESCRIPTION },
 };
 

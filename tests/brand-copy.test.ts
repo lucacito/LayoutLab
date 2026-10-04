@@ -7,7 +7,9 @@ describe('site positioning copy', () => {
     for (const s of [SITE_TITLE, SITE_DESCRIPTION, SITE_TAGLINE, SOCIAL_DESCRIPTION]) {
       expect(s).toMatch(/divi 5/i);
     }
-    expect(SITE_TITLE).toMatch(/^AI Editor for Divi 5/);
+    expect(SITE_TITLE).toMatch(/^Divi 5 AI Editor/);
+    // title + ' | Divi5Lab' stays within what Google shows in a result
+    expect(`${SITE_TITLE} | Divi5Lab`.length).toBeLessThanOrEqual(65);
     expect(SITE_DESCRIPTION).toMatch(/^Divi5Lab is home to the AI Editor/);
     expect(SITE_TAGLINE).toMatch(/^The AI Editor for Divi 5/);
     expect(SITE_DESCRIPTION).toMatch(/deterministic validator/i);

@@ -1,10 +1,14 @@
 // Site-wide positioning copy. Divi5Lab is home to the AI Editor for Divi 5: the AI editor leads; the converters
 // that bring other builders to Divi 5 and the free validated layouts come after it. Keep these in one place so the
 // <title>, description, social card, footer and llms.txt tell one story.
-export const SITE_TITLE = 'AI Editor for Divi 5: edit Divi with Claude, ChatGPT or Cursor';
+export const SITE_TITLE = 'Divi 5 AI Editor: Edit Pages with Claude or ChatGPT';
 
 export const SITE_DESCRIPTION =
   'Divi5Lab is home to the AI Editor for Divi 5: a free WordPress plugin and a Pro add-on that let Claude, ChatGPT, Cursor or VS Code edit your Divi 5 pages in plain English. Every change passes a deterministic validator before it is saved, and every change can be undone. We also build converters for Elementor, Beaver Builder and WPBakery, and a library of free validated Divi 5 layouts.';
+
+// What a search result shows (about 155 characters). SITE_DESCRIPTION above is the long form for structured data.
+export const SITE_META_DESCRIPTION =
+  'Let Claude or ChatGPT edit your Divi 5 pages in plain English. Free AI Editor plugin: every change is validated before it is saved, and can be undone.';
 
 export const SOCIAL_DESCRIPTION =
   'Edit Divi 5 pages in plain English with the AI assistant you already use. A deterministic validator checks every change before it is saved.';

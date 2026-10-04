@@ -42,9 +42,13 @@ describe('sitemapEntries', () => {
     expect(plugins).toHaveLength(PLUGIN_MENU.length);
     expect(new Set(plugins.map((e) => e.url)).size).toBe(PLUGIN_MENU.length);
     const priority = (href: string) => plugins.find((e) => e.url === `${SITE}${href}`)?.priority;
-    expect(priority('/plugins/wpbakery-to-divi-5')).toBe(0.9);
-    expect(priority('/plugins/beaver-builder-to-divi-5')).toBe(0.9);
-    expect(priority('/plugins/divi-5-ai-editor')).toBe(0.6);
+    // The AI Editor is the lead product; the converters are secondary.
+    expect(priority('/plugins/divi-5-ai-editor')).toBe(0.95);
+    expect(priority('/plugins/wpbakery-to-divi-5')).toBe(0.7);
+    expect(priority('/plugins/beaver-builder-to-divi-5')).toBe(0.7);
+    for (const p of ['/plugins/wpbakery-to-divi-5', '/plugins/beaver-builder-to-divi-5']) {
+      expect(priority('/plugins/divi-5-ai-editor')!).toBeGreaterThan(priority(p)!);
+    }
   });
 
   it('includes every layout and pack url', () => {
@@ -67,5 +71,19 @@ describe('sitemapEntries', () => {
     const urls = out.map((e) => e.url);
     expect(urls).toContain(`${SITE}`);
     expect(urls).toContain(`${SITE}/browse`);
+  });
+
+  it('marks the pages that changed with the product shift as recently modified, so Google recrawls them', () => {
+    const entries = sitemapEntries({ siteUrl: SITE, layouts: [], packs: [] });
+    for (const path of ['', '/pricing', '/plugins', '/plugins/divi-5-ai-editor', '/about', '/license']) {
+      const e = entries.find((x) => x.url === `${SITE}${path}`);
+      expect(e?.lastModified, path || 'home').toBeInstanceOf(Date);
+    }
+  });
+  it('ranks the AI Editor page and pricing above the converters', () => {
+    const entries = sitemapEntries({ siteUrl: SITE, layouts: [], packs: [] });
+    const pr = (path: string) => entries.find((x) => x.url === `${SITE}${path}`)?.priority ?? 0;
+    expect(pr('/plugins/divi-5-ai-editor')).toBeGreaterThan(pr('/plugins/elementor-to-divi-5'));
+    expect(pr('/pricing')).toBeGreaterThanOrEqual(0.9);
   });
 });

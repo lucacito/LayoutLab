@@ -23,9 +23,9 @@ const PRODUCT_DESCRIPTION =
 
 export const metadata: Metadata = {
   title: 'AI Editor for Divi 5: edit Divi with AI, validated',
-  description:
-    `Free plugin: connect Claude, Cursor, or ChatGPT to your Divi 5 site and edit pages in plain English. Every change is validated before it is saved. Pro add-on adds 14 site-wide tools from ${formatUsd(lowestTier().priceCents)}/yr.`,
+  description: `Let Claude, ChatGPT or Cursor edit your Divi 5 pages in plain English. Free plugin, every change validated. Pro from ${formatUsd(lowestTier().priceCents)}/yr.`,
   alternates: { canonical: `${env.NEXT_PUBLIC_SITE_URL}/plugins/divi-5-ai-editor` },
+  openGraph: { type: 'website', url: `${env.NEXT_PUBLIC_SITE_URL}/plugins/divi-5-ai-editor`, title: 'AI Editor for Divi 5: edit Divi with AI, validated' },
 };
 
 const DEMO_STEPS: ChatStep[] = [
