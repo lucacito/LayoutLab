@@ -4,11 +4,13 @@ import { render, screen } from '@testing-library/react';
 import PluginsHub, { metadata } from '@/app/(marketing)/plugins/page';
 
 describe('/plugins hub', () => {
-  it('renders all four products with honest chips', async () => {
+  it('renders AI Editor and converters with honest chips', async () => {
     render(await PluginsHub());
     expect(screen.getAllByText(/beaver builder → divi 5 converter/i).length).toBeGreaterThan(0);
     expect(screen.queryByText(/pending wordpress\.org review/i)).toBeNull();
-    expect(screen.getByText(/\$30\/yr/i)).toBeTruthy();
+    expect(screen.queryByText(/\$30/)).toBeNull();
+    // AI Editor chip now shows "Free plugin · from $49/yr"
+    expect(screen.getByText(/free plugin.*from \$/i)).toBeTruthy();
     expect(screen.getAllByText(/\$25\/yr/i).length).toBeGreaterThan(0);
   });
   it('has a which-tool decision strip that says Bricks is in the works', async () => {

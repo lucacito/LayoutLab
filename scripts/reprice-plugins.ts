@@ -18,7 +18,6 @@ import Stripe from 'stripe';
 const TARGETS = [
   { slug: 'elementor-to-divi5-pro', envVar: 'STRIPE_PRICE_ELEM2DIVI_PRO', newCents: 2500 },
   { slug: 'divi-to-elementor-pro', envVar: 'STRIPE_PRICE_DIVI2ELEM_PRO', newCents: 2500 },
-  { slug: 'ai-editor-divi5-pro', envVar: 'STRIPE_PRICE_AI_EDITOR_PRO', newCents: 3000 },
   { slug: 'beaver-to-divi5-pro', envVar: 'STRIPE_PRICE_BB2DIVI_PRO', newCents: 2500 },
   { slug: 'wpbakery-to-divi5-pro', envVar: 'STRIPE_PRICE_WPB2DIVI_PRO', newCents: 2500 },
 ] as const;

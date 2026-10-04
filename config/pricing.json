@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "product": "ai-editor-divi5-pro",
+  "currency": "USD",
+  "tiers": [
+    { "id": "personal",   "label": "Personal",   "sites": 1,    "priceCents": 4900,  "priceEnv": "STRIPE_PRICE_AI_EDITOR_PERSONAL" },
+    { "id": "freelancer", "label": "Freelancer", "sites": 10,   "priceCents": 9900,  "priceEnv": "STRIPE_PRICE_AI_EDITOR_FREELANCER" },
+    { "id": "agency",     "label": "Agency",     "sites": null, "priceCents": 14900, "priceEnv": "STRIPE_PRICE_AI_EDITOR_AGENCY" }
+  ],
+  "founding": { "percentOff": 30, "cap": 100, "couponEnv": "STRIPE_COUPON_AI_EDITOR_FOUNDING" },
+  "lifetime": { "tier": "agency", "priceCents": 44900, "cap": 50, "priceEnv": "STRIPE_PRICE_AI_EDITOR_LIFETIME" },
+  "trial": { "tier": "personal", "days": 45, "requireCard": false },
+  "renewalReminderDays": [30, 7],
+  "pastDueGraceDays": 7,
+  "urls": { "pricing": "/pricing", "account": "/account/licenses", "billing": "/account/billing" }
+}

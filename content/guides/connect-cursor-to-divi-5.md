@@ -12,7 +12,7 @@ This guide covers both editors, since they share the same underlying idea and mo
 ## Prerequisites
 
 - Divi 5 (Divi 4 won't work, because the plugin targets Divi 5's module schema specifically) on WordPress 6.0+ and PHP 8.1+.
-- The [AI Editor for Divi 5](/plugins/divi-5-ai-editor) plugin installed and active. Free tier is sufficient for everything in this guide.
+- The free [AI Editor for Divi 5](/plugins/divi-5-ai-editor) plugin (listed in WordPress as JHMG AI Editor for Divi 5) installed and active. Everything in this guide works with the free plugin.
 - Cursor or VS Code with the Copilot extension, whichever you use day to day.
 
 ## Step 1: Get the connection details
@@ -45,11 +45,13 @@ Both Cursor and Copilot distinguish between a chat mode that only talks and an *
 
 Whichever tool proposes the edit, the request lands on the same plugin backend, and every layout change passes through a **deterministic validator** before it's written to your site. If the proposed change doesn't match Divi 5's real module schema (malformed attributes, invalid nesting, a missing required field) the validator rejects it and returns the exact violation, which the assistant uses to correct itself and retry. This is the same validator that gates every layout in [our catalog](/browse) before publication (see [Divi 5 Design Tips](/guides/divi-5-design-tips) for the design rules layered on top of pure structural validity). It means an agent that's confidently wrong about Divi's schema still can't leave your page broken. The change simply doesn't save.
 
-## Free vs. Pro
+## What the free plugin includes
 
-Free covers listing pages, reading pages, updating existing ones, dry-run validation, and the plugin's bundled guides, which is plenty for iterating on a site that already exists, which is most of what developers use an editor-based workflow for anyway.
+The plugin is free, and nothing in it is locked. Your agent can list and read pages, validate a layout without saving it, update a page or change one piece of text without rebuilding the rest, and create new pages. New pages are always saved as **drafts**, so you review and publish them yourself, which suits scaffolding a new section from a single agent prompt. Each page the agent changes keeps its previous version (the last 10), so you can undo an edit from the plugin's Dashboard or ask the agent to restore it.
 
-**Pro** ($30/yr, unlimited sites on one license) adds the tools that build rather than edit: creating new pages, setting the front page, assembling the primary menu, site-wide custom CSS, and reviewed PHP snippet proposals. If you're scaffolding a new site section entirely from an agent prompt, that's Pro territory. Full comparison on the [plugin page](/plugins/divi-5-ai-editor).
+It also includes a built-in pack of 44 original images, read-only access to your Media Library, and the style, landing-page, site and image guides plus 17 section recipes. It doesn't set your front page, edit menus, or save custom CSS or PHP. Full list on the [plugin page](/plugins/divi-5-ai-editor).
+
+A separate Pro add-on for live stock-photo sourcing is planned, but it is not available yet and the free plugin is complete without it.
 
 ## Troubleshooting
 
@@ -59,4 +61,4 @@ Free covers listing pages, reading pages, updating existing ones, dry-run valida
 
 **Edits keep getting rejected.** Ask the agent to show the validator's violation message. It's specific enough to tell you exactly what about the proposed layout was invalid, and the agent should retry with that information.
 
-Ready to try it? [Get the AI Editor for Divi 5](/plugins/divi-5-ai-editor). The free tier edits existing pages; Pro builds whole sites.
+Ready to try it? [Get the free AI Editor for Divi 5](/plugins/divi-5-ai-editor), connect your editor, and make your first validated edit.

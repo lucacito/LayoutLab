@@ -25,6 +25,7 @@ function fakeStore(over: Partial<FulfillmentStore> = {}): FulfillmentStore {
     grantPluginEntitlement: vi.fn(async () => {}),
     revokePluginEntitlement: vi.fn(async () => {}),
     notifyLicensePurchase: vi.fn(async () => {}),
+    countLicensesByCondition: vi.fn(async () => 0),
     ...over,
   };
 }
@@ -381,5 +382,99 @@ describe('plugin license fulfillment', () => {
       currentPeriodEnd: new Date(1780000000 * 1000),
     });
     expect(store.grantAllAccess).toHaveBeenCalledWith('user_1', new Date(1780000000 * 1000));
+  });
+});
+
+describe('AI Editor tiered licences', () => {
+  const completed = (metadata: Record<string, string>, extra: Record<string, unknown> = {}) => ({
+    id: 'evt_t1', type: 'checkout.session.completed',
+    data: { object: {
+      id: 'cs_t1', customer: 'cus_1', subscription: 'sub_t1', payment_status: 'paid',
+      customer_details: { email: 'buyer@x.com' }, mode: 'subscription', metadata, ...extra,
+    } },
+  }) as never;
+
+  it('mints the tier, founding and trial flags from the checkout metadata', async () => {
+    const store = fakeStore();
+    await handleStripeEvent(completed({ kind: 'plugin', product: 'ai-editor-divi5-pro', tier: 'freelancer', founding: '1', lifetime: '0', trial: '0' }), store);
+    expect(store.mintLicense).toHaveBeenCalledWith({
+      userId: 'user_1', productSlug: 'ai-editor-divi5-pro', stripeSubscriptionId: 'sub_t1', currentPeriodEnd: null,
+      tier: 'freelancer', founding: true, lifetime: false, trial: false,
+    });
+    expect(store.notifyLicensePurchase).toHaveBeenCalledWith(expect.objectContaining({ tier: 'freelancer', lifetime: false }));
+  });
+
+  it('a trial checkout mints a trial licence', async () => {
+    const store = fakeStore();
+    await handleStripeEvent(completed({ kind: 'plugin', product: 'ai-editor-divi5-pro', tier: 'personal', founding: '0', lifetime: '0', trial: '1' }), store);
+    expect(store.mintLicense).toHaveBeenCalledWith(expect.objectContaining({ tier: 'personal', trial: true, founding: false }));
+  });
+
+  it('a lifetime payment mints a lifetime licence keyed by the checkout session, never by a subscription', async () => {
+    const store = fakeStore();
+    await handleStripeEvent(completed({ kind: 'plugin', product: 'ai-editor-divi5-pro', tier: 'agency', founding: '0', lifetime: '1', trial: '0' }, { mode: 'payment', subscription: null }), store);
+    expect(store.mintLicense).toHaveBeenCalledWith(expect.objectContaining({
+      stripeSubscriptionId: 'cs_t1', currentPeriodEnd: null, tier: 'agency', lifetime: true,
+    }));
+  });
+
+  it('an unpaid lifetime payment mints nothing yet; async_payment_succeeded mints it', async () => {
+    const store = fakeStore();
+    const meta = { kind: 'plugin', product: 'ai-editor-divi5-pro', tier: 'agency', founding: '0', lifetime: '1', trial: '0' };
+    await handleStripeEvent(completed(meta, { mode: 'payment', subscription: null, payment_status: 'unpaid' }), store);
+    expect(store.mintLicense).not.toHaveBeenCalled();
+
+    const later = { id: 'evt_t2', type: 'checkout.session.async_payment_succeeded', data: { object: {
+      id: 'cs_t1', customer: 'cus_1', subscription: null, payment_status: 'paid', mode: 'payment',
+      customer_details: { email: 'buyer@x.com' }, metadata: meta,
+    } } } as never;
+    await handleStripeEvent(later, store);
+    expect(store.mintLicense).toHaveBeenCalledWith(expect.objectContaining({ lifetime: true }));
+  });
+
+  it('converter licences keep their exact old mint call (no tier keys)', async () => {
+    const store = fakeStore();
+    await handleStripeEvent(completed({ kind: 'plugin', product: 'wpbakery-to-divi5-pro' }), store);
+    expect(store.mintLicense).toHaveBeenCalledWith({
+      userId: 'user_1', productSlug: 'wpbakery-to-divi5-pro', stripeSubscriptionId: 'sub_t1', currentPeriodEnd: null,
+    });
+  });
+
+  it('a subscription update re-derives the tier from the item Price, not from stale metadata', async () => {
+    const store = fakeStore();
+    const prev = process.env.STRIPE_PRICE_AI_EDITOR_AGENCY;
+    const { env } = await import('@/lib/env');
+    (env as Record<string, string | undefined>).STRIPE_PRICE_AI_EDITOR_AGENCY = 'price_agency_x';
+    try {
+      await handleStripeEvent({
+        id: 'evt_u1', type: 'customer.subscription.updated',
+        data: { object: {
+          id: 'sub_t1', status: 'active', current_period_end: 1780000000,
+          metadata: { kind: 'plugin', product: 'ai-editor-divi5-pro', tier: 'personal' },
+          items: { data: [{ price: { id: 'price_agency_x' } }] },
+        } },
+      } as never, store);
+    } finally {
+      (env as Record<string, string | undefined>).STRIPE_PRICE_AI_EDITOR_AGENCY = prev;
+    }
+    expect(store.setLicenseStatusBySubscription).toHaveBeenCalledWith({
+      stripeSubscriptionId: 'sub_t1', status: 'active', currentPeriodEnd: new Date(1780000000 * 1000),
+      tier: 'agency', trial: false,
+    });
+  });
+
+  it('a trialing subscription marks the licence as a trial; an unknown Price leaves the tier alone', async () => {
+    const store = fakeStore();
+    await handleStripeEvent({
+      id: 'evt_u2', type: 'customer.subscription.updated',
+      data: { object: {
+        id: 'sub_t1', status: 'trialing', current_period_end: 1780000000,
+        metadata: { kind: 'plugin', product: 'ai-editor-divi5-pro' },
+        items: { data: [{ price: { id: 'price_unknown' } }] },
+      } },
+    } as never, store);
+    const arg = (store.setLicenseStatusBySubscription as any).mock.calls[0][0];
+    expect(arg.trial).toBe(true);
+    expect('tier' in arg).toBe(false);
   });
 });

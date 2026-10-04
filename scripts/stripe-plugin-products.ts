@@ -1,4 +1,4 @@
-// One-time: create the two Pro plugin Products + yearly Prices in Stripe and
+// One-time: create the Pro plugin Products (the AI Editor is built from config/pricing.json: see ensureAiEditor) + yearly Prices in Stripe and
 // print the env lines to paste into .env / Vercel. Idempotent by lookup on
 // product metadata.slug. Run with: npx tsx scripts/stripe-plugin-products.ts
 //
@@ -8,13 +8,14 @@
 // ~1 minute), which caused duplicate products/prices when this script was
 // re-run shortly after a prior run.
 import Stripe from 'stripe';
+import { PRICING } from '../lib/pricing/config';
 
 const PRODUCTS = [
   { slug: 'elementor-to-divi5-pro', name: 'JHMG Converter For Elementor to Divi 5 — Pro', envVar: 'STRIPE_PRICE_ELEM2DIVI_PRO', yearlyUsdCents: 2500 },
   { slug: 'divi-to-elementor-pro', name: 'JHMG Converter For Divi to Elementor — Pro', envVar: 'STRIPE_PRICE_DIVI2ELEM_PRO', yearlyUsdCents: 2500 },
-  { slug: 'ai-editor-divi5-pro', name: 'AI Editor for Divi 5 — Pro', envVar: 'STRIPE_PRICE_AI_EDITOR_PRO', yearlyUsdCents: 3000 },
   { slug: 'beaver-to-divi5-pro', name: 'JHMG Converter For Beaver Builder to Divi 5 — Pro', envVar: 'STRIPE_PRICE_BB2DIVI_PRO', yearlyUsdCents: 2500 },
   { slug: 'wpbakery-to-divi5-pro', name: 'JHMG Converter For WPBakery to Divi 5 — Pro', envVar: 'STRIPE_PRICE_WPB2DIVI_PRO', yearlyUsdCents: 2500 },
+  { slug: 'bricks-to-divi5-pro', name: 'JHMG Converter For Bricks to Divi 5 — Pro', envVar: 'STRIPE_PRICE_BRICKS2DIVI_PRO', yearlyUsdCents: 2500 },
 ] as const;
 
 async function findBySlug(stripe: Stripe, slug: string): Promise<Stripe.Product | undefined> {
@@ -36,10 +37,51 @@ async function findBySlug(stripe: Stripe, slug: string): Promise<Stripe.Product 
   return oldest;
 }
 
+// The AI Editor Pro: ONE product, three yearly Prices (one per tier), one one-time Lifetime Price and the
+// founding-offer coupon, all taken from config/pricing.json. Idempotent: Prices are found by lookup_key, the
+// coupon by its fixed id. Prints the env lines for Vercel. Nothing here is a price literal.
+async function ensureAiEditor(stripe: Stripe): Promise<void> {
+  let product = await findBySlug(stripe, PRICING.product);
+  if (!product) {
+    product = await stripe.products.create({
+      name: 'AI Editor for Divi 5 — Pro',
+      metadata: { slug: PRICING.product },
+      description: 'Annual licence priced by site count. The price covers updates and support; the tools keep working if it lapses.',
+    });
+  }
+
+  const ensurePrice = async (lookupKey: string, cents: number, recurring: boolean, envVar: string) => {
+    const existing = (await stripe.prices.list({ lookup_keys: [lookupKey], active: true, limit: 1 })).data[0];
+    if (existing && existing.unit_amount !== cents) {
+      console.error(`WARNING: ${lookupKey} (${existing.id}) is ${existing.unit_amount}c, config says ${cents}c. Archive it in the dashboard and re-run.`);
+    }
+    const price = existing ?? await stripe.prices.create({
+      product: product!.id, currency: PRICING.currency.toLowerCase(), unit_amount: cents, lookup_key: lookupKey,
+      ...(recurring ? { recurring: { interval: 'year' as const } } : {}),
+    });
+    console.log(`${envVar}=${price.id}`);
+  };
+
+  for (const tier of PRICING.tiers) await ensurePrice(`${PRICING.product}-${tier.id}`, tier.priceCents, true, tier.priceEnv);
+  await ensurePrice(`${PRICING.product}-lifetime`, PRICING.lifetime.priceCents, false, PRICING.lifetime.priceEnv);
+
+  const couponId = `${PRICING.product}-founding`;
+  let coupon: Stripe.Coupon | undefined;
+  try { coupon = await stripe.coupons.retrieve(couponId); } catch { coupon = undefined; }
+  if (!coupon) {
+    coupon = await stripe.coupons.create({
+      id: couponId, name: 'Founding offer', percent_off: PRICING.founding.percentOff, duration: 'forever',
+      max_redemptions: PRICING.founding.cap, applies_to: { products: [product.id] },
+    });
+  }
+  console.log(`${PRICING.founding.couponEnv}=${coupon.id}`);
+}
+
 async function main() {
   const secret = process.env.STRIPE_SECRET_KEY;
   if (!secret) { console.error('STRIPE_SECRET_KEY not set'); process.exit(1); }
   const stripe = new Stripe(secret);
+  await ensureAiEditor(stripe);
   for (const p of PRODUCTS) {
     let product = await findBySlug(stripe, p.slug);
     if (!product) {

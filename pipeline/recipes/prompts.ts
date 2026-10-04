@@ -26,9 +26,9 @@ export interface Guide {
    *  into the brief/section prompts. Optional — absent when the file couldn't
    *  be found/parsed; every consumer must degrade gracefully. */
   landingGuide?: string;
-  /** T3.3 — the validator repo's ImageGuide (image-selection strategy: keyword
-   *  derivation, source-per-role, pinning, aspect ratios), extracted from
-   *  ImageGuide.php's heredoc by loadGrounding. Guide-level, like schema/style —
+  /** T3.3 — the pipeline-owned image guide (pipeline/recipes/image-guide.ts:
+   *  keyword derivation, remote source-per-role, pinning, aspect ratios), set by
+   *  loadGrounding (no longer scraped from the plugin's ImageGuide.php). Guide-level, like schema/style —
    *  folded into the stable system grounding block when present, and referenced
    *  by the per-call image directive. Optional; absent falls back to the
    *  pre-existing hardcoded image directive text only. */
@@ -260,7 +260,7 @@ function directives(target: Target, guide: Guide): string {
       'The eyebrow "product/app shot" in a hero must depict the ACTUAL product (a dashboard, an app screen, the product photo) — never a random lifestyle stock image that has nothing to do with what is being sold. ' +
       'Never use placehold.co, never leave an empty "src", and never emit an image whose subject is unrelated to the section.',
   );
-  // T3.3 — when the validator's ImageGuide was loaded (full text lives in the
+  // T3.3 — when the image guide was loaded (full text lives in the
   // stable system grounding block above — see stableGroundingBlock), point the
   // model at it explicitly and pull its most load-bearing, easy-to-miss rules
   // (aspect-ratio consistency within a grid, one avatar source per section,
@@ -269,7 +269,7 @@ function directives(target: Target, guide: Guide): string {
   // above are unchanged (fail-soft).
   if (guide.imageGuide) {
     lines.push(
-      "Also follow the validator's IMAGE GUIDE included in the system grounding above: derive keywords from the section's specific role (not just the niche), " +
+      "Also follow the IMAGE GUIDE included in the system grounding above: derive keywords from the section's specific role (not just the niche), " +
         'keep every image within one grid/row at the SAME aspect ratio, use ONE consistent avatar source/style for every person shown in a section, ' +
         'and pin every image URL (LoremFlickr `?lock={n}`, Picsum `/seed/{keyword}/`, a fixed avatar index) so the same image renders on every load.',
     );

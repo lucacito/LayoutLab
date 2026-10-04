@@ -2,7 +2,8 @@
 import { useState } from 'react';
 
 // Email capture (Loops source ai_editor_free) that reveals the plugin download.
-// Soft gate by design: the zip's premium tools are license-gated at runtime.
+// Currently unused: the AI Editor zip is a direct download (lib/site/free-downloads.ts) and
+// its plugin has no licence-gated tools any more.
 export function FreeDownloadForm({ product }: { product: string }) {
   const [email, setEmail] = useState('');
   const [state, setState] = useState<'idle' | 'loading' | 'done' | 'error'>('idle');

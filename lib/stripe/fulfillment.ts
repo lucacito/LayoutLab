@@ -1,4 +1,6 @@
 import type Stripe from 'stripe';
+import { PRICING } from '@/lib/pricing/config';
+import { tierForPriceId } from '@/lib/pricing/stripe';
 
 export interface FulfillmentStore {
   hasProcessedEvent(id: string): Promise<boolean>;
@@ -13,11 +15,13 @@ export interface FulfillmentStore {
   grantAllAccess(userId: string, expiresAt: Date | null): Promise<void>;
   revokeAllAccess(userId: string): Promise<void>;
   notifyPurchase(input: { email: string; kind: 'pack' | 'membership'; packId?: string; amountCents?: number }): Promise<void>;
-  mintLicense(l: { userId: string; productSlug: string; stripeSubscriptionId: string | null; currentPeriodEnd: Date | null }): Promise<{ licenseKey: string }>;
-  setLicenseStatusBySubscription(s: { stripeSubscriptionId: string; status: 'active' | 'past_due' | 'canceled'; currentPeriodEnd: Date | null }): Promise<{ found: boolean }>;
+  // `tier`, `founding`, `lifetime` and `trial` are passed ONLY for the AI Editor product (PRICING.product); converter calls keep their exact old shape.
+  mintLicense(l: { userId: string; productSlug: string; stripeSubscriptionId: string | null; currentPeriodEnd: Date | null; tier?: string | null; founding?: boolean; lifetime?: boolean; trial?: boolean }): Promise<{ licenseKey: string }>;
+  setLicenseStatusBySubscription(s: { stripeSubscriptionId: string; status: 'active' | 'past_due' | 'canceled'; currentPeriodEnd: Date | null; tier?: string; trial?: boolean }): Promise<{ found: boolean }>;
   grantPluginEntitlement(userId: string, productSlug: string): Promise<void>;
   revokePluginEntitlement(stripeSubscriptionId: string): Promise<void>;
-  notifyLicensePurchase(input: { email: string; productSlug: string; licenseKey: string }): Promise<void>;
+  notifyLicensePurchase(input: { email: string; productSlug: string; licenseKey: string; tier?: string | null; lifetime?: boolean }): Promise<void>;
+  countLicensesByCondition(conditions: { founding?: boolean; lifetime?: boolean; productSlug?: string }): Promise<number>;
 }
 
 function mapStatus(s: string): 'active' | 'past_due' | 'canceled' {
@@ -39,7 +43,8 @@ export async function handleStripeEvent(event: Stripe.Event, store: FulfillmentS
   if (await store.hasProcessedEvent(event.id)) return;
 
   switch (event.type) {
-    case 'checkout.session.completed': {
+    case 'checkout.session.completed':
+    case 'checkout.session.async_payment_succeeded': {
       const s = event.data.object as Stripe.Checkout.Session;
       const email = s.customer_details?.email ?? s.customer_email ?? null;
       if (!email) break;
@@ -56,15 +61,31 @@ export async function handleStripeEvent(event: Stripe.Event, store: FulfillmentS
           await store.upsertSubscription({ userId, stripeSubscriptionId: s.subscription, status: 'active', currentPeriodEnd: null });
         }
       } else if (meta.kind === 'plugin' && meta.product) {
+        const aiEditor = meta.product === PRICING.product;
+        const lifetime = aiEditor && meta.lifetime === '1';
+        // A one-time lifetime payment that has not been paid yet (delayed methods) waits for async_payment_succeeded.
+        if (lifetime && s.payment_status !== 'paid') break;
         const { licenseKey } = await store.mintLicense({
           userId,
           productSlug: meta.product,
-          stripeSubscriptionId: typeof s.subscription === 'string' ? s.subscription : null,
-          currentPeriodEnd: null, // set by the first customer.subscription.updated event
+          // A lifetime licence has no subscription; the checkout session id keys it so a webhook retry cannot mint twice.
+          stripeSubscriptionId: lifetime ? s.id : typeof s.subscription === 'string' ? s.subscription : null,
+          currentPeriodEnd: null, // set by the first customer.subscription.updated event; a lifetime licence never has one
+          ...(aiEditor
+            ? {
+                tier: meta.tier ? meta.tier : null,
+                founding: meta.founding === '1',
+                lifetime,
+                trial: meta.trial === '1',
+              }
+            : {}),
         });
         await store.grantPluginEntitlement(userId, meta.product);
         try {
-          await store.notifyLicensePurchase({ email, productSlug: meta.product, licenseKey });
+          await store.notifyLicensePurchase({
+            email, productSlug: meta.product, licenseKey,
+            ...(aiEditor ? { tier: meta.tier ? meta.tier : null, lifetime } : {}),
+          });
         } catch (err) {
           console.error('[webhook] license email failed:', err);
         }
@@ -92,10 +113,14 @@ export async function handleStripeEvent(event: Stripe.Event, store: FulfillmentS
       if (sub.status === 'incomplete' || sub.status === 'incomplete_expired') break;
       if ((sub.metadata as Record<string, string> | null)?.kind === 'plugin') {
         const periodEnd = subscriptionPeriodEnd(sub);
+        const aiEditor = (sub.metadata as Record<string, string>).product === PRICING.product;
+        // An upgrade changes the subscription item's Price, not its metadata: the tier is always re-derived from the Price.
+        const tier = aiEditor ? tierForPriceId(sub.items?.data?.[0]?.price?.id) : null;
         const { found } = await store.setLicenseStatusBySubscription({
           stripeSubscriptionId: sub.id,
           status: mapStatus(sub.status),
           currentPeriodEnd: periodEnd,
+          ...(aiEditor ? { ...(tier ? { tier } : {}), trial: sub.status === 'trialing' } : {}),
         });
         if (!found) throw new Error(`subscription event: license not minted yet for ${sub.id}`);
         break;

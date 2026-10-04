@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { env } from '@/lib/env';
 import { rateLimit } from '@/lib/rate-limit';
 import { handleActivate } from '@/lib/license-server/handlers';
 import { dbLicenseStore } from '@/lib/license-server/store';
@@ -25,6 +26,7 @@ export async function POST(req: Request): Promise<Response> {
   const result = await handleActivate(
     { key, siteUrl: site_url, product, pluginVersion: plugin_version, wpVersion: wp_version },
     dbLicenseStore,
+    { origin: env.NEXT_PUBLIC_SITE_URL },
   );
   return NextResponse.json(result.body, { status: result.status });
 }

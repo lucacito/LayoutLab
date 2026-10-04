@@ -1,10 +1,11 @@
 import type Stripe from 'stripe';
 import type { PluginProduct } from '@/lib/license-server/core';
+import { PRICING } from '@/lib/pricing/config';
 
 export type CheckoutInput =
   | { kind: 'pack'; packId: string }
   | { kind: 'membership'; plan: 'monthly' | 'yearly' }
-  | { kind: 'plugin'; product: PluginProduct };
+  | { kind: 'plugin'; product: PluginProduct; tier?: string; lifetime?: boolean; trial?: boolean };
 
 export interface CheckoutContext {
   siteUrl: string;
@@ -24,6 +25,9 @@ export interface CheckoutContext {
    * `${siteUrl}/license`.
    */
   requireTermsConsent?: boolean;
+  /** AI Editor only: apply the founding coupon (the route has already checked the cap). Never combined with a trial. */
+  founding?: boolean;
+  foundingCouponId?: string;
 }
 
 export function buildCheckoutSessionParams(
@@ -65,30 +69,15 @@ export function buildCheckoutSessionParams(
     };
   }
   if (input.kind === 'plugin') {
-    // Launch offer, scoped to the AI Editor only: a 45-day free trial with NO card
-    // up front. `if_required` tells Checkout to skip payment-method collection when
-    // nothing is due now (the whole trial is $0). Consequence: with no card on file
-    // the trial can't auto-charge, so it ends by cancelling. A tester who wants to
-    // keep the plugin must return and re-subscribe (and pay). Nobody gets a surprise
-    // invoice. The webhook mints the license on `checkout.session.completed`
-    // regardless of amount paid, and `trialing` maps to an active license
-    // (see fulfillment.ts). Other plugins keep the standard pay-now flow.
-    const aiEditorLaunchTrial = input.product === 'ai-editor-divi5-pro';
+    if (input.product === PRICING.product) return aiEditorParams(input, ctx, common);
     return {
       ...common,
       mode: 'subscription',
       allow_promotion_codes: true,
-      ...(aiEditorLaunchTrial ? { payment_method_collection: 'if_required' } : {}),
       line_items: [{ price: ctx.pluginPriceId, quantity: 1 }],
       metadata: { kind: 'plugin', product: input.product },
       subscription_data: {
         metadata: { kind: 'plugin', product: input.product },
-        ...(aiEditorLaunchTrial
-          ? {
-              trial_period_days: 45,
-              trial_settings: { end_behavior: { missing_payment_method: 'cancel' } },
-            }
-          : {}),
       },
     };
   }
@@ -97,5 +86,57 @@ export function buildCheckoutSessionParams(
     mode: 'subscription',
     line_items: [{ price: ctx.membershipPriceId, quantity: 1 }],
     metadata: { kind: 'membership', plan: input.plan },
+  };
+}
+
+/**
+ * The AI Editor Pro sessions. The route has validated the combination: either `lifetime`, or a `tier`
+ * (and `trial` only on PRICING.trial.tier). Tier is stored on the licence from the metadata.
+ */
+function aiEditorParams(
+  input: Extract<CheckoutInput, { kind: 'plugin' }>,
+  ctx: CheckoutContext,
+  common: Stripe.Checkout.SessionCreateParams,
+): Stripe.Checkout.SessionCreateParams {
+  if (input.lifetime) {
+    const metadata = { kind: 'plugin', product: input.product, tier: PRICING.lifetime.tier, founding: '0', lifetime: '1', trial: '0' };
+    return {
+      ...common,
+      mode: 'payment',
+      customer_creation: 'always',
+      // Lifetime is capped and fixed-price: no promotion codes (a fully discounted session would also complete without a
+      // payment and never be fulfilled), and a short expiry so unpaid sessions cannot pile up past the cap.
+      expires_at: Math.floor(Date.now() / 1000) + 31 * 60,
+      line_items: [{ price: ctx.pluginPriceId, quantity: 1 }],
+      metadata,
+    };
+  }
+
+  const tier = input.tier ?? '';
+  const trial = input.trial === true && tier === PRICING.trial.tier;
+  // A trial never takes the founding coupon: a no-card trial must not use up one of the limited redemptions.
+  const founding = !trial && ctx.founding === true && !!ctx.foundingCouponId;
+  const metadata = {
+    kind: 'plugin', product: input.product, tier,
+    founding: founding ? '1' : '0', lifetime: '0', trial: trial ? '1' : '0',
+  };
+
+  return {
+    ...common,
+    mode: 'subscription',
+    // Stripe rejects discounts together with allow_promotion_codes.
+    ...(founding ? { discounts: [{ coupon: ctx.foundingCouponId as string }] } : { allow_promotion_codes: true }),
+    ...(trial && !PRICING.trial.requireCard ? { payment_method_collection: 'if_required' as const } : {}),
+    line_items: [{ price: ctx.pluginPriceId, quantity: 1 }],
+    metadata,
+    subscription_data: {
+      metadata,
+      ...(trial
+        ? {
+            trial_period_days: PRICING.trial.days,
+            ...(PRICING.trial.requireCard ? {} : { trial_settings: { end_behavior: { missing_payment_method: 'cancel' as const } } }),
+          }
+        : {}),
+    },
   };
 }

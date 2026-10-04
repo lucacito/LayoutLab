@@ -241,11 +241,16 @@ export const taxonomyPages = pgTable('taxonomy_pages', {
 export const licenses = pgTable('licenses', {
   id: text('id').primaryKey(),
   userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
-  productSlug: text('product_slug').notNull(), // 'elementor-to-divi5-pro' | 'divi-to-elementor-pro'
+  productSlug: text('product_slug').notNull(), // 'elementor-to-divi5-pro' | 'divi-to-elementor-pro' | 'ai-editor-divi5-pro'
   licenseKey: text('license_key').notNull().unique(),
   status: licenseStatus('status').notNull().default('active'),
   stripeSubscriptionId: text('stripe_subscription_id'),
   currentPeriodEnd: timestamp('current_period_end'),
+  tier: text('tier'), // 'personal' | 'freelancer' | 'agency' | null for legacy/unlimited
+  founding: boolean('founding').notNull().default(false),
+  lifetime: boolean('lifetime').notNull().default(false),
+  // True while the Stripe subscription is in its free trial (no card). Trial licences get no renewal reminders.
+  trial: boolean('trial').notNull().default(false),
   createdAt: timestamp('created_at').notNull().defaultNow(),
 }, (t) => ({
   stripeSubUq: uniqueIndex('licenses_stripe_sub_uq').on(t.stripeSubscriptionId),
@@ -263,6 +268,16 @@ export const licenseActivations = pgTable('license_activations', {
   lastSeenAt: timestamp('last_seen_at').notNull().defaultNow(),
 }, (t) => ({
   licenseSiteUq: uniqueIndex('license_activations_license_site_uq').on(t.licenseId, t.siteUrl),
+}));
+
+export const licenseReminders = pgTable('license_reminders', {
+  id: text('id').primaryKey(),
+  licenseId: text('license_id').notNull().references(() => licenses.id, { onDelete: 'cascade' }),
+  days: integer('days').notNull(), // 30 or 7
+  periodEnd: timestamp('period_end').notNull(),
+  sentAt: timestamp('sent_at').notNull().defaultNow(),
+}, (t) => ({
+  licenseReminderUq: uniqueIndex('license_reminders_license_days_period_uq').on(t.licenseId, t.days, t.periodEnd),
 }));
 
 export const pluginReleases = pgTable('plugin_releases', {

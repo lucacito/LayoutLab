@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
-import { and, eq, isNull, or } from 'drizzle-orm';
+import { getTier } from '@/lib/pricing/config';
+import { and, count, eq, isNull, or } from 'drizzle-orm';
 import { db } from '@/db/client';
 import { users, orders, entitlements, subscriptions, stripeEvents, packs, licenses } from '@/db/schema';
 import { findOrCreateUserByEmail } from '@/lib/users/find-or-create';
@@ -81,6 +82,10 @@ export const dbStore: FulfillmentStore = {
       id: randomUUID(), userId: l.userId, productSlug: l.productSlug,
       licenseKey, status: 'active',
       stripeSubscriptionId: l.stripeSubscriptionId, currentPeriodEnd: l.currentPeriodEnd,
+      tier: l.tier ?? null,
+      founding: l.founding ?? false,
+      lifetime: l.lifetime ?? false,
+      trial: l.trial ?? false,
     }).onConflictDoNothing({ target: licenses.stripeSubscriptionId });
     // Idempotency: if this subscription already minted a key (webhook retry),
     // return the existing one instead of a dangling fresh key.
@@ -92,8 +97,13 @@ export const dbStore: FulfillmentStore = {
     return { licenseKey };
   },
   async setLicenseStatusBySubscription(s) {
+    const updates: Record<string, unknown> = { status: s.status };
+    if (s.currentPeriodEnd) updates.currentPeriodEnd = s.currentPeriodEnd;
+    if (s.tier !== undefined) updates.tier = s.tier;
+    if (s.trial !== undefined) updates.trial = s.trial;
+
     const rows = await db.update(licenses)
-      .set({ status: s.status, ...(s.currentPeriodEnd ? { currentPeriodEnd: s.currentPeriodEnd } : {}) })
+      .set(updates)
       .where(eq(licenses.stripeSubscriptionId, s.stripeSubscriptionId))
       .returning({ id: licenses.id });
     return { found: rows.length > 0 };
@@ -116,8 +126,24 @@ export const dbStore: FulfillmentStore = {
   async notifyLicensePurchase(input) {
     const signInUrl = await createMagicSignInUrl(input.email, '/account/licenses', signInUrlDeps);
     const title = PRODUCT_TITLES[input.productSlug as PluginProduct] ?? input.productSlug;
-    const { subject, html, text } = licenseKeyEmail({ productTitle: title, licenseKey: input.licenseKey, signInUrl });
+    const tier = input.tier ? getTier(input.tier) : undefined;
+    const { subject, html, text } = licenseKeyEmail({
+      productTitle: title, licenseKey: input.licenseKey, signInUrl,
+      ...(tier ? { tierLabel: tier.label, sitesAllowed: tier.sites, lifetime: input.lifetime === true } : {}),
+    });
     const { sent } = await sendEmail({ to: input.email, subject, html, text });
     if (!sent) console.log(`[license:dev] key for ${input.email}: ${input.licenseKey}\n${signInUrl}`);
+  },
+  async countLicensesByCondition(conditions) {
+    const where = and(
+      conditions.founding !== undefined ? eq(licenses.founding, conditions.founding) : undefined,
+      conditions.lifetime !== undefined ? eq(licenses.lifetime, conditions.lifetime) : undefined,
+      conditions.productSlug !== undefined ? eq(licenses.productSlug, conditions.productSlug) : undefined,
+    ) as any;
+
+    const result = await db.select({ count: count().as('count') }).from(licenses)
+      .where(where);
+
+    return result[0]?.count ?? 0;
   },
 };

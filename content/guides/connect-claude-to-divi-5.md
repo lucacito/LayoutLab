@@ -5,14 +5,14 @@ date: 2026-07-12
 keywords: claude divi, divi 5 ai editor, claude mcp wordpress, edit divi with ai
 ---
 
-If you've used Claude Desktop for coding or research, you've probably seen it reach for a tool mid-conversation: searching the web, reading a file, running a command. **MCP (Model Context Protocol)** is the open standard that makes that possible: it's a small, structured way for an AI assistant to discover a set of tools a server exposes, call them, and read back the results. The [AI Editor for Divi 5](/plugins/divi-5-ai-editor) plugin turns your WordPress site into exactly that kind of MCP server, so Claude can list your pages, read their layouts, and, with your permission, change them, all without you touching the Divi builder.
+If you've used Claude Desktop for coding or research, you've probably seen it reach for a tool mid-conversation: searching the web, reading a file, running a command. **MCP (Model Context Protocol)** is the open standard that makes that possible: it's a small, structured way for an AI assistant to discover a set of tools a server exposes, call them, and read back the results. The [AI Editor for Divi 5](/plugins/divi-5-ai-editor) plugin turns your WordPress site into exactly that kind of MCP server, so Claude can list your pages, read their layouts, change them, create new pages as drafts, and undo its own edits, all without you touching the Divi builder.
 
 This guide walks through connecting Claude Desktop to a Divi 5 site in about five minutes.
 
 ## What you need first
 
 - A WordPress site running **Divi 5** (not Divi 4, because the plugin talks to Divi 5's module schema specifically) on **WordPress 6.0+** and **PHP 8.1+**.
-- The [AI Editor for Divi 5](/plugins/divi-5-ai-editor) plugin installed and activated. The free tier is enough to follow this whole guide.
+- The free [AI Editor for Divi 5](/plugins/divi-5-ai-editor) plugin (listed in WordPress as JHMG AI Editor for Divi 5) installed and activated. Everything in this guide works with the free plugin.
 - Claude Desktop installed on your machine.
 
 ## Step 1: Get your connection details from WordPress
@@ -52,6 +52,7 @@ Start small so you can see the tools in action before trusting Claude with anyth
 - **"List my Divi pages."** Claude calls the plugin's page-listing tool and shows you what it can see, which is a good sanity check that the connection actually works.
 - **"Show me the layout of my Home page."** Claude reads the page's structure without changing anything.
 - **"Change the hero heading on Home to 'Built for speed, priced for growth.'"** This is the real test: Claude proposes a change, and you watch what happens next.
+- **"Undo that last change."** Claude restores the previous version of the page. You can do the same yourself from the plugin's Dashboard.
 
 ## Why validation matters here
 
@@ -59,11 +60,13 @@ That last prompt is where the plugin earns its keep. Every change Claude propose
 
 Practically, this means you can let Claude make real edits without babysitting the builder afterward to check for breakage. Worst case, an edit gets rejected and Claude tries a different approach; it can't silently corrupt the page.
 
-## Free vs. Pro
+## What the free plugin includes
 
-The **free tier** covers everything above: listing pages, reading layouts, updating existing pages, dry-run validation, and all of the plugin's built-in guides (style, site structure, section recipes). That's enough for the vast majority of "edit my existing site" work.
+The plugin is free, and nothing in it is locked. Claude can list and read your Divi 5 pages, validate a layout without saving it, update a page or change a single piece of text (a phone number, a price, a sentence) without rebuilding the rest, and create new pages. New pages are always saved as **drafts**, so you review and publish them yourself. Every page Claude changes keeps its previous version (the last 10), so you can undo an edit from the plugin's Dashboard or just ask Claude to undo it.
 
-**Pro** ($30/yr, one license for unlimited sites) unlocks the tools that create things rather than edit them: building new pages from scratch, setting the site's front page, assembling the primary menu, writing site-wide custom CSS, and proposing reviewed PHP snippets. If you find yourself asking Claude to "build a new pricing page" and it can edit but not create, that's the free/Pro line. See the full breakdown on the [plugin page](/plugins/divi-5-ai-editor).
+It also includes a built-in pack of 44 original images, read-only access to your Media Library (Claude looks at your own images first), and the style, landing-page, site and image guides plus 17 proven section recipes that steer Claude toward good-looking pages. What it does not do: it doesn't set your front page, edit your menus, or save custom CSS or PHP. See the full list on the [plugin page](/plugins/divi-5-ai-editor).
+
+A separate Pro add-on for live stock-photo sourcing is planned, but it is not available yet and the free plugin is complete without it.
 
 ## Troubleshooting
 
@@ -73,4 +76,4 @@ The **free tier** covers everything above: listing pages, reading layouts, updat
 
 **Claude can see pages but every edit is rejected.** That's the validator doing its job, not a bug. Ask Claude to show you the violation message, which explains exactly what's wrong so it can adjust.
 
-Ready to try it? [Get the AI Editor for Divi 5](/plugins/divi-5-ai-editor). The free tier edits existing pages; Pro builds whole sites.
+Ready to try it? [Get the free AI Editor for Divi 5](/plugins/divi-5-ai-editor), connect Claude, and make your first validated edit.

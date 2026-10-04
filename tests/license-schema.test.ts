@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { getTableName } from 'drizzle-orm';
-import { licenses, licenseActivations, pluginReleases } from '@/db/schema';
+import { licenses, licenseActivations, pluginReleases, licenseReminders } from '@/db/schema';
 
 describe('licensing schema', () => {
   it('defines the licenses table with key/status/subscription columns', () => {
@@ -10,6 +10,13 @@ describe('licensing schema', () => {
     expect(licenses.stripeSubscriptionId.name).toBe('stripe_subscription_id');
     expect(licenses.currentPeriodEnd.name).toBe('current_period_end');
     expect(licenses.status.name).toBe('status');
+  });
+
+  it('licenses table includes tier, founding, lifetime columns', () => {
+    expect(licenses.tier).toBeDefined();
+    expect(licenses.founding).toBeDefined();
+    expect(licenses.lifetime).toBeDefined();
+    expect(licenses.trial).toBeDefined();
   });
 
   it('defines license_activations keyed by license + site', () => {
@@ -24,5 +31,13 @@ describe('licensing schema', () => {
     expect(pluginReleases.productSlug.name).toBe('product_slug');
     expect(pluginReleases.version.name).toBe('version');
     expect(pluginReleases.blobKey.name).toBe('blob_key');
+  });
+
+  it('defines license_reminders table with unique constraint', () => {
+    expect(getTableName(licenseReminders)).toBe('license_reminders');
+    expect(licenseReminders.licenseId).toBeDefined();
+    expect(licenseReminders.days).toBeDefined();
+    expect(licenseReminders.periodEnd).toBeDefined();
+    expect(licenseReminders.sentAt).toBeDefined();
   });
 });

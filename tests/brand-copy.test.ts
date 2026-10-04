@@ -3,22 +3,29 @@ import { SITE_TITLE, SITE_DESCRIPTION, SITE_TAGLINE, SOCIAL_DESCRIPTION } from '
 import { GET } from '@/app/llms.txt/route';
 
 describe('site positioning copy', () => {
-  it('leads every site-wide description with converting to Divi 5', () => {
-    expect(SITE_TITLE).toMatch(/convert .* to divi 5/i);
+  it('leads every site-wide description with the AI Editor for Divi 5', () => {
     for (const s of [SITE_TITLE, SITE_DESCRIPTION, SITE_TAGLINE, SOCIAL_DESCRIPTION]) {
       expect(s).toMatch(/divi 5/i);
     }
+    expect(SITE_TITLE).toMatch(/^AI Editor for Divi 5/);
+    expect(SITE_DESCRIPTION).toMatch(/^Divi5Lab is home to the AI Editor/);
+    expect(SITE_TAGLINE).toMatch(/^The AI Editor for Divi 5/);
+    expect(SITE_DESCRIPTION).toMatch(/deterministic validator/i);
+  });
+
+  it('still mentions the converters, after the AI Editor', () => {
     for (const builder of [/elementor/i, /beaver builder/i, /wpbakery/i]) {
       expect(SITE_DESCRIPTION).toMatch(builder);
       expect(SITE_TAGLINE).toMatch(builder);
     }
+    expect(SITE_DESCRIPTION.search(/AI Editor/)).toBeLessThan(SITE_DESCRIPTION.search(/converters/i));
   });
 
   it('tells AI agents the same story in llms.txt', async () => {
     const body = await GET().text();
     const summary = body.split('\n').find((line) => line.startsWith('> ')) ?? '';
-    expect(summary).toMatch(/convert/i);
+    expect(summary).toMatch(/^> Divi5Lab is home to the AI Editor for Divi 5/);
     expect(summary).toMatch(/wpbakery/i);
-    expect(body).toMatch(/\/plugins\/wpbakery-to-divi-5/);
+    expect(body.indexOf('/plugins/divi-5-ai-editor')).toBeLessThan(body.indexOf('/plugins/wpbakery-to-divi-5'));
   });
 });

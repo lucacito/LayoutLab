@@ -1,13 +1,12 @@
-// Site-wide positioning copy. Divi5Lab is the place a site moves to Divi 5:
-// the converters lead, the layouts, validator and AI editor are what you use
-// once you are there. Keep these in one place so the <title>, description,
-// social card, footer and llms.txt tell one story.
-export const SITE_TITLE = 'Convert Elementor, Beaver Builder or WPBakery to Divi 5';
+// Site-wide positioning copy. Divi5Lab is home to the AI Editor for Divi 5: the AI editor leads; the converters
+// that bring other builders to Divi 5 and the free validated layouts come after it. Keep these in one place so the
+// <title>, description, social card, footer and llms.txt tell one story.
+export const SITE_TITLE = 'AI Editor for Divi 5: edit Divi with Claude, ChatGPT or Cursor';
 
 export const SITE_DESCRIPTION =
-  'Divi5Lab is where sites move to Divi 5: converters for Elementor, Beaver Builder and WPBakery that turn pages into real, validated Divi 5 modules, an AI editor for the pages that land, and a library of free validated Divi 5 layouts. Check first, convert, undo if you like.';
+  'Divi5Lab is home to the AI Editor for Divi 5: a free WordPress plugin and a Pro add-on that let Claude, ChatGPT, Cursor or VS Code edit your Divi 5 pages in plain English. Every change passes a deterministic validator before it is saved, and every change can be undone. We also build converters for Elementor, Beaver Builder and WPBakery, and a library of free validated Divi 5 layouts.';
 
 export const SOCIAL_DESCRIPTION =
-  'Convert Elementor, Beaver Builder or WPBakery sites to Divi 5 with validated converters, then build on them with free layouts and an AI editor.';
+  'Edit Divi 5 pages in plain English with the AI assistant you already use. A deterministic validator checks every change before it is saved.';
 
-export const SITE_TAGLINE = 'Converters that bring Elementor, Beaver Builder and WPBakery sites to Divi 5, plus free validated layouts.';
+export const SITE_TAGLINE = 'The AI Editor for Divi 5, plus converters from Elementor, Beaver Builder and WPBakery and free validated layouts.';

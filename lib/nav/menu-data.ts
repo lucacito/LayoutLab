@@ -3,6 +3,8 @@
 // taxonomy pages. Pure + client-safe (no DB). Icons are Material Icons
 // (outlined) ligature names.
 
+import { PRICING, formatUsd, lowestTier } from '@/lib/pricing/config';
+
 export type NavAxis = 'type' | 'niche' | 'style';
 
 export const AXIS_META: Record<NavAxis, Record<string, { icon: string; blurb: string }>> = {
@@ -99,6 +101,14 @@ export type PluginMenuItem = {
 
 export const PLUGIN_MENU: PluginMenuItem[] = [
   {
+    name: 'AI Editor for Divi 5',
+    desc: 'Edit Divi 5 in plain English, with every change validated.',
+    href: '/plugins/divi-5-ai-editor',
+    icon: 'smart_toy',
+    chip: `Free plugin · from ${formatUsd(lowestTier().priceCents)}/yr`,
+    tone: 'green',
+  },
+  {
     name: 'Elementor → Divi 5',
     desc: 'Migrate Elementor pages and kits into validated Divi 5.',
     href: '/plugins/elementor-to-divi-5',
@@ -128,14 +138,6 @@ export const PLUGIN_MENU: PluginMenuItem[] = [
     href: '/plugins/divi-to-elementor',
     icon: 'u_turn_left',
     chip: 'Free on wordpress.org · Pro $25/yr',
-    tone: 'green',
-  },
-  {
-    name: 'AI Editor for Divi 5',
-    desc: 'Edit Divi 5 in plain English, with every change validated.',
-    href: '/plugins/divi-5-ai-editor',
-    icon: 'smart_toy',
-    chip: 'Free · Pro $30/yr',
     tone: 'green',
   },
 ];
