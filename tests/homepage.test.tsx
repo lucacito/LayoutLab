@@ -5,16 +5,17 @@ import { render, screen } from '@testing-library/react';
 import HomePage from '@/app/(marketing)/page';
 
 describe('homepage (validator spine)', () => {
-  it('leads with the never-broken promise and links all four products', async () => {
+  it('leads with the AI Editor and links all products', async () => {
     render(await HomePage());
     const h1 = screen.getByRole('heading', { level: 1 });
-    expect(h1.textContent).toMatch(/bring any site to divi 5/i);
+    expect(h1.textContent).toMatch(/an ai that edits your divi pages safely/i);
     const links = Array.from(document.querySelectorAll('a')).map((a) => a.getAttribute('href'));
     expect(links).toContain('/plugins/elementor-to-divi-5');
     expect(links).toContain('/plugins/beaver-builder-to-divi-5');
     expect(links).toContain('/plugins/wpbakery-to-divi-5');
     expect(links).toContain('/plugins/divi-to-elementor');
     expect(links).toContain('/plugins/divi-5-ai-editor');
+    expect(links).toContain('/pricing');
   });
   it('shows the proof strip with real numbers', async () => {
     render(await HomePage());
@@ -45,13 +46,18 @@ describe('homepage (validator spine)', () => {
     const links = Array.from(document.querySelectorAll('a')).map((a) => a.getAttribute('href'));
     expect(links.some((h) => h?.startsWith('/guides/'))).toBe(true);
   });
-  it('leads with a converter for each of the three builders and the WPBakery count', async () => {
+  it('lists products with AI Editor first and converter tools below', async () => {
     render(await HomePage());
-    expect(screen.getAllByText(/convert anything into divi 5/i).length).toBeGreaterThan(0);
-    for (const name of [/convert elementor to divi 5/i, /convert beaver builder to divi 5/i, /convert wpbakery to divi 5/i]) {
-      expect(screen.getAllByRole('link', { name }).length).toBeGreaterThan(0);
-    }
+    // AI Editor is now the lead
+    expect(screen.getByText(/edit divi 5 in plain english/i)).toBeTruthy();
+    expect(screen.getByText(/leave elementor without rebuilding/i)).toBeTruthy();
+    expect(screen.getByText(/leave beaver builder without rebuilding/i)).toBeTruthy();
+    expect(screen.getByText(/leave wpbakery without rebuilding/i)).toBeTruthy();
+    // Check for the CTA buttons on the converter cards
+    expect(screen.getByRole('link', { name: /see the converter/i })).toBeTruthy();
+    expect(screen.getByRole('link', { name: /see the beaver converter/i })).toBeTruthy();
+    expect(screen.getByRole('link', { name: /see the wpbakery converter/i })).toBeTruthy();
     expect(screen.getAllByText(/element types mapped/i).length).toBeGreaterThan(0);
-    expect(screen.getByText(/coming from anywhere\. landing on divi 5\./i)).toBeTruthy();
+    expect(screen.getByText(/ai editing, layout conversion, and more\./i)).toBeTruthy();
   });
 });

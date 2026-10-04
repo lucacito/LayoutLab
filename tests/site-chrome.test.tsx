@@ -39,7 +39,7 @@ describe('site chrome', () => {
     expect(getAllByText('Pricing').length).toBeGreaterThan(0);
     expect(queryByText(/Pricing & all-access/)).toBeNull();
     expect(container.querySelector('a[href="/contact"]')).not.toBeNull();
-    expect(getByText(/bring Elementor, Beaver Builder and WPBakery sites to Divi 5/)).toBeTruthy();
+    expect(getByText(/The AI Editor for Divi 5, plus converters from Elementor, Beaver Builder and WPBakery/)).toBeTruthy();
   });
   it('AnnouncementBar announces the WPBakery converter on wordpress.org, names Bricks as next, and links the page', () => {
     const { getByText, container } = render(<AnnouncementBar />);

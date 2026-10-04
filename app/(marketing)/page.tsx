@@ -46,27 +46,21 @@ export default async function HomePage() {
       {/* `bottom="xl"` keeps the floating stack clear of the curved seam. */}
       <SectionShell tone="hero" underHeader bottom="xl" blooms curveBottom={EDGE.paper}>
         <Container className="text-center">
-          <Eyebrow tone="dark" className="mb-5">Convert anything into Divi 5</Eyebrow>
-          <h1 className="mx-auto max-w-4xl text-display text-paper">Bring any site to Divi 5. Without rebuilding it.</h1>
+          <Eyebrow tone="dark" className="mb-5">AI editing for Divi 5</Eyebrow>
+          <h1 className="mx-auto max-w-4xl text-display text-paper">An AI that edits your Divi pages safely.</h1>
           <p className="mx-auto mt-6 max-w-2xl text-lead text-paper/80">
-            Converters for Elementor, Beaver Builder and WPBakery, an AI editor for the pages that land, and
-            one deterministic validator underneath all of it. Check what a conversion will produce, convert,
-            undo if you like. If it imports, it works.
+            Free plugin with 16 AI editing tools. Connect Claude, ChatGPT, Cursor or VS Code Copilot over MCP.
+            Every edit passes a deterministic validator before it touches your database, so your AI assistant can be creative
+            and the layout is guaranteed valid. Undo every change.
           </p>
           <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
-            <Button href="/plugins/elementor-to-divi-5" size="lg" variant="primary">Convert Elementor to Divi 5</Button>
-            <Button href="/plugins/beaver-builder-to-divi-5" size="lg" variant="onDark">Convert Beaver Builder to Divi 5</Button>
-            <Button href="/plugins/wpbakery-to-divi-5" size="lg" variant="onDark">Convert WPBakery to Divi 5</Button>
+            <Button href="/plugins/divi-5-ai-editor" size="lg" variant="primary">Get the AI Editor</Button>
+            <Button href="/pricing" size="lg" variant="onDark">See Pro plans</Button>
           </div>
           <p className="mt-5 text-small text-paper/70">
-            Going the other way?{' '}
-            <Link href="/plugins/divi-to-elementor" className="font-semibold text-paper underline underline-offset-2 hover:text-g-pink">Divi → Elementor</Link>
+            Free plugin on WordPress.org · Undo for every change · Theme Builder editing ·{' '}
             <span className="mx-2">·</span>
-            Already on Divi 5?{' '}
-            <Link href="/plugins/divi-5-ai-editor" className="font-semibold text-paper underline underline-offset-2 hover:text-g-pink">Meet the AI Editor</Link>
-            <span className="mx-2">·</span>
-            On Bricks?{' '}
-            <a href="#next-converter" className="font-semibold text-paper underline underline-offset-2 hover:text-g-pink">Bricks → Divi 5 is in the works</a>
+            Whole-site build · Works with Claude, ChatGPT, Cursor, VS Code
           </p>
 
           <StatStrip
@@ -158,11 +152,11 @@ export default async function HomePage() {
         </Container>
       </SectionShell>
 
-      {/* 4. Three doors */}
+      {/* 4. Products section */}
       <SectionShell tone="mist" pad="lg" curveTop={EDGE.deepBottom}>
         <Container>
-          <SectionTitle eyebrow="Pick your builder" title="Coming from anywhere. Landing on Divi 5.">
-            Three converters in, one converter out, an AI editor for what lands, and the same validator under every one of them.
+          <SectionTitle eyebrow="Our tools" title="AI editing, layout conversion, and more.">
+            The AI Editor leads. Converters for Elementor, Beaver Builder, and WPBakery, plus the reverse converter. All backed by the same deterministic validator.
           </SectionTitle>
           <div className="mt-16">
             <ProductDoors />

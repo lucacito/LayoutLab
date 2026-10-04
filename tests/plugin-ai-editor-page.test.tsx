@@ -4,18 +4,24 @@ import { render, screen } from '@testing-library/react';
 import AiEditorPage, { metadata } from '@/app/(marketing)/plugins/divi-5-ai-editor/page';
 
 describe('/plugins/divi-5-ai-editor', () => {
-  it('is a live product page for the free plugin; only the Pro add-on has a waitlist', () => {
-    render(<AiEditorPage />);
-    expect(screen.getByRole('heading', { level: 1 }).textContent).toMatch(/AI Editor/i);
-    // exactly one email form on the page: the Pro add-on waitlist
-    expect(screen.getAllByRole('textbox').length).toBe(1);
+  it('is a live product page for both free plugin and Pro add-on', () => {
+    const { container } = render(<AiEditorPage />);
+    const h1 = screen.getByRole('heading', { level: 1 });
+    expect(h1.textContent).toMatch(/edit divi.*validated|divi.*english/i);
+    // expects separate section headings for free and Pro - check with getAllByText since text appears multiple places
+    const freePluginMatches = screen.getAllByText(/free plugin/i);
+    expect(freePluginMatches.length).toBeGreaterThan(0);
+    expect(Array.from(freePluginMatches).some(el => el.textContent?.match(/16 tools/i))).toBe(true);
+
+    const proAddOnMatches = screen.getAllByText(/pro add-on/i);
+    expect(proAddOnMatches.length).toBeGreaterThan(0);
+    expect(Array.from(proAddOnMatches).some(el => el.textContent?.match(/14.*tools/i))).toBe(true);
   });
-  it('has metadata for the free plugin (no "coming soon" in the title)', () => {
+  it('has metadata for both free plugin and Pro add-on', () => {
     expect(String(metadata.title)).toMatch(/AI Editor/i);
     expect(String(metadata.title)).not.toMatch(/coming soon/i);
     expect(String(metadata.description)).toMatch(/validat/i);
-    expect(String(metadata.description)).toMatch(/free/i);
-    expect(String(metadata.description)).not.toMatch(/impossible|\$30/i);
+    expect(String(metadata.description)).toMatch(/free|49|pro/i);
   });
   it('shows the live chat demo with a self-correction', () => {
     render(<AiEditorPage />);
@@ -27,14 +33,19 @@ describe('/plugins/divi-5-ai-editor', () => {
     expect(screen.getAllByText(/claude desktop/i).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/cursor/i).length).toBeGreaterThan(0);
   });
-  it('lists what the free plugin does instead of a Free vs Pro table', () => {
+  it('describes free and Pro capabilities instead of a Free vs Pro table', () => {
     render(<AiEditorPage />);
     expect(screen.queryByRole('table')).toBeNull();
-    expect(screen.getByText(/what the free plugin does/i)).toBeTruthy();
+    // Check that free plugin capabilities are described
+    const freePluginMatches = screen.getAllByText(/free plugin/i);
+    expect(freePluginMatches.length).toBeGreaterThan(0);
     expect(screen.getByText(/create pages as drafts/i)).toBeTruthy();
+    expect(screen.getByText(/set the front page and menu/i)).toBeTruthy();
   });
-  it('has an expanded FAQ', () => {
+  it('has an expanded FAQ covering both free and Pro', () => {
     render(<AiEditorPage />);
-    expect(document.querySelectorAll('dl dt').length).toBeGreaterThanOrEqual(8);
+    expect(document.querySelectorAll('dl dt').length).toBeGreaterThanOrEqual(10);
+    expect(screen.getByText(/which ai assistants/i)).toBeTruthy();
+    expect(screen.getByText(/what does the pro add-on/i)).toBeTruthy();
   });
 });

@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import { getTier } from '@/lib/pricing/config';
 import { and, count, eq, isNull, or } from 'drizzle-orm';
 import { db } from '@/db/client';
 import { users, orders, entitlements, subscriptions, stripeEvents, packs, licenses } from '@/db/schema';
@@ -125,7 +126,11 @@ export const dbStore: FulfillmentStore = {
   async notifyLicensePurchase(input) {
     const signInUrl = await createMagicSignInUrl(input.email, '/account/licenses', signInUrlDeps);
     const title = PRODUCT_TITLES[input.productSlug as PluginProduct] ?? input.productSlug;
-    const { subject, html, text } = licenseKeyEmail({ productTitle: title, licenseKey: input.licenseKey, signInUrl });
+    const tier = input.tier ? getTier(input.tier) : undefined;
+    const { subject, html, text } = licenseKeyEmail({
+      productTitle: title, licenseKey: input.licenseKey, signInUrl,
+      ...(tier ? { tierLabel: tier.label, sitesAllowed: tier.sites, lifetime: input.lifetime === true } : {}),
+    });
     const { sent } = await sendEmail({ to: input.email, subject, html, text });
     if (!sent) console.log(`[license:dev] key for ${input.email}: ${input.licenseKey}\n${signInUrl}`);
   },

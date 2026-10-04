@@ -21,18 +21,20 @@ describe('menu-data', () => {
     expect(PRIMARY_NAV.find((m) => m.key === 'browse')).toBeUndefined();
   });
 
-  it('lists all five plugins in the plugins mega-menu', () => {
+  it('lists AI Editor first, then all converters in the plugins mega-menu', () => {
     expect(PLUGIN_MENU.map((p) => p.href)).toEqual([
+      '/plugins/divi-5-ai-editor',
       '/plugins/elementor-to-divi-5',
       '/plugins/beaver-builder-to-divi-5',
       '/plugins/wpbakery-to-divi-5',
       '/plugins/divi-to-elementor',
-      '/plugins/divi-5-ai-editor',
     ]);
+    const aiEditor = PLUGIN_MENU.find((p) => p.href === '/plugins/divi-5-ai-editor');
+    expect(aiEditor?.name).toBe('AI Editor for Divi 5');
+    expect(aiEditor?.chip).toMatch(/from \$/);
     const wpbakery = PLUGIN_MENU.find((p) => p.href === '/plugins/wpbakery-to-divi-5');
     expect(wpbakery?.name).toBe('WPBakery → Divi 5');
     expect(wpbakery?.chip).toBe('Free on wordpress.org · Pro $25/yr');
-    expect(PLUGIN_MENU.find((p) => p.href === '/plugins/divi-5-ai-editor')?.chip).toBe('Free plugin');
     expect(JSON.stringify(PLUGIN_MENU)).not.toContain('$30');
   });
 

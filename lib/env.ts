@@ -27,14 +27,13 @@ const schema = z.object({
   // Checkout (needed to lawfully deny refunds to EU/UK consumers). Requires a
   // Terms of Service URL configured in the Stripe Dashboard → pointing at /license.
   STRIPE_TERMS_CONSENT: z.string().optional(),
-  // Cron secret for renewal reminders and other periodic tasks
-  CRON_SECRET: z.string().optional(),
   BLOB_READ_WRITE_TOKEN: z.string().optional(),
   RESEND_API_KEY: z.string().optional(),
   RESEND_FROM: z.string().optional(),
   LOOPS_API_KEY: z.string().optional(),
   INGEST_API_TOKEN: z.string().optional(),
   ADMIN_EMAILS: z.string().optional(),
+  CRON_SECRET: z.string().optional(),
 });
 
 export type Env = z.infer<typeof schema>;
