@@ -12,7 +12,7 @@ import { BuyProButton } from '@/components/plugins/BuyProButton';
 import { STATS } from '@/lib/site/stats';
 import { CtaBand } from '@/components/marketing/CtaBand';
 import { FREE_PLUGIN_LINKS, freePluginAnchorProps } from '@/lib/site/free-downloads';
-import { PRICING, OFFER, formatUsd, isPriceEnvSet, siteLabel } from '@/lib/pricing/config';
+import { PRICING, OFFER, formatUsd, isPriceEnvSet, isCouponEnvSet, siteLabel } from '@/lib/pricing/config';
 import { getAvailability } from '@/lib/pricing/availability';
 import { WaitlistForm } from '@/components/plugins/WaitlistForm';
 
@@ -131,7 +131,7 @@ export default async function PricingPage() {
   const foundingRemaining = availability?.founding.remaining ?? 0;
   const foundingCap = PRICING.founding.cap;
   // The offer is only promised while checkout can really apply it: the coupon is configured and not used up.
-  const foundingOpen = isPriceEnvSet(PRICING.founding.couponEnv) && availability !== null && availability.founding.available;
+  const foundingOpen = isCouponEnvSet(PRICING.founding.couponEnv) && availability !== null && availability.founding.available;
   const FAQ = buildFaq(foundingOpen);
 
   const trialTier = PRICING.tiers.find((t) => t.id === PRICING.trial.tier) ?? PRICING.tiers[0];

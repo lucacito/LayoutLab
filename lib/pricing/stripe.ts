@@ -1,5 +1,5 @@
 import { env } from '@/lib/env';
-import { PRICING, type TierId } from './config';
+import { PRICING, type TierId, isStripePriceId, isCouponId } from './config';
 
 /**
  * Get the Stripe Price ID for a tier.
@@ -9,8 +9,9 @@ export function priceIdForTier(tierId: TierId | null | string): string | undefin
   if (!tierId) return undefined;
   const tier = PRICING.tiers.find((t) => t.id === tierId);
   if (!tier) return undefined;
-  const envKey = tier.priceEnv;
-  return (env as Record<string, string | undefined>)[envKey];
+  const value = (env as Record<string, string | undefined>)[tier.priceEnv];
+  // A value that is not a Stripe price id (a pasted label) counts as 'not configured', never as a price.
+  return isStripePriceId(value) ? value : undefined;
 }
 
 /**
@@ -18,8 +19,8 @@ export function priceIdForTier(tierId: TierId | null | string): string | undefin
  * Returns undefined if the priceEnv is not set.
  */
 export function lifetimePriceId(): string | undefined {
-  const envKey = PRICING.lifetime.priceEnv;
-  return (env as Record<string, string | undefined>)[envKey];
+  const value = (env as Record<string, string | undefined>)[PRICING.lifetime.priceEnv];
+  return isStripePriceId(value) ? value : undefined;
 }
 
 /**
@@ -27,8 +28,8 @@ export function lifetimePriceId(): string | undefined {
  * Returns undefined if the couponEnv is not set.
  */
 export function foundingCouponId(): string | undefined {
-  const envKey = PRICING.founding.couponEnv;
-  return (env as Record<string, string | undefined>)[envKey];
+  const value = (env as Record<string, string | undefined>)[PRICING.founding.couponEnv];
+  return isCouponId(value) ? value : undefined;
 }
 
 /**
