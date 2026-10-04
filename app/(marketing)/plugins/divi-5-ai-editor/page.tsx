@@ -15,16 +15,16 @@ import { StatStrip } from '@/components/marketing/StatStrip';
 import { ValidatorChatDemo, type ChatStep } from '@/components/marketing/ValidatorChatDemo';
 import { CtaBand } from '@/components/marketing/CtaBand';
 import { UseCaseVignettes } from '@/components/marketing/UseCaseVignettes';
-import { PRICING, formatUsd } from '@/lib/pricing/config';
+import { PRICING, OFFER, formatUsd, lowestTier, siteLabel } from '@/lib/pricing/config';
 
 const PRODUCT_NAME = 'AI Editor for Divi 5';
 const PRODUCT_DESCRIPTION =
-  'Connect Claude, Cursor, or ChatGPT to your Divi 5 site and edit pages in plain English. Every change passes a deterministic validator before it is saved, so a broken page is never saved by an AI edit. Free plugin with 16 tools, Pro add-on with 14 advanced tools for $49+/year.';
+  'Connect Claude, Cursor, or ChatGPT to your Divi 5 site and edit pages in plain English. Every change passes a deterministic validator before it is saved, so a broken page is never saved by an AI edit. Free plugin with 16 tools, Pro add-on with 14 advanced tools from ' + formatUsd(lowestTier().priceCents) + '/year.';
 
 export const metadata: Metadata = {
   title: 'AI Editor for Divi 5: edit Divi with AI, validated',
   description:
-    'Free plugin: connect Claude, Cursor, or ChatGPT to your Divi 5 site and edit pages in plain English. Every change is validated before it is saved. Pro add-on adds 14 site-wide tools from $49/yr.',
+    `Free plugin: connect Claude, Cursor, or ChatGPT to your Divi 5 site and edit pages in plain English. Every change is validated before it is saved. Pro add-on adds 14 site-wide tools from ${formatUsd(lowestTier().priceCents)}/yr.`,
   alternates: { canonical: `${env.NEXT_PUBLIC_SITE_URL}/plugins/divi-5-ai-editor` },
 };
 
@@ -155,7 +155,7 @@ const FAQ = [
   {
     question: 'How much does the Pro add-on cost?',
     answer:
-      `Personal tier (1 site): ${formatUsd(PRICING.tiers[0].priceCents)}/year. Freelancer (10 sites): ${formatUsd(PRICING.tiers[1].priceCents)}/year. Agency (unlimited sites): ${formatUsd(PRICING.tiers[2].priceCents)}/year. Founding offer: 30% off, first 100 buyers, price locked while active. Lifetime option (Agency tier): ${formatUsd(PRICING.lifetime.priceCents)} one-time, first 50 buyers. Trial: 45 days free, no credit card.`,
+      `${PRICING.tiers.map((t) => `${t.label} (${siteLabel(t).toLowerCase()}): ${formatUsd(t.priceCents)}/year`).join('. ')}. Founding offer: ${OFFER.foundingPercent}% off for the first ${OFFER.foundingCap} buyers, with the renewal price locked while the licence stays active. Lifetime (${PRICING.lifetime.tier} tier): ${formatUsd(PRICING.lifetime.priceCents)} one-time, limited to the first ${OFFER.lifetimeCap} sales. Trial: ${OFFER.trialDays} days free${PRICING.trial.requireCard ? '' : ', no credit card'}.`,
   },
   {
     question: 'What happens when my license expires?',
@@ -170,7 +170,7 @@ const FAQ = [
   {
     question: 'Do licenses cover client sites?',
     answer:
-      'Yes. Personal and Freelancer licenses are per-owner but activate on as many of your own or client sites as they allow. Agency and Lifetime are unlimited.',
+      'Yes. A licence covers as many sites as its tier allows, whether they are your own or your clients\'. Agency and Lifetime are unlimited.',
   },
   {
     question: 'Is the plugin GPL?',
@@ -199,6 +199,14 @@ export default function AiEditorPage() {
           description: PRODUCT_DESCRIPTION,
           url,
           offer: { priceCents: 0, currency: 'USD' },
+        })}
+      />
+      <JsonLd
+        data={productJsonLd({
+          name: `${PRODUCT_NAME} Pro`,
+          description: `The Pro add-on: 14 site-wide tools for ${PRODUCT_NAME}. Annual licence by number of sites.`,
+          url,
+          offer: { priceCents: lowestTier().priceCents, currency: PRICING.currency },
         })}
       />
       <JsonLd data={faqJsonLd(FAQ)} />
@@ -322,7 +330,7 @@ export default function AiEditorPage() {
               <p className="mt-2 text-body text-muted">
                 Set your front page and menu, publish pages, add CSS, manage your live header and footer, find and replace across your site, audit for problems, and build whole sites as one undoable batch.
               </p>
-              <p className="mt-4 text-body text-navy">Plans from {formatUsd(PRICING.tiers[0].priceCents)}/year. Try free for 45 days, no credit card.</p>
+              <p className="mt-4 text-body text-navy">Plans from {formatUsd(lowestTier().priceCents)}/year. Try free for {OFFER.trialDays} days{PRICING.trial.requireCard ? '' : ', no credit card'}.</p>
               <div className="mt-6">
                 <Link
                   href="/pricing"
@@ -341,7 +349,7 @@ export default function AiEditorPage() {
         <Container>
           <h2 className="text-h2 text-navy">Pro add-on: 14 advanced tools</h2>
           <p className="mt-3 max-w-2xl text-lead text-muted">
-            Unlock site-wide editing and automation. Try free for 45 days.
+            Unlock site-wide editing and automation. Try free for {OFFER.trialDays} days.
           </p>
           <div className="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {PRO_CAPABILITIES.map((c) => (
@@ -382,9 +390,9 @@ export default function AiEditorPage() {
 
       <CtaBand
         title="Your assistant already knows Divi. Now it can edit it safely."
-        body="Free plugin with 16 tools, Pro add-on with 14 more. No credit card for the free version or the 45-day trial."
+        body={`Free plugin with 16 tools, Pro add-on with 14 more. ${PRICING.trial.requireCard ? '' : `No credit card for the free version or the ${OFFER.trialDays}-day trial.`}`}
         cta={{ label: 'Get the free plugin', href: '#free' }}
-        secondary={{ label: 'Try Pro free for 45 days', href: '/pricing' }}
+        secondary={{ label: `Try Pro free for ${OFFER.trialDays} days`, href: '/pricing' }}
       />
     </main>
   );

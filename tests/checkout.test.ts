@@ -152,8 +152,9 @@ describe('POST /api/checkout — validation (no Stripe/DB)', () => {
 describe('POST /api/checkout — ai-editor-divi5-pro when paused', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    // Explicitly mock the pause switch as true (paused) for this test suite
-    vi.mocked(isProductPaused).mockReturnValue(true);
+    // Explicitly mock the pause switch: ai-editor-divi5-pro is paused (returns true),
+    // other products return false (not paused)
+    vi.mocked(isProductPaused).mockImplementation((product) => product === 'ai-editor-divi5-pro');
     mockEnv.STRIPE_PRICE_AI_EDITOR_PRO = 'price_aied_test';
   });
 

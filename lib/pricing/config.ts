@@ -115,3 +115,22 @@ export function isPriceEnvSet(priceEnv: string): boolean {
   const value = process.env[priceEnv];
   return !!value;
 }
+
+/** The cheapest tier (the config guarantees at least one, ordered by price). */
+export function lowestTier(): Tier {
+  return PRICING.tiers.reduce((a, b) => (b.priceCents < a.priceCents ? b : a));
+}
+
+/** "1 site", "10 sites", "Unlimited sites": the wording for a tier's site limit, from the config. */
+export function siteLabel(tier: Tier): string {
+  if (tier.sites === null) return 'Unlimited sites';
+  return tier.sites === 1 ? '1 site' : `${tier.sites} sites`;
+}
+
+/** Copy-ready values for the offers around the tiers, all read from the config. */
+export const OFFER = {
+  trialDays: PRICING.trial.days,
+  foundingPercent: PRICING.founding.percentOff,
+  foundingCap: PRICING.founding.cap,
+  lifetimeCap: PRICING.lifetime.cap,
+} as const;

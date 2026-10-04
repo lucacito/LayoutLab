@@ -1,9 +1,7 @@
 // The AI Editor Pro add-on is LIVE and shipping.
 // JHMG AI Editor for Divi 5 Pro: 14 tools for advanced AI editing on your Divi 5
-// site. Buy by annual per-site-count tier (Personal 1 site, Freelancer 10, Agency
-// unlimited). Expiry never disables features, only updates and support stop.
-// Founding offer: 30% off, first 100 buyers, price locked while active.
-// Lifetime: Agency unlimited, one-time purchase, 50 capped.
+// site. Sold by annual per-site-count tier; every price, tier, limit and cap is in config/pricing.json.
+// Expiry never disables features, only updates and support stop.
 export const AI_EDITOR_PRO_AVAILABLE = true as boolean;
 
 export const AI_EDITOR_PRO_PRODUCT = 'ai-editor-divi5-pro';

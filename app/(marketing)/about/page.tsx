@@ -10,7 +10,7 @@ import { CtaBand } from '@/components/marketing/CtaBand';
 export const metadata: Metadata = {
   title: 'About',
   description:
-    'Divi5Lab builds migration converters, an AI editor, and free layouts for Divi 5, all gated by one deterministic validator. Same input, same verdict.',
+    'Divi5Lab builds the AI Editor for Divi 5, plus migration converters and free layouts, all gated by one deterministic validator. Same input, same verdict.',
 };
 
 export default function AboutPage() {

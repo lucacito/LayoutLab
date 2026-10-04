@@ -1,35 +1,34 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
-
-// Guard against price literals for the AI Editor Pro appearing outside config/pricing.json.
-// Every price must come from PRICING at runtime; hardcoding them means:
-// - the storefront and add-on can drift when prices change,
-// - someone has to update the code, not just the config.
-// Converter prices ($25) are out of scope; only the AI Editor amounts are checked.
-
 import { PRICING } from '@/lib/pricing/config';
+
+// Every AI Editor price, tier name price, site limit and cap lives in config/pricing.json. Nothing else may type
+// them: rendered copy uses formatUsd(PRICING...) so changing the config changes the whole site.
+// Converter prices (a different amount) are out of scope.
 
 const ROOT = process.cwd();
 const SCAN = ['app', 'components', 'content', 'lib'];
 const EXT = /\.(tsx?|md|txt)$/;
+const ALLOWED = new Set(['lib/pricing/config.ts']);
 
-// These directories and files are allowed to reference Stripe infra and backend plumbing,
-// where price envs and product ids live but not rendered prices.
-const PLUMBING = new Set([
-  'app/api/checkout/route.ts',
-  'app/api/billing/change-tier/route.ts',
-  'lib/site/pro-status.ts',
-  'lib/stripe/checkout.ts',
-  'lib/pricing/stripe.ts',
-  'lib/env.ts',
-]);
+export function literalsIn(text: string, tiers: number[], lifetime: number): string[] {
+  const dollars = [...tiers, lifetime].map((c) => c / 100);
+  const cents = [...tiers, lifetime];
+  const found: string[] = [];
+  for (const d of dollars) {
+    const m = text.match(new RegExp(`\\$\\s?${d}(?!\\d|,\\d)`, 'g'));
+    if (m) found.push(...m);
+  }
+  for (const c of cents) {
+    const m = text.match(new RegExp(`(?<![\\d.]|\\d,)${c}(?!\\d|,\\d)`, 'g'));
+    if (m) found.push(...m);
+  }
+  return found;
+}
 
-const isPlumbing = (rel: string) =>
-  PLUMBING.has(rel) ||
-  rel.startsWith('lib/license-server/') ||
-  rel.startsWith('lib/stripe/') ||
-  rel.startsWith('scripts/');
+const tiers = PRICING.tiers.map((t) => t.priceCents);
+const lifetime = PRICING.lifetime.priceCents;
 
 function walk(dir: string, out: string[] = []): string[] {
   for (const e of readdirSync(dir)) {
@@ -41,52 +40,26 @@ function walk(dir: string, out: string[] = []): string[] {
   return out;
 }
 
-const files = SCAN.flatMap((d) => walk(join(ROOT, d))).map((f) => ({
-  rel: relative(ROOT, f),
-  text: readFileSync(f, 'utf8'),
-}));
-
-describe('Pricing literals guard', () => {
-  it('no AI Editor Pro price appears outside config/pricing.json', () => {
-    // AI Editor price amounts (cents and dollars) that must not appear as literals.
-    // Converters are $25/yr and are out of scope.
-    const aiEditorCents = ['4900', '9900', '14900', '44900'];
-    const aiEditorDollars = ['$49', '$99', '$149', '$449', '$ 49', '$ 99', '$ 149', '$ 449'];
-    const allPrices = [...aiEditorCents, ...aiEditorDollars];
-
-    const offenders: string[] = [];
-    for (const file of files) {
-      // Skip config, tests, and pricing loader.
-      if (
-        file.rel === 'config/pricing.json' ||
-        file.rel === 'lib/pricing/config.ts' ||
-        file.rel === 'lib/pricing/availability.ts' ||
-        file.rel.endsWith('.test.ts')
-      )
-        continue;
-      // Skip plumbing.
-      if (isPlumbing(file.rel)) continue;
-
-      for (const price of allPrices) {
-        // Escape dollars for regex.
-        const escaped = price.replace('$', '\\$').replace(' ', '\\s?');
-        // Match as a standalone price, not part of a word or year.
-        // E.g. "$49" but not "2049" or "49th".
-        const pattern = new RegExp(`\\b${escaped}\\b`, 'g');
-        if (pattern.test(file.text)) {
-          offenders.push(`${file.rel}: ${price}`);
-        }
-      }
-    }
-
-    expect(offenders, `Price literals found in:\n${offenders.join('\n')}`).toEqual([]);
+describe('pricing literals guard', () => {
+  it('the matcher finds typed prices and ignores unrelated numbers', () => {
+    const hit = literalsIn('Personal is $49/yr, or 4900 cents, or $ 149, and Lifetime costs $449.', tiers, lifetime);
+    expect(hit.sort()).toEqual(['$ 149', '$449', '$49', '4900'].sort());
+    expect(literalsIn('Founded in 2049, 14 900 words, $490, $1,499, version 4.9.0, id 49001, 2025-04-90', tiers, lifetime)).toEqual([]);
   });
 
-  it('PRICING config has expected tiers and amounts', () => {
-    expect(PRICING.tiers).toHaveLength(3);
-    expect(PRICING.tiers[0].priceCents).toBe(4900);
-    expect(PRICING.tiers[1].priceCents).toBe(9900);
-    expect(PRICING.tiers[2].priceCents).toBe(14900);
-    expect(PRICING.lifetime.priceCents).toBe(44900);
+  const files = SCAN.flatMap((d) => walk(join(ROOT, d))).map((f) => ({ rel: relative(ROOT, f), text: readFileSync(f, 'utf8') }));
+
+  it('scans the places prices tend to hide in', () => {
+    const rels = files.map((f) => f.rel);
+    for (const must of ['app/llms.txt/route.ts', 'lib/email/license-email.ts', 'lib/nav/menu-data.ts', 'components/marketing/ProductDoors.tsx', 'app/(catalog)/pricing/page.tsx']) {
+      expect(rels).toContain(must);
+    }
+  });
+
+  it('no AI Editor price is typed outside config/pricing.json', () => {
+    const offenders = files
+      .filter((f) => !ALLOWED.has(f.rel))
+      .flatMap((f) => literalsIn(f.text, tiers, lifetime).map((h) => `${f.rel}: ${h}`));
+    expect(offenders).toEqual([]);
   });
 });

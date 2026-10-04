@@ -12,7 +12,7 @@ import { BuyProButton } from '@/components/plugins/BuyProButton';
 import { STATS } from '@/lib/site/stats';
 import { CtaBand } from '@/components/marketing/CtaBand';
 import { FREE_PLUGIN_LINKS, freePluginAnchorProps } from '@/lib/site/free-downloads';
-import { PRICING, formatUsd, isPriceEnvSet } from '@/lib/pricing/config';
+import { PRICING, OFFER, formatUsd, isPriceEnvSet, siteLabel } from '@/lib/pricing/config';
 import { getAvailability } from '@/lib/pricing/availability';
 import { WaitlistForm } from '@/components/plugins/WaitlistForm';
 
@@ -35,27 +35,27 @@ const FAQ = [
   },
   {
     question: 'How many sites does each tier cover?',
-    answer: `Personal: 1 site. Freelancer: 10 sites. Agency: unlimited sites. Upgrade between tiers any time; the difference is prorated to your remaining term.`,
+    answer: `${PRICING.tiers.map((t) => `${t.label}: ${siteLabel(t).toLowerCase()}`).join('. ')}. Upgrade between tiers any time; the difference is prorated to your remaining term.`,
   },
   {
     question: 'Can I try the Pro add-on?',
     answer:
-      'Yes. Buy the 45-day trial for Personal tier, no credit card required. The free plugin is already a complete, fully-featured editor; the Pro add-on adds whole-site and advanced tools.',
+      `Yes. The ${OFFER.trialDays}-day trial is the ${PRICING.tiers.find((t) => t.id === PRICING.trial.tier)?.label} tier${PRICING.trial.requireCard ? '' : ', no credit card required'}. The free plugin is already a complete, fully-featured editor; the Pro add-on adds whole-site and advanced tools.`,
   },
   {
     question: 'What is the founding offer?',
     answer:
-      'First 100 buyers get 30% off any tier, price locked for life (as long as the license stays active). Renewal reminders help you stay current.',
+      `The first ${OFFER.foundingCap} buyers get ${OFFER.foundingPercent}% off any tier. The discounted renewal price stays locked for as long as the licence stays active. Renewal reminders arrive ${PRICING.renewalReminderDays.join(' and ')} days before your renewal.`,
   },
   {
     question: 'Is there a lifetime option?',
     answer:
-      'Yes, Agency tier only (unlimited sites), one-time purchase. First 50 buyers. No renewal, no expiry, updates forever.',
+      `Yes: the ${PRICING.lifetime.tier} tier (${siteLabel(PRICING.tiers.find((t) => t.id === PRICING.lifetime.tier)!).toLowerCase()}), one payment, no renewal. Limited to the first ${OFFER.lifetimeCap} sales.`,
   },
   {
     question: 'Do licenses cover client sites?',
     answer:
-      'Yes. Personal and Freelancer licenses are per-owner but activate on as many of your own or client sites as they allow. Agency and Lifetime are unlimited.',
+      'Yes. A licence covers as many sites as its tier allows, whether they are your own or your clients\'. Agency and Lifetime are unlimited.',
   },
   {
     question: 'Are the layouts really free?',
@@ -149,14 +149,14 @@ export default async function PricingPage() {
           <div className="mx-auto mb-8 max-w-2xl text-center">
             <h2 className="text-h2 text-navy">AI Editor for Divi 5 Pro</h2>
             <p className="mt-3 text-lead text-muted">
-              Annual subscription per site count. Founding offer: 30% off, first 100 buyers, price locked while active.
+              Annual subscription per site count. Founding offer: {OFFER.foundingPercent}% off, first {OFFER.foundingCap} buyers, price locked while active.
             </p>
           </div>
 
           {foundingRemaining > 0 && hasPersonalPrice && (
             <Card className="mb-8 border-action bg-blue-50 p-6 text-center">
               <p className="text-body font-semibold text-action">
-                Founding offer: {foundingRemaining} of {foundingCap} left, 30% off
+                Founding offer: {foundingRemaining} of {foundingCap} left, {OFFER.foundingPercent}% off
               </p>
             </Card>
           )}
@@ -223,11 +223,11 @@ export default async function PricingPage() {
                 </div>
                 <p className="mt-1 text-small text-muted">Agency tier, unlimited sites</p>
                 <p className="mt-4 text-body text-muted">
-                  One-time purchase, updates forever, no expiry. First 50 buyers.
+                  One payment, no renewal. Limited to the first {OFFER.lifetimeCap} sales.
                   {availability && availability.lifetime.remaining !== null && (
                     <>
                       {' '}
-                      {availability.lifetime.remaining} of 50 left.
+                      {availability.lifetime.remaining} of {OFFER.lifetimeCap} left.
                     </>
                   )}
                 </p>
@@ -271,7 +271,7 @@ export default async function PricingPage() {
       <SectionShell tone="mist" pad="lg">
         <Container>
           <div className="mx-auto max-w-2xl rounded-lg border border-action/30 bg-blue-50 p-8 text-center">
-            <h3 className="text-section text-navy">Try the Pro add-on free for 45 days</h3>
+            <h3 className="text-section text-navy">Try the Pro add-on free for {OFFER.trialDays} days</h3>
             <p className="mt-2 text-body text-muted">
               No credit card required. Trial is Personal tier and unlocks all 14 Pro tools.
             </p>
@@ -372,7 +372,7 @@ export default async function PricingPage() {
 
       <CtaBand
         eyebrow="No card required"
-        title="Try Pro free for 45 days, or buy a converter."
+        title={`Try Pro free for ${OFFER.trialDays} days, or buy a converter.`}
         body="Personal tier Pro add-on, free AI Editor plugin, and free layout catalog. Upgrade or cancel anytime."
         cta={{ label: 'Start your trial', href: '#' }}
         curveTop={EDGE.mist}

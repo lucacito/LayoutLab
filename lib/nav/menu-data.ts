@@ -3,7 +3,7 @@
 // taxonomy pages. Pure + client-safe (no DB). Icons are Material Icons
 // (outlined) ligature names.
 
-import { PRICING, formatUsd } from '@/lib/pricing/config';
+import { PRICING, formatUsd, lowestTier } from '@/lib/pricing/config';
 
 export type NavAxis = 'type' | 'niche' | 'style';
 
@@ -105,7 +105,7 @@ export const PLUGIN_MENU: PluginMenuItem[] = [
     desc: 'Edit Divi 5 in plain English, with every change validated.',
     href: '/plugins/divi-5-ai-editor',
     icon: 'smart_toy',
-    chip: `Free plugin · from ${formatUsd(PRICING.tiers[0]?.priceCents ?? 4900)}/yr`,
+    chip: `Free plugin · from ${formatUsd(lowestTier().priceCents)}/yr`,
     tone: 'green',
   },
   {

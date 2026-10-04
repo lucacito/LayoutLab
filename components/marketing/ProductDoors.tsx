@@ -4,7 +4,7 @@ import { Icon } from '@/components/ui/Icon';
 import { STATS } from '@/lib/site/stats';
 import { WPBAKERY_REGISTERED_ELEMENTS } from '@/lib/site/wpbakery-element-mappings';
 import { FREE_PLUGIN_LINKS, freePluginAnchorProps, type FreePluginLink } from '@/lib/site/free-downloads';
-import { PRICING, formatUsd } from '@/lib/pricing/config';
+import { PRICING, formatUsd, lowestTier } from '@/lib/pricing/config';
 
 type Door = {
   headline: string;
@@ -77,7 +77,7 @@ const DOORS: Door[] = [
   {
     headline: 'Edit Divi 5 in plain English',
     name: 'AI Editor for Divi 5',
-    chip: { label: `Free plugin · from ${formatUsd(PRICING.tiers[0]?.priceCents ?? 4900)}/yr`, tone: 'green' },
+    chip: { label: `Free plugin · from ${formatUsd(lowestTier().priceCents)}/yr`, tone: 'green' },
     body: 'Connect Claude, Cursor, or ChatGPT to your site. Free plugin on WordPress.org with 16 tools. Pro add-on adds 14 more: whole-site build, Theme Builder editing, site audit, find and replace. Every change passes the validator before it touches your database.',
     stats: `${STATS.validatorViolationClasses} violation classes checked on every save`,
     href: '/plugins/divi-5-ai-editor',
