@@ -36,8 +36,10 @@ export function buildCheckoutSessionParams(
 ): Stripe.Checkout.SessionCreateParams {
   // Disclosed on every checkout (satisfies the "state the policy at checkout"
   // requirement, and is sufficient disclosure for US buyers).
-  const submitMessage =
-    `Digital goods are delivered instantly. By completing your purchase you consent to immediate delivery and agree that all sales are final and non-refundable. Full License & Refund policy: ${ctx.siteUrl}/license`;
+  const aiEditor = input.kind === 'plugin' && input.product === PRICING.product;
+  const submitMessage = aiEditor
+    ? `Digital goods are delivered instantly. A plan purchase is final except in the cases listed in our refund policy (charged in error, cannot be activated, or a renewal you ask about within ${PRICING.refundWindowDays} days). Cancel any time; if a licence ends, everything keeps working and only updates and support stop. Full policy: ${ctx.siteUrl}/license#refunds`
+    : `Digital goods are delivered instantly. By completing your purchase you consent to immediate delivery and agree that all sales are final and non-refundable. Full License & Refund policy: ${ctx.siteUrl}/license`;
 
   const customText: Stripe.Checkout.SessionCreateParams.CustomText = {
     submit: { message: submitMessage },

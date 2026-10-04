@@ -41,6 +41,7 @@ const PricingConfigSchema = z.object({
     requireCard: z.boolean(),
   }),
   renewalReminderDays: z.array(z.number()),
+  refundWindowDays: z.number(),
   pastDueGraceDays: z.number(),
   urls: z.object({
     pricing: z.string(),
