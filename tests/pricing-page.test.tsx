@@ -1,74 +1,85 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, within } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
+import { PRICING } from '@/lib/pricing/config';
 
 vi.mock('@/components/plugins/BuyProButton', () => ({
-  BuyProButton: ({ product }: { product: string }) => <div data-testid={`buy-${product}`} />,
+  BuyProButton: ({ product, tier, lifetime }: { product: string; tier?: string; lifetime?: boolean }) => (
+    <div data-testid={`buy-${product}`} data-tier={tier} data-lifetime={lifetime ? 'true' : undefined} />
+  ),
 }));
 
 import PricingPage, { metadata } from '@/app/(catalog)/pricing/page';
 
-describe('/pricing (plugin licenses)', () => {
-  it('shows the Elementor→Divi5 Pro card with a live buy button', async () => {
+describe('/pricing (AI Editor Pro and converters)', () => {
+  it('leads with AI Editor Pro: three tier cards from config', async () => {
     render(await PricingPage());
-    expect(screen.getByText(/Elementor → Divi 5 Pro/i)).toBeTruthy();
-    expect(screen.getAllByText(/\$25/).length).toBeGreaterThan(0);
-    expect(screen.getByTestId('buy-elementor-to-divi5-pro')).toBeTruthy();
+    expect(screen.getByText(/AI Editor for Divi 5 Pro/i)).toBeTruthy();
+    expect(screen.getByText(/personal/i)).toBeTruthy();
+    expect(screen.getByText(/freelancer/i)).toBeTruthy();
+    expect(screen.getByText(/agency/i)).toBeTruthy();
+    // Prices should appear (from PRICING config)
+    expect(screen.getByText(/\$49\/year/i)).toBeTruthy();
+    expect(screen.getByText(/\$99\/year/i)).toBeTruthy();
+    expect(screen.getByText(/\$149\/year/i)).toBeTruthy();
   });
-  it('shows Divi→Elementor Pro with a live buy button, no longer coming soon', async () => {
+
+  it('shows lifetime option capped at 50', async () => {
     render(await PricingPage());
-    expect(screen.getByText(/Divi → Elementor Pro/i)).toBeTruthy();
-    expect(screen.getByTestId('buy-divi-to-elementor-pro')).toBeTruthy();
-    // "coming soon" is now expected, but only for the AI Editor's Pro add-on note
-    const soon = screen.getAllByText(/coming soon/i);
-    expect(soon.length).toBe(1);
-    expect(soon[0]!.textContent).toMatch(/pro add-on coming soon/i);
+    expect(screen.getByText(/lifetime/i)).toBeTruthy();
+    expect(screen.getByText(/\$449 one-time/i)).toBeTruthy();
+    expect(screen.getByText(/first 50 buyers/i)).toBeTruthy();
   });
-  it('mentions free layouts but sells no packs or membership', async () => {
+
+  it('mentions founding offer (30% off) and trial (45 days, no card)', async () => {
     render(await PricingPage());
-    expect(screen.getByText(/free divi 5 layouts/i)).toBeTruthy();
-    expect(screen.queryByText(/all-access|membership/i)).toBeNull();
+    expect(screen.getByText(/founding offer.*30% off/i)).toBeTruthy();
+    expect(screen.getByText(/45 days free/i)).toBeTruthy();
+    expect(screen.getByText(/no credit card/i)).toBeTruthy();
   });
+
+  it('shows converter Pro plugins below AI Editor tiers', async () => {
+    render(await PricingPage());
+    expect(screen.getByText(/converter pro plugins/i)).toBeTruthy();
+    expect(screen.getByText(/Elementor to Divi 5 Pro/i)).toBeTruthy();
+    expect(screen.getByText(/WPBakery to Divi 5 Pro/i)).toBeTruthy();
+    expect(screen.getByText(/Divi to Elementor Pro/i)).toBeTruthy();
+    expect(screen.getByText(/Beaver Builder to Divi 5 Pro/i)).toBeTruthy();
+    expect(screen.getAllByText(/\$25\/yr/).length).toBeGreaterThanOrEqual(4);
+  });
+
+  it('has FAQ explaining Pro features, expiry, tiers, and trial', async () => {
+    render(await PricingPage());
+    expect(screen.getByText(/what does the ai editor pro add-on/i)).toBeTruthy();
+    expect(screen.getByText(/what if my license expires/i)).toBeTruthy();
+    expect(screen.getByText(/how many sites does each tier/i)).toBeTruthy();
+    expect(screen.getByText(/can i try the pro add-on/i)).toBeTruthy();
+  });
+
   it('keeps FAQ JSON-LD', async () => {
     const { container } = render(await PricingPage());
     const scripts = Array.from(container.querySelectorAll('script[type="application/ld+json"]'));
     expect(scripts.some((s) => (s.textContent ?? '').includes('FAQPage'))).toBe(true);
   });
-  it('has plugin-focused metadata', () => {
-    expect(String(metadata.title)).toMatch(/pricing/i);
-    expect(String(metadata.description)).toMatch(/plugin|converter/i);
+
+  it('has metadata for AI Editor Pro and converters', () => {
+    expect(String(metadata.title)).toMatch(/AI Editor Pro and converters/i);
+    expect(String(metadata.description)).toMatch(/personal.*freelancer.*agency/i);
+    expect(String(metadata.description)).toMatch(/\$25/);
   });
-  it('tells the license philosophy once', async () => {
+
+  it('mentions free layouts to download', async () => {
     render(await PricingPage());
-    expect(screen.getByText(/licenses that respect you/i)).toBeTruthy();
-    expect(screen.getByText(/nothing breaks/i)).toBeTruthy();
+    expect(screen.getByText(/free divi 5 layouts/i)).toBeTruthy();
+    expect(screen.getByText(/free to download and use/i)).toBeTruthy();
   });
-  it('shows the AI Editor as free, with no price, no buy button and a Pro add-on note', async () => {
+
+  it('tier cards use BuyProButton with tier and lifetime props', async () => {
     const { container } = render(await PricingPage());
-    expect(screen.getByText(/AI Editor for Divi 5$/)).toBeTruthy();
-    expect(screen.queryByTestId('buy-ai-editor-divi5-pro')).toBeNull();
-    expect(container.textContent).not.toMatch(/\$30|45-day|free trial/i);
-    const card = screen.getByText(/AI Editor for Divi 5$/).closest('div.relative, .flex-col') as HTMLElement;
-    expect(card.textContent).toMatch(/Free/);
-    expect(card.textContent).toMatch(/pro add-on coming soon/i);
-    const link = within(card).getByRole('link', { name: /get the free ai editor/i });
-    expect(link.getAttribute('href')).toBe('/plugins/divi-5-ai-editor');
-  });
-  it('answers the AI Editor FAQ truthfully', async () => {
-    render(await PricingPage());
-    expect(screen.getByText(/is the ai editor free\?/i)).toBeTruthy();
-    expect(screen.getByText(/the ai editor has no paid plan today/i)).toBeTruthy();
-    expect(screen.queryByText(/page creation, menus, and site-wide styling/i)).toBeNull();
-  });
-  it('puts the free tier one click away on every plugin card', async () => {
-    render(await PricingPage());
-    expect(screen.queryByRole('link', { name: /download the free plugin \(\.zip\)/i })).toBeNull();
-    const wporg = screen.getAllByRole('link', { name: /get the free plugin on wordpress\.org/i });
-    expect(wporg.map((a) => a.getAttribute('href')).sort()).toEqual([
-      'https://wordpress.org/plugins/jhmg-converter-for-beaver-builder-to-divi-5/',
-      'https://wordpress.org/plugins/jhmg-converter-for-divi-to-elementor/',
-      'https://wordpress.org/plugins/jhmg-converter-for-elementor-to-divi/',
-      'https://wordpress.org/plugins/jhmg-converter-for-wpbakery-to-divi-5/',
-    ]);
+    // BuyProButton mocked components render as divs with data-testid
+    const buyButtons = container.querySelectorAll('[data-testid^="buy-ai-editor-divi5-pro"]');
+    expect(buyButtons.length).toBeGreaterThan(3); // At least personal, freelancer, agency, lifetime
+    const lifetimeButton = Array.from(buyButtons).find(b => b.getAttribute('data-lifetime'));
+    expect(lifetimeButton).toBeTruthy();
   });
 });

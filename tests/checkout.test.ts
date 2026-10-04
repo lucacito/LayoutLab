@@ -16,8 +16,8 @@ vi.mock('@/lib/env', async (importOriginal) => {
   return { ...actual, env: { ...actual.env } };
 });
 
-// The AI Editor Pro product is paused by default (lib/site/pro-status.ts). Wrap the
-// real helper so individual tests can simulate the paused / re-enabled state.
+// The AI Editor Pro product is now LIVE by default (lib/site/pro-status.ts). Wrap the
+// real helper so individual tests can simulate the paused state for testing pause behavior.
 vi.mock('@/lib/site/pro-status', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/lib/site/pro-status')>();
   return { ...actual, isProductPaused: vi.fn(actual.isProductPaused) };
@@ -149,9 +149,11 @@ describe('POST /api/checkout — validation (no Stripe/DB)', () => {
   });
 });
 
-describe('POST /api/checkout — ai-editor-divi5-pro is paused', () => {
+describe('POST /api/checkout — ai-editor-divi5-pro when paused', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // Explicitly mock the pause switch as true (paused) for this test suite
+    vi.mocked(isProductPaused).mockReturnValue(true);
     mockEnv.STRIPE_PRICE_AI_EDITOR_PRO = 'price_aied_test';
   });
 
@@ -173,9 +175,10 @@ describe('POST /api/checkout — ai-editor-divi5-pro is paused', () => {
   });
 });
 
-describe('POST /api/checkout — ai-editor-divi5-pro (plugin, subscription) once re-enabled', () => {
+describe('POST /api/checkout — ai-editor-divi5-pro (plugin, subscription) live', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // Default: AI Editor Pro is live (isProductPaused returns false)
     vi.mocked(isProductPaused).mockReturnValue(false);
     delete (mockEnv as Record<string, unknown>).STRIPE_PRICE_AI_EDITOR_PRO;
   });

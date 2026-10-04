@@ -2,17 +2,17 @@ import { describe, it, expect } from 'vitest';
 import { AI_EDITOR_PRO_AVAILABLE, isProductPaused } from '@/lib/site/pro-status';
 
 describe('AI Editor Pro pause switch', () => {
-  it('ships paused: the Pro add-on is not built yet', () => {
-    expect(AI_EDITOR_PRO_AVAILABLE).toBe(false);
+  it('ships live: the Pro add-on is now available', () => {
+    expect(AI_EDITOR_PRO_AVAILABLE).toBe(true);
   });
 
-  it('pauses ai-editor-divi5-pro while the switch is off', () => {
-    expect(isProductPaused('ai-editor-divi5-pro')).toBe(true);
-    expect(isProductPaused('ai-editor-divi5-pro', false)).toBe(true);
-  });
-
-  it('un-pauses ai-editor-divi5-pro when the switch is flipped on', () => {
+  it('un-pauses ai-editor-divi5-pro when the switch is on (live now)', () => {
+    expect(isProductPaused('ai-editor-divi5-pro')).toBe(false);
     expect(isProductPaused('ai-editor-divi5-pro', true)).toBe(false);
+  });
+
+  it('pauses ai-editor-divi5-pro when the switch is explicitly flipped off', () => {
+    expect(isProductPaused('ai-editor-divi5-pro', false)).toBe(true);
   });
 
   it('never pauses any other product', () => {
