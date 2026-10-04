@@ -4,7 +4,7 @@ import type { PluginProduct } from '@/lib/license-server/core';
 export type CheckoutInput =
   | { kind: 'pack'; packId: string }
   | { kind: 'membership'; plan: 'monthly' | 'yearly' }
-  | { kind: 'plugin'; product: PluginProduct };
+  | { kind: 'plugin'; product: PluginProduct; tier?: string; lifetime?: boolean };
 
 export interface CheckoutContext {
   siteUrl: string;
@@ -24,6 +24,10 @@ export interface CheckoutContext {
    * `${siteUrl}/license`.
    */
   requireTermsConsent?: boolean;
+  tier?: string;
+  founding?: boolean;
+  lifetime?: boolean;
+  foundingCouponId?: string;
 }
 
 export function buildCheckoutSessionParams(
@@ -65,25 +69,48 @@ export function buildCheckoutSessionParams(
     };
   }
   if (input.kind === 'plugin') {
-    // Launch offer, scoped to the AI Editor only: a 45-day free trial with NO card
-    // up front. `if_required` tells Checkout to skip payment-method collection when
-    // nothing is due now (the whole trial is $0). Consequence: with no card on file
-    // the trial can't auto-charge, so it ends by cancelling. A tester who wants to
-    // keep the plugin must return and re-subscribe (and pay). Nobody gets a surprise
-    // invoice. The webhook mints the license on `checkout.session.completed`
-    // regardless of amount paid, and `trialing` maps to an active license
-    // (see fulfillment.ts). Other plugins keep the standard pay-now flow.
-    const aiEditorLaunchTrial = input.product === 'ai-editor-divi5-pro';
+    const isAiEditor = input.product === 'ai-editor-divi5-pro';
+    const isLifetime = input.lifetime || false;
+    const tier = input.tier || (isAiEditor && isLifetime ? 'agency' : undefined);
+    const isTrial = isAiEditor && !isLifetime && !tier; // Trial only on personal tier with no lifetime
+
+    const metadata: Record<string, string> = {
+      kind: 'plugin',
+      product: input.product,
+      tier: tier || '0',
+      founding: ctx.founding ? '1' : '0',
+      lifetime: isLifetime ? '1' : '0',
+    };
+
+    // For lifetime, use one-time payment mode
+    if (isLifetime) {
+      return {
+        ...common,
+        mode: 'payment',
+        line_items: [{ price: ctx.pluginPriceId, quantity: 1 }],
+        metadata,
+        allow_promotion_codes: !ctx.founding, // Don't combine founding with allow_promotion_codes
+        ...(ctx.founding ? {} : {}), // No subscription_data for payment mode
+      };
+    }
+
+    // For subscription mode (yearly tiers + trial)
+    const discounts = [];
+    if (ctx.founding && ctx.foundingCouponId) {
+      discounts.push({ coupon: ctx.foundingCouponId });
+    }
+
     return {
       ...common,
       mode: 'subscription',
-      allow_promotion_codes: true,
-      ...(aiEditorLaunchTrial ? { payment_method_collection: 'if_required' } : {}),
+      allow_promotion_codes: !ctx.founding, // Don't combine founding with allow_promotion_codes
+      ...(isTrial ? { payment_method_collection: 'if_required' } : {}),
       line_items: [{ price: ctx.pluginPriceId, quantity: 1 }],
-      metadata: { kind: 'plugin', product: input.product },
+      metadata,
+      ...(discounts.length > 0 ? { discounts } : {}),
       subscription_data: {
-        metadata: { kind: 'plugin', product: input.product },
-        ...(aiEditorLaunchTrial
+        metadata,
+        ...(isTrial
           ? {
               trial_period_days: 45,
               trial_settings: { end_behavior: { missing_payment_method: 'cancel' } },

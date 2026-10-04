@@ -13,11 +13,12 @@ export interface FulfillmentStore {
   grantAllAccess(userId: string, expiresAt: Date | null): Promise<void>;
   revokeAllAccess(userId: string): Promise<void>;
   notifyPurchase(input: { email: string; kind: 'pack' | 'membership'; packId?: string; amountCents?: number }): Promise<void>;
-  mintLicense(l: { userId: string; productSlug: string; stripeSubscriptionId: string | null; currentPeriodEnd: Date | null }): Promise<{ licenseKey: string }>;
-  setLicenseStatusBySubscription(s: { stripeSubscriptionId: string; status: 'active' | 'past_due' | 'canceled'; currentPeriodEnd: Date | null }): Promise<{ found: boolean }>;
+  mintLicense(l: { userId: string; productSlug: string; stripeSubscriptionId: string | null; currentPeriodEnd: Date | null; tier?: string | null; founding?: boolean; lifetime?: boolean }): Promise<{ licenseKey: string }>;
+  setLicenseStatusBySubscription(s: { stripeSubscriptionId: string; status: 'active' | 'past_due' | 'canceled'; currentPeriodEnd: Date | null; tier?: string | null; founding?: boolean; lifetime?: boolean }): Promise<{ found: boolean }>;
   grantPluginEntitlement(userId: string, productSlug: string): Promise<void>;
   revokePluginEntitlement(stripeSubscriptionId: string): Promise<void>;
   notifyLicensePurchase(input: { email: string; productSlug: string; licenseKey: string }): Promise<void>;
+  countLicensesByCondition(conditions: { founding?: boolean; lifetime?: boolean; productSlug?: string }): Promise<number>;
 }
 
 function mapStatus(s: string): 'active' | 'past_due' | 'canceled' {
@@ -56,11 +57,16 @@ export async function handleStripeEvent(event: Stripe.Event, store: FulfillmentS
           await store.upsertSubscription({ userId, stripeSubscriptionId: s.subscription, status: 'active', currentPeriodEnd: null });
         }
       } else if (meta.kind === 'plugin' && meta.product) {
+        // For lifetime (payment mode), set currentPeriodEnd to null
+        const isLifetime = s.mode === 'payment' || meta.lifetime === '1';
         const { licenseKey } = await store.mintLicense({
           userId,
           productSlug: meta.product,
           stripeSubscriptionId: typeof s.subscription === 'string' ? s.subscription : null,
-          currentPeriodEnd: null, // set by the first customer.subscription.updated event
+          currentPeriodEnd: null, // set by the first customer.subscription.updated event for subscriptions; lifetime stays null
+          tier: meta.tier && meta.tier !== '0' ? meta.tier : null,
+          founding: meta.founding === '1',
+          lifetime: isLifetime,
         });
         await store.grantPluginEntitlement(userId, meta.product);
         try {
@@ -92,10 +98,14 @@ export async function handleStripeEvent(event: Stripe.Event, store: FulfillmentS
       if (sub.status === 'incomplete' || sub.status === 'incomplete_expired') break;
       if ((sub.metadata as Record<string, string> | null)?.kind === 'plugin') {
         const periodEnd = subscriptionPeriodEnd(sub);
+        const meta = (sub.metadata as Record<string, string> | null) ?? {};
         const { found } = await store.setLicenseStatusBySubscription({
           stripeSubscriptionId: sub.id,
           status: mapStatus(sub.status),
           currentPeriodEnd: periodEnd,
+          tier: meta.tier && meta.tier !== '0' ? meta.tier : null,
+          founding: meta.founding === '1',
+          lifetime: meta.lifetime === '1',
         });
         if (!found) throw new Error(`subscription event: license not minted yet for ${sub.id}`);
         break;

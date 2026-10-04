@@ -15,6 +15,11 @@ const schema = z.object({
   STRIPE_PRICE_ELEM2DIVI_PRO: z.string().optional(),
   STRIPE_PRICE_DIVI2ELEM_PRO: z.string().optional(),
   STRIPE_PRICE_AI_EDITOR_PRO: z.string().optional(),
+  STRIPE_PRICE_AI_EDITOR_PERSONAL: z.string().optional(),
+  STRIPE_PRICE_AI_EDITOR_FREELANCER: z.string().optional(),
+  STRIPE_PRICE_AI_EDITOR_AGENCY: z.string().optional(),
+  STRIPE_PRICE_AI_EDITOR_LIFETIME: z.string().optional(),
+  STRIPE_COUPON_AI_EDITOR_FOUNDING: z.string().optional(),
   STRIPE_PRICE_BB2DIVI_PRO: z.string().optional(),
   STRIPE_PRICE_WPB2DIVI_PRO: z.string().optional(),
   STRIPE_PRICE_BRICKS2DIVI_PRO: z.string().optional(),
@@ -22,6 +27,8 @@ const schema = z.object({
   // Checkout (needed to lawfully deny refunds to EU/UK consumers). Requires a
   // Terms of Service URL configured in the Stripe Dashboard → pointing at /license.
   STRIPE_TERMS_CONSENT: z.string().optional(),
+  // Cron secret for renewal reminders and other periodic tasks
+  CRON_SECRET: z.string().optional(),
   BLOB_READ_WRITE_TOKEN: z.string().optional(),
   RESEND_API_KEY: z.string().optional(),
   RESEND_FROM: z.string().optional(),

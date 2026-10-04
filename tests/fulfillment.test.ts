@@ -25,6 +25,7 @@ function fakeStore(over: Partial<FulfillmentStore> = {}): FulfillmentStore {
     grantPluginEntitlement: vi.fn(async () => {}),
     revokePluginEntitlement: vi.fn(async () => {}),
     notifyLicensePurchase: vi.fn(async () => {}),
+    countLicensesByCondition: vi.fn(async () => 0),
     ...over,
   };
 }
@@ -153,13 +154,16 @@ describe('plugin license fulfillment', () => {
       data: { object: {
         id: 'cs_1', customer: 'cus_1', subscription: 'sub_plugin_1',
         customer_details: { email: 'buyer@x.com' }, amount_total: 4900,
-        metadata: { kind: 'plugin', product: 'elementor-to-divi5-pro' },
+        metadata: { kind: 'plugin', product: 'elementor-to-divi5-pro', tier: '0', founding: '0', lifetime: '0' },
       } },
     } as never, store);
-    expect(store.mintLicense).toHaveBeenCalledWith({
+    expect(store.mintLicense).toHaveBeenCalledWith(expect.objectContaining({
       userId: 'user_1', productSlug: 'elementor-to-divi5-pro',
       stripeSubscriptionId: 'sub_plugin_1', currentPeriodEnd: null,
-    });
+      tier: null,
+      founding: false,
+      lifetime: false,
+    }));
     expect(store.grantPluginEntitlement).toHaveBeenCalledWith('user_1', 'elementor-to-divi5-pro');
     expect(store.notifyLicensePurchase).toHaveBeenCalledWith(
       expect.objectContaining({ email: 'buyer@x.com', productSlug: 'elementor-to-divi5-pro' }),
@@ -178,10 +182,13 @@ describe('plugin license fulfillment', () => {
         metadata: { kind: 'plugin', product: 'elementor-to-divi5-pro' },
       } },
     } as never, store);
-    expect(store.setLicenseStatusBySubscription).toHaveBeenCalledWith({
+    expect(store.setLicenseStatusBySubscription).toHaveBeenCalledWith(expect.objectContaining({
       stripeSubscriptionId: 'sub_plugin_1', status: 'past_due',
       currentPeriodEnd: new Date(1780000000 * 1000),
-    });
+      tier: null,
+      founding: false,
+      lifetime: false,
+    }));
     expect(store.grantAllAccess).not.toHaveBeenCalled();
     expect(store.revokeAllAccess).not.toHaveBeenCalled();
     expect(store.upsertSubscription).not.toHaveBeenCalled();
@@ -330,10 +337,10 @@ describe('plugin license fulfillment', () => {
         metadata: { kind: 'plugin', product: 'elementor-to-divi5-pro' },
       } },
     } as never, store)).resolves.toBeUndefined();
-    expect(store.mintLicense).toHaveBeenCalledWith({
+    expect(store.mintLicense).toHaveBeenCalledWith(expect.objectContaining({
       userId: 'user_1', productSlug: 'elementor-to-divi5-pro',
       stripeSubscriptionId: 'sub_plugin_6', currentPeriodEnd: null,
-    });
+    }));
     expect(store.grantPluginEntitlement).toHaveBeenCalledWith('user_1', 'elementor-to-divi5-pro');
     expect(store.markEventProcessed).toHaveBeenCalled();
   });
@@ -360,10 +367,13 @@ describe('plugin license fulfillment', () => {
         metadata: { kind: 'plugin', product: 'elementor-to-divi5-pro' },
       } },
     } as never, store);
-    expect(store.setLicenseStatusBySubscription).toHaveBeenCalledWith({
+    expect(store.setLicenseStatusBySubscription).toHaveBeenCalledWith(expect.objectContaining({
       stripeSubscriptionId: 'sub_plugin_1', status: 'active',
       currentPeriodEnd: new Date(1780000000 * 1000),
-    });
+      tier: null,
+      founding: false,
+      lifetime: false,
+    }));
   });
 
   it('membership subscription.updated reads current_period_end from items when absent at top level (2025+ API versions)', async () => {

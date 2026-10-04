@@ -87,8 +87,8 @@ describe('plugin license checkout', () => {
     );
     expect(params.mode).toBe('subscription');
     expect(params.line_items).toEqual([{ price: 'price_pro_yearly', quantity: 1 }]);
-    expect(params.metadata).toEqual({ kind: 'plugin', product: 'elementor-to-divi5-pro' });
-    expect((params.subscription_data as any).metadata).toEqual({ kind: 'plugin', product: 'elementor-to-divi5-pro' });
+    expect(params.metadata).toEqual({ kind: 'plugin', product: 'elementor-to-divi5-pro', tier: '0', founding: '0', lifetime: '0' });
+    expect((params.subscription_data as any).metadata).toEqual({ kind: 'plugin', product: 'elementor-to-divi5-pro', tier: '0', founding: '0', lifetime: '0' });
     // The launch trial is scoped to the AI Editor only — other plugins pay now.
     expect((params.subscription_data as any).trial_period_days).toBeUndefined();
     expect(params.payment_method_collection).toBeUndefined();
