@@ -15,6 +15,7 @@ const PRODUCTS = [
   { slug: 'ai-editor-divi5-pro', name: 'AI Editor for Divi 5 — Pro', envVar: 'STRIPE_PRICE_AI_EDITOR_PRO', yearlyUsdCents: 3000 },
   { slug: 'beaver-to-divi5-pro', name: 'JHMG Converter For Beaver Builder to Divi 5 — Pro', envVar: 'STRIPE_PRICE_BB2DIVI_PRO', yearlyUsdCents: 2500 },
   { slug: 'wpbakery-to-divi5-pro', name: 'JHMG Converter For WPBakery to Divi 5 — Pro', envVar: 'STRIPE_PRICE_WPB2DIVI_PRO', yearlyUsdCents: 2500 },
+  { slug: 'bricks-to-divi5-pro', name: 'JHMG Converter For Bricks to Divi 5 — Pro', envVar: 'STRIPE_PRICE_BRICKS2DIVI_PRO', yearlyUsdCents: 2500 },
 ] as const;
 
 async function findBySlug(stripe: Stripe, slug: string): Promise<Stripe.Product | undefined> {

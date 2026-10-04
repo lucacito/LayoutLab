@@ -37,6 +37,7 @@ export async function POST(req: Request): Promise<Response> {
     'ai-editor-divi5-pro': env.STRIPE_PRICE_AI_EDITOR_PRO,
     'beaver-to-divi5-pro': env.STRIPE_PRICE_BB2DIVI_PRO,
     'wpbakery-to-divi5-pro': env.STRIPE_PRICE_WPB2DIVI_PRO,
+    'bricks-to-divi5-pro': env.STRIPE_PRICE_BRICKS2DIVI_PRO,
   };
   const pluginPriceId = PRICE_ENV[input.product];
   if (!pluginPriceId) return NextResponse.json({ error: 'plugin_unavailable' }, { status: 400 });

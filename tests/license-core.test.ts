@@ -79,6 +79,7 @@ describe('PLUGIN_PRODUCTS', () => {
       'ai-editor-divi5-pro',
       'beaver-to-divi5-pro',
       'wpbakery-to-divi5-pro',
+      'bricks-to-divi5-pro',
     ]);
   });
 
@@ -87,5 +88,6 @@ describe('PLUGIN_PRODUCTS', () => {
       expect(PRODUCT_TITLES[slug]?.length).toBeGreaterThan(0);
     }
     expect(PRODUCT_TITLES['wpbakery-to-divi5-pro']).toBe('JHMG Converter For WPBakery to Divi 5 Pro');
+    expect(PRODUCT_TITLES['bricks-to-divi5-pro']).toBe('JHMG Converter For Bricks to Divi 5 Pro');
   });
 });

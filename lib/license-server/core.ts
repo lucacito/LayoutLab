@@ -2,7 +2,7 @@
 // and shared by the fulfillment webhook, the license API, and account queries.
 import { randomBytes } from 'node:crypto';
 
-export const PLUGIN_PRODUCTS = ['elementor-to-divi5-pro', 'divi-to-elementor-pro', 'ai-editor-divi5-pro', 'beaver-to-divi5-pro', 'wpbakery-to-divi5-pro'] as const;
+export const PLUGIN_PRODUCTS = ['elementor-to-divi5-pro', 'divi-to-elementor-pro', 'ai-editor-divi5-pro', 'beaver-to-divi5-pro', 'wpbakery-to-divi5-pro', 'bricks-to-divi5-pro'] as const;
 export type PluginProduct = (typeof PLUGIN_PRODUCTS)[number];
 
 export const PRODUCT_TITLES: Record<PluginProduct, string> = {
@@ -11,6 +11,7 @@ export const PRODUCT_TITLES: Record<PluginProduct, string> = {
   'ai-editor-divi5-pro': 'AI Editor for Divi 5 Pro',
   'beaver-to-divi5-pro': 'JHMG Converter For Beaver Builder to Divi 5 Pro',
   'wpbakery-to-divi5-pro': 'JHMG Converter For WPBakery to Divi 5 Pro',
+  'bricks-to-divi5-pro': 'JHMG Converter For Bricks to Divi 5 Pro',
 };
 
 // No 0/O/1/I/L so keys survive being read aloud or retyped from a receipt.
