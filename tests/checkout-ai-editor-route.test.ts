@@ -131,3 +131,26 @@ describe('POST /api/checkout for the AI Editor', () => {
     expect(count).not.toHaveBeenCalled();
   });
 });
+
+describe('a Stripe price variable that holds a label instead of a price id', () => {
+  it('is treated as not configured: plugin_unavailable, no call to Stripe', async () => {
+    (env as Record<string, string | undefined>).STRIPE_PRICE_AI_EDITOR_PERSONAL = '$49.00 per year';
+    const res = await post({ ...base, tier: 'personal', trial: true });
+    expect(res.status).toBe(400);
+    expect(await res.json()).toEqual({ error: 'plugin_unavailable' });
+    expect(create).not.toHaveBeenCalled();
+  });
+
+  it('the same for lifetime', async () => {
+    (env as Record<string, string | undefined>).STRIPE_PRICE_AI_EDITOR_LIFETIME = '$449.00';
+    const res = await post({ ...base, lifetime: true });
+    expect(res.status).toBe(400);
+    expect(create).not.toHaveBeenCalled();
+  });
+
+  it('a malformed founding coupon id is ignored, never sent', async () => {
+    (env as Record<string, string | undefined>).STRIPE_COUPON_AI_EDITOR_FOUNDING = '30% off (forever)';
+    await post({ ...base, tier: 'personal' });
+    expect((create.mock.calls[0]![0] as any).discounts).toBeUndefined();
+  });
+});

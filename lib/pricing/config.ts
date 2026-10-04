@@ -114,8 +114,21 @@ export function proratedUpgradeCents(
  * Used to determine if a tier is available for purchase.
  */
 export function isPriceEnvSet(priceEnv: string): boolean {
-  const value = process.env[priceEnv];
-  return !!value;
+  return isStripePriceId(process.env[priceEnv]);
+}
+
+/** A Stripe price id looks like `price_1AbC...`. Anything else (a pasted label such as "$49.00 per year") is not one. */
+export function isStripePriceId(value: string | undefined | null): value is string {
+  return typeof value === 'string' && /^price_[A-Za-z0-9_]+$/.test(value);
+}
+
+/** A Stripe coupon id: letters, digits, dash and underscore only (the founding coupon is created with a fixed id). */
+export function isCouponId(value: string | undefined | null): value is string {
+  return typeof value === 'string' && /^[A-Za-z0-9_-]{3,}$/.test(value);
+}
+
+export function isCouponEnvSet(couponEnv: string): boolean {
+  return isCouponId(process.env[couponEnv]);
 }
 
 /** The cheapest tier (the config guarantees at least one, ordered by price). */

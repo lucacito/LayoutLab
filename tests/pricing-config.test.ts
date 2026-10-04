@@ -75,3 +75,13 @@ describe('pricing config', () => {
     expect(tierSiteLimit('freelancer')).toBe(10);
   });
 });
+
+describe('id validators', () => {
+  it('accept Stripe ids and reject pasted labels', async () => {
+    const { isStripePriceId, isCouponId } = await import('@/lib/pricing/config');
+    expect(isStripePriceId('price_1QabcXYZ123')).toBe(true);
+    for (const bad of ['$49.00 per year', '$449.00', 'price 1abc', 'prod_123', '', undefined, null]) expect(isStripePriceId(bad as never)).toBe(false);
+    expect(isCouponId('ai-editor-divi5-pro-founding')).toBe(true);
+    for (const bad of ['30% off', 'a b', '', undefined]) expect(isCouponId(bad as never)).toBe(false);
+  });
+});
