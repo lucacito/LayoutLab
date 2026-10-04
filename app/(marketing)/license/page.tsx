@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { readLicense } from '@/lib/license';
-import { REFUND_POLICY } from '@/lib/legal/refund';
+import { REFUND_POLICY, aiEditorRefundPolicy } from '@/lib/legal/refund';
 import { Container } from '@/components/ui/Container';
 import { Card } from '@/components/ui/Card';
 import { Icon } from '@/components/ui/Icon';
@@ -11,7 +11,8 @@ export const metadata: Metadata = {
 };
 
 const SUMMARY = [
-  { ok: true, title: 'Unlimited sites', body: 'Use what you buy on any site you own.' },
+  { ok: true, title: 'Layouts: unlimited sites', body: 'Use the layouts you download on any site you own.' },
+  { ok: true, title: 'AI Editor Pro: sites by plan', body: 'A plan covers the number of sites it lists, yours or your clients’.' },
   { ok: true, title: 'Client work', body: 'Build for clients, with no extra seats and no per-site fees.' },
   { ok: true, title: 'Keeps working', body: 'A lapsed license never breaks an activated site.' },
   { ok: false, title: 'No resale', body: 'Don’t sell or license the files themselves.' },
@@ -50,8 +51,11 @@ export default function LicensePage() {
           <pre className="whitespace-pre-wrap font-sans text-small leading-relaxed text-navy">{license}</pre>
         </Card>
 
-        <h2 className="mt-12 text-section text-navy">Refunds</h2>
-        <p className="mt-3 text-body text-muted">{REFUND_POLICY}</p>
+        <h2 id="refunds" className="mt-12 text-section text-navy">Refunds</h2>
+        <h3 className="mt-4 text-body font-semibold text-navy">Layouts and converter plugins</h3>
+        <p className="mt-2 text-body text-muted">{REFUND_POLICY}</p>
+        <h3 className="mt-6 text-body font-semibold text-navy">AI Editor for Divi 5 Pro</h3>
+        <p className="mt-2 text-body text-muted">{aiEditorRefundPolicy()}</p>
 
         <h2 id="privacy" className="mt-12 text-section text-navy">Privacy</h2>
         <div className="mt-3 space-y-3 text-body text-muted">

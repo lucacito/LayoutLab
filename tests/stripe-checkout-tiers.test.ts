@@ -69,4 +69,18 @@ describe('AI Editor tier sessions', () => {
     expect(p.allow_promotion_codes).toBe(true);
     expect((p.subscription_data as any).trial_period_days).toBeUndefined();
   });
+
+  it('the AI Editor checkout discloses its own refund policy, not "all sales are final and non-refundable"', () => {
+    const p = buildCheckoutSessionParams({ kind: 'plugin', product, tier: 'personal' }, { ...ctx, siteUrl: 'https://divi5lab.com' });
+    const msg = (p.custom_text as any).submit.message as string;
+    expect(msg).toContain('https://divi5lab.com/license#refunds');
+    expect(msg).toContain(`within ${PRICING.refundWindowDays} days`);
+    expect(msg.toLowerCase()).not.toContain('non-refundable');
+    expect(msg.length).toBeLessThanOrEqual(1200);
+  });
+
+  it('converters keep the original disclosure', () => {
+    const p = buildCheckoutSessionParams({ kind: 'plugin', product: 'wpbakery-to-divi5-pro' }, { ...ctx, siteUrl: 'https://divi5lab.com' });
+    expect((p.custom_text as any).submit.message).toContain('non-refundable');
+  });
 });

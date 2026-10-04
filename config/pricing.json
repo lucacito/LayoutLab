@@ -11,6 +11,7 @@
   "lifetime": { "tier": "agency", "priceCents": 44900, "cap": 50, "priceEnv": "STRIPE_PRICE_AI_EDITOR_LIFETIME" },
   "trial": { "tier": "personal", "days": 45, "requireCard": false },
   "renewalReminderDays": [30, 7],
+  "refundWindowDays": 14,
   "pastDueGraceDays": 7,
   "urls": { "pricing": "/pricing", "account": "/account/licenses", "billing": "/account/billing" }
 }
