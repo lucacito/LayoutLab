@@ -10,9 +10,10 @@ import { CtaBand } from '@/components/marketing/CtaBand';
 import { NextConverterBand } from '@/components/marketing/NextConverterBand';
 
 export const metadata: Metadata = {
-  title: 'Convert anything into Divi 5: WordPress plugins by Divi5Lab',
+  title: 'Divi 5 Plugins: AI Editor and Converters by Divi5Lab',
   description:
-    'Converters that bring Elementor, Beaver Builder and WPBakery pages to Divi 5, a Divi to Elementor converter for the other direction, and a validated AI editor for Divi 5. Free tiers on all of them.',
+    'The AI Editor for Divi 5, free on WordPress.org, plus converters from Elementor, Beaver Builder and WPBakery to Divi 5, and Divi to Elementor.',
+  alternates: { canonical: '/plugins' },
 };
 
 const DECISIONS = [

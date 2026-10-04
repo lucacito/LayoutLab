@@ -12,14 +12,15 @@ import { BuyProButton } from '@/components/plugins/BuyProButton';
 import { STATS } from '@/lib/site/stats';
 import { CtaBand } from '@/components/marketing/CtaBand';
 import { FREE_PLUGIN_LINKS, freePluginAnchorProps } from '@/lib/site/free-downloads';
-import { PRICING, OFFER, formatUsd, isPriceEnvSet, isCouponEnvSet, siteLabel } from '@/lib/pricing/config';
+import { PRICING, OFFER, formatUsd, lowestTier, isPriceEnvSet, isCouponEnvSet, siteLabel } from '@/lib/pricing/config';
 import { getAvailability } from '@/lib/pricing/availability';
 import { WaitlistForm } from '@/components/plugins/WaitlistForm';
 
 export const metadata: Metadata = {
-  title: 'Pricing: AI Editor Pro and converters',
-  description:
-    'AI Editor for Divi 5 Pro: personal, freelancer and agency plans. Free AI Editor plugin. Converter Pro licenses from $25/yr. Nothing breaks when licenses expire.',
+  title: 'Pricing: AI Editor for Divi 5 Pro and Converters',
+  description: `AI Editor for Divi 5 Pro from ${formatUsd(lowestTier().priceCents)}/yr by number of sites, with a ${OFFER.trialDays}-day free trial. The plugin is free. Converter Pro from $25/yr.`,
+  alternates: { canonical: '/pricing' },
+  openGraph: { type: 'website', url: '/pricing', title: 'Pricing: AI Editor for Divi 5 Pro and Converters' },
 };
 
 // The founding and lifetime counters and the buy buttons depend on the database and on the Stripe env, so this page

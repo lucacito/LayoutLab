@@ -66,7 +66,7 @@ The plugin is free, and nothing in it is locked. Claude can list and read your D
 
 It also includes a built-in pack of 44 original images, read-only access to your Media Library (Claude looks at your own images first), and the style, landing-page, site and image guides plus 17 proven section recipes that steer Claude toward good-looking pages. What it does not do: it doesn't set your front page, edit your menus, or save custom CSS or PHP. See the full list on the [plugin page](/plugins/divi-5-ai-editor).
 
-A separate Pro add-on for live stock-photo sourcing is planned, but it is not available yet and the free plugin is complete without it.
+The free plugin is complete on its own. A separate Pro add-on adds 14 more tools: whole-site build with one-step undo, Theme Builder editing, site-wide find and replace, and a site audit. See the [pricing](/pricing).
 
 ## Troubleshooting
 
