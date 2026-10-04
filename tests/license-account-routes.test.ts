@@ -41,7 +41,7 @@ describe('POST /api/billing/change-tier', () => {
   it('upgrades the subscription item to the higher tier price, prorated and invoiced now', async () => {
     const res = await changeTier(req({ licenseId: 'l1', tier: 'freelancer' }));
     expect(res.status).toBe(200);
-    expect(subs.update).toHaveBeenCalledWith('sub_1', { items: [{ id: 'si_1', price: 'price_f' }], proration_behavior: 'always_invoice' });
+    expect(subs.update).toHaveBeenCalledWith('sub_1', { items: [{ id: 'si_1', price: 'price_f' }], proration_behavior: 'always_invoice', payment_behavior: 'pending_if_incomplete' });
   });
 
   it.each([

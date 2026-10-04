@@ -155,12 +155,12 @@ const FAQ = [
   {
     question: 'How much does the Pro add-on cost?',
     answer:
-      `${PRICING.tiers.map((t) => `${t.label} (${siteLabel(t).toLowerCase()}): ${formatUsd(t.priceCents)}/year`).join('. ')}. Founding offer: ${OFFER.foundingPercent}% off for the first ${OFFER.foundingCap} buyers, with the renewal price locked while the licence stays active. Lifetime (${PRICING.lifetime.tier} tier): ${formatUsd(PRICING.lifetime.priceCents)} one-time, limited to the first ${OFFER.lifetimeCap} sales. Trial: ${OFFER.trialDays} days free${PRICING.trial.requireCard ? '' : ', no credit card'}.`,
+      `${PRICING.tiers.map((t) => `${t.label} (${siteLabel(t).toLowerCase()}): ${formatUsd(t.priceCents)}/year`).join('. ')}. Trial: ${OFFER.trialDays} days free${PRICING.trial.requireCard ? '' : ', no credit card'}. Current offers are on the pricing page.`,
   },
   {
     question: 'What happens when my license expires?',
     answer:
-      'Pro keeps working on every site where it is already activated. You just stop receiving new updates and support until you renew. No hostage access. Renewal reminders are sent 30 and 7 days before expiry.',
+      `Pro keeps working on every site where it is already activated. You just stop receiving new updates and support until you renew. No hostage access. Renewal reminders are sent ${PRICING.renewalReminderDays.join(' and ')} days before your renewal.`,
   },
   {
     question: 'Can I undo a Pro change?',
@@ -170,7 +170,7 @@ const FAQ = [
   {
     question: 'Do licenses cover client sites?',
     answer:
-      'Yes. A licence covers as many sites as its tier allows, whether they are your own or your clients\'. Agency and Lifetime are unlimited.',
+      `Yes. A licence covers as many sites as its tier allows, whether they are your own or your clients'. ${PRICING.tiers.filter((t) => t.sites === null).map((t) => t.label).join(' and ')} cover unlimited sites.`,
   },
   {
     question: 'Is the plugin GPL?',
@@ -183,7 +183,7 @@ const FAQ = [
   },
   {
     question: 'Is my site data sent to Divi5Lab?',
-    answer: 'No. Your assistant talks directly to your WordPress site over its API. The plugin uses no third-party services, and we never see your content.',
+    answer: 'Your content is not. Your assistant talks directly to your WordPress site over its API, and neither plugin sends your pages anywhere. The free plugin makes no remote calls at all. The Pro add-on contacts divi5lab.com only to check your licence and look for updates, and sends your licence key, site address, plugin version and WordPress version to do so.',
   },
 ];
 

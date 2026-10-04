@@ -79,6 +79,9 @@ export async function POST(req: Request): Promise<Response> {
         },
       ],
       proration_behavior: 'always_invoice',
+      // The new Price only applies once the proration invoice is PAID. Without this Stripe applies it even when the
+      // card declines, which would hand out the bigger tier for nothing.
+      payment_behavior: 'pending_if_incomplete',
     });
 
     // Return success with the new tier

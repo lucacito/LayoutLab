@@ -14,7 +14,7 @@ export function GET(): Response {
 ## Key pages
 - [AI Editor for Divi 5](${base}/plugins/divi-5-ai-editor): Free plugin that lets Claude, ChatGPT, Cursor and VS Code Copilot edit Divi 5 pages safely. 16 free tools, 14 more in Pro.
 - [Plugins and converters](${base}/plugins): The AI Editor, plus converters (Elementor, Beaver Builder, WPBakery to Divi 5) and reverse converter (Divi to Elementor).
-- [Pricing](${base}/pricing): Pro add-on licenses by annual site count. Free trial, no card required.
+- [Pricing](${base}/pricing): Pro add-on licenses by annual site count, with a free trial.
 - [Elementor to Divi 5](${base}/plugins/elementor-to-divi-5): Convert Elementor pages, kits and headers/footers into Divi 5.
 - [Beaver Builder to Divi 5](${base}/plugins/beaver-builder-to-divi-5): Convert Beaver Builder pages and Themer layouts into Divi 5.
 - [WPBakery to Divi 5](${base}/plugins/wpbakery-to-divi-5): Convert WPBakery shortcode pages and templates into Divi 5.

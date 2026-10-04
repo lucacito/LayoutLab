@@ -12,6 +12,8 @@ export interface LicenseStore {
   markDeactivated(licenseId: string, siteUrl: string): Promise<void>;
   latestRelease(productSlug: string): Promise<{ version: string; blobKey: string; changelog: string | null } | null>;
   countActiveActivations(licenseId: string): Promise<number>;
+  /** True when this site (normalised) has ever been activated, active or not, under a DIFFERENT licence of this product. */
+  siteHasOtherActivation(productSlug: string, siteUrl: string, exceptLicenseId: string): Promise<boolean>;
   upsertActivationWithinLimit(a: { licenseId: string; siteUrl: string; pluginVersion?: string; wpVersion?: string }, limit: number | null): Promise<{ ok: true; used: number } | { ok: false; used: number }>;
 }
 
@@ -72,6 +74,12 @@ export async function handleActivate(
   const now = opts.now ?? new Date();
   const r = await findUsable(input.key, input.product, store, now);
   if ('fail' in r) return r.fail;
+
+  // A free trial only starts on a site that has never had a licence of this product: otherwise a new trial per email
+  // would keep any one site on the Pro tools indefinitely.
+  if (r.license.trial && await store.siteHasOtherActivation(r.license.productSlug, site, r.license.id)) {
+    return { status: 403, body: { error: 'trial_not_available' } };
+  }
 
   // For tiered products, check site limit
   if (r.license.productSlug === PRICING.product && r.license.tier) {

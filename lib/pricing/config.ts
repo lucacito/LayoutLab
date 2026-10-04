@@ -45,6 +45,7 @@ const PricingConfigSchema = z.object({
   urls: z.object({
     pricing: z.string(),
     account: z.string(),
+    billing: z.string(),
   }),
 });
 

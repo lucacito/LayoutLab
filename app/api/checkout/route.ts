@@ -3,6 +3,7 @@ import { z } from 'zod';
 import type Stripe from 'stripe';
 import { env } from '@/lib/env';
 import { stripe } from '@/lib/stripe/client';
+import { rateLimit } from '@/lib/rate-limit';
 import { buildCheckoutSessionParams, type CheckoutInput, type CheckoutContext } from '@/lib/stripe/checkout';
 import { PLUGIN_PRODUCTS, type PluginProduct } from '@/lib/license-server/core';
 import { PRICING } from '@/lib/pricing/config';
@@ -23,8 +24,12 @@ const bodySchema = z.object({
   trial: z.boolean().optional(),
 });
 
-// TODO(§16): add rate limiting to this route.
 export async function POST(req: Request): Promise<Response> {
+  // Starting a checkout session (and above all a no-card trial) is cheap to repeat: keep it to a human pace per address.
+  const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown';
+  if (!rateLimit(`checkout:${ip}`, { limit: 12, windowMs: 60_000 }).ok) {
+    return NextResponse.json({ error: 'rate_limited' }, { status: 429 });
+  }
   if (!env.STRIPE_SECRET_KEY) return NextResponse.json({ error: 'stripe_not_configured' }, { status: 500 });
 
   let body: unknown;

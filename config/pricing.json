@@ -12,5 +12,5 @@
   "trial": { "tier": "personal", "days": 45, "requireCard": false },
   "renewalReminderDays": [30, 7],
   "pastDueGraceDays": 7,
-  "urls": { "pricing": "/pricing", "account": "/account/licenses" }
+  "urls": { "pricing": "/pricing", "account": "/account/licenses", "billing": "/account/billing" }
 }

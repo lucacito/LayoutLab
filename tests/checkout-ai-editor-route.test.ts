@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
+vi.mock('@/lib/rate-limit', () => ({ rateLimit: vi.fn(() => ({ ok: true })) }));
 vi.mock('@/lib/stripe/client', () => ({ stripe: { checkout: { sessions: { create: vi.fn() } } } }));
 vi.mock('@/lib/stripe/fulfillment-store', () => ({ dbStore: { countLicensesByCondition: vi.fn() } }));
 vi.mock('@/lib/env', async (importOriginal) => {
@@ -16,6 +17,7 @@ import { stripe } from '@/lib/stripe/client';
 import { dbStore } from '@/lib/stripe/fulfillment-store';
 import { env } from '@/lib/env';
 import { PRICING } from '@/lib/pricing/config';
+import { rateLimit } from '@/lib/rate-limit';
 
 const create = vi.mocked(stripe.checkout.sessions.create);
 const count = vi.mocked(dbStore.countLicensesByCondition);
@@ -119,5 +121,13 @@ describe('POST /api/checkout for the AI Editor', () => {
     expect(res.status).toBe(410);
     expect(await res.json()).toEqual({ error: 'sold_out' });
     expect(create).not.toHaveBeenCalled();
+  });
+
+  it('429 when one address starts too many checkouts, before any Stripe or DB call', async () => {
+    vi.mocked(rateLimit).mockReturnValueOnce({ ok: false } as never);
+    const res = await post({ ...base, tier: 'personal', trial: true });
+    expect(res.status).toBe(429);
+    expect(create).not.toHaveBeenCalled();
+    expect(count).not.toHaveBeenCalled();
   });
 });

@@ -62,4 +62,20 @@ describe('pricing literals guard', () => {
       .flatMap((f) => literalsIn(f.text, tiers, lifetime).map((h) => `${f.rel}: ${h}`));
     expect(offenders).toEqual([]);
   });
+
+  it('no offer value (trial days, founding percent, caps, reminder days, site counts) is typed in copy either', () => {
+    const finiteSites = PRICING.tiers.map((t) => t.sites).filter((n): n is number => n !== null && n > 1);
+    const patterns: Array<[string, RegExp]> = [
+      ['trial days', new RegExp(`\\b${PRICING.trial.days}[- ]days?\\b`, 'i')],
+      ['founding percent', new RegExp(`\\b${PRICING.founding.percentOff}%`)],
+      ['founding cap', new RegExp(`\\b(first|of) ${PRICING.founding.cap}\\b`, 'i')],
+      ['lifetime cap', new RegExp(`\\b(first|of) ${PRICING.lifetime.cap}\\b`, 'i')],
+      ['reminder days', new RegExp(`\\b${[...PRICING.renewalReminderDays].sort((a, b) => b - a).join(' and ')} days\\b`, 'i')],
+      ...finiteSites.map((n): [string, RegExp] => [`${n} sites`, new RegExp(`\\b${n} sites\\b`, 'i')]),
+    ];
+    const offenders = files
+      .filter((f) => !ALLOWED.has(f.rel))
+      .flatMap((f) => patterns.filter(([, re]) => re.test(f.text)).map(([name]) => `${f.rel}: ${name}`));
+    expect(offenders).toEqual([]);
+  });
 });

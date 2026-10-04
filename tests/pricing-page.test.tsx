@@ -11,6 +11,9 @@ beforeAll(() => {
   process.env.STRIPE_PRICE_AI_EDITOR_LIFETIME = 'price_lifetime_test';
 });
 
+const { availability } = vi.hoisted(() => ({ availability: vi.fn() }));
+vi.mock('@/lib/pricing/availability', () => ({ getAvailability: availability }));
+
 vi.mock('@/components/plugins/BuyProButton', () => ({
   BuyProButton: ({ product, tier, lifetime }: { product: string; tier?: string; lifetime?: boolean }) => (
     <div data-testid={`buy-${product}`} data-tier={tier} data-lifetime={lifetime ? 'true' : undefined} />
@@ -46,15 +49,45 @@ describe('/pricing (AI Editor Pro and converters)', () => {
     expect(Array.from(container.querySelectorAll('*')).some(el => el.textContent?.toLowerCase().includes(capText))).toBe(true);
   });
 
-  it('mentions founding offer (30% off) and trial (45 days, no card)', async () => {
+  const open = { founding: { count: 10, remaining: PRICING.founding.cap - 10, available: true }, lifetime: { count: 1, remaining: PRICING.lifetime.cap - 1, available: true } };
+
+  it('mentions the founding offer only while checkout can apply it', async () => {
+    process.env.STRIPE_COUPON_AI_EDITOR_FOUNDING = 'co_f';
+    availability.mockResolvedValue(open);
+    const { container, unmount } = render(await PricingPage());
+    const text = container.textContent ?? '';
+    expect(text).toContain(`Founding offer: ${PRICING.founding.cap - 10} of ${PRICING.founding.cap} left`);
+    expect(text).toContain('What is the founding offer?');
+    unmount();
+
+    // sold out: no promise anywhere
+    availability.mockResolvedValue({ ...open, founding: { count: PRICING.founding.cap, remaining: 0, available: false } });
+    const soldOut = render(await PricingPage());
+    expect(soldOut.container.textContent).not.toMatch(/founding/i);
+    soldOut.unmount();
+
+    // coupon not configured: no promise either
+    delete process.env.STRIPE_COUPON_AI_EDITOR_FOUNDING;
+    availability.mockResolvedValue(open);
+    const noCoupon = render(await PricingPage());
+    expect(noCoupon.container.textContent).not.toMatch(/founding/i);
+  });
+
+  it('does not claim updates or support forever for Lifetime, and has no unearned badge', async () => {
+    availability.mockResolvedValue(open);
     const { container } = render(await PricingPage());
-    expect(screen.getByText(/founding offer.*30% off/i)).toBeTruthy();
-    // "45 days" appears in multiple places, so use the specific trial text
-    expect(screen.getByText(/try the pro add-on free for 45 days/i)).toBeTruthy();
-    // "no credit card required" appears in multiple places, so check that it's in the page somewhere
-    const hasNoCreditCard = Array.from(container.querySelectorAll('*'))
-      .some(el => el.textContent?.toLowerCase().includes('no credit card required'));
-    expect(hasNoCreditCard).toBe(true);
+    const text = container.textContent ?? '';
+    expect(text).not.toMatch(/forever/i);
+    expect(text).not.toMatch(/most popular/i);
+    expect(text).toContain('One payment, no renewal');
+  });
+
+  it('the trial text and the closing call to action come from the config and go somewhere', async () => {
+    availability.mockResolvedValue(open);
+    const { container } = render(await PricingPage());
+    expect(screen.getByText(new RegExp(`try the pro add-on free for ${PRICING.trial.days} days`, 'i'))).toBeTruthy();
+    expect((container.textContent ?? '').toLowerCase().includes('no credit card required')).toBe(!PRICING.trial.requireCard);
+    expect(container.querySelector('a[href="#"]')).toBeNull();
   });
 
   it('shows converter Pro plugins below AI Editor tiers', async () => {

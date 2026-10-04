@@ -19,19 +19,25 @@ import { WaitlistForm } from '@/components/plugins/WaitlistForm';
 export const metadata: Metadata = {
   title: 'Pricing: AI Editor Pro and converters',
   description:
-    'AI Editor for Divi 5 Pro: personal, freelancer and agency plans. Free AI Editor plugin. Converter Pro licenses from $25/yr. No credit card for trial. Nothing breaks when licenses expire.',
+    'AI Editor for Divi 5 Pro: personal, freelancer and agency plans. Free AI Editor plugin. Converter Pro licenses from $25/yr. Nothing breaks when licenses expire.',
 };
 
-const FAQ = [
+// The founding and lifetime counters and the buy buttons depend on the database and on the Stripe env, so this page
+// is rendered per request, never frozen at build time.
+export const dynamic = 'force-dynamic';
+
+function buildFaq(foundingOpen: boolean) {
+  const unlimited = PRICING.tiers.filter((t) => t.sites === null).map((t) => t.label);
+  return [
   {
     question: 'What does the AI Editor Pro add-on include?',
     answer:
-      'Fourteen advanced tools: set the front page and primary menu, publish pages, add custom CSS, propose PHP, edit the live Divi header and footer, find and replace text across your site, audit for problems and broken links, and build a whole Divi 5 site in one undoable step. Every change is undoable. The free plugin has 16 tools for reading, editing and creating pages.',
+      'Fourteen advanced tools: set the front page and primary menu, publish pages, add custom CSS, propose PHP, edit the live Divi header and footer, find and replace text across your site, audit for problems and broken links, and build a whole Divi 5 site in one undoable step. Each edit the plugin saves can be undone from the page history. The free plugin has 16 tools for reading, editing and creating pages.',
   },
   {
     question: 'What if my license expires?',
     answer:
-      'Pro keeps working on every site where it is already activated. You just stop receiving new updates and support until you renew. No hostage access. Renewal reminders are sent 30 and 7 days before expiry.',
+      `Pro keeps working on every site where it is already activated. You just stop receiving new updates and support until you renew. No hostage access. Renewal reminders are sent ${PRICING.renewalReminderDays.join(' and ')} days before your renewal.`,
   },
   {
     question: 'How many sites does each tier cover?',
@@ -42,11 +48,11 @@ const FAQ = [
     answer:
       `Yes. The ${OFFER.trialDays}-day trial is the ${PRICING.tiers.find((t) => t.id === PRICING.trial.tier)?.label} tier${PRICING.trial.requireCard ? '' : ', no credit card required'}. The free plugin is already a complete, fully-featured editor; the Pro add-on adds whole-site and advanced tools.`,
   },
-  {
+  ...(foundingOpen ? [{
     question: 'What is the founding offer?',
     answer:
-      `The first ${OFFER.foundingCap} buyers get ${OFFER.foundingPercent}% off any tier. The discounted renewal price stays locked for as long as the licence stays active. Renewal reminders arrive ${PRICING.renewalReminderDays.join(' and ')} days before your renewal.`,
-  },
+      `The first ${OFFER.foundingCap} buyers get ${OFFER.foundingPercent}% off any tier. The discounted renewal price stays locked for as long as the licence stays active.`,
+  }] : []),
   {
     question: 'Is there a lifetime option?',
     answer:
@@ -55,7 +61,7 @@ const FAQ = [
   {
     question: 'Do licenses cover client sites?',
     answer:
-      'Yes. A licence covers as many sites as its tier allows, whether they are your own or your clients\'. Agency and Lifetime are unlimited.',
+      `Yes. A licence covers as many sites as its tier allows, whether they are your own or your clients\'. ${unlimited.join(' and ')} (and Lifetime) cover unlimited sites.`,
   },
   {
     question: 'Are the layouts really free?',
@@ -67,6 +73,7 @@ const FAQ = [
       'Each converter is $25/yr on unlimited sites. Free versions convert one page per run; Pro adds whole-site runs and Theme Builder headers/footers. Nothing breaks when a license lapses.',
   },
 ];
+}
 
 const CONVERTERS = [
   {
@@ -123,20 +130,17 @@ export default async function PricingPage() {
   const availability = await getAvailability();
   const foundingRemaining = availability?.founding.remaining ?? 0;
   const foundingCap = PRICING.founding.cap;
+  // The offer is only promised while checkout can really apply it: the coupon is configured and not used up.
+  const foundingOpen = isPriceEnvSet(PRICING.founding.couponEnv) && availability !== null && availability.founding.available;
+  const FAQ = buildFaq(foundingOpen);
 
   const trialTier = PRICING.tiers.find((t) => t.id === PRICING.trial.tier) ?? PRICING.tiers[0];
   const trialTierLabel = trialTier.label;
-  const hasPersonalPrice = isPriceEnvSet(PRICING.tiers[0].priceEnv);
-  const hasFreelancerPrice = isPriceEnvSet(PRICING.tiers[1].priceEnv);
-  const hasAgencyPrice = isPriceEnvSet(PRICING.tiers[2].priceEnv);
-  const hasLifetimePrice = isPriceEnvSet(PRICING.lifetime.priceEnv);
+  const hasLifetimePrice = isPriceEnvSet(PRICING.lifetime.priceEnv) && (availability?.lifetime.available ?? true);
 
-  const tiersWithPrices = PRICING.tiers.filter((t) => {
-    if (t.id === 'personal') return hasPersonalPrice;
-    if (t.id === 'freelancer') return hasFreelancerPrice;
-    if (t.id === 'agency') return hasAgencyPrice;
-    return true;
-  });
+  const tiersWithPrices = PRICING.tiers.filter((t) => isPriceEnvSet(t.priceEnv));
+  const hasAnyTierPrice = tiersWithPrices.length > 0;
+  const lifetimeTier = PRICING.tiers.find((t) => t.id === PRICING.lifetime.tier);
 
   return (
     <main>
@@ -151,11 +155,12 @@ export default async function PricingPage() {
           <div className="mx-auto mb-8 max-w-2xl text-center">
             <h2 className="text-h2 text-navy">AI Editor for Divi 5 Pro</h2>
             <p className="mt-3 text-lead text-muted">
-              Annual subscription per site count. Founding offer: {OFFER.foundingPercent}% off, first {OFFER.foundingCap} buyers, price locked while active.
+              Annual subscription per site count.
+              {foundingOpen && ` Founding offer: ${OFFER.foundingPercent}% off for the first ${OFFER.foundingCap} buyers, price locked while the licence stays active.`}
             </p>
           </div>
 
-          {foundingRemaining > 0 && hasPersonalPrice && (
+          {foundingOpen && foundingRemaining > 0 && (
             <Card className="mb-8 border-action bg-blue-50 p-6 text-center">
               <p className="text-body font-semibold text-action">
                 Founding offer: {foundingRemaining} of {foundingCap} left, {OFFER.foundingPercent}% off
@@ -167,15 +172,8 @@ export default async function PricingPage() {
             {tiersWithPrices.map((tier) => (
               <Card
                 key={tier.id}
-                className={`relative flex flex-col p-8 transition duration-300 hover:-translate-y-1.5 hover:shadow-lift ${
-                  tier.id === 'agency' ? 'border-action shadow-lift ring-1 ring-action' : ''
-                }`}
+                className="relative flex flex-col p-8 transition duration-300 hover:-translate-y-1.5 hover:shadow-lift"
               >
-                {tier.id === 'agency' && (
-                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-pill bg-action px-4 py-1.5 text-small font-semibold text-paper shadow-glow">
-                    Most popular
-                  </span>
-                )}
                 <h3 className="text-section text-navy">{tier.label}</h3>
                 <div className="mt-3 flex items-baseline gap-1.5">
                   <span className="text-h2 text-navy">{formatUsd(tier.priceCents)}</span>
@@ -223,7 +221,7 @@ export default async function PricingPage() {
                   <span className="text-h2 text-navy">{formatUsd(PRICING.lifetime.priceCents)}</span>
                   <span className="text-small text-muted">one-time</span>
                 </div>
-                <p className="mt-1 text-small text-muted">Agency tier, unlimited sites</p>
+                <p className="mt-1 text-small text-muted">{lifetimeTier ? `${lifetimeTier.label} tier, ${siteLabel(lifetimeTier).toLowerCase()}` : ''}</p>
                 <p className="mt-4 text-body text-muted">
                   One payment, no renewal. Limited to the first {OFFER.lifetimeCap} sales.
                   {availability && availability.lifetime.remaining !== null && (
@@ -237,15 +235,15 @@ export default async function PricingPage() {
                   <ul className="space-y-2">
                     <li className="flex items-start gap-2 text-body text-navy">
                       <Icon name="check_circle" size={18} className="mt-0.5 shrink-0 text-action" />
-                      All tools, forever
+                      All 14 Pro tools
                     </li>
                     <li className="flex items-start gap-2 text-body text-navy">
                       <Icon name="check_circle" size={18} className="mt-0.5 shrink-0 text-action" />
-                      Unlimited sites
+                      {lifetimeTier ? siteLabel(lifetimeTier) : ''}
                     </li>
                     <li className="flex items-start gap-2 text-body text-navy">
                       <Icon name="check_circle" size={18} className="mt-0.5 shrink-0 text-action" />
-                      No expiry or renewal
+                      One payment, no renewal
                     </li>
                   </ul>
                 </div>
@@ -255,7 +253,7 @@ export default async function PricingPage() {
               </Card>
             )}
 
-            {!hasPersonalPrice && (
+            {!hasAnyTierPrice && (
               <Card className="p-8 text-center">
                 <h3 className="text-section text-navy">Coming soon</h3>
                 <p className="mt-3 text-body text-muted">
@@ -379,10 +377,10 @@ export default async function PricingPage() {
       </SectionShell>
 
       <CtaBand
-        eyebrow="No card required"
+        eyebrow={PRICING.trial.requireCard ? undefined : 'No card required'}
         title={`Try Pro free for ${OFFER.trialDays} days, or buy a converter.`}
-        body="Personal tier Pro add-on, free AI Editor plugin, and free layout catalog. Upgrade or cancel anytime."
-        cta={{ label: 'Start your trial', href: '#' }}
+        body={`The ${trialTierLabel} tier of the Pro add-on, the free AI Editor plugin, and the free layout catalog.`}
+        cta={{ label: 'See the AI Editor', href: '/plugins/divi-5-ai-editor' }}
         curveTop={EDGE.mist}
       />
 

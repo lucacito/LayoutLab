@@ -4,6 +4,7 @@ import { buildCheckoutSessionParams } from '@/lib/stripe/checkout';
 // Real `stripe` client requires a live SDK call — mock it so the ai-editor
 // price-selection tests below can assert on what checkout.sessions.create was
 // called with, without hitting the network.
+vi.mock('@/lib/rate-limit', () => ({ rateLimit: vi.fn(() => ({ ok: true })) }));
 vi.mock('@/lib/stripe/client', () => ({
   stripe: { checkout: { sessions: { create: vi.fn() } } },
 }));

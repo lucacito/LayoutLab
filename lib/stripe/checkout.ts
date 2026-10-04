@@ -104,7 +104,9 @@ function aiEditorParams(
       ...common,
       mode: 'payment',
       customer_creation: 'always',
-      allow_promotion_codes: true,
+      // Lifetime is capped and fixed-price: no promotion codes (a fully discounted session would also complete without a
+      // payment and never be fulfilled), and a short expiry so unpaid sessions cannot pile up past the cap.
+      expires_at: Math.floor(Date.now() / 1000) + 31 * 60,
       line_items: [{ price: ctx.pluginPriceId, quantity: 1 }],
       metadata,
     };

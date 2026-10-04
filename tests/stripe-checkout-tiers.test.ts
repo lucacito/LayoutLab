@@ -57,6 +57,9 @@ describe('AI Editor tier sessions', () => {
     expect((p as any).subscription_data).toBeUndefined();
     expect(p.discounts).toBeUndefined();
     expect(p.customer_creation).toBe('always');
+    expect(p.allow_promotion_codes).toBeUndefined();
+    expect(p.expires_at).toBeGreaterThan(Math.floor(Date.now() / 1000) + 30 * 60);
+    expect(p.expires_at).toBeLessThan(Math.floor(Date.now() / 1000) + 24 * 60 * 60);
     expect(p.metadata).toEqual({ kind: 'plugin', product, tier: PRICING.lifetime.tier, founding: '0', lifetime: '1', trial: '0' });
   });
 

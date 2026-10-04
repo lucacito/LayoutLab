@@ -1,5 +1,5 @@
 /**
- * Daily cron (vercel.json): email a renewal reminder 30 and 7 days before an AI Editor subscription renews.
+ * Daily cron (vercel.json): email a renewal reminder ahead of an AI Editor subscription renewing (the windows are PRICING.renewalReminderDays).
  * GET /api/cron/renewal-reminders  with  Authorization: Bearer <CRON_SECRET>  (Vercel Cron sends this itself).
  */
 import { NextResponse } from 'next/server';
@@ -12,6 +12,7 @@ import { PRICING } from '@/lib/pricing/config';
 import { dueReminders, type LicenseWithReminders } from '@/lib/license-server/reminders';
 import { renewalReminderEmail } from '@/lib/email/renewal-reminder';
 import { sendEmail } from '@/lib/email';
+import { stripe } from '@/lib/stripe/client';
 
 export const runtime = 'nodejs';
 
@@ -69,12 +70,32 @@ export async function GET(req: Request): Promise<Response> {
       const claimed = await record([due.send]);
       if (claimed.length === 0) continue;
 
+      const release = () => db.delete(licenseReminders).where(and(
+        eq(licenseReminders.licenseId, due.license.id),
+        inArray(licenseReminders.days, [due.send as number]),
+        eq(licenseReminders.periodEnd, due.periodEnd),
+      ));
+
+      // The store keeps a subscription 'active' until its period ends even after the customer cancelled it, so ask
+      // Stripe: a subscription that will not renew gets no 'renews on' email (the claim stays, so it is not asked again).
+      const subId = (candidates.find((c) => c.id === due.license.id)?.stripeSubscriptionId) ?? null;
+      try {
+        if (!subId) continue;
+        const sub = await stripe.subscriptions.retrieve(subId);
+        if (sub.status !== 'active' || sub.cancel_at_period_end || sub.cancel_at) continue;
+      } catch (err) {
+        console.error('[renewal-reminder] could not read the subscription:', err);
+        await release();
+        failed++;
+        continue;
+      }
+
       const user = await db.select({ email: users.email }).from(users).where(eq(users.id, due.license.userId)).limit(1);
       const tierLabel = PRICING.tiers.find((t) => t.id === due.license.tier)?.label ?? 'Pro';
       let ok = false;
       if (user[0]) {
         try {
-          const mail = renewalReminderEmail({ email: user[0].email, tierLabel, renewalDate: due.periodEnd, manageUrl: `${origin}${PRICING.urls.account}` });
+          const mail = renewalReminderEmail({ email: user[0].email, tierLabel, renewalDate: due.periodEnd, manageUrl: `${origin}${PRICING.urls.billing}` });
           ok = (await sendEmail({ to: user[0].email, subject: mail.subject, html: mail.html, text: mail.text })).sent;
         } catch (err) {
           console.error('[renewal-reminder] email send failed:', err);
@@ -84,11 +105,7 @@ export async function GET(req: Request): Promise<Response> {
         sent++;
       } else {
         failed++;
-        await db.delete(licenseReminders).where(and(
-          eq(licenseReminders.licenseId, due.license.id),
-          inArray(licenseReminders.days, [due.send]),
-          eq(licenseReminders.periodEnd, due.periodEnd),
-        ));
+        await release();
       }
     }
 

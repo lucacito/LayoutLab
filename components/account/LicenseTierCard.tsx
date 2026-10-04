@@ -4,10 +4,10 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { Card } from '@/components/ui/Card';
 import { PRICING, getTier, tierSiteLimit, formatUsd, proratedUpgradeCents } from '@/lib/pricing/config';
-import type { StoredLicenseStatus } from '@/lib/license-server/core';
-import { PRODUCT_TITLES, type PluginProduct } from '@/lib/license-server/core';
+import type { StoredLicenseStatus } from '@/lib/license-server/core'; // type only: core.ts imports node:crypto and must not reach the client bundle
 
 interface LicenseTierCardProps {
+  productTitle: string;
   license: {
     id: string;
     productSlug: string;
@@ -18,6 +18,7 @@ interface LicenseTierCardProps {
     tier: string | null;
     founding: boolean;
     lifetime: boolean;
+    trial: boolean;
   };
 }
 
@@ -32,9 +33,10 @@ const STATUS_LABEL: Record<string, string> = {
 
 const RENEWING_STATUSES = new Set(['active', 'past_due']);
 
-export function LicenseTierCard({ license }: LicenseTierCardProps) {
+export function LicenseTierCard({ license, productTitle }: LicenseTierCardProps) {
   const [freeloading, setFreeloading] = useState(false);
   const [upgrading, setUpgrading] = useState(false);
+  const [problem, setProblem] = useState<string | null>(null);
 
   // Only show tier card for AI Editor product
   const isAiEditor = license.productSlug === PRICING.product;
@@ -53,15 +55,24 @@ export function LicenseTierCard({ license }: LicenseTierCardProps) {
       if (res.ok) {
         // Reload the page to see the updated list
         window.location.reload();
+      } else {
+        setProblem('That site could not be freed. Try again, or email support@divi5lab.com.');
       }
     } catch (err) {
       console.error('Free slot failed:', err);
+      setProblem('That site could not be freed. Try again, or email support@divi5lab.com.');
     } finally {
       setFreeloading(false);
     }
   };
 
-  const handleUpgrade = async (newTier: string) => {
+  const handleUpgrade = async (newTier: string, dueToday: string | null) => {
+    const label = getTier(newTier)?.label ?? newTier;
+    const ok = window.confirm(
+      `Upgrade to ${label}? Your card on file is charged${dueToday ? ` about ${dueToday}` : ' the prorated difference'} now, for the rest of your current term.`,
+    );
+    if (!ok) return;
+    setProblem(null);
     setUpgrading(true);
     try {
       const res = await fetch('/api/billing/change-tier', {
@@ -71,9 +82,12 @@ export function LicenseTierCard({ license }: LicenseTierCardProps) {
       });
       if (res.ok) {
         window.location.reload();
+      } else {
+        setProblem('The upgrade could not be completed, and you have not been charged for it. Check your card in the billing page, or email support@divi5lab.com.');
       }
     } catch (err) {
       console.error('Upgrade failed:', err);
+      setProblem('The upgrade could not be completed. Try again, or email support@divi5lab.com.');
     } finally {
       setUpgrading(false);
     }
@@ -86,7 +100,7 @@ export function LicenseTierCard({ license }: LicenseTierCardProps) {
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <div className="text-body font-semibold text-navy">
-              {PRODUCT_TITLES[license.productSlug as PluginProduct] ?? license.productSlug}
+              {productTitle}
             </div>
             {isAiEditor && tierData && (
               <div className="mt-1 text-small font-medium text-action">{tierData.label}</div>
@@ -103,7 +117,7 @@ export function LicenseTierCard({ license }: LicenseTierCardProps) {
 
         {/* Status and Expiry */}
         <div className="text-small text-muted">
-          {STATUS_LABEL[license.status] ?? license.status}
+          {license.trial ? 'Free trial' : (STATUS_LABEL[license.status] ?? license.status)}
           {license.lifetime
             ? ' · Lifetime'
             : license.currentPeriodEnd
@@ -167,7 +181,7 @@ export function LicenseTierCard({ license }: LicenseTierCardProps) {
         )}
 
         {/* Upgrade options */}
-        {isAiEditor && tierData && !license.lifetime && license.status !== 'canceled' && (
+        {isAiEditor && tierData && !license.lifetime && !license.trial && license.status === 'active' && (
           <div className="border-t border-border pt-3">
             <div className="text-small font-medium text-navy mb-2">Upgrade to higher tier:</div>
             <div className="flex flex-wrap gap-2">
@@ -188,7 +202,7 @@ export function LicenseTierCard({ license }: LicenseTierCardProps) {
                 return (
                   <button
                     key={t.id}
-                    onClick={() => handleUpgrade(t.id)}
+                    onClick={() => handleUpgrade(t.id, proratedCents > 0 ? formatUsd(proratedCents) : null)}
                     disabled={upgrading}
                     className="inline-flex items-center justify-center rounded-full bg-blue-600 px-4 py-2 text-small font-semibold text-white transition hover:brightness-110 disabled:opacity-50"
                   >
@@ -203,11 +217,13 @@ export function LicenseTierCard({ license }: LicenseTierCardProps) {
           </div>
         )}
 
-        {/* Manage link */}
-        {isAiEditor && (
+        {problem && <p className="text-small text-red-600" role="alert">{problem}</p>}
+
+        {/* Billing portal: change card, see invoices, cancel */}
+        {isAiEditor && !license.lifetime && (
           <div className="text-small">
-            <Link href={PRICING.urls.account} className="text-action hover:underline">
-              Manage your license
+            <Link href={PRICING.urls.billing} className="text-action hover:underline">
+              Billing, card and cancellation
             </Link>
           </div>
         )}

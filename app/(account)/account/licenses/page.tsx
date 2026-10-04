@@ -4,6 +4,7 @@ import { getUserIdByEmail } from '@/lib/account/queries';
 import { getLicensesForUser } from '@/lib/license-server/store';
 import { Container } from '@/components/ui/Container';
 import { AccountNav } from '@/components/account/AccountNav';
+import { PRODUCT_TITLES, type PluginProduct } from '@/lib/license-server/core';
 import { LicenseTierCard } from '@/components/account/LicenseTierCard';
 
 export const dynamic = 'force-dynamic';
@@ -32,7 +33,7 @@ export default async function LicensesPage() {
           <ul className="mt-8 space-y-3">
             {licenses.map((l) => (
               <li key={l.id}>
-                <LicenseTierCard license={l} />
+                <LicenseTierCard license={l} productTitle={PRODUCT_TITLES[l.productSlug as PluginProduct] ?? l.productSlug} />
               </li>
             ))}
           </ul>

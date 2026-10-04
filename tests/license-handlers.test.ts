@@ -13,6 +13,7 @@ function makeStore(
   license: LicenseRecord | null,
   release?: { version: string; blobKey: string; changelog: string | null },
   activeCount: number = 0,
+  siteTakenByOther: boolean = false,
 ) {
   const activations: Array<{ licenseId: string; siteUrl: string }> = [];
   const deactivated: Array<{ licenseId: string; siteUrl: string }> = [];
@@ -22,6 +23,7 @@ function makeStore(
     async markDeactivated(licenseId, siteUrl) { deactivated.push({ licenseId, siteUrl }); },
     async latestRelease() { return release ?? null; },
     async countActiveActivations() { return activeCount; },
+    async siteHasOtherActivation() { return siteTakenByOther; },
     async upsertActivationWithinLimit(a, limit) {
       const count = activeCount;
       // If limit is null (unlimited), always succeed
@@ -311,5 +313,29 @@ describe('site limit enforcement (tiered product)', () => {
     expect(res.body).not.toHaveProperty('tier');
     expect(res.body).not.toHaveProperty('sites_used');
     expect(res.body).not.toHaveProperty('sites_allowed');
+  });
+});
+
+describe('free trial licences', () => {
+  const TRIAL: LicenseRecord = { ...LICENSE, productSlug: 'ai-editor-divi5-pro', tier: 'personal', trial: true };
+  const input = { key: KEY, siteUrl: 'https://fresh.example.com', product: 'ai-editor-divi5-pro' };
+
+  it('start on a site that has never had a licence of this product', async () => {
+    const { store, activations } = makeStore(TRIAL, undefined, 0, false);
+    const res = await handleActivate(input, store, { now: NOW, origin: 'https://divi5lab.com' });
+    expect(res.status).toBe(200);
+    expect(activations).toHaveLength(1);
+  });
+
+  it('are refused on a site another licence already used, and record nothing', async () => {
+    const { store, activations } = makeStore(TRIAL, undefined, 0, true);
+    const res = await handleActivate(input, store, { now: NOW, origin: 'https://divi5lab.com' });
+    expect(res).toEqual({ status: 403, body: { error: 'trial_not_available' } });
+    expect(activations).toHaveLength(0);
+  });
+
+  it('a paid licence is not subject to the rule', async () => {
+    const { store } = makeStore({ ...TRIAL, trial: false }, undefined, 0, true);
+    expect((await handleActivate(input, store, { now: NOW, origin: 'https://divi5lab.com' })).status).toBe(200);
   });
 });

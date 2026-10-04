@@ -2,7 +2,7 @@
 // deliberately thin SQL. Behavioral coverage lives in the handler tests
 // (lib/license-server/handlers.ts consumers) plus the e2e.
 import { randomUUID } from 'node:crypto';
-import { and, desc, eq, isNull, sql } from 'drizzle-orm';
+import { and, desc, eq, isNull, sql, ne } from 'drizzle-orm';
 import { db } from '@/db/client';
 import { licenses, licenseActivations, pluginReleases } from '@/db/schema';
 import { effectiveStatus, type LicenseRecord, type StoredLicenseStatus } from './core';
@@ -23,7 +23,15 @@ export const dbLicenseStore: LicenseStore = {
       tier: r.tier,
       founding: r.founding,
       lifetime: r.lifetime,
+      trial: r.trial,
     };
+  },
+  async siteHasOtherActivation(productSlug, siteUrl, exceptLicenseId) {
+    const rows = await db.select({ id: licenseActivations.id }).from(licenseActivations)
+      .innerJoin(licenses, eq(licenses.id, licenseActivations.licenseId))
+      .where(and(eq(licenses.productSlug, productSlug), eq(licenseActivations.siteUrl, siteUrl), ne(licenseActivations.licenseId, exceptLicenseId)))
+      .limit(1);
+    return rows.length > 0;
   },
   async upsertActivation(a) {
     await db.insert(licenseActivations).values({
@@ -133,7 +141,7 @@ export const dbLicenseStore: LicenseStore = {
 export async function getLicensesForUser(userId: string): Promise<Array<{
   id: string; productSlug: string; licenseKey: string;
   status: StoredLicenseStatus; currentPeriodEnd: Date | null; activeSites: string[];
-  tier: string | null; founding: boolean; lifetime: boolean;
+  tier: string | null; founding: boolean; lifetime: boolean; trial: boolean;
 }>> {
   const rows = await db.select().from(licenses).where(eq(licenses.userId, userId));
   const out = [];
@@ -151,6 +159,7 @@ export async function getLicensesForUser(userId: string): Promise<Array<{
       tier: r.tier,
       founding: r.founding,
       lifetime: r.lifetime,
+      trial: r.trial,
     });
   }
   return out;
