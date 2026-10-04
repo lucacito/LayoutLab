@@ -25,3 +25,12 @@ describe('free plugin links', () => {
     });
   });
 });
+
+describe('the free AI Editor link', () => {
+  it('goes to the wordpress.org listing, never to a bundled zip that can go stale (the Pro add-on needs the current free plugin)', () => {
+    const link = FREE_PLUGIN_LINKS['ai-editor-divi5'];
+    expect(link.href).toBe('https://wordpress.org/plugins/jhmg-ai-editor-for-divi-5/');
+    expect(link.download).toBe(false);
+    expect(link.href).not.toMatch(/\.zip$/);
+  });
+});

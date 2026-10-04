@@ -1,6 +1,5 @@
 // Retired. This route once served the AI Editor zip for free, because the AI Editor was one plugin whose premium tools
-// were licence-gated at runtime. Today the free plugin is a separate download (/downloads/jhmg-ai-editor-for-divi-5.zip
-// and wordpress.org) and `ai-editor-divi5-pro` is the PAID Pro add-on, whose zip must only ever be served by the
+// were licence-gated at runtime. Today the free plugin is a separate download (wordpress.org) and `ai-editor-divi5-pro` is the PAID Pro add-on, whose zip must only ever be served by the
 // key-authenticated /api/plugin/download route. No product may be listed here.
 export const FREE_DOWNLOAD_PRODUCTS: readonly string[] = [];
 
