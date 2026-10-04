@@ -11,17 +11,16 @@ export type FreePluginLink = {
   label: string;
 };
 
-const ZIP_LABEL = 'Download the free plugin (.zip)';
 const WPORG_LABEL = 'Get the free plugin on wordpress.org';
 
 export const FREE_PLUGIN_LINKS: Record<FreePluginProduct, FreePluginLink> = {
-  // JHMG AI Editor for Divi 5 4.0.0: submitted to wordpress.org and awaiting approval, so it is
-  // served as the exact submitted zip from public/downloads/. When the listing is approved, swap
-  // this entry to its wordpress.org URL (download: false) like the converters below.
+  // JHMG AI Editor for Divi 5 is approved and published on wordpress.org (2026-10-04); that listing is the only place
+  // to get it, so the version is always current. (An old 4.0.0 zip was served from public/downloads/ while the
+  // review was pending: it is too old for the Pro add-on, which needs 4.4.0 or newer, and has been removed.)
   'ai-editor-divi5': {
-    href: '/downloads/jhmg-ai-editor-for-divi-5.zip',
-    download: true,
-    label: ZIP_LABEL,
+    href: 'https://wordpress.org/plugins/jhmg-ai-editor-for-divi-5/',
+    download: false,
+    label: WPORG_LABEL,
   },
   'elementor-to-divi5': {
     href: 'https://wordpress.org/plugins/jhmg-converter-for-elementor-to-divi/',
