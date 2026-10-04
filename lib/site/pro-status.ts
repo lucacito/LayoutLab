@@ -1,20 +1,10 @@
-// The AI Editor "Pro" plan is PAUSED. JHMG AI Editor for Divi 5 4.0.0 (free, on
-// wordpress.org) has no licence-gated feature left: page creation (as drafts),
-// undo, the image pack and Media Library access are all free. A separate Pro
-// add-on (live stock-photo sourcing) is planned but not built and has no date.
-//
-// Flip this to `true` ONLY when that add-on actually ships. Flipping it only
-// re-opens the server-side checkout gate (`isProductPaused`). The site copy
-// was rewritten for the free plugin, so a real relaunch also needs to:
-//   - restore the BuyProButton / price / trial copy on
-//     app/(marketing)/plugins/divi-5-ai-editor/page.tsx and the AI Editor row
-//     of app/(catalog)/pricing/page.tsx (replace the "coming soon" card),
-//   - restore the "$ price" chips in lib/nav/menu-data.ts and ProductDoors,
-//   - restore the Pro mention in the three connect-* guides,
-//   - point the Product JSON-LD offer at the real price,
-//   - re-check what the Pro add-on actually unlocks before describing it.
-// All Stripe, licence-server and price env code is intentionally left in place.
-export const AI_EDITOR_PRO_AVAILABLE = false as boolean;
+// The AI Editor Pro add-on is LIVE and shipping.
+// JHMG AI Editor for Divi 5 Pro: 14 tools for advanced AI editing on your Divi 5
+// site. Buy by annual per-site-count tier (Personal 1 site, Freelancer 10, Agency
+// unlimited). Expiry never disables features, only updates and support stop.
+// Founding offer: 30% off, first 100 buyers, price locked while active.
+// Lifetime: Agency unlimited, one-time purchase, 50 capped.
+export const AI_EDITOR_PRO_AVAILABLE = true as boolean;
 
 export const AI_EDITOR_PRO_PRODUCT = 'ai-editor-divi5-pro';
 

@@ -1,19 +1,36 @@
 'use client';
 import { useState } from 'react';
 
-export function BuyProButton({ product, label }: { product: string; label: string }) {
+export function BuyProButton({
+  product,
+  label,
+  tier,
+  lifetime,
+}: {
+  product: string;
+  label: string;
+  tier?: 'personal' | 'freelancer' | 'agency';
+  lifetime?: boolean;
+}) {
   const [state, setState] = useState<'idle' | 'loading' | 'error'>('idle');
 
   const buy = async () => {
     setState('loading');
     try {
+      const body: Record<string, unknown> = { kind: 'plugin', product };
+      if (tier) body.tier = tier;
+      if (lifetime) body.lifetime = true;
+
       const res = await fetch('/api/checkout', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ kind: 'plugin', product }),
+        body: JSON.stringify(body),
       });
       const json = await res.json();
-      if (json.url) { window.location.assign(json.url); return; }
+      if (json.url) {
+        window.location.assign(json.url);
+        return;
+      }
       setState('error');
     } catch {
       setState('error');

@@ -106,3 +106,12 @@ export function proratedUpgradeCents(
   // Round and return
   return Math.round(prorated);
 }
+
+/**
+ * Check if a price env variable is set in the server environment.
+ * Used to determine if a tier is available for purchase.
+ */
+export function isPriceEnvSet(priceEnv: string): boolean {
+  const value = process.env[priceEnv];
+  return !!value;
+}

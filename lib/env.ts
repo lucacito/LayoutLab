@@ -15,6 +15,11 @@ const schema = z.object({
   STRIPE_PRICE_ELEM2DIVI_PRO: z.string().optional(),
   STRIPE_PRICE_DIVI2ELEM_PRO: z.string().optional(),
   STRIPE_PRICE_AI_EDITOR_PRO: z.string().optional(),
+  STRIPE_PRICE_AI_EDITOR_PERSONAL: z.string().optional(),
+  STRIPE_PRICE_AI_EDITOR_FREELANCER: z.string().optional(),
+  STRIPE_PRICE_AI_EDITOR_AGENCY: z.string().optional(),
+  STRIPE_PRICE_AI_EDITOR_LIFETIME: z.string().optional(),
+  STRIPE_COUPON_AI_EDITOR_FOUNDING: z.string().optional(),
   STRIPE_PRICE_BB2DIVI_PRO: z.string().optional(),
   STRIPE_PRICE_WPB2DIVI_PRO: z.string().optional(),
   STRIPE_PRICE_BRICKS2DIVI_PRO: z.string().optional(),
@@ -28,6 +33,7 @@ const schema = z.object({
   LOOPS_API_KEY: z.string().optional(),
   INGEST_API_TOKEN: z.string().optional(),
   ADMIN_EMAILS: z.string().optional(),
+  CRON_SECRET: z.string().optional(),
 });
 
 export type Env = z.infer<typeof schema>;
