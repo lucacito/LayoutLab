@@ -51,6 +51,9 @@ export interface LicenseRecord {
   licenseKey: string;
   status: StoredLicenseStatus;
   currentPeriodEnd: Date | null;
+  tier: string | null; // 'personal' | 'freelancer' | 'agency' for ai-editor-divi5-pro; null for others
+  founding: boolean;
+  lifetime: boolean;
 }
 
 // past_due keeps Pro working for 7 days after the period lapses (covers Stripe
