@@ -101,3 +101,23 @@ describe('AI Editor tier sessions', () => {
     expect((p.custom_text as any).submit.message).toContain('non-refundable');
   });
 });
+
+describe('invoices for one-time Lifetime payments', () => {
+  it('a Lifetime session asks Stripe to create an invoice, so the buyer and their bookkeeper get a real invoice PDF', () => {
+    const p = buildCheckoutSessionParams({ kind: 'plugin', product, lifetime: true }, ctx);
+    expect(p.mode).toBe('payment');
+    expect(p.invoice_creation).toEqual({ enabled: true });
+  });
+
+  it('a Lifetime session with the founding coupon keeps both the discount and the invoice', () => {
+    const p = buildCheckoutSessionParams({ kind: 'plugin', product, lifetime: true }, { ...ctx, founding: true, foundingCouponId: 'co_f' });
+    expect(p.discounts).toEqual([{ coupon: 'co_f' }]);
+    expect(p.invoice_creation).toEqual({ enabled: true });
+  });
+
+  it('subscriptions never set invoice_creation (Stripe rejects it outside payment mode; they invoice by themselves)', () => {
+    for (const tier of ['personal', 'freelancer', 'agency']) {
+      expect(buildCheckoutSessionParams({ kind: 'plugin', product, tier }, ctx)).not.toHaveProperty('invoice_creation');
+    }
+  });
+});

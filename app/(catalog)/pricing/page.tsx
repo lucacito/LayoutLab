@@ -36,6 +36,11 @@ function buildFaq(foundingOpen: boolean) {
       'Fourteen advanced tools: set the front page and primary menu, publish pages, add custom CSS, propose PHP, edit the live Divi header and footer, find and replace text across your site, audit for problems and broken links, and build a whole Divi 5 site in one undoable step. Each edit the plugin saves can be undone from the page history. The free plugin has 16 tools for reading, editing and creating pages.',
   },
   {
+    question: 'Does an AI Editor Pro licence include your other plugins?',
+    answer:
+      'No. Each plugin is licensed separately. An AI Editor Pro licence covers the AI Editor Pro add-on on as many WordPress sites as your plan allows.',
+  },
+  {
     question: 'What if my license expires?',
     answer:
       `Pro keeps working on every site where it is already activated. You just stop receiving new updates and support until you renew. No hostage access. Renewal reminders are sent ${PRICING.renewalReminderDays.join(' and ')} days before your renewal.`,
@@ -148,7 +153,7 @@ export default async function PricingPage() {
       <PageHero
         eyebrow="Pricing"
         title="AI Editor Pro and converters"
-        lead="Free AI Editor plugin, or upgrade to Pro for advanced site-wide tools. Converter Pro licenses from $25/yr on unlimited sites. Nothing breaks when licenses expire."
+        lead="Free AI Editor plugin, or upgrade to Pro for advanced tools that work across your whole WordPress site. Converter Pro licenses from $25/yr on unlimited sites. Nothing breaks when licenses expire."
       />
 
       <SectionShell tone="paper" pad="lg">

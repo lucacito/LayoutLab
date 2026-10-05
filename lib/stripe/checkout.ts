@@ -108,6 +108,8 @@ function aiEditorParams(
       ...common,
       mode: 'payment',
       customer_creation: 'always',
+      // A one-time payment has no subscription invoice, so ask Stripe for one: the buyer (and their bookkeeper) get a real invoice PDF.
+      invoice_creation: { enabled: true },
       // Lifetime is capped: its only discount is the fixed founding coupon, never a customer promotion code (a fully
       // discounted session would complete without a payment and never be fulfilled). A short expiry keeps unpaid
       // sessions from piling up past the cap.

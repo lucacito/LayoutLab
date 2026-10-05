@@ -9,6 +9,7 @@ import { purchaseReceiptEmail } from '@/lib/email/receipt';
 import { sendEmail } from '@/lib/email';
 import { generateLicenseKey, PRODUCT_TITLES, type PluginProduct } from '@/lib/license-server/core';
 import { licenseKeyEmail } from '@/lib/email/license-email';
+import { buildPurchaseOrder } from '@/lib/stripe/order';
 import type { FulfillmentStore } from './fulfillment';
 
 export const dbStore: FulfillmentStore = {
@@ -130,6 +131,7 @@ export const dbStore: FulfillmentStore = {
     const { subject, html, text } = licenseKeyEmail({
       productTitle: title, licenseKey: input.licenseKey, signInUrl,
       ...(tier ? { tierLabel: tier.label, sitesAllowed: tier.sites, lifetime: input.lifetime === true } : {}),
+      ...(input.order ? { order: buildPurchaseOrder(input.order, { tier: input.tier, lifetime: input.lifetime === true, trial: input.trial === true }) } : {}),
     });
     const { sent } = await sendEmail({ to: input.email, subject, html, text });
     if (!sent) console.log(`[license:dev] key for ${input.email}: ${input.licenseKey}\n${signInUrl}`);

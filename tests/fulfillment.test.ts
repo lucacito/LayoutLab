@@ -486,3 +486,70 @@ describe('AI Editor tiered licences', () => {
     expect('tier' in arg).toBe(false);
   });
 });
+
+describe('the purchase facts reach the licence email (it doubles as the receipt)', () => {
+  const checkout = (over: Record<string, unknown>, metadata: Record<string, string>) => ({
+    id: 'evt_receipt', type: 'checkout.session.completed',
+    data: { object: {
+      id: 'cs_r1', customer: 'cus_1', created: 1790000000, currency: 'usd',
+      customer_details: { email: 'buyer@x.com' },
+      metadata: { kind: 'plugin', product: 'ai-editor-divi5-pro', ...metadata },
+      ...over,
+    } },
+  }) as never;
+
+  it('a founding Lifetime purchase passes the exact amount, the discount and the payment intent', async () => {
+    const store = fakeStore();
+    await handleStripeEvent(checkout(
+      { payment_intent: 'pi_9', payment_status: 'paid', amount_total: 31430, total_details: { amount_discount: 13470 } },
+      { tier: 'agency', founding: '1', lifetime: '1', trial: '0' },
+    ), store);
+    expect(store.notifyLicensePurchase).toHaveBeenCalledWith(expect.objectContaining({
+      lifetime: true,
+      trial: false,
+      order: { amountCents: 31430, discountCents: 13470, currency: 'usd', paidAt: new Date(1790000000 * 1000), reference: 'pi_9' },
+    }));
+  });
+
+  it('an annual subscription purchase uses the invoice as the reference', async () => {
+    const store = fakeStore();
+    await handleStripeEvent(checkout(
+      { subscription: 'sub_1', invoice: 'in_5', amount_total: 4900, total_details: { amount_discount: 0 } },
+      { tier: 'personal', founding: '0', lifetime: '0', trial: '0' },
+    ), store);
+    expect(store.notifyLicensePurchase).toHaveBeenCalledWith(expect.objectContaining({
+      trial: false, order: expect.objectContaining({ amountCents: 4900, discountCents: 0, reference: 'in_5' }),
+    }));
+  });
+
+  it('a no-card trial is flagged as a trial and carries a zero amount', async () => {
+    const store = fakeStore();
+    await handleStripeEvent(checkout(
+      { subscription: 'sub_t', amount_total: 0, total_details: { amount_discount: 0 } },
+      { tier: 'personal', founding: '0', lifetime: '0', trial: '1' },
+    ), store);
+    expect(store.notifyLicensePurchase).toHaveBeenCalledWith(expect.objectContaining({
+      trial: true, order: expect.objectContaining({ amountCents: 0 }),
+    }));
+  });
+
+  it('a converter purchase also carries its order', async () => {
+    const store = fakeStore();
+    await handleStripeEvent(checkout(
+      { subscription: 'sub_c', amount_total: 2500, total_details: { amount_discount: 0 } },
+      { product: 'elementor-to-divi5-pro' },
+    ), store);
+    expect(store.notifyLicensePurchase).toHaveBeenCalledWith(expect.objectContaining({
+      productSlug: 'elementor-to-divi5-pro', order: expect.objectContaining({ amountCents: 2500 }),
+    }));
+  });
+
+  it('when Stripe reports no amount there is no order (no invented receipt) and the purchase still completes', async () => {
+    const store = fakeStore();
+    await handleStripeEvent(checkout({ subscription: 'sub_n' }, { tier: 'personal' }), store);
+    const arg = (store.notifyLicensePurchase as any).mock.calls[0][0];
+    expect(arg.order).toBeUndefined();
+    expect(store.mintLicense).toHaveBeenCalled();
+    expect(store.markEventProcessed).toHaveBeenCalled();
+  });
+});

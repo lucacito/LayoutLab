@@ -45,6 +45,7 @@ export function LicenseTierCard({ license, productTitle }: LicenseTierCardProps)
   const sitesUsed = license.activeSites.length;
 
   const handleFreeSlot = async (siteUrl: string) => {
+    if (!window.confirm(`Free the slot used by ${siteUrl}? The plugin keeps working on that site until you deactivate it there.`)) return;
     setFreeloading(true);
     try {
       const res = await fetch('/api/license/free-site', {
@@ -165,7 +166,7 @@ export function LicenseTierCard({ license, productTitle }: LicenseTierCardProps)
               {license.activeSites.map((site) => (
                 <li key={site} className="flex items-center justify-between gap-2 text-small text-muted">
                   <code>{site}</code>
-                  {isAiEditor && sitesAllowed !== null && sitesUsed >= sitesAllowed && (
+                  {isAiEditor && (
                     <button
                       onClick={() => handleFreeSlot(site)}
                       disabled={freeloading}
@@ -177,6 +178,11 @@ export function LicenseTierCard({ license, productTitle }: LicenseTierCardProps)
                 </li>
               ))}
             </ul>
+            {isAiEditor && (
+              <p className="mt-2 text-small text-muted">
+                Free a slot when a client leaves or a site moves, so the slot can be used on another site. The plugin keeps working on a freed site until you deactivate it there.
+              </p>
+            )}
           </div>
         )}
 
@@ -219,11 +225,11 @@ export function LicenseTierCard({ license, productTitle }: LicenseTierCardProps)
 
         {problem && <p className="text-small text-red-600" role="alert">{problem}</p>}
 
-        {/* Billing portal: change card, see invoices, cancel */}
-        {isAiEditor && !license.lifetime && (
+        {/* Billing portal: change card, see invoices, cancel. A Lifetime licence has nothing to renew or cancel, but its invoice lives here. */}
+        {isAiEditor && (
           <div className="text-small">
             <Link href={PRICING.urls.billing} className="text-action hover:underline">
-              Billing, card and cancellation
+              {license.lifetime ? 'Invoices and receipts' : 'Billing, card and cancellation'}
             </Link>
           </div>
         )}
