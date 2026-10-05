@@ -123,6 +123,54 @@ describe('POST /api/checkout for the AI Editor', () => {
     expect(create).not.toHaveBeenCalled();
   });
 
+  describe('lifetime and the founding offer', () => {
+    // The lifetime and founding counters are separate queries; answer each by its condition.
+    const counts = (c: { lifetime: number; founding: number }) =>
+      count.mockImplementation(async (cond) => ((cond as { lifetime?: boolean }).lifetime ? c.lifetime : c.founding));
+
+    it('applies the founding coupon to lifetime while founding places are left', async () => {
+      counts({ lifetime: 3, founding: PRICING.founding.cap - 1 });
+      expect((await post({ ...base, lifetime: true })).status).toBe(200);
+      const params = create.mock.calls[0]![0] as any;
+      expect(params.mode).toBe('payment');
+      expect(params.line_items[0].price).toBe('price_lifetime');
+      expect(params.discounts).toEqual([{ coupon: 'co_founding' }]);
+      expect(params.metadata).toMatchObject({ lifetime: '1', founding: '1' });
+    });
+
+    it('is full price once the founding places are used up, while lifetime is still on sale', async () => {
+      counts({ lifetime: 3, founding: PRICING.founding.cap });
+      expect((await post({ ...base, lifetime: true })).status).toBe(200);
+      const params = create.mock.calls[0]![0] as any;
+      expect(params.discounts).toBeUndefined();
+      expect(params.metadata).toMatchObject({ lifetime: '1', founding: '0' });
+    });
+
+    it('is full price when no founding coupon is configured, and never queries the founding count', async () => {
+      (env as Record<string, string | undefined>).STRIPE_COUPON_AI_EDITOR_FOUNDING = undefined;
+      counts({ lifetime: 3, founding: 0 });
+      expect((await post({ ...base, lifetime: true })).status).toBe(200);
+      expect((create.mock.calls[0]![0] as any).discounts).toBeUndefined();
+      expect(count).toHaveBeenCalledTimes(1);
+    });
+
+    it('a refused coupon never blocks a lifetime purchase: it retries at full price', async () => {
+      counts({ lifetime: 3, founding: 0 });
+      create.mockRejectedValueOnce(new Error('This coupon cannot be applied')).mockResolvedValueOnce(ok);
+      expect((await post({ ...base, lifetime: true })).status).toBe(200);
+      const retry = create.mock.calls[1]![0] as any;
+      expect(retry.mode).toBe('payment');
+      expect(retry.discounts).toBeUndefined();
+      expect(retry.metadata).toMatchObject({ lifetime: '1', founding: '0' });
+    });
+
+    it('is still sold out at the lifetime cap even when founding places are left', async () => {
+      counts({ lifetime: PRICING.lifetime.cap, founding: 0 });
+      expect((await post({ ...base, lifetime: true })).status).toBe(410);
+      expect(create).not.toHaveBeenCalled();
+    });
+  });
+
   it('429 when one address starts too many checkouts, before any Stripe or DB call', async () => {
     vi.mocked(rateLimit).mockReturnValueOnce({ ok: false } as never);
     const res = await post({ ...base, tier: 'personal', trial: true });

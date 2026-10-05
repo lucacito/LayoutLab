@@ -51,8 +51,8 @@ describe('AI Editor tier sessions', () => {
     expect(p.metadata).toMatchObject({ founding: '0' });
   });
 
-  it('lifetime is a one-time payment on the lifetime tier with no subscription data and no founding', () => {
-    const p = buildCheckoutSessionParams({ kind: 'plugin', product, lifetime: true }, { ...ctx, founding: true, foundingCouponId: 'co_f' });
+  it('lifetime is a one-time payment on the lifetime tier with no subscription data; without the founding flag it is full price', () => {
+    const p = buildCheckoutSessionParams({ kind: 'plugin', product, lifetime: true }, ctx);
     expect(p.mode).toBe('payment');
     expect((p as any).subscription_data).toBeUndefined();
     expect(p.discounts).toBeUndefined();
@@ -61,6 +61,23 @@ describe('AI Editor tier sessions', () => {
     expect(p.expires_at).toBeGreaterThan(Math.floor(Date.now() / 1000) + 30 * 60);
     expect(p.expires_at).toBeLessThan(Math.floor(Date.now() / 1000) + 24 * 60 * 60);
     expect(p.metadata).toEqual({ kind: 'plugin', product, tier: PRICING.lifetime.tier, founding: '0', lifetime: '1', trial: '0' });
+  });
+
+  it('lifetime with the founding flag takes the founding coupon and records founding in the metadata', () => {
+    const p = buildCheckoutSessionParams({ kind: 'plugin', product, lifetime: true }, { ...ctx, founding: true, foundingCouponId: 'co_f' });
+    expect(p.mode).toBe('payment');
+    expect(p.discounts).toEqual([{ coupon: 'co_f' }]);
+    expect((p as any).subscription_data).toBeUndefined();
+    // Stripe rejects discounts together with allow_promotion_codes, and a lifetime session never takes promo codes.
+    expect(p.allow_promotion_codes).toBeUndefined();
+    expect(p.customer_creation).toBe('always');
+    expect(p.metadata).toEqual({ kind: 'plugin', product, tier: PRICING.lifetime.tier, founding: '1', lifetime: '1', trial: '0' });
+  });
+
+  it('lifetime with the founding flag but no coupon id stays full price', () => {
+    const p = buildCheckoutSessionParams({ kind: 'plugin', product, lifetime: true }, { ...ctx, founding: true });
+    expect(p.discounts).toBeUndefined();
+    expect(p.metadata).toMatchObject({ founding: '0', lifetime: '1' });
   });
 
   it('other products keep the exact legacy session', () => {

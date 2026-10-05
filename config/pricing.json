@@ -8,7 +8,7 @@
     { "id": "agency",     "label": "Agency",     "sites": null, "priceCents": 14900, "priceEnv": "STRIPE_PRICE_AI_EDITOR_AGENCY" }
   ],
   "founding": { "percentOff": 30, "cap": 100, "couponEnv": "STRIPE_COUPON_AI_EDITOR_FOUNDING" },
-  "lifetime": { "tier": "agency", "priceCents": 44900, "cap": 50, "priceEnv": "STRIPE_PRICE_AI_EDITOR_LIFETIME" },
+  "lifetime": { "tier": "agency", "priceCents": 44900, "cap": 100, "priceEnv": "STRIPE_PRICE_AI_EDITOR_LIFETIME" },
   "trial": { "tier": "personal", "days": 45, "requireCard": false },
   "renewalReminderDays": [30, 7],
   "refundWindowDays": 14,

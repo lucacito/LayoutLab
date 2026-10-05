@@ -418,6 +418,14 @@ describe('AI Editor tiered licences', () => {
     }));
   });
 
+  it('a lifetime payment made with the founding coupon mints a licence that is both lifetime and founding', async () => {
+    const store = fakeStore();
+    await handleStripeEvent(completed({ kind: 'plugin', product: 'ai-editor-divi5-pro', tier: 'agency', founding: '1', lifetime: '1', trial: '0' }, { mode: 'payment', subscription: null }), store);
+    expect(store.mintLicense).toHaveBeenCalledWith(expect.objectContaining({
+      stripeSubscriptionId: 'cs_t1', tier: 'agency', lifetime: true, founding: true,
+    }));
+  });
+
   it('an unpaid lifetime payment mints nothing yet; async_payment_succeeded mints it', async () => {
     const store = fakeStore();
     const meta = { kind: 'plugin', product: 'ai-editor-divi5-pro', tier: 'agency', founding: '0', lifetime: '1', trial: '0' };

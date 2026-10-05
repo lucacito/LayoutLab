@@ -17,6 +17,10 @@ describe('pricing config', () => {
     }
   });
 
+  it('the lifetime offer is capped at 100 sales (owner decision 2026-10-05)', () => {
+    expect(PRICING.lifetime.cap).toBe(100);
+  });
+
   it('agency is unlimited sites', () => {
     const agency = getTier('agency');
     expect(agency?.sites).toBeNull();

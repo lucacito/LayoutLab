@@ -52,7 +52,7 @@ function buildFaq(foundingOpen: boolean) {
   ...(foundingOpen ? [{
     question: 'What is the founding offer?',
     answer:
-      `The first ${OFFER.foundingCap} buyers get ${OFFER.foundingPercent}% off any tier. The discounted renewal price stays locked for as long as the licence stays active.`,
+      `The first ${OFFER.foundingCap} buyers get ${OFFER.foundingPercent}% off any plan, Lifetime included. On the annual plans the discounted renewal price stays locked for as long as the licence stays active.`,
   }] : []),
   {
     question: 'Is there a lifetime option?',
@@ -232,6 +232,11 @@ export default async function PricingPage() {
                     </>
                   )}
                 </p>
+                {foundingOpen && (
+                  <p className="mt-2 text-body font-semibold text-action">
+                    Founding offer: {OFFER.foundingPercent}% off, applied at checkout.
+                  </p>
+                )}
                 <div className="mt-6 flex-1">
                   <ul className="space-y-2">
                     <li className="flex items-start gap-2 text-body text-navy">

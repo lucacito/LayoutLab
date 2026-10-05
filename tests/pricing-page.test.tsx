@@ -73,6 +73,20 @@ describe('/pricing (AI Editor Pro and converters)', () => {
     expect(noCoupon.container.textContent).not.toMatch(/founding/i);
   });
 
+  it('says on the Lifetime card that the founding offer applies to it, only while checkout can apply it', async () => {
+    process.env.STRIPE_COUPON_AI_EDITOR_FOUNDING = 'co_f';
+    availability.mockResolvedValue(open);
+    const withOffer = render(await PricingPage());
+    const lifetimeCard = (container: HTMLElement) =>
+      Array.from(container.querySelectorAll('h3')).find((h) => h.textContent?.toLowerCase() === 'lifetime')?.closest('div[class*="flex-col"]');
+    expect(lifetimeCard(withOffer.container)?.textContent).toContain(`${PRICING.founding.percentOff}% off`);
+    withOffer.unmount();
+
+    availability.mockResolvedValue({ ...open, founding: { count: PRICING.founding.cap, remaining: 0, available: false } });
+    const soldOut = render(await PricingPage());
+    expect(lifetimeCard(soldOut.container)?.textContent).not.toMatch(/% off/);
+  });
+
   it('does not claim updates or support forever for Lifetime, and has no unearned badge', async () => {
     availability.mockResolvedValue(open);
     const { container } = render(await PricingPage());

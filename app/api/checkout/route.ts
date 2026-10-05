@@ -58,10 +58,11 @@ export async function POST(req: Request): Promise<Response> {
       }
       pluginPriceId = priceIdForTier(input.tier);
       if (!pluginPriceId) return NextResponse.json({ error: 'plugin_unavailable' }, { status: 400 });
-      if (!input.trial && foundingCouponId()) {
-        const taken = await dbStore.countLicensesByCondition({ founding: true, productSlug: PRICING.product });
-        foundingFlag = foundingAvailable(taken);
-      }
+    }
+    // The founding offer covers every paid purchase, Lifetime included (never a trial): while its cap has room and the coupon is set.
+    if (!input.trial && foundingCouponId()) {
+      const taken = await dbStore.countLicensesByCondition({ founding: true, productSlug: PRICING.product });
+      foundingFlag = foundingAvailable(taken);
     }
   } else {
     if (input.tier || input.lifetime || input.trial) return NextResponse.json({ error: 'invalid_request' }, { status: 400 });

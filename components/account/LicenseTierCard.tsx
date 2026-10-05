@@ -132,7 +132,7 @@ export function LicenseTierCard({ license, productTitle }: LicenseTierCardProps)
           <div className="flex flex-wrap gap-2">
             {license.founding && (
               <span className="inline-block rounded-full bg-amber-100 px-3 py-1 text-small font-medium text-amber-900">
-                Founding price locked
+                {license.lifetime ? 'Founding offer' : 'Founding price locked'}
               </span>
             )}
             {license.lifetime && (

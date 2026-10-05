@@ -101,13 +101,17 @@ function aiEditorParams(
   common: Stripe.Checkout.SessionCreateParams,
 ): Stripe.Checkout.SessionCreateParams {
   if (input.lifetime) {
-    const metadata = { kind: 'plugin', product: input.product, tier: PRICING.lifetime.tier, founding: '0', lifetime: '1', trial: '0' };
+    // Lifetime takes the founding coupon like any tier (the route has checked the founding cap) and counts as a founding sale.
+    const founding = ctx.founding === true && !!ctx.foundingCouponId;
+    const metadata = { kind: 'plugin', product: input.product, tier: PRICING.lifetime.tier, founding: founding ? '1' : '0', lifetime: '1', trial: '0' };
     return {
       ...common,
       mode: 'payment',
       customer_creation: 'always',
-      // Lifetime is capped and fixed-price: no promotion codes (a fully discounted session would also complete without a
-      // payment and never be fulfilled), and a short expiry so unpaid sessions cannot pile up past the cap.
+      // Lifetime is capped: its only discount is the fixed founding coupon, never a customer promotion code (a fully
+      // discounted session would complete without a payment and never be fulfilled). A short expiry keeps unpaid
+      // sessions from piling up past the cap.
+      ...(founding ? { discounts: [{ coupon: ctx.foundingCouponId as string }] } : {}),
       expires_at: Math.floor(Date.now() / 1000) + 31 * 60,
       line_items: [{ price: ctx.pluginPriceId, quantity: 1 }],
       metadata,
