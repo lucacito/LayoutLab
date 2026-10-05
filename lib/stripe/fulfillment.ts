@@ -1,6 +1,7 @@
 import type Stripe from 'stripe';
 import { PRICING } from '@/lib/pricing/config';
 import { tierForPriceId } from '@/lib/pricing/stripe';
+import { purchaseFactsFromSession, type PurchaseFacts } from '@/lib/stripe/order';
 
 export interface FulfillmentStore {
   hasProcessedEvent(id: string): Promise<boolean>;
@@ -20,7 +21,8 @@ export interface FulfillmentStore {
   setLicenseStatusBySubscription(s: { stripeSubscriptionId: string; status: 'active' | 'past_due' | 'canceled'; currentPeriodEnd: Date | null; tier?: string; trial?: boolean }): Promise<{ found: boolean }>;
   grantPluginEntitlement(userId: string, productSlug: string): Promise<void>;
   revokePluginEntitlement(stripeSubscriptionId: string): Promise<void>;
-  notifyLicensePurchase(input: { email: string; productSlug: string; licenseKey: string; tier?: string | null; lifetime?: boolean }): Promise<void>;
+  // `trial` is passed only for the AI Editor product; `order` (what Stripe says was paid) whenever Stripe reported an amount: the email doubles as the receipt.
+  notifyLicensePurchase(input: { email: string; productSlug: string; licenseKey: string; tier?: string | null; lifetime?: boolean; trial?: boolean; order?: PurchaseFacts }): Promise<void>;
   countLicensesByCondition(conditions: { founding?: boolean; lifetime?: boolean; productSlug?: string }): Promise<number>;
 }
 
@@ -82,9 +84,11 @@ export async function handleStripeEvent(event: Stripe.Event, store: FulfillmentS
         });
         await store.grantPluginEntitlement(userId, meta.product);
         try {
+          const order = purchaseFactsFromSession(s);
           await store.notifyLicensePurchase({
             email, productSlug: meta.product, licenseKey,
-            ...(aiEditor ? { tier: meta.tier ? meta.tier : null, lifetime } : {}),
+            ...(aiEditor ? { tier: meta.tier ? meta.tier : null, lifetime, trial: meta.trial === '1' } : {}),
+            ...(order ? { order } : {}),
           });
         } catch (err) {
           console.error('[webhook] license email failed:', err);

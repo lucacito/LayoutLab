@@ -221,7 +221,7 @@ export default function AiEditorPage() {
               <p className="mt-6 max-w-xl text-lead text-paper/80">
                 Connect Claude, Cursor, or ChatGPT to your site and edit pages in plain English. Every change
                 passes a deterministic validator before it is saved, so a broken page is never saved by an AI
-                edit. Free plugin with 16 tools, or upgrade to Pro for site-wide features.
+                edit. Free plugin with 16 tools, or upgrade to Pro for tools that work across your whole site.
               </p>
               <div className="mt-10 flex flex-wrap items-center gap-3">
                 <a
@@ -325,7 +325,7 @@ export default function AiEditorPage() {
               </div>
             </Card>
             <Card className="border-dashed p-8">
-              <p className="text-small font-semibold uppercase tracking-wide text-muted">Pro add-on: 14 site-wide tools</p>
+              <p className="text-small font-semibold uppercase tracking-wide text-muted">Pro add-on: 14 tools that work across your whole site</p>
               <h3 className="mt-2 text-section text-navy">AI Editor for Divi 5 Pro</h3>
               <p className="mt-2 text-body text-muted">
                 Set your front page and menu, publish pages, add CSS, manage your live header and footer, find and replace across your site, audit for problems, and build whole sites as one undoable batch.
@@ -349,7 +349,7 @@ export default function AiEditorPage() {
         <Container>
           <h2 className="text-h2 text-navy">Pro add-on: 14 advanced tools</h2>
           <p className="mt-3 max-w-2xl text-lead text-muted">
-            Unlock site-wide editing and automation. Try free for {OFFER.trialDays} days.
+            Unlock editing and automation across your whole site. Try free for {OFFER.trialDays} days.
           </p>
           <div className="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {PRO_CAPABILITIES.map((c) => (

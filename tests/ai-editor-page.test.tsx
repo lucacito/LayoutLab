@@ -36,6 +36,19 @@ describe('/plugins/divi-5-ai-editor', () => {
     expect(screen.getByText(/build a whole divi 5 site/i)).toBeTruthy();
   });
 
+  it('says the Pro tools work across the whole site, not "site-wide" (a buyer read that as store-wide access)', () => {
+    const { container } = render(<AiEditorPage />);
+    // Visible copy only: the JSON-LD blocks are search metadata and are deliberately left as they are.
+    const visible = container.cloneNode(true) as HTMLElement;
+    visible.querySelectorAll('script').forEach((s) => s.remove());
+    const text = visible.textContent ?? '';
+    expect(text).toContain('Pro add-on: 14 tools that work across your whole site');
+    expect(text).toContain('Unlock editing and automation across your whole site');
+    expect(text).toContain('upgrade to Pro for tools that work across your whole site');
+    expect(text).not.toMatch(/14 site-wide tools/i);
+    expect(text).not.toMatch(/unlock site-wide/i);
+  });
+
   it('links to pricing and mentions the 45-day free trial', () => {
     const { container } = render(<AiEditorPage />);
     expect(screen.getAllByRole('link', { name: /see pro pricing/i }).length).toBeGreaterThan(0);
