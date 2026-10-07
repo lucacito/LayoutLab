@@ -4,12 +4,12 @@ import { describe, expect, it } from 'vitest';
 import AiEditorPage from '@/app/(marketing)/plugins/divi-5-ai-editor/page';
 
 // The AI Editor Pro add-on is now live (lib/site/pro-status.ts). This page
-// describes the free plugin (17 tools) and the Pro add-on (14 additional tools).
+// describes the free plugin (17 tools) and the Pro add-on (17 additional tools).
 describe('/plugins/divi-5-ai-editor', () => {
   it('describes both free and Pro tiers', () => {
     render(<AiEditorPage />);
     expect(screen.getByText(/free plugin: 17 tools/i)).toBeTruthy();
-    expect(screen.getByText(/pro add-on: 14 advanced tools/i)).toBeTruthy();
+    expect(screen.getByText(/pro add-on: 17 advanced tools/i)).toBeTruthy();
   });
 
   it('says a broken page is never saved by an AI edit', () => {
@@ -60,11 +60,18 @@ describe('/plugins/divi-5-ai-editor', () => {
     const visible = container.cloneNode(true) as HTMLElement;
     visible.querySelectorAll('script').forEach((s) => s.remove());
     const text = visible.textContent ?? '';
-    expect(text).toContain('Pro add-on: 14 tools that work across your whole site');
+    expect(text).toContain('Pro add-on: 17 tools that work across your whole site');
     expect(text).toContain('Unlock editing and automation across your whole site');
     expect(text).toContain('upgrade to Pro for tools that work across your whole site');
-    expect(text).not.toMatch(/14 site-wide tools/i);
+    expect(text).not.toMatch(/17 site-wide tools/i);
     expect(text).not.toMatch(/unlock site-wide/i);
+  });
+
+  it('lists the three global-style Pro tools shipped in Pro 0.8.0', () => {
+    render(<AiEditorPage />);
+    expect(screen.getByText(/manage global colors/i)).toBeTruthy();
+    expect(screen.getByText(/manage number and text variables/i)).toBeTruthy();
+    expect(screen.getByText(/create and update module presets/i)).toBeTruthy();
   });
 
   it('links to pricing and mentions the 45-day free trial', () => {

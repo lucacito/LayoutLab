@@ -19,7 +19,7 @@ import { PRICING, OFFER, formatUsd, lowestTier, siteLabel } from '@/lib/pricing/
 
 const PRODUCT_NAME = 'AI Editor for Divi 5';
 const PRODUCT_DESCRIPTION =
-  'Connect Claude, Cursor, or ChatGPT to your Divi 5 site and edit pages in plain English. Every change passes a deterministic validator before it is saved, so a broken page is never saved by an AI edit. Free plugin with 17 tools, Pro add-on with 14 advanced tools from ' + formatUsd(lowestTier().priceCents) + '/year.';
+  'Connect Claude, Cursor, or ChatGPT to your Divi 5 site and edit pages in plain English. Every change passes a deterministic validator before it is saved, so a broken page is never saved by an AI edit. Free plugin with 17 tools, Pro add-on with 17 advanced tools from ' + formatUsd(lowestTier().priceCents) + '/year.';
 
 export const metadata: Metadata = {
   title: 'AI Editor for Divi 5: edit Divi with AI, validated',
@@ -128,12 +128,27 @@ const PRO_CAPABILITIES = [
   {
     icon: 'fact_check',
     title: 'Audit your site',
-    body: 'Read-only check for layout problems, unknown preset or color ids, and internal links to missing or unpublished pages.',
+    body: 'Read-only check for layout problems, unknown preset, color, variable or custom field ids, and internal links to missing or unpublished pages.',
   },
   {
     icon: 'rocket_launch',
     title: 'Build and launch whole sites',
     body: 'Add multiple pages as one batch, set the menu and front page, and launch everything in one undoable step.',
+  },
+  {
+    icon: 'format_paint',
+    title: 'Manage global colors',
+    body: 'Create, recolor, rename and deactivate your Divi global colors so the palette is set before pages are built. Nothing is ever deleted, and one undo restores it.',
+  },
+  {
+    icon: 'tune',
+    title: 'Manage number and text variables',
+    body: 'Create and change Divi number variables (spacing, radius, sizes) and text variables, so your assistant builds with your own tokens. Every change is previewed first and can be undone.',
+  },
+  {
+    icon: 'style',
+    title: 'Create and update module presets',
+    body: 'Set the look of a whole kind of module, such as headings or buttons, through a preset. Custom code in a preset is refused, and one undo puts it back.',
   },
 ];
 
@@ -180,7 +195,7 @@ const FAQ = [
   {
     question: 'What does the Pro add-on add?',
     answer:
-      'Fourteen advanced tools: set the front page and primary menu, publish pages, add custom CSS and PHP proposals, edit live Divi headers and footers, find and replace text site-wide, audit for problems and broken links, and build a whole Divi 5 site as one undoable batch. Every change is undoable.',
+      'Seventeen advanced tools: set the front page and primary menu, publish pages, add custom CSS and PHP proposals, edit live Divi headers and footers, find and replace text site-wide, audit for problems and broken links, create and edit your global colors, number and text variables and module presets, and build a whole Divi 5 site as one undoable batch. Every change is undoable. The three global-style tools work over MCP and the REST API, not through ChatGPT Actions.',
   },
   {
     question: 'How much does the Pro add-on cost?',
@@ -234,7 +249,7 @@ export default function AiEditorPage() {
       <JsonLd
         data={productJsonLd({
           name: `${PRODUCT_NAME} Pro`,
-          description: `The Pro add-on: 14 site-wide tools for ${PRODUCT_NAME}. Annual licence by number of sites.`,
+          description: `The Pro add-on: 17 site-wide tools for ${PRODUCT_NAME}. Annual licence by number of sites.`,
           url,
           offer: { priceCents: lowestTier().priceCents, currency: PRICING.currency },
         })}
@@ -355,7 +370,7 @@ export default function AiEditorPage() {
               </div>
             </Card>
             <Card className="border-dashed p-8">
-              <p className="text-small font-semibold uppercase tracking-wide text-muted">Pro add-on: 14 tools that work across your whole site</p>
+              <p className="text-small font-semibold uppercase tracking-wide text-muted">Pro add-on: 17 tools that work across your whole site</p>
               <h3 className="mt-2 text-section text-navy">AI Editor for Divi 5 Pro</h3>
               <p className="mt-2 text-body text-muted">
                 Set your front page and menu, publish pages, add CSS, manage your live header and footer, find and replace across your site, audit for problems, and build whole sites as one undoable batch.
@@ -377,7 +392,7 @@ export default function AiEditorPage() {
       {/* Pro capabilities */}
       <SectionShell tone="mist" pad="lg">
         <Container>
-          <h2 className="text-h2 text-navy">Pro add-on: 14 advanced tools</h2>
+          <h2 className="text-h2 text-navy">Pro add-on: 17 advanced tools</h2>
           <p className="mt-3 max-w-2xl text-lead text-muted">
             Unlock editing and automation across your whole site. Try free for {OFFER.trialDays} days.
           </p>
@@ -420,7 +435,7 @@ export default function AiEditorPage() {
 
       <CtaBand
         title="Your assistant already knows Divi. Now it can edit it safely."
-        body={`Free plugin with 17 tools, Pro add-on with 14 more. ${PRICING.trial.requireCard ? '' : `No credit card for the free version or the ${OFFER.trialDays}-day trial.`}`}
+        body={`Free plugin with 17 tools, Pro add-on with 17 more. ${PRICING.trial.requireCard ? '' : `No credit card for the free version or the ${OFFER.trialDays}-day trial.`}`}
         cta={{ label: 'Get the free plugin', href: '#free' }}
         secondary={{ label: `Try Pro free for ${OFFER.trialDays} days`, href: '/pricing' }}
       />

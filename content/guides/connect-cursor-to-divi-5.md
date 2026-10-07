@@ -51,7 +51,7 @@ The plugin is free, and nothing in it is locked. Your agent can list and read pa
 
 It also includes a built-in pack of 44 original images, read-only access to your Media Library, and the style, landing-page, site and image guides plus 17 section recipes. It doesn't set your front page, edit menus, or save custom CSS or PHP. Full list on the [plugin page](/plugins/divi-5-ai-editor).
 
-The free plugin is complete on its own. A separate Pro add-on adds 14 more tools: whole-site build with one-step undo, Theme Builder editing, site-wide find and replace, and a site audit. See the [pricing](/pricing).
+The free plugin is complete on its own. A separate Pro add-on adds 17 more tools: whole-site build with one-step undo, Theme Builder editing, site-wide find and replace, a site audit, and your global colors, variables and presets. See the [pricing](/pricing).
 
 ## Troubleshooting
 

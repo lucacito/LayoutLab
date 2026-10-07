@@ -15,7 +15,7 @@ describe('/plugins/divi-5-ai-editor', () => {
 
     const proAddOnMatches = screen.getAllByText(/pro add-on/i);
     expect(proAddOnMatches.length).toBeGreaterThan(0);
-    expect(Array.from(proAddOnMatches).some(el => el.textContent?.match(/14.*tools/i))).toBe(true);
+    expect(Array.from(proAddOnMatches).some(el => el.textContent?.match(/17.*tools/i))).toBe(true);
   });
   it('has metadata for both free plugin and Pro add-on', () => {
     expect(String(metadata.title)).toMatch(/AI Editor/i);
