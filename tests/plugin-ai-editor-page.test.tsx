@@ -11,7 +11,7 @@ describe('/plugins/divi-5-ai-editor', () => {
     // expects separate section headings for free and Pro - check with getAllByText since text appears multiple places
     const freePluginMatches = screen.getAllByText(/free plugin/i);
     expect(freePluginMatches.length).toBeGreaterThan(0);
-    expect(Array.from(freePluginMatches).some(el => el.textContent?.match(/16 tools/i))).toBe(true);
+    expect(Array.from(freePluginMatches).some(el => el.textContent?.match(/17 tools/i))).toBe(true);
 
     const proAddOnMatches = screen.getAllByText(/pro add-on/i);
     expect(proAddOnMatches.length).toBeGreaterThan(0);

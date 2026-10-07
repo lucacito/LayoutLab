@@ -4,11 +4,11 @@ import { describe, expect, it } from 'vitest';
 import AiEditorPage from '@/app/(marketing)/plugins/divi-5-ai-editor/page';
 
 // The AI Editor Pro add-on is now live (lib/site/pro-status.ts). This page
-// describes the free plugin (16 tools) and the Pro add-on (14 additional tools).
+// describes the free plugin (17 tools) and the Pro add-on (14 additional tools).
 describe('/plugins/divi-5-ai-editor', () => {
   it('describes both free and Pro tiers', () => {
     render(<AiEditorPage />);
-    expect(screen.getByText(/free plugin: 16 tools/i)).toBeTruthy();
+    expect(screen.getByText(/free plugin: 17 tools/i)).toBeTruthy();
     expect(screen.getByText(/pro add-on: 14 advanced tools/i)).toBeTruthy();
   });
 
@@ -21,11 +21,29 @@ describe('/plugins/divi-5-ai-editor', () => {
     render(<AiEditorPage />);
     const section = document.getElementById('free')!;
     const text = section.textContent ?? '';
-    expect(text).toMatch(/free plugin.*16 tools/i);
+    expect(text).toMatch(/free plugin.*17 tools/i);
     expect(text).toMatch(/create pages as drafts/i);
     expect(text).toMatch(/undo any ai edit/i);
     expect(text).toMatch(/media library/i);
     expect(text).toMatch(/image/i);
+  });
+
+  it('describes the 4.7.0 free capabilities: site structure, ACF and custom fields, site styles', () => {
+    render(<AiEditorPage />);
+    const text = document.getElementById('free')!.textContent ?? '';
+    expect(text).toMatch(/knows how your site is set up/i);
+    expect(text).toMatch(/shows your acf and custom field values/i);
+    expect(text).toMatch(/reuses your site colors and variables/i);
+    expect(text).toMatch(/advanced custom fields/i);
+  });
+
+  it('answers the new FAQ questions: ACF, the approval step and modules from other Divi add-on plugins', () => {
+    render(<AiEditorPage />);
+    const text = document.body.textContent ?? '';
+    expect(text).toMatch(/does it work with advanced custom fields and custom post types/i);
+    expect(text).toMatch(/is there an approval step before the ai saves/i);
+    expect(text).toMatch(/can it edit pages that use modules from other divi add-on plugins/i);
+    expect(text).toMatch(/refuses to save a page that contains a module from another plugin/i);
   });
 
   it('lists Pro add-on capabilities: site-wide tools like menu, front page, find/replace, audit, build', () => {

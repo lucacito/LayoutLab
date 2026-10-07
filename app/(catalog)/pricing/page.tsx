@@ -33,7 +33,7 @@ function buildFaq(foundingOpen: boolean) {
   {
     question: 'What does the AI Editor Pro add-on include?',
     answer:
-      'Fourteen advanced tools: set the front page and primary menu, publish pages, add custom CSS, propose PHP, edit the live Divi header and footer, find and replace text across your site, audit for problems and broken links, and build a whole Divi 5 site in one undoable step. Each edit the plugin saves can be undone from the page history. The free plugin has 16 tools for reading, editing and creating pages.',
+      'Fourteen advanced tools: set the front page and primary menu, publish pages, add custom CSS, propose PHP, edit the live Divi header and footer, find and replace text across your site, audit for problems and broken links, and build a whole Divi 5 site in one undoable step. Each edit the plugin saves can be undone from the page history. The free plugin has 17 tools for reading, editing and creating pages.',
   },
   {
     question: 'Does an AI Editor Pro licence include your other plugins?',
@@ -189,7 +189,7 @@ export default async function PricingPage() {
                   {tier.sites === null ? 'Unlimited sites' : `${tier.sites} site${tier.sites !== 1 ? 's' : ''}`}
                 </p>
                 <p className="mt-4 text-body text-muted">
-                  All 14 Pro tools, 16 free tools, theme builder editing, whole-site builds, undo every change.
+                  All 14 Pro tools, 17 free tools, theme builder editing, whole-site builds, undo every change.
                 </p>
                 <div className="mt-6 flex-1">
                   <ul className="space-y-2">
