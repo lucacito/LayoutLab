@@ -19,7 +19,7 @@ import { PRICING, OFFER, formatUsd, lowestTier, siteLabel } from '@/lib/pricing/
 
 const PRODUCT_NAME = 'AI Editor for Divi 5';
 const PRODUCT_DESCRIPTION =
-  'Connect Claude, Cursor, or ChatGPT to your Divi 5 site and edit pages in plain English. Every change passes a deterministic validator before it is saved, so a broken page is never saved by an AI edit. Free plugin with 17 tools, Pro add-on with 17 advanced tools from ' + formatUsd(lowestTier().priceCents) + '/year.';
+  'Connect Claude, Cursor, or ChatGPT to your Divi 5 site and edit pages in plain English. Every change passes a deterministic validator before it is saved, so a broken page is never saved by an AI edit. Free plugin with 18 tools, Pro add-on with 18 advanced tools from ' + formatUsd(lowestTier().priceCents) + '/year.';
 
 export const metadata: Metadata = {
   title: 'AI Editor for Divi 5: edit Divi with AI, validated',
@@ -60,7 +60,7 @@ const FREE_CAPABILITIES = [
   {
     icon: 'manage_search',
     title: 'List, read and validate',
-    body: 'See every Divi 5 page on your site, read its current layout, and check a layout against the validator without saving anything.',
+    body: 'See every Divi 5 page and Divi Project on your site, read its current layout, and check a layout against the validator without saving anything. Every edit and undo works on Projects too.',
   },
   {
     icon: 'edit_note',
@@ -75,12 +75,12 @@ const FREE_CAPABILITIES = [
   {
     icon: 'dns',
     title: 'Knows how your site is set up',
-    body: 'Reads your custom post types, taxonomies, image sizes and, if you use Advanced Custom Fields, your field groups and where each one applies (never your field values), so pages fit your site. Read-only.',
+    body: 'Reads your custom post types, taxonomies, image sizes and, if you use Advanced Custom Fields, your field groups and where each one applies, plus the custom field names your posts use, so pages fit your site. Read-only.',
   },
   {
     icon: 'database',
     title: 'Shows your ACF and custom field values',
-    body: 'Your assistant can bind a text, image or button link to an ACF or custom field so the page shows live values, and it is warned when it names a field your site does not have.',
+    body: 'Your assistant can read the custom fields of a page or Divi Project you can edit, so its copy fits, and bind a text, image or button link to a field so the page shows live values. It is warned when it names a field your site does not have, and password-like fields are never shown.',
   },
   {
     icon: 'format_color_fill',
@@ -150,6 +150,11 @@ const PRO_CAPABILITIES = [
     title: 'Create and update module presets',
     body: 'Set the look of a whole kind of module, such as headings or buttons, through a preset. Custom code in a preset is refused, and one undo puts it back.',
   },
+  {
+    icon: 'database',
+    title: 'Set custom field values',
+    body: 'Fill in the custom fields (for example ACF) that your layouts show, on one page, Divi Project or post at a time. Every field is checked first and nothing is saved unless all pass, you can preview it, and one undo puts every value back.',
+  },
 ];
 
 const FAQ = [
@@ -175,12 +180,12 @@ const FAQ = [
   {
     question: 'What can the free plugin do?',
     answer:
-      'Your assistant can list and read your Divi 5 pages, validate a layout without saving, update a page or change a single piece of text, create new pages (always saved as drafts for you to review and publish), and undo any AI edit. It also includes a built-in image pack, read-only access to your Media Library and to your site\'s structure (custom post types, taxonomies, image sizes and ACF field groups), the style, landing, site and image guides, and the section recipes. It does not set your front page, edit menus, or save custom CSS or PHP. All 17 free tools work on unlimited sites.',
+      'Your assistant can list and read your Divi 5 pages and Divi Projects, validate a layout without saving, update a page or change a single piece of text, create new pages (always saved as drafts for you to review and publish), and undo any AI edit. It also includes a built-in image pack, read-only access to your Media Library and to your site\'s structure (custom post types, taxonomies, image sizes and ACF field groups), the style, landing, site and image guides, and the section recipes. It does not set your front page, edit menus, or save custom CSS or PHP. All 18 free tools work on unlimited sites.',
   },
   {
     question: 'Does it work with Advanced Custom Fields and custom post types?',
     answer:
-      'Yes, read-only. Your assistant can see your custom post types, taxonomies, image sizes and, when ACF is active, your field groups with their field names, types, choices and where each group applies. It never reads or changes field values. It can also show a field on a page by binding a module to it (text, an image or a button link), and the plugin warns it when it names a field your site does not have. ACF repeater and loop fields are not supported yet.',
+      'Yes, read-only. Your assistant can see your custom post types, taxonomies, image sizes and, when ACF is active, your field groups with their field names, types, choices and where each group applies. It can read the custom field values of a page or Divi Project you can edit, so the copy it writes fits (fields that look like passwords or tokens are never shown). The free plugin never changes field values; the Pro add-on can set them, with a preview first and one-step undo. It can also show a field on a page by binding a module to it (text, an image or a button link), and the plugin warns it when it names a field your site does not have. ACF repeater and loop fields are not supported yet.',
   },
   {
     question: 'Is there an approval step before the AI saves?',
@@ -195,7 +200,7 @@ const FAQ = [
   {
     question: 'What does the Pro add-on add?',
     answer:
-      'Seventeen advanced tools: set the front page and primary menu, publish pages, add custom CSS and PHP proposals, edit live Divi headers and footers, find and replace text site-wide, audit for problems and broken links, create and edit your global colors, number and text variables and module presets, and build a whole Divi 5 site as one undoable batch. Every change is undoable. The three global-style tools work over MCP and the REST API, not through ChatGPT Actions.',
+      'Eighteen advanced tools: set the front page and primary menu, publish pages, add custom CSS and PHP proposals, edit live Divi headers and footers, find and replace text site-wide, audit for problems and broken links, create and edit your global colors, number and text variables and module presets, set custom field values on a page, Divi Project or post, and build a whole Divi 5 site as one undoable batch. Every change is undoable. The global-style tools and the custom field tool work over MCP and the REST API, not through ChatGPT Actions.',
   },
   {
     question: 'How much does the Pro add-on cost?',
@@ -249,7 +254,7 @@ export default function AiEditorPage() {
       <JsonLd
         data={productJsonLd({
           name: `${PRODUCT_NAME} Pro`,
-          description: `The Pro add-on: 17 site-wide tools for ${PRODUCT_NAME}. Annual licence by number of sites.`,
+          description: `The Pro add-on: 18 site-wide tools for ${PRODUCT_NAME}. Annual licence by number of sites.`,
           url,
           offer: { priceCents: lowestTier().priceCents, currency: PRICING.currency },
         })}
@@ -266,7 +271,7 @@ export default function AiEditorPage() {
               <p className="mt-6 max-w-xl text-lead text-paper/80">
                 Connect Claude, Cursor, or ChatGPT to your site and edit pages in plain English. Every change
                 passes a deterministic validator before it is saved, so a broken page is never saved by an AI
-                edit. Free plugin with 17 tools, or upgrade to Pro for tools that work across your whole site.
+                edit. Free plugin with 18 tools, or upgrade to Pro for tools that work across your whole site.
               </p>
               <div className="mt-10 flex flex-wrap items-center gap-3">
                 <a
@@ -337,7 +342,7 @@ export default function AiEditorPage() {
       {/* What the free plugin does */}
       <SectionShell tone="paper" pad="lg" className="scroll-mt-24" id="free">
         <Container>
-          <h2 className="text-h2 text-navy">Free plugin: 17 tools</h2>
+          <h2 className="text-h2 text-navy">Free plugin: 18 tools</h2>
           <p className="mt-3 max-w-2xl text-lead text-muted">
             Everything below is in the free plugin. Your assistant can do all of this on any Divi 5 site.
           </p>
@@ -356,7 +361,7 @@ export default function AiEditorPage() {
             <Card className="p-8">
               <h3 className="text-section text-navy">Download and install free</h3>
               <p className="mt-2 text-body text-muted">
-                JHMG AI Editor for Divi 5: all 17 tools included, no features locked, no credit card, no account needed. Install on one site or a hundred.
+                JHMG AI Editor for Divi 5: all 18 tools included, no features locked, no credit card, no account needed. Install on one site or a hundred.
               </p>
               <div className="mt-6">
                 <a
@@ -370,7 +375,7 @@ export default function AiEditorPage() {
               </div>
             </Card>
             <Card className="border-dashed p-8">
-              <p className="text-small font-semibold uppercase tracking-wide text-muted">Pro add-on: 17 tools that work across your whole site</p>
+              <p className="text-small font-semibold uppercase tracking-wide text-muted">Pro add-on: 18 tools that work across your whole site</p>
               <h3 className="mt-2 text-section text-navy">AI Editor for Divi 5 Pro</h3>
               <p className="mt-2 text-body text-muted">
                 Set your front page and menu, publish pages, add CSS, manage your live header and footer, find and replace across your site, audit for problems, and build whole sites as one undoable batch.
@@ -392,7 +397,7 @@ export default function AiEditorPage() {
       {/* Pro capabilities */}
       <SectionShell tone="mist" pad="lg">
         <Container>
-          <h2 className="text-h2 text-navy">Pro add-on: 17 advanced tools</h2>
+          <h2 className="text-h2 text-navy">Pro add-on: 18 advanced tools</h2>
           <p className="mt-3 max-w-2xl text-lead text-muted">
             Unlock editing and automation across your whole site. Try free for {OFFER.trialDays} days.
           </p>
@@ -435,7 +440,7 @@ export default function AiEditorPage() {
 
       <CtaBand
         title="Your assistant already knows Divi. Now it can edit it safely."
-        body={`Free plugin with 17 tools, Pro add-on with 17 more. ${PRICING.trial.requireCard ? '' : `No credit card for the free version or the ${OFFER.trialDays}-day trial.`}`}
+        body={`Free plugin with 18 tools, Pro add-on with 18 more. ${PRICING.trial.requireCard ? '' : `No credit card for the free version or the ${OFFER.trialDays}-day trial.`}`}
         cta={{ label: 'Get the free plugin', href: '#free' }}
         secondary={{ label: `Try Pro free for ${OFFER.trialDays} days`, href: '/pricing' }}
       />

@@ -4,12 +4,12 @@ import { describe, expect, it } from 'vitest';
 import AiEditorPage from '@/app/(marketing)/plugins/divi-5-ai-editor/page';
 
 // The AI Editor Pro add-on is now live (lib/site/pro-status.ts). This page
-// describes the free plugin (17 tools) and the Pro add-on (17 additional tools).
+// describes the free plugin (18 tools) and the Pro add-on (18 additional tools).
 describe('/plugins/divi-5-ai-editor', () => {
   it('describes both free and Pro tiers', () => {
     render(<AiEditorPage />);
-    expect(screen.getByText(/free plugin: 17 tools/i)).toBeTruthy();
-    expect(screen.getByText(/pro add-on: 17 advanced tools/i)).toBeTruthy();
+    expect(screen.getByText(/free plugin: 18 tools/i)).toBeTruthy();
+    expect(screen.getByText(/pro add-on: 18 advanced tools/i)).toBeTruthy();
   });
 
   it('says a broken page is never saved by an AI edit', () => {
@@ -21,7 +21,7 @@ describe('/plugins/divi-5-ai-editor', () => {
     render(<AiEditorPage />);
     const section = document.getElementById('free')!;
     const text = section.textContent ?? '';
-    expect(text).toMatch(/free plugin.*17 tools/i);
+    expect(text).toMatch(/free plugin.*18 tools/i);
     expect(text).toMatch(/create pages as drafts/i);
     expect(text).toMatch(/undo any ai edit/i);
     expect(text).toMatch(/media library/i);
@@ -60,10 +60,10 @@ describe('/plugins/divi-5-ai-editor', () => {
     const visible = container.cloneNode(true) as HTMLElement;
     visible.querySelectorAll('script').forEach((s) => s.remove());
     const text = visible.textContent ?? '';
-    expect(text).toContain('Pro add-on: 17 tools that work across your whole site');
+    expect(text).toContain('Pro add-on: 18 tools that work across your whole site');
     expect(text).toContain('Unlock editing and automation across your whole site');
     expect(text).toContain('upgrade to Pro for tools that work across your whole site');
-    expect(text).not.toMatch(/17 site-wide tools/i);
+    expect(text).not.toMatch(/18 site-wide tools/i);
     expect(text).not.toMatch(/unlock site-wide/i);
   });
 
@@ -72,6 +72,17 @@ describe('/plugins/divi-5-ai-editor', () => {
     expect(screen.getByText(/manage global colors/i)).toBeTruthy();
     expect(screen.getByText(/manage number and text variables/i)).toBeTruthy();
     expect(screen.getByText(/create and update module presets/i)).toBeTruthy();
+  });
+
+  it('describes the 4.8.0 and Pro 0.9.0 capabilities: Divi Projects, reading and setting custom field values', () => {
+    render(<AiEditorPage />);
+    const free = document.getElementById('free')!.textContent ?? '';
+    expect(free).toMatch(/divi project/i);
+    expect(free).toMatch(/read the custom fields of a page or divi project/i);
+    expect(screen.getByRole('heading', { name: /set custom field values/i })).toBeTruthy();
+    const text = document.body.textContent ?? '';
+    expect(text).toMatch(/the free plugin never changes field values/i);
+    expect(text).not.toMatch(/never reads or changes field values/i);
   });
 
   it('links to pricing and mentions the 45-day free trial', () => {
