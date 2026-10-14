@@ -50,7 +50,7 @@ The plugin is free, and everything in it is available to your Custom GPT over Ac
 
 It also includes a built-in pack of 44 original images, read-only access to your Media Library and, when WooCommerce is active, to your products (list, count and read one in detail), and the style, landing-page, site and image guides plus 17 section recipes. It doesn't set your front page, edit menus, or save custom CSS or PHP. Details are on the [plugin page](/plugins/divi-5-ai-editor).
 
-The free plugin is complete on its own. A separate Pro add-on adds 21 more tools: whole-site build with one-step undo, Theme Builder editing, site-wide find and replace, a site audit, your global colors, variables and presets, and WooCommerce product and price tools. Six of them (global colors, variables and presets, and the three WooCommerce tools) work over MCP and the REST API, not through ChatGPT Actions. The two free product-reading tools also work over MCP and the REST API only. See the [pricing](/pricing).
+The free plugin is complete on its own. A separate Pro add-on adds 21 more tools: whole-site build with one-step undo, Theme Builder editing, site-wide find and replace, a site audit, your global colors, variables and presets, and WooCommerce product and price tools. Seven of them (global colors, variables and presets, custom field values, and the three WooCommerce tools) work over MCP and the REST API, not through ChatGPT Actions. The same goes for four free tools: site structure, custom fields and the two product-reading tools. See the [pricing](/pricing).
 
 ## Troubleshooting
 
