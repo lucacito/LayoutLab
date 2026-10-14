@@ -64,9 +64,9 @@ Practically, this means you can let Claude make real edits without babysitting t
 
 The plugin is free, and nothing in it is locked. Claude can list and read your Divi 5 pages, validate a layout without saving it, update a page or change a single piece of text (a phone number, a price, a sentence) without rebuilding the rest, and create new pages. New pages are always saved as **drafts**, so you review and publish them yourself. Every page Claude changes keeps its previous version (the last 10), so you can undo an edit from the plugin's Dashboard or just ask Claude to undo it.
 
-It also includes a built-in pack of 44 original images, read-only access to your Media Library (Claude looks at your own images first), and the style, landing-page, site and image guides plus 17 proven section recipes that steer Claude toward good-looking pages. What it does not do: it doesn't set your front page, edit your menus, or save custom CSS or PHP. See the full list on the [plugin page](/plugins/divi-5-ai-editor).
+It also includes a built-in pack of 44 original images, read-only access to your Media Library (Claude looks at your own images first) and, when WooCommerce is active, to your products (list, count and read one in detail), and the style, landing-page, site and image guides plus 17 proven section recipes that steer Claude toward good-looking pages. What it does not do: it doesn't set your front page, edit your menus, or save custom CSS or PHP. See the full list on the [plugin page](/plugins/divi-5-ai-editor).
 
-The free plugin is complete on its own. A separate Pro add-on adds 18 more tools: whole-site build with one-step undo, Theme Builder editing, site-wide find and replace, a site audit, and your global colors, variables and presets. See the [pricing](/pricing).
+The free plugin is complete on its own. A separate Pro add-on adds 21 more tools: whole-site build with one-step undo, Theme Builder editing, site-wide find and replace, a site audit, your global colors, variables and presets, and WooCommerce product and price tools. See the [pricing](/pricing).
 
 ## Troubleshooting
 

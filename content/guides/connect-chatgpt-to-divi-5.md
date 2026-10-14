@@ -48,9 +48,9 @@ Actions and MCP are just two doors into the same house. Whether the request come
 
 The plugin is free, and everything in it is available to your Custom GPT over Actions. It can list pages, read layouts, update existing ones, change a single piece of text without rebuilding the page, run dry-run validation, and create new pages. New pages are always saved as **drafts**, so you review and publish them yourself. Every page the GPT changes keeps its previous version (the last 10), so the GPT can restore an earlier one, or you can undo an edit from the plugin's Dashboard.
 
-It also includes a built-in pack of 44 original images, read-only access to your Media Library, and the style, landing-page, site and image guides plus 17 section recipes. It doesn't set your front page, edit menus, or save custom CSS or PHP. Details are on the [plugin page](/plugins/divi-5-ai-editor).
+It also includes a built-in pack of 44 original images, read-only access to your Media Library and, when WooCommerce is active, to your products (list, count and read one in detail), and the style, landing-page, site and image guides plus 17 section recipes. It doesn't set your front page, edit menus, or save custom CSS or PHP. Details are on the [plugin page](/plugins/divi-5-ai-editor).
 
-The free plugin is complete on its own. A separate Pro add-on adds 18 more tools: whole-site build with one-step undo, Theme Builder editing, site-wide find and replace, a site audit, and your global colors, variables and presets. Three of them (global colors, variables and presets) work over MCP and the REST API, not through ChatGPT Actions. See the [pricing](/pricing).
+The free plugin is complete on its own. A separate Pro add-on adds 21 more tools: whole-site build with one-step undo, Theme Builder editing, site-wide find and replace, a site audit, your global colors, variables and presets, and WooCommerce product and price tools. Six of them (global colors, variables and presets, and the three WooCommerce tools) work over MCP and the REST API, not through ChatGPT Actions. The two free product-reading tools also work over MCP and the REST API only. See the [pricing](/pricing).
 
 ## Troubleshooting
 

@@ -4,12 +4,12 @@ import { describe, expect, it } from 'vitest';
 import AiEditorPage from '@/app/(marketing)/plugins/divi-5-ai-editor/page';
 
 // The AI Editor Pro add-on is now live (lib/site/pro-status.ts). This page
-// describes the free plugin (18 tools) and the Pro add-on (18 additional tools).
+// describes the free plugin (20 tools) and the Pro add-on (21 additional tools).
 describe('/plugins/divi-5-ai-editor', () => {
   it('describes both free and Pro tiers', () => {
     render(<AiEditorPage />);
-    expect(screen.getByText(/free plugin: 18 tools/i)).toBeTruthy();
-    expect(screen.getByText(/pro add-on: 18 advanced tools/i)).toBeTruthy();
+    expect(screen.getByText(/free plugin: 20 tools/i)).toBeTruthy();
+    expect(screen.getByText(/pro add-on: 21 advanced tools/i)).toBeTruthy();
   });
 
   it('says a broken page is never saved by an AI edit', () => {
@@ -21,7 +21,7 @@ describe('/plugins/divi-5-ai-editor', () => {
     render(<AiEditorPage />);
     const section = document.getElementById('free')!;
     const text = section.textContent ?? '';
-    expect(text).toMatch(/free plugin.*18 tools/i);
+    expect(text).toMatch(/free plugin.*20 tools/i);
     expect(text).toMatch(/create pages as drafts/i);
     expect(text).toMatch(/undo any ai edit/i);
     expect(text).toMatch(/media library/i);
@@ -60,10 +60,10 @@ describe('/plugins/divi-5-ai-editor', () => {
     const visible = container.cloneNode(true) as HTMLElement;
     visible.querySelectorAll('script').forEach((s) => s.remove());
     const text = visible.textContent ?? '';
-    expect(text).toContain('Pro add-on: 18 tools that work across your whole site');
+    expect(text).toContain('Pro add-on: 21 tools that work across your whole site');
     expect(text).toContain('Unlock editing and automation across your whole site');
     expect(text).toContain('upgrade to Pro for tools that work across your whole site');
-    expect(text).not.toMatch(/18 site-wide tools/i);
+    expect(text).not.toMatch(/21 site-wide tools/i);
     expect(text).not.toMatch(/unlock site-wide/i);
   });
 
@@ -83,6 +83,16 @@ describe('/plugins/divi-5-ai-editor', () => {
     const text = document.body.textContent ?? '';
     expect(text).toMatch(/the free plugin never changes field values/i);
     expect(text).not.toMatch(/never reads or changes field values/i);
+  });
+
+  it('describes the 4.9.0 and Pro 0.12.0 WooCommerce tools', () => {
+    render(<AiEditorPage />);
+    expect(screen.getByRole('heading', { name: /see your woocommerce products/i })).toBeTruthy();
+    expect(screen.getByRole('heading', { name: /create and change woocommerce products/i })).toBeTruthy();
+    expect(screen.getByRole('heading', { name: /change prices in bulk/i })).toBeTruthy();
+    const text = document.body.textContent ?? '';
+    expect(text).toMatch(/never returns download links, purchase notes or customer and order data/i);
+    expect(text).toMatch(/the three woocommerce tools work over mcp and the rest api, not through chatgpt actions/i);
   });
 
   it('links to pricing and mentions the 45-day free trial', () => {

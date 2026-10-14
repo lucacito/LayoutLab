@@ -49,9 +49,9 @@ Whichever tool proposes the edit, the request lands on the same plugin backend, 
 
 The plugin is free, and nothing in it is locked. Your agent can list and read pages, validate a layout without saving it, update a page or change one piece of text without rebuilding the rest, and create new pages. New pages are always saved as **drafts**, so you review and publish them yourself, which suits scaffolding a new section from a single agent prompt. Each page the agent changes keeps its previous version (the last 10), so you can undo an edit from the plugin's Dashboard or ask the agent to restore it.
 
-It also includes a built-in pack of 44 original images, read-only access to your Media Library, and the style, landing-page, site and image guides plus 17 section recipes. It doesn't set your front page, edit menus, or save custom CSS or PHP. Full list on the [plugin page](/plugins/divi-5-ai-editor).
+It also includes a built-in pack of 44 original images, read-only access to your Media Library and, when WooCommerce is active, to your products (list, count and read one in detail), and the style, landing-page, site and image guides plus 17 section recipes. It doesn't set your front page, edit menus, or save custom CSS or PHP. Full list on the [plugin page](/plugins/divi-5-ai-editor).
 
-The free plugin is complete on its own. A separate Pro add-on adds 18 more tools: whole-site build with one-step undo, Theme Builder editing, site-wide find and replace, a site audit, and your global colors, variables and presets. See the [pricing](/pricing).
+The free plugin is complete on its own. A separate Pro add-on adds 21 more tools: whole-site build with one-step undo, Theme Builder editing, site-wide find and replace, a site audit, your global colors, variables and presets, and WooCommerce product and price tools. See the [pricing](/pricing).
 
 ## Troubleshooting
 
