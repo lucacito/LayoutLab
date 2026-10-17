@@ -3,7 +3,7 @@
 // Mirrors upsertPack() in create-restaurant-pack.ts but targets prod directly.
 //
 // Usage: bash scripts/assemble-larkspur-pack-prod.sh   (dry-run prints the plan)
-//        bash scripts/assemble-bella-pack-prod.sh --confirm
+//        bash scripts/assemble-larkspur-pack-prod.sh --confirm
 import { randomUUID } from 'node:crypto';
 import { Pool } from 'pg';
 import { drizzle } from 'drizzle-orm/node-postgres';
