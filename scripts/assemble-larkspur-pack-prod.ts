@@ -32,7 +32,7 @@ const PACK_SEO = {
   metaDescription:
     'A complete 7-page Divi 5 real estate website theme — Home, Listings, Property, Sell, Neighborhoods, ' +
     'About & Contact — one fresh brand, senior-level copy, real booking details. Launch a credible ' +
-    'real estate site in an afternoon. $12.',
+    'real estate site in an afternoon. Free download.',
   keywords: [
     'divi 5 real estate theme', 'real estate website template', 'divi real estate pack',
     'realtor website template', 'divi 5 multi-page theme', 'real estate agent website divi',
