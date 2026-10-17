@@ -493,12 +493,18 @@ async function withTempFile<T>(json: string, fn: (file: string) => Promise<T>): 
 async function main() {
   const slug = process.argv[2];
   if (!slug) { console.error('usage: patch-live-layout.ts <slug>'); process.exit(1); }
-  // PATCH_MODE=phone → canonicalize every (415) number to the brandFacts one,
-  // regardless of slug (systemic Bella Nota phone drift). Else use the registry.
-  const canonPhone = process.env.CANON_PHONE || '(415) 555-0148'; // Bella Nota default
+  // PATCH_MODE=phone → canonicalize every phone number in the pack's area code to the
+  // brandFacts one (text AND tel: links), regardless of slug. The model invents a
+  // different number per page despite the pinned brand facts (Bella Nota 415, Larkspur 828).
+  // Defaults are Bella Nota's; set CANON_PHONE='(828) 555-0176' CANON_AREA=828 for other packs.
+  const canonPhone = process.env.CANON_PHONE || '(415) 555-0148';
+  const canonArea = process.env.CANON_AREA || '415';
+  const canonDigits = canonPhone.replace(/\D/g, '');
   const phoneCanon: Patch = (c) => {
-    const o = c.replace(/\(415\) \d{3}-\d{4}/g, canonPhone);
-    if (o === c) throw new Error('no (415) phone numbers found');
+    const o = c
+      .replace(new RegExp(`\\(${canonArea}\\) \\d{3}-\\d{4}`, 'g'), canonPhone)
+      .replace(new RegExp(`tel:\\+1${canonArea}\\d{7}`, 'g'), `tel:+1${canonDigits}`);
+    if (o === c) throw new Error(`no (${canonArea}) phone numbers found`);
     return o;
   };
   const patch =
