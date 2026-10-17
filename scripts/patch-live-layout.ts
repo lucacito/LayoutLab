@@ -331,6 +331,15 @@ const PATCHES: Record<string, Patch> = {
     if (out === c) throw new Error('idea-sprint: no change');
     return out;
   },
+  // Larkspur Listings: the first home-card grid (homes_1) hit the 32k output limit and was
+  // skipped, so the surviving grid's "Three More ..." copy points at nothing.
+  'larkspur-home-co-minimal-real-estate-listings-page-for-divi-5': (c) => {
+    const out = c
+      .replace('<p>More Homes to Consider</p>', '<p>Featured Homes</p>')
+      .replace('"value":"Three More Worth a Closer Look"', '"value":"Three Homes Worth a Closer Look"');
+    if (out === c) throw new Error('listings: nothing left to change (already patched)');
+    return out;
+  },
 };
 
 // ── Generic patch: center un-centered CTA buttons (PATCH_MODE=center-buttons) ─
@@ -483,6 +492,24 @@ function centerLabels(c: string): string {
   return out;
 }
 
+/** Drop top-level sections that hold no content module at all (only section/row/column
+ *  shells). A card grid the generator could not finish can leave one behind: it renders
+ *  as an empty bordered box. Idempotent; throws if there is nothing to drop. */
+function dropEmptySections(c: string): string {
+  const STRUCT = new Set(['section', 'row', 'column']);
+  const starts = [...c.matchAll(/<!-- wp:divi\/section /g)].map((m) => m.index!);
+  const parts: string[] = [c.slice(0, starts[0] ?? c.length)];
+  let dropped = 0;
+  starts.forEach((st, i) => {
+    const seg = c.slice(st, starts[i + 1] ?? c.length);
+    const mods = [...seg.matchAll(/<!-- wp:divi\/([\w-]+)/g)].map((m) => m[1]).filter((m) => !STRUCT.has(m));
+    if (mods.length === 0) dropped++;
+    else parts.push(seg);
+  });
+  if (!dropped) throw new Error('no empty sections found');
+  return parts.join('');
+}
+
 async function withTempFile<T>(json: string, fn: (file: string) => Promise<T>): Promise<T> {
   const dir = await mkdtemp(join(tmpdir(), 'patch-'));
   const file = join(dir, 'layout.json');
@@ -509,6 +536,7 @@ async function main() {
   };
   const patch =
     process.env.PATCH_MODE === 'phone' ? phoneCanon
+    : process.env.PATCH_MODE === 'drop-empty-sections' ? dropEmptySections
     : process.env.PATCH_MODE === 'center-buttons' ? centerButtons
     : process.env.PATCH_MODE === 'center-lone-buttons' ? centerLoneButtonColumns
     : process.env.PATCH_MODE === 'center-labels' ? centerLabels
