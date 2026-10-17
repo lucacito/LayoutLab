@@ -1,5 +1,5 @@
 // Generate a coherent 7-page REAL ESTATE theme (Larkspur Home Co., a residential
-// brokerage) and assemble it into one paid pack. Same shape as
+// brokerage) and assemble it into one free pack. Same shape as
 // create-restaurant-pack.ts: idempotent (re-runs dedupe by content hash, resume by
 // page slug, upsert the pack by slug).
 //
@@ -15,7 +15,6 @@ import { randomUUID } from 'node:crypto';
 import { eq, inArray } from 'drizzle-orm';
 import { db } from '@/db/client';
 import { packs, packLayouts, layouts } from '@/db/schema';
-import { stripe } from '@/lib/stripe/client';
 import { buildThemeDeps } from '@/pipeline/deps';
 import { runThemePack, themePageSlug, type ThemeSpec, type ThemePage } from '@/pipeline/theme';
 import type { Brief, Step } from '@/pipeline/compose';
@@ -157,7 +156,7 @@ const SPEC: ThemeSpec = { niche: 'real_estate', style: 'minimal', color: 'green'
 // ── Pack metadata ──────────────────────────────────────────────────────────────
 const PACK_SLUG = 'larkspur-real-estate-theme';
 const PACK_TITLE = 'Larkspur — Fresh Real Estate Theme (7 Pages)';
-const PRICE_CENTS = 1200; // $12, same as the Bella Nota and Blackline packs
+const PRICE_CENTS = 0; // a free pack (lead magnet): no Stripe product, no price
 const DESCRIPTION =
   'Everything a real estate agent or small brokerage needs to launch a credible website — seven ' +
   'coherent Divi 5 pages that already share one fresh, editorial identity. Home, Listings, a ' +
@@ -193,34 +192,22 @@ async function upsertPack(slugs: string[]): Promise<void> {
   const cover = bySlug.get(slugs[0])?.previews?.[0] ?? bySlug.get(found[0])!.previews?.[0] ?? null;
   const existing = (await db.select().from(packs).where(eq(packs.slug, PACK_SLUG)).limit(1))[0];
   const common = {
-    title: PACK_TITLE, description: DESCRIPTION, kind: 'paid' as const,
-    priceCents: PRICE_CENTS, coverImageKey: cover, seo: PACK_SEO, status: 'published' as const,
+    title: PACK_TITLE, description: DESCRIPTION, kind: 'free' as const,
+    priceCents: PRICE_CENTS, stripePriceId: null, coverImageKey: cover, seo: PACK_SEO, status: 'published' as const,
   };
   let packId: string;
-  let stripePriceId: string | null;
   if (existing) {
     packId = existing.id;
-    const priceChanged = existing.priceCents !== PRICE_CENTS;
-    stripePriceId = priceChanged ? null : existing.stripePriceId;
-    await db.update(packs).set({ ...common, ...(priceChanged ? { stripePriceId: null } : {}) }).where(eq(packs.id, packId));
+    await db.update(packs).set(common).where(eq(packs.id, packId));
   } else {
     packId = randomUUID();
-    stripePriceId = null;
     await db.insert(packs).values({ id: packId, slug: PACK_SLUG, ...common });
   }
 
   await db.delete(packLayouts).where(eq(packLayouts.packId, packId));
   await db.insert(packLayouts).values(found.map((s, i) => ({ packId, layoutId: bySlug.get(s)!.id, position: i })));
 
-  if (!stripePriceId) {
-    const product = await stripe.products.create({ name: PACK_TITLE, metadata: { packSlug: PACK_SLUG } });
-    const price = await stripe.prices.create({ product: product.id, unit_amount: PRICE_CENTS, currency: 'usd' });
-    await db.update(packs).set({ stripePriceId: price.id }).where(eq(packs.id, packId));
-    console.log(`created Stripe price ${price.id}`);
-  } else {
-    console.log(`pack already has Stripe price ${stripePriceId}`);
-  }
-  console.log(`\nPack ready: /packs/${PACK_SLUG}  ($${(PRICE_CENTS / 100).toFixed(2)}, ${found.length} pages, cover=${cover ? 'set' : 'none'})`);
+  console.log(`\nPack ready: /packs/${PACK_SLUG}  (free, ${found.length} pages, cover=${cover ? 'set' : 'none'})`);
 }
 
 async function main() {
