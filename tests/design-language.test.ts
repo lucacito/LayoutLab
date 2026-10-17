@@ -141,6 +141,26 @@ describe('buildLanguageDirective', () => {
   });
 });
 
+describe('buildLanguageDirective niche photography', () => {
+  it('real_estate searches bright color photos of homes, not the language default (editorial = documentary)', () => {
+    const { language, variant } = selectDesignLanguage({ style: 'minimal', niche: 'real_estate', designKey: 'Larkspur Home Co.' });
+    expect(language.id).toBe('editorial');
+    const plain = buildLanguageDirective(language, variant);
+    expect(plain).toContain('documentary');
+    const d = buildLanguageDirective(language, variant, 'real_estate');
+    expect(d).not.toContain('documentary');
+    expect(d).toContain('bright');
+    expect(d).toMatch(/home|house/i);
+    // the rest of the system is untouched
+    expect(d).toContain(language.buttons);
+    expect(d).toContain(variant.display);
+  });
+  it('other niches keep the language default photography', () => {
+    const { language, variant } = selectDesignLanguage({ style: 'minimal', niche: 'saas', designKey: 'Acme' });
+    expect(buildLanguageDirective(language, variant, 'saas')).toBe(buildLanguageDirective(language, variant));
+  });
+});
+
 describe('designLanguagesEnabled', () => {
   it('defaults on; DESIGN_LANGUAGES=0 disables', () => {
     const prev = process.env.DESIGN_LANGUAGES;

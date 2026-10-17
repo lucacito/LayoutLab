@@ -176,7 +176,7 @@ function directives(target: Target, guide: Guide): string {
   // USER prompt only (varies per target) — never the cached system grounding.
   if (designLanguagesEnabled()) {
     const { language, variant } = selectDesignLanguage(target);
-    lines.push(buildLanguageDirective(language, variant));
+    lines.push(buildLanguageDirective(language, variant, target.niche));
   }
   if (target.color) lines.push(`Use a ${target.color} color palette.`);
   if (target.layout) lines.push(`Composition: ${target.layout}.`);

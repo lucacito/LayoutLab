@@ -298,11 +298,24 @@ export function selectLanguageVariantId(t: Parameters<typeof selectDesignLanguag
   return selectDesignLanguage(t).variant.id;
 }
 
+/** Niche-level photography override, merged LAST (over language and variant).
+ *  Some languages' mood words fit one niche and wreck another: editorial's
+ *  'documentary' makes Pexels return grainy black-and-white reportage, fine for a
+ *  magazine and wrong for a home listing. Only photography is overridden — the
+ *  typography, buttons, cards and spacing of the language stay as they are. */
+const NICHE_PHOTOGRAPHY: Record<string, Partial<PhotoDirection>> = {
+  real_estate: {
+    styleWords: ['bright', 'natural light'],
+    framing: 'colour daylight shots of real homes: exteriors, front porches, tree-lined streets, kitchens and living rooms',
+    subjects: 'houses, interiors and street scenes (not close-up people, except agent portraits); never black-and-white',
+  },
+};
+
 /** The prompt block injected by directives() (prompts.ts) — USER prompt only,
  *  never the cached system grounding (T1.4). One block, fixed field order, so
  *  golden snapshots and word-ownership tests have a stable shape to hold onto. */
-export function buildLanguageDirective(language: DesignLanguage, variant: LanguageVariant): string {
-  const photo = { ...language.photography, ...(variant.photography ?? {}) };
+export function buildLanguageDirective(language: DesignLanguage, variant: LanguageVariant, niche?: string): string {
+  const photo = { ...language.photography, ...(variant.photography ?? {}), ...(NICHE_PHOTOGRAPHY[niche ?? ''] ?? {}) };
   // Hyphenate multi-word style words for URL safety: images.ts's placeholder
   // regex stops at whitespace, and its Pexels resolution turns hyphens back
   // into spaces — see the PhotoDirection JSDoc.
