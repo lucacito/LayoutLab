@@ -88,7 +88,8 @@ const PAGES: ThemePage[] = [
     role: 'listings', roleLabel: 'Listings',
     flow: [
       S('hero', 'hero', 'Introduce the current listings: a calm, curated collection rather than a firehose, and the primary action to book a consultation or a tour.', true),
-      S('homes', 'cards', 'Six featured home cards in a grid: photo, neighborhood, a short honest description, and bracketed placeholders for price, beds, baths and square feet. Vary the home types (bungalow, townhome, new build, mountain-view house).', true),
+      S('homes_1', 'cards', 'Three featured home cards in one row: photo, neighborhood label, one short honest line, and a single compact line of bracketed placeholders for price, beds, baths and square feet. Keep every card SHORT. Home types here: a bungalow, a townhome, a new build.', true),
+      S('homes_2', 'cards', 'Three MORE featured home cards in one row, different homes from the row above: photo, neighborhood label, one short honest line, one compact line of bracketed placeholders for price, beds, baths and square feet. Keep every card SHORT. Home types here: a mountain-view house, a condo, a historic cottage.', true),
       S('browse', 'features', 'How to browse and tour: save a search, get new listings first, book a private tour — three short blocks that make the next step obvious.'),
       S('gallery', 'gallery', 'A gallery of recently sold homes and street scenes in the neighborhoods served.'),
       S('faq', 'faq', 'Buyer questions: how to schedule a tour, what a pre-approval is, how offers work, what closing costs to expect, how long a purchase takes.'),
@@ -101,7 +102,7 @@ const PAGES: ThemePage[] = [
       S('hero', 'hero', 'A single-listing page for one example home: its bracketed address and price, key facts (beds, baths, square feet, lot) and the primary action to schedule a tour.', true),
       S('photos', 'gallery', 'A photo gallery of the home: exterior, kitchen, living room, primary bedroom, yard.'),
       S('highlights', 'features', 'What makes this home special: 4 concrete highlights (light, layout, the kitchen, the yard or view), written as plain observations, not hype.'),
-      S('details', 'cards', 'The facts at a glance as cards: bedrooms, bathrooms, square feet, lot size, year built, parking, taxes, HOA — bracketed placeholders.'),
+      S('details', 'cards', 'The facts at a glance as FOUR compact cards (no photos): bedrooms, bathrooms, square feet, lot size — each a big bracketed placeholder number and a short label.'),
       S('neighborhood', 'features', 'The neighborhood around it: walkability, schools, coffee, parks, commute — with bracketed placeholders for distances.'),
       S('contact', 'contact', 'Schedule a tour: canonical phone, email and hours, plus a tour-request form (name, email, phone, preferred day).'),
       S('final_cta', 'cta', 'A final nudge to see it in person: Book a Free Consultation. One action.', true),
@@ -123,7 +124,8 @@ const PAGES: ThemePage[] = [
     role: 'neighborhoods', roleLabel: 'Neighborhoods',
     flow: [
       S('hero', 'hero', 'Introduce the areas Larkspur knows best and why local knowledge changes the outcome, with the primary action.', true),
-      S('areas', 'cards', 'Six neighborhood cards using the canonical neighborhood names: photo, a one-line personality, and bracketed placeholders for typical price range and commute.', true),
+      S('areas_1', 'cards', 'Three neighborhood cards in one row using the canonical neighborhood names Montford, West Asheville and River Arts District: photo, a one-line personality, and one compact line of bracketed placeholders for typical price range and commute. Keep every card SHORT.', true),
+      S('areas_2', 'cards', 'Three MORE neighborhood cards in one row using the canonical neighborhood names Biltmore Village, Weaverville and Black Mountain: photo, a one-line personality, and one compact line of bracketed placeholders for typical price range and commute. Keep every card SHORT.', true),
       S('guide', 'features', 'How we help you choose: 3-4 blocks on matching a neighborhood to how you actually live (walkability, space, schools, commute, quiet).'),
       S('gallery', 'gallery', 'Street scenes and local favorites across the neighborhoods.'),
       S('final_cta', 'cta', 'Invite them to talk it through with someone who lives here: Book a Free Consultation.', true),
