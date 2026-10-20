@@ -19,7 +19,7 @@ import { PRICING, OFFER, formatUsd, lowestTier, siteLabel } from '@/lib/pricing/
 
 const PRODUCT_NAME = 'AI Editor for Divi 5';
 const PRODUCT_DESCRIPTION =
-  'Connect Claude, Cursor, or ChatGPT to your Divi 5 site and edit pages in plain English. Every change passes a deterministic validator before it is saved, so a broken page is never saved by an AI edit. Free plugin with 20 tools, Pro add-on with 21 advanced tools from ' + formatUsd(lowestTier().priceCents) + '/year.';
+  'Connect Claude, Cursor, or ChatGPT to your Divi 5 site and edit pages in plain English. Every change passes a deterministic validator before it is saved, so a broken page is never saved by an AI edit. Free plugin with 21 tools, Pro add-on with 21 advanced tools from ' + formatUsd(lowestTier().priceCents) + '/year.';
 
 export const metadata: Metadata = {
   title: 'AI Editor for Divi 5: edit Divi with AI, validated',
@@ -105,7 +105,7 @@ const FREE_CAPABILITIES = [
   {
     icon: 'menu_book',
     title: 'Guides and section recipes',
-    body: 'Style, landing-page, site and image guides plus 17 proven section recipes steer the assistant toward real, good-looking Divi 5 pages.',
+    body: 'Style, landing-page, site and image guides plus 71 proven section recipes, ten design languages and 40 style kits steer the assistant toward real, good-looking Divi 5 pages.',
   },
 ];
 
@@ -195,7 +195,7 @@ const FAQ = [
   {
     question: 'What can the free plugin do?',
     answer:
-      'Your assistant can list and read your Divi 5 pages and Divi Projects, validate a layout without saving, update a page or change a single piece of text, create new pages (always saved as drafts for you to review and publish), and undo any AI edit. It also includes a built-in image pack, read-only access to your Media Library, to your site\'s structure (custom post types, taxonomies, image sizes, ACF field groups and how many items each content type has) and, when WooCommerce is active, to your products (list, count and read one in detail), the style, landing, site and image guides, and the section recipes. It does not set your front page, edit menus, or save custom CSS or PHP. All 20 free tools work on unlimited sites.',
+      'Your assistant can list and read your Divi 5 pages and Divi Projects, validate a layout without saving, update a page or change a single piece of text, create new pages (always saved as drafts for you to review and publish), and undo any AI edit. It also includes a built-in image pack, read-only access to your Media Library, to your site\'s structure (custom post types, taxonomies, image sizes, ACF field groups and how many items each content type has) and, when WooCommerce is active, to your products (list, count and read one in detail), the style, landing, site and image guides, and the section recipes. It does not set your front page, edit menus, or save custom CSS or PHP. All 21 free tools work on unlimited sites.',
   },
   {
     question: 'Does it work with Advanced Custom Fields and custom post types?',
@@ -286,7 +286,7 @@ export default function AiEditorPage() {
               <p className="mt-6 max-w-xl text-lead text-paper/80">
                 Connect Claude, Cursor, or ChatGPT to your site and edit pages in plain English. Every change
                 passes a deterministic validator before it is saved, so a broken page is never saved by an AI
-                edit. Free plugin with 20 tools, or upgrade to Pro for tools that work across your whole site.
+                edit. Free plugin with 21 tools, or upgrade to Pro for tools that work across your whole site.
               </p>
               <div className="mt-10 flex flex-wrap items-center gap-3">
                 <a
@@ -357,7 +357,7 @@ export default function AiEditorPage() {
       {/* What the free plugin does */}
       <SectionShell tone="paper" pad="lg" className="scroll-mt-24" id="free">
         <Container>
-          <h2 className="text-h2 text-navy">Free plugin: 20 tools</h2>
+          <h2 className="text-h2 text-navy">Free plugin: 21 tools</h2>
           <p className="mt-3 max-w-2xl text-lead text-muted">
             Everything below is in the free plugin. Your assistant can do all of this on any Divi 5 site.
           </p>
@@ -376,7 +376,7 @@ export default function AiEditorPage() {
             <Card className="p-8">
               <h3 className="text-section text-navy">Download and install free</h3>
               <p className="mt-2 text-body text-muted">
-                JHMG AI Editor for Divi 5: all 20 tools included, no features locked, no credit card, no account needed. Install on one site or a hundred.
+                JHMG AI Editor for Divi 5: all 21 tools included, no features locked, no credit card, no account needed. Install on one site or a hundred.
               </p>
               <div className="mt-6">
                 <a
@@ -455,7 +455,7 @@ export default function AiEditorPage() {
 
       <CtaBand
         title="Your assistant already knows Divi. Now it can edit it safely."
-        body={`Free plugin with 20 tools, Pro add-on with 21 more. ${PRICING.trial.requireCard ? '' : `No credit card for the free version or the ${OFFER.trialDays}-day trial.`}`}
+        body={`Free plugin with 21 tools, Pro add-on with 21 more. ${PRICING.trial.requireCard ? '' : `No credit card for the free version or the ${OFFER.trialDays}-day trial.`}`}
         cta={{ label: 'Get the free plugin', href: '#free' }}
         secondary={{ label: `Try Pro free for ${OFFER.trialDays} days`, href: '/pricing' }}
       />

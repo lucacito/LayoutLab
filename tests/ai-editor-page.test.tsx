@@ -4,11 +4,11 @@ import { describe, expect, it } from 'vitest';
 import AiEditorPage from '@/app/(marketing)/plugins/divi-5-ai-editor/page';
 
 // The AI Editor Pro add-on is now live (lib/site/pro-status.ts). This page
-// describes the free plugin (20 tools) and the Pro add-on (21 additional tools).
+// describes the free plugin (21 tools) and the Pro add-on (21 additional tools).
 describe('/plugins/divi-5-ai-editor', () => {
   it('describes both free and Pro tiers', () => {
     render(<AiEditorPage />);
-    expect(screen.getByText(/free plugin: 20 tools/i)).toBeTruthy();
+    expect(screen.getByText(/free plugin: 21 tools/i)).toBeTruthy();
     expect(screen.getByText(/pro add-on: 21 advanced tools/i)).toBeTruthy();
   });
 
@@ -21,7 +21,7 @@ describe('/plugins/divi-5-ai-editor', () => {
     render(<AiEditorPage />);
     const section = document.getElementById('free')!;
     const text = section.textContent ?? '';
-    expect(text).toMatch(/free plugin.*20 tools/i);
+    expect(text).toMatch(/free plugin.*21 tools/i);
     expect(text).toMatch(/create pages as drafts/i);
     expect(text).toMatch(/undo any ai edit/i);
     expect(text).toMatch(/media library/i);

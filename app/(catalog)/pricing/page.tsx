@@ -33,7 +33,7 @@ function buildFaq(foundingOpen: boolean) {
   {
     question: 'What does the AI Editor Pro add-on include?',
     answer:
-      'Twenty-one advanced tools: set the front page and primary menu, publish pages, add custom CSS, propose PHP, edit the live Divi header and footer, find and replace text across your site, audit for problems and broken links, create and edit your global colors, variables and presets, set custom field values, create and change WooCommerce products, change prices in bulk, and build a whole Divi 5 site in one undoable step. Each edit the plugin saves can be undone from the page history. The free plugin has 20 tools for reading, editing and creating pages, and for reading your WooCommerce products.',
+      'Twenty-one advanced tools: set the front page and primary menu, publish pages, add custom CSS, propose PHP, edit the live Divi header and footer, find and replace text across your site, audit for problems and broken links, create and edit your global colors, variables and presets, set custom field values, create and change WooCommerce products, change prices in bulk, and build a whole Divi 5 site in one undoable step. Each edit the plugin saves can be undone from the page history. The free plugin has 21 tools for reading, editing and creating pages, and for reading your WooCommerce products.',
   },
   {
     question: 'Does an AI Editor Pro licence include your other plugins?',
@@ -189,7 +189,7 @@ export default async function PricingPage() {
                   {tier.sites === null ? 'Unlimited sites' : `${tier.sites} site${tier.sites !== 1 ? 's' : ''}`}
                 </p>
                 <p className="mt-4 text-body text-muted">
-                  All 21 Pro tools, 20 free tools, theme builder editing, whole-site builds, undo every change.
+                  All 21 Pro tools, 21 free tools, theme builder editing, whole-site builds, undo every change.
                 </p>
                 <div className="mt-6 flex-1">
                   <ul className="space-y-2">
