@@ -9,7 +9,7 @@ export function GET(): Response {
   const base = env.NEXT_PUBLIC_SITE_URL.replace(/\/+$/, '');
   const body = `# Divi5Lab
 
-> Divi5Lab is home to the AI Editor for Divi 5: a free WordPress plugin with 20 AI editing tools that work with Claude, ChatGPT, Cursor and VS Code Copilot over MCP. Every AI edit passes a deterministic validator before it touches your database. Pro add-on adds 21 more tools: whole-site build, Theme Builder editing, site audit, find and replace, WooCommerce product and price tools, and more. We also offer converters for Elementor, Beaver Builder and WPBakery, and a library of free validated Divi 5 layouts for what you build next.
+> Divi5Lab is home to the AI Editor for Divi 5: a free WordPress plugin that turns your site into an MCP server for Divi 5, with 20 AI editing tools that work with Claude, ChatGPT, Cursor and VS Code Copilot. Give your assistant a screenshot or a URL and it can rebuild that page in Divi 5. Every AI edit passes a deterministic validator before it touches your database. Pro add-on adds 21 more tools: whole-site build, Theme Builder editing, site audit, find and replace, WooCommerce product and price tools, and more. We also offer converters for Elementor, Beaver Builder and WPBakery, and a library of free validated Divi 5 layouts for what you build next.
 
 ## Key pages
 - [AI Editor for Divi 5](${base}/plugins/divi-5-ai-editor): Free plugin that lets Claude, ChatGPT, Cursor and VS Code Copilot edit Divi 5 pages safely. 20 free tools, 21 more in Pro.
