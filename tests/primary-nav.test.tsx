@@ -24,4 +24,20 @@ describe('PrimaryNav', () => {
     // The "Browse all layouts" CTA inside the panel points to the catalog.
     expect(getByText('Browse all layouts').closest('a')?.getAttribute('href')).toBe('/browse');
   });
+
+  it('hangs each mega panel from the nav with no empty gap (padding bridge, never a margin)', () => {
+    const { container } = render(<PrimaryNav />);
+    const panels = Array.from(container.querySelectorAll('[data-mega-panel]'));
+    expect(panels).toHaveLength(2);
+    for (const el of panels) {
+      const cls = el.getAttribute('class') ?? '';
+      // A margin above the panel leaves a strip that is neither nav nor panel: the pointer leaves the nav while crossing
+      // it and the panel closes. The breathing room is padding on this wrapper, so the pointer is always over something.
+      expect(cls).toMatch(/\bpt-4\b/);
+      expect(cls).not.toMatch(/\bmt-\d/);
+      expect(cls).toMatch(/\btop-full\b/);
+      // The visible card is the child, not the wrapper.
+      expect(el.firstElementChild?.getAttribute('class') ?? '').toMatch(/bg-paper/);
+    }
+  });
 });

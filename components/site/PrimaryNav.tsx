@@ -126,15 +126,20 @@ export function PrimaryNav({ inverted = false }: { inverted?: boolean }) {
   );
 }
 
+// The panel hangs from the bottom edge of the nav with NO empty gap: the 1rem of breathing room is padding on an
+// invisible wrapper (`pt-4`), so the pointer is always over the nav, the wrapper or the card while it travels from a
+// label down into the panel. A margin here would leave a strip that belongs to neither, the nav's mouseleave would
+// fire and the panel would close under the pointer.
 function MegaPanel({ visible, width, children }: { visible: boolean; width: string; children: React.ReactNode }) {
   return (
     <div
-      className={`absolute left-1/2 top-full z-50 mt-4 -translate-x-1/2 ${width} max-w-[calc(100vw-2rem)] rounded-panel border border-border bg-paper p-4 shadow-lift transition ${
+      data-mega-panel=""
+      className={`absolute left-1/2 top-full z-50 -translate-x-1/2 pt-4 ${width} max-w-[calc(100vw-2rem)] transition ${
         visible ? 'visible translate-y-0 opacity-100' : 'invisible -translate-y-1 opacity-0'
       }`}
       aria-hidden={!visible}
     >
-      {children}
+      <div className="rounded-panel border border-border bg-paper p-4 shadow-lift">{children}</div>
     </div>
   );
 }

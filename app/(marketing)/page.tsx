@@ -46,10 +46,11 @@ export default async function HomePage() {
       {/* `bottom="xl"` keeps the floating stack clear of the curved seam. */}
       <SectionShell tone="hero" underHeader bottom="xl" blooms curveBottom={EDGE.paper}>
         <Container className="text-center">
-          <Eyebrow tone="dark" className="mb-5">AI editing for Divi 5</Eyebrow>
+          <Eyebrow tone="dark" className="mb-5">Specialized in Divi 5</Eyebrow>
           <h1 className="mx-auto max-w-4xl text-display text-paper">An AI that edits your Divi pages safely.</h1>
-          <p className="mx-auto mt-6 max-w-2xl text-lead text-paper/80">
-            Free plugin with 16 AI editing tools. Connect Claude, ChatGPT, Cursor or VS Code Copilot over MCP.
+          <p className="mx-auto mt-6 max-w-3xl text-lead text-paper/80">
+            We specialize in Divi 5, and our free plugin is one of the best AI tools for it on the market. Connect Claude, ChatGPT,
+            Cursor or VS Code Copilot over MCP, then give your AI a URL or a screenshot and have it rebuild that page in Divi 5.
             Every edit passes a deterministic validator before it touches your database, so your AI assistant can be creative
             and the layout is guaranteed valid. Undo every change.
           </p>
