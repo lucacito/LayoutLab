@@ -87,7 +87,7 @@ const DOORS: Door[] = [
   {
     headline: 'Leave Elementor without rebuilding',
     name: 'Elementor → Divi 5 Converter',
-    chip: { label: 'Free on wordpress.org · Pro $25/yr', tone: 'green' },
+    chip: { label: 'Free on wordpress.org · Pro $47/yr', tone: 'green' },
     body: 'Pages, full kits, global headers and footers, converted into real, validated Divi 5 markup that imports clean the first time.',
     stats: `${STATS.elementorWidgetsMapped} widget types mapped · ${STATS.activeInstalls}+ active installs`,
     href: '/plugins/elementor-to-divi-5',

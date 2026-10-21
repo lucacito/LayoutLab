@@ -32,6 +32,8 @@ describe('ProductDoors', () => {
     const hrefs = wporg.map((a) => a.getAttribute('href'));
     expect(hrefs).toContain('https://wordpress.org/plugins/jhmg-converter-for-beaver-builder-to-divi-5/');
     expect(hrefs).toContain('https://wordpress.org/plugins/jhmg-converter-for-wpbakery-to-divi-5/');
-    expect(screen.getAllByText(/free on wordpress\.org · pro \$25\/yr/i).length).toBe(4);
+    // Elementor → Divi 5 Pro is $47/yr; the other three converters stay $25/yr.
+    expect(screen.getAllByText(/free on wordpress\.org · pro \$25\/yr/i).length).toBe(3);
+    expect(screen.getAllByText(/free on wordpress\.org · pro \$47\/yr/i).length).toBe(1);
   });
 });

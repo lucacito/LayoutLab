@@ -113,7 +113,7 @@ export const PLUGIN_MENU: PluginMenuItem[] = [
     desc: 'Migrate Elementor pages and kits into validated Divi 5.',
     href: '/plugins/elementor-to-divi-5',
     icon: 'sync_alt',
-    chip: 'Free · Pro $25/yr',
+    chip: 'Free · Pro $47/yr',
     tone: 'green',
   },
   {

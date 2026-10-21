@@ -76,7 +76,7 @@ function buildFaq(foundingOpen: boolean) {
   {
     question: 'How are the converter Pro plugins priced?',
     answer:
-      'Each converter is $25/yr on unlimited sites. Free versions convert one page per run; Pro adds whole-site runs and Theme Builder headers/footers. Nothing breaks when a license lapses.',
+      'The Elementor converter is $47/yr and the other converters are $25/yr, all on unlimited sites. Free versions convert one page per run; Pro adds whole-site runs and Theme Builder headers/footers. Nothing breaks when a license lapses.',
   },
 ];
 }
@@ -84,12 +84,12 @@ function buildFaq(foundingOpen: boolean) {
 const CONVERTERS = [
   {
     name: 'Elementor to Divi 5 Pro',
-    price: '$25',
+    price: '$47',
     per: '/yr',
     tagline: 'The full migration toolkit for moving Elementor sites to Divi 5.',
     freeTier: `Free plugin: unlimited single-page conversions, ${STATS.elementorWidgetsMapped} widget mappings, conversion reports.`,
     proTier: 'Pro: full kit ZIP import, Theme Builder headers/footers, global colors & typography.',
-    action: <BuyProButton product="elementor-to-divi5-pro" label="Get Pro · $25/yr" />,
+    action: <BuyProButton product="elementor-to-divi5-pro" label="Get Pro · $47/yr" />,
     href: '/plugins/elementor-to-divi-5',
     free: FREE_PLUGIN_LINKS['elementor-to-divi5'],
     highlight: true,

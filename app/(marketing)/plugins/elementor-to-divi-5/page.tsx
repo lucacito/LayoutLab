@@ -18,6 +18,10 @@ import { CtaBand } from '@/components/marketing/CtaBand';
 import { UseCaseVignettes } from '@/components/marketing/UseCaseVignettes';
 import { FREE_PLUGIN_LINKS } from '@/lib/site/free-downloads';
 
+/** Elementor to Divi 5 Pro, per year. Keep in step with the Stripe price behind STRIPE_PRICE_ELEM2DIVI_PRO. */
+const PRO_PRICE_CENTS = 4700;
+const PRO_PRICE = '$47/yr';
+
 const WP_ORG_URL = FREE_PLUGIN_LINKS['elementor-to-divi5'].href;
 
 const PRODUCT_NAME = 'Elementor to Divi 5 Converter';
@@ -28,7 +32,7 @@ export const metadata: Metadata = {
   // Root layout's title.template appends "| Divi5Lab".
   title: 'Elementor to Divi 5 Converter: Free plugin + Pro',
   description:
-    `Convert Elementor pages and kits to Divi 5 in minutes. ${WIDGET_TYPES_MAPPED} widget types mapped to real, validated Divi 5 modules. Free plugin for single pages; Pro adds full kit ZIP import and global styles, at $25/yr on unlimited sites.`,
+    `Convert Elementor pages and kits to Divi 5 in minutes. ${WIDGET_TYPES_MAPPED} widget types mapped to real, validated Divi 5 modules. Free plugin for single pages; Pro adds full kit ZIP import and global styles, at ${PRO_PRICE} on unlimited sites.`,
   alternates: { canonical: `${env.NEXT_PUBLIC_SITE_URL}/plugins/elementor-to-divi-5` },
 };
 
@@ -151,7 +155,7 @@ export default function PluginPage() {
           description: PRODUCT_DESCRIPTION,
           image: 'https://ps.w.org/jhmg-converter-for-elementor-to-divi/assets/banner-772x250.png',
           url,
-          offer: { priceCents: 2500, currency: 'USD' },
+          offer: { priceCents: PRO_PRICE_CENTS, currency: 'USD' },
         })}
       />
       <JsonLd data={faqJsonLd(FAQ)} />
@@ -164,7 +168,7 @@ export default function PluginPage() {
         lead="Export from Elementor, import into Divi 5, review real modules, not shortcode soup. Every conversion is checked against the Divi 5 schema before you see it. Free for single pages; Pro moves whole sites."
       >
         <div className="flex flex-wrap items-center gap-3">
-          <BuyProButton product="elementor-to-divi5-pro" label="Get Pro · $25/yr" />
+          <BuyProButton product="elementor-to-divi5-pro" label={`Get Pro · ${PRO_PRICE}`} />
           <a
             href={WP_ORG_URL}
             target="_blank"
@@ -259,7 +263,7 @@ export default function PluginPage() {
           <ComparisonTable
             className="mt-8"
             caption="Elementor to Divi 5 Converter: Free vs Pro"
-            columns={['Free', 'Pro · $25/yr']}
+            columns={['Free', `Pro · ${PRO_PRICE}`]}
             rows={[
               { label: 'Single-page JSON imports (unlimited)', values: [true, true] },
               { label: `${WIDGET_TYPES_MAPPED} widget-type mappings`, values: [true, true] },
@@ -274,7 +278,7 @@ export default function PluginPage() {
             footnote="Pro keeps working on activated sites even if the license lapses. Renewal covers updates and support."
           />
           <div className="mt-8 flex flex-wrap items-center gap-3">
-            <BuyProButton product="elementor-to-divi5-pro" label="Get Pro · $25/yr" />
+            <BuyProButton product="elementor-to-divi5-pro" label={`Get Pro · ${PRO_PRICE}`} />
             <a href={WP_ORG_URL} target="_blank" rel="noopener noreferrer" className="text-body font-semibold text-action hover:underline">
               Start with the free plugin
             </a>
@@ -335,7 +339,7 @@ export default function PluginPage() {
       <CtaBand
         title="Ship your migration this week."
         body="Full kits, global styles, headers and footers, converted into validated Divi 5 markup and reviewed by you."
-        cta={{ label: 'Get Pro · $25/yr', href: '/pricing' }}
+        cta={{ label: `Get Pro · ${PRO_PRICE}`, href: '/pricing' }}
         secondary={{ label: 'Try the free plugin first', href: WP_ORG_URL }}
       />
     </main>

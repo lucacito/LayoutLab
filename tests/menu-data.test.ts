@@ -32,6 +32,8 @@ describe('menu-data', () => {
     const aiEditor = PLUGIN_MENU.find((p) => p.href === '/plugins/divi-5-ai-editor');
     expect(aiEditor?.name).toBe('AI Editor for Divi 5');
     expect(aiEditor?.chip).toMatch(/from \$/);
+    const elementor = PLUGIN_MENU.find((p) => p.href === '/plugins/elementor-to-divi-5');
+    expect(elementor?.chip).toBe('Free · Pro $47/yr');
     const wpbakery = PLUGIN_MENU.find((p) => p.href === '/plugins/wpbakery-to-divi-5');
     expect(wpbakery?.name).toBe('WPBakery → Divi 5');
     expect(wpbakery?.chip).toBe('Free on wordpress.org · Pro $25/yr');
