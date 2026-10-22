@@ -1,10 +1,11 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { AXIS_VALUES, PAGE_SIZE } from '@/lib/catalog/filters';
-import { listLayouts, countLayouts, facetCounts } from '@/lib/catalog/queries';
+import { listLayouts, countLayouts, facetCounts } from '@/lib/catalog/public-queries';
 import { env } from '@/lib/env';
 import { TaxonomyLanding } from '@/components/TaxonomyLanding';
-import { getTaxonomyCopy, type TaxonomyAxis } from '@/lib/seo/taxonomy';
+import type { TaxonomyAxis } from '@/lib/seo/taxonomy';
+import { getTaxonomyCopy } from '@/lib/seo/public-taxonomy';
 import { taxonomyFallbackCopy } from '@/lib/seo/taxonomy-copy';
 import { listGuides } from '@/lib/guides';
 

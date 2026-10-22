@@ -1,7 +1,7 @@
 import type { MetadataRoute } from 'next';
 import { env } from '@/lib/env';
 import { sitemapEntries } from '@/lib/seo/sitemap';
-import { listAllPublishedLayoutSlugs, listAllPublishedPackSlugs } from '@/lib/catalog/queries';
+import { listAllPublishedLayoutSlugs, listAllPublishedPackSlugs } from '@/lib/catalog/public-queries';
 
 // Sitemap rows come from the live DB; render on-demand instead of
 // prerendering at build time (which would fail without a real connection).

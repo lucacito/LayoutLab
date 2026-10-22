@@ -1,6 +1,6 @@
 // app/(catalog)/packs/page.tsx: Themes & Packs catalog.
 import type { Metadata } from 'next';
-import { listPacks } from '@/lib/catalog/queries';
+import { listPacks } from '@/lib/catalog/public-queries';
 import { env } from '@/lib/env';
 import { Container } from '@/components/ui/Container';
 import { SectionTitle } from '@/components/ui/SectionTitle';

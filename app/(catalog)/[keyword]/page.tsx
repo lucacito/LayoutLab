@@ -8,7 +8,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { env } from '@/lib/env';
 import { getKeywordPage, listKeywordPages } from '@/lib/seo/keyword-pages';
-import { listLayouts, listFreeLayouts, listPacks } from '@/lib/catalog/queries';
+import { listLayouts, listFreeLayouts, listPacks } from '@/lib/catalog/public-queries';
 import { collectionPageJsonLd, breadcrumbJsonLd, faqJsonLd, itemListJsonLd } from '@/lib/seo';
 import { hubLinkGroups } from '@/lib/seo/internal-links';
 import { JsonLd } from '@/components/JsonLd';

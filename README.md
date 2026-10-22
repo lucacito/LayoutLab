@@ -26,3 +26,24 @@ npm run dev
 
 The validator and the Docker WP+Divi render env live in the sibling repo
 `../Divi 5 Deterministic Validator` (run `make up` there).
+
+### Public catalog caching
+
+Public catalog pages, taxonomy copy/facet counts, and sitemap database reads use
+`lib/catalog/public-queries.ts` and `lib/seo/public-taxonomy.ts`. They share Next's
+Data Cache across requests, keyed by query name and arguments, with a 300-second
+revalidation interval. Database dates are restored after cache serialization.
+
+Only display reads opt in. The original query modules remain uncached for
+checkout, downloads, authorization, admin, and scripts. Do not import the public
+cached wrappers into these paths.
+
+Publishing, unpublishing, edits, and displayed prices may remain stale until a
+request triggers revalidation after five minutes; that request can receive the
+old result while refreshing in the background. Failed refreshes may retain older
+cached data. Checkout must continue validating live prices and permissions.
+There is no background polling timer. This reduces repeated database reads but
+is not a guarantee that Neon will suspend: cache misses across different pages,
+preview traffic, and other database clients can still keep it active. After
+merging/deploying, compare Neon CU-hours and active time over comparable traffic
+windows, not query execution time alone.
