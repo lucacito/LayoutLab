@@ -3,7 +3,7 @@ import { formatPriceCents } from '@/lib/format/price';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { env } from '@/lib/env';
-import { getPackBySlug, getLayoutsForPack } from '@/lib/catalog/queries';
+import { getPackBySlug, getLayoutsForPack } from '@/lib/catalog/public-queries';
 import { assetUrl } from '@/lib/blob';
 import { buildPackMetadata, productJsonLd, itemListJsonLd, breadcrumbJsonLd } from '@/lib/seo';
 import { LayoutCard } from '@/components/LayoutCard';

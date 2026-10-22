@@ -2,7 +2,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { parseFilters, PAGE_SIZE } from '@/lib/catalog/filters';
-import { listLayouts, countLayouts, facetCounts } from '@/lib/catalog/queries';
+import { listLayouts, countLayouts, facetCounts } from '@/lib/catalog/public-queries';
 import { FacetFilters } from '@/components/FacetFilters';
 import { SearchSort } from '@/components/SearchSort';
 import { Pagination } from '@/components/Pagination';

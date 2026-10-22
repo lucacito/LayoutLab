@@ -3,7 +3,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { env } from '@/lib/env';
-import { getLayoutBySlug, getPacksForLayout, listRelatedLayouts, listVariantSiblings } from '@/lib/catalog/queries';
+import { getLayoutBySlug, getPacksForLayout, listRelatedLayouts, listVariantSiblings } from '@/lib/catalog/public-queries';
 import { assetUrl } from '@/lib/blob';
 import { buildLayoutMetadata, productJsonLd, breadcrumbJsonLd, faqJsonLd } from '@/lib/seo';
 import { LayoutArticle, SHARED_LAYOUT_FAQ } from '@/components/LayoutArticle';
