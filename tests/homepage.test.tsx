@@ -43,7 +43,8 @@ describe('homepage (validator spine)', () => {
   it('asks which builder to convert next', async () => {
     render(await HomePage());
     expect(screen.getByText(/which builder should we convert next/i)).toBeTruthy();
-    expect(screen.getByLabelText('Bricks')).toBeTruthy();
+    expect(screen.getByLabelText('Oxygen')).toBeTruthy();
+    expect(screen.queryByLabelText('Bricks')).toBeNull();
   });
   it('keeps a free-layouts band', async () => {
     render(await HomePage());

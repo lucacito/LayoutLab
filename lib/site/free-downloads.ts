@@ -2,7 +2,7 @@
 // approved, so each entry is its wordpress.org URL. A plugin still under review
 // would be served as a direct download of the exact zip that was submitted
 // (`download: true`, a zip in public/downloads/) until its listing is approved.
-export type FreePluginProduct = 'elementor-to-divi5' | 'beaver-to-divi5' | 'wpbakery-to-divi5' | 'divi-to-elementor' | 'ai-editor-divi5';
+export type FreePluginProduct = 'elementor-to-divi5' | 'beaver-to-divi5' | 'wpbakery-to-divi5' | 'bricks-to-divi5' | 'divi-to-elementor' | 'ai-editor-divi5';
 
 export type FreePluginLink = {
   href: string;
@@ -34,6 +34,11 @@ export const FREE_PLUGIN_LINKS: Record<FreePluginProduct, FreePluginLink> = {
   },
   'wpbakery-to-divi5': {
     href: 'https://wordpress.org/plugins/jhmg-converter-for-wpbakery-to-divi-5/',
+    download: false,
+    label: WPORG_LABEL,
+  },
+  'bricks-to-divi5': {
+    href: 'https://wordpress.org/plugins/jhmg-converter-for-bricks-to-divi-5/',
     download: false,
     label: WPORG_LABEL,
   },

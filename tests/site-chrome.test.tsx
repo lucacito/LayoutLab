@@ -39,7 +39,7 @@ describe('site chrome', () => {
     expect(getAllByText('Pricing').length).toBeGreaterThan(0);
     expect(queryByText(/Pricing & all-access/)).toBeNull();
     expect(container.querySelector('a[href="/contact"]')).not.toBeNull();
-    expect(getByText(/The AI Editor for Divi 5, plus converters from Elementor, Beaver Builder and WPBakery/)).toBeTruthy();
+    expect(getByText(/The AI Editor for Divi 5, plus converters from Elementor, Beaver Builder, WPBakery and Bricks/)).toBeTruthy();
   });
   it('AnnouncementBar announces the AI Editor on wordpress.org and links its page', () => {
     const { getByText, container } = render(<AnnouncementBar />);

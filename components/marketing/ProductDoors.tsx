@@ -118,6 +118,17 @@ const DOORS: Door[] = [
     motif: <MotifShortcode />,
   },
   {
+    headline: 'Leave Bricks without rebuilding',
+    name: 'Bricks → Divi 5 Converter',
+    chip: { label: 'Free on wordpress.org · Pro $25/yr', tone: 'green' },
+    body: "Pick a page on your site, preview what the conversion will produce, convert. Bricks elements become native, validated Divi 5 modules, with your global classes, variables and theme styles carried over, and your Bricks pages are never touched.",
+    stats: `${STATS.bricksElementsMapped} element types mapped · WooCommerce with Pro`,
+    href: '/plugins/bricks-to-divi-5',
+    free: FREE_PLUGIN_LINKS['bricks-to-divi5'],
+    cta: 'See the Bricks converter',
+    motif: <MotifCheck />,
+  },
+  {
     headline: 'Going the other way? Also covered.',
     name: 'Divi → Elementor Converter',
     chip: { label: 'Free on wordpress.org · Pro $25/yr', tone: 'green' },

@@ -10,6 +10,7 @@ import { JsonLd } from '@/components/JsonLd';
 import { faqJsonLd } from '@/lib/seo/jsonld';
 import { BuyProButton } from '@/components/plugins/BuyProButton';
 import { STATS } from '@/lib/site/stats';
+import { env } from '@/lib/env';
 import { CtaBand } from '@/components/marketing/CtaBand';
 import { FREE_PLUGIN_LINKS, freePluginAnchorProps } from '@/lib/site/free-downloads';
 import { PRICING, OFFER, formatUsd, lowestTier, isPriceEnvSet, isCouponEnvSet, siteLabel } from '@/lib/pricing/config';
@@ -104,6 +105,22 @@ const CONVERTERS = [
     action: <BuyProButton product="wpbakery-to-divi5-pro" label="Get Pro · $25/yr" />,
     href: '/plugins/wpbakery-to-divi-5',
     free: FREE_PLUGIN_LINKS['wpbakery-to-divi5'],
+    highlight: false,
+  },
+  {
+    name: 'Bricks to Divi 5 Pro',
+    price: '$25',
+    per: '/yr',
+    tagline: 'Move a whole Bricks site to Divi 5, headers, footers and shop included.',
+    freeTier: `Free plugin on wordpress.org: one page per run, ${STATS.bricksElementsMapped} element types, global classes, variables and theme styles carried over, preview report before anything is written.`,
+    proTier: 'Pro: unlimited pages per run, Bricks headers and footers into the Divi Theme Builder, WooCommerce elements, a year of updates, priority support.',
+    action: env.STRIPE_PRICE_BRICKS2DIVI_PRO ? (
+      <BuyProButton product="bricks-to-divi5-pro" label="Get Pro · $25/yr" />
+    ) : (
+      <span className="text-body font-semibold text-navy">Pro opens shortly · $25/yr</span>
+    ),
+    href: '/plugins/bricks-to-divi-5',
+    free: FREE_PLUGIN_LINKS['bricks-to-divi5'],
     highlight: false,
   },
   {
@@ -301,7 +318,7 @@ export default async function PricingPage() {
           <div className="mx-auto mb-8 max-w-2xl text-center">
             <h2 className="text-h2 text-navy">Converter Pro plugins</h2>
             <p className="mt-3 text-lead text-muted">
-              Convert from Elementor, WPBakery, Beaver Builder and more. Free versions included.
+              Convert from Elementor, WPBakery, Beaver Builder, Bricks and more. Free versions included.
             </p>
           </div>
 

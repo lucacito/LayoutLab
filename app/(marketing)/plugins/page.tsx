@@ -12,7 +12,7 @@ import { NextConverterBand } from '@/components/marketing/NextConverterBand';
 export const metadata: Metadata = {
   title: 'Divi 5 Plugins: AI Editor and Converters by Divi5Lab',
   description:
-    'The AI Editor for Divi 5, free on WordPress.org, plus converters from Elementor, Beaver Builder and WPBakery to Divi 5, and Divi to Elementor.',
+    'The AI Editor for Divi 5, free on WordPress.org, plus converters from Elementor, Beaver Builder, WPBakery and Bricks to Divi 5, and Divi to Elementor.',
   alternates: { canonical: '/plugins' },
 };
 
@@ -36,6 +36,12 @@ const DECISIONS = [
     href: '/plugins/wpbakery-to-divi-5',
   },
   {
+    icon: 'sync_alt',
+    situation: 'I have a Bricks site and want Divi 5.',
+    answer: 'Bricks → Divi 5 Converter',
+    href: '/plugins/bricks-to-divi-5',
+  },
+  {
     icon: 'u_turn_left',
     situation: 'I have a Divi site and need Elementor.',
     answer: 'Divi → Elementor Converter',
@@ -49,8 +55,8 @@ const DECISIONS = [
   },
   {
     icon: 'how_to_vote',
-    situation: "I'm on Bricks, Oxygen or another builder.",
-    answer: 'Bricks is in the works · vote for the next',
+    situation: "I'm on Oxygen, Breakdance or another builder.",
+    answer: 'Vote for the next converter',
     href: '#next-converter',
   },
 ];

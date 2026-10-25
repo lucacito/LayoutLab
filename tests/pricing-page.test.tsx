@@ -114,10 +114,11 @@ describe('/pricing (AI Editor Pro and converters)', () => {
     expect(screen.getByText(/WPBakery to Divi 5 Pro/i)).toBeTruthy();
     expect(screen.getByText(/Divi to Elementor Pro/i)).toBeTruthy();
     expect(screen.getByText(/Beaver Builder to Divi 5 Pro/i)).toBeTruthy();
+    expect(screen.getByText(/Bricks to Divi 5 Pro/i)).toBeTruthy();
     // Prices are rendered as separate spans
-    // Elementor to Divi 5 Pro is $47; the other three converters are $25.
+    // Elementor to Divi 5 Pro is $47; the other four converters are $25.
     expect(screen.getAllByText('$47').length).toBe(1);
-    expect(screen.getAllByText('$25').length).toBe(3);
+    expect(screen.getAllByText('$25').length).toBe(4);
     const text = container.textContent ?? '';
     expect(text).toContain('Elementor to Divi 5 Pro$47/yr');
     expect(text).toContain('WPBakery to Divi 5 Pro$25/yr');
