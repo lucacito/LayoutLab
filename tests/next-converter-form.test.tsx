@@ -34,18 +34,18 @@ describe('NextConverterForm', () => {
   it('shows an error state when the API fails', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false, json: () => Promise.resolve({}) }));
     render(<NextConverterForm />);
-    fireEvent.click(screen.getByLabelText('Bricks'));
+    fireEvent.click(screen.getByLabelText('Oxygen'));
     fireEvent.change(screen.getByLabelText('Your email'), { target: { value: 'x@y.com' } });
     fireEvent.click(screen.getByRole('button', { name: /cast my vote/i }));
     await waitFor(() => expect(screen.getByText(/try again/i)).toBeTruthy());
   });
   it('never offers a builder that already has a converter', () => {
     render(<NextConverterForm />);
-    for (const shipped of ['WPBakery', 'Elementor', 'Beaver Builder']) {
+    for (const shipped of ['WPBakery', 'Elementor', 'Beaver Builder', 'Bricks']) {
       expect(screen.queryByLabelText(shipped)).toBeNull();
     }
     const keys = NEXT_CONVERTER_OPTIONS.map((o) => o.key);
     expect(keys).not.toContain('wpbakery');
-    expect(keys).toContain('bricks');
+    expect(keys).not.toContain('bricks');
   });
 });

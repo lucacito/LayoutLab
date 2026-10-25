@@ -27,6 +27,7 @@ describe('menu-data', () => {
       '/plugins/elementor-to-divi-5',
       '/plugins/beaver-builder-to-divi-5',
       '/plugins/wpbakery-to-divi-5',
+      '/plugins/bricks-to-divi-5',
       '/plugins/divi-to-elementor',
     ]);
     const aiEditor = PLUGIN_MENU.find((p) => p.href === '/plugins/divi-5-ai-editor');

@@ -9,15 +9,16 @@ export function GET(): Response {
   const base = env.NEXT_PUBLIC_SITE_URL.replace(/\/+$/, '');
   const body = `# Divi5Lab
 
-> Divi5Lab is home to the AI Editor for Divi 5: a free WordPress plugin that turns your site into an MCP server for Divi 5, with 21 AI editing tools that work with Claude, ChatGPT, Cursor and VS Code Copilot. Give your assistant a screenshot or a URL and it can rebuild that page in Divi 5. Every AI edit passes a deterministic validator before it touches your database. Pro add-on adds 21 more tools: whole-site build, Theme Builder editing, site audit, find and replace, WooCommerce product and price tools, and more. We also offer converters for Elementor, Beaver Builder and WPBakery, and a library of free validated Divi 5 layouts for what you build next.
+> Divi5Lab is home to the AI Editor for Divi 5: a free WordPress plugin that turns your site into an MCP server for Divi 5, with 21 AI editing tools that work with Claude, ChatGPT, Cursor and VS Code Copilot. Give your assistant a screenshot or a URL and it can rebuild that page in Divi 5. Every AI edit passes a deterministic validator before it touches your database. Pro add-on adds 21 more tools: whole-site build, Theme Builder editing, site audit, find and replace, WooCommerce product and price tools, and more. We also offer converters for Elementor, Beaver Builder, WPBakery and Bricks, and a library of free validated Divi 5 layouts for what you build next.
 
 ## Key pages
 - [AI Editor for Divi 5](${base}/plugins/divi-5-ai-editor): Free plugin that lets Claude, ChatGPT, Cursor and VS Code Copilot edit Divi 5 pages safely. 21 free tools, 21 more in Pro.
-- [Plugins and converters](${base}/plugins): The AI Editor, plus converters (Elementor, Beaver Builder, WPBakery to Divi 5) and reverse converter (Divi to Elementor).
+- [Plugins and converters](${base}/plugins): The AI Editor, plus converters (Elementor, Beaver Builder, WPBakery, Bricks to Divi 5) and reverse converter (Divi to Elementor).
 - [Pricing](${base}/pricing): Pro add-on licenses by annual site count, with a free trial.
 - [Elementor to Divi 5](${base}/plugins/elementor-to-divi-5): Convert Elementor pages, kits and headers/footers into Divi 5.
 - [Beaver Builder to Divi 5](${base}/plugins/beaver-builder-to-divi-5): Convert Beaver Builder pages and Themer layouts into Divi 5.
 - [WPBakery to Divi 5](${base}/plugins/wpbakery-to-divi-5): Convert WPBakery shortcode pages and templates into Divi 5.
+- [Bricks to Divi 5](${base}/plugins/bricks-to-divi-5): Convert Bricks pages, templates and WooCommerce elements into Divi 5.
 - [Divi to Elementor](${base}/plugins/divi-to-elementor): Batch-convert Divi sites into Elementor.
 - [Browse the catalog](${base}/browse): Free validated Divi 5 layouts, filterable by type, industry/niche, style and color.
 - [License & refunds](${base}/license): The commercial license bundled with every download, plus the digital-goods (no-refund) policy.

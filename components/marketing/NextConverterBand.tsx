@@ -12,8 +12,8 @@ export function NextConverterBand() {
       <SectionShell tone="paper" pad="lg">
         <Container>
           <SectionTitle eyebrow="You decide what ships next" title="Which builder should we convert next?">
-            Elementor, Beaver Builder and WPBakery are done, and Bricks → Divi 5 is in the works right now. Oxygen,
-            Breakdance and block builders are on the bench. Your vote picks the order after Bricks, and you hear
+            Elementor, Beaver Builder, WPBakery and Bricks are done. Oxygen, Breakdance and block builders are on
+            the bench. Your vote picks the order, and you hear
             the day yours ships.
           </SectionTitle>
           <Card className="mx-auto mt-12 max-w-3xl p-8">

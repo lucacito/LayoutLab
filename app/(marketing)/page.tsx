@@ -157,7 +157,7 @@ export default async function HomePage() {
       <SectionShell tone="mist" pad="lg" curveTop={EDGE.deepBottom}>
         <Container>
           <SectionTitle eyebrow="Our tools" title="AI editing, layout conversion, and more.">
-            The AI Editor leads. Converters for Elementor, Beaver Builder, and WPBakery, plus the reverse converter. All backed by the same deterministic validator.
+            The AI Editor leads. Converters for Elementor, Beaver Builder, WPBakery and Bricks, plus the reverse converter. All backed by the same deterministic validator.
           </SectionTitle>
           <div className="mt-16">
             <ProductDoors />

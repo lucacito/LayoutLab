@@ -133,6 +133,14 @@ export const PLUGIN_MENU: PluginMenuItem[] = [
     tone: 'green',
   },
   {
+    name: 'Bricks → Divi 5',
+    desc: 'Preview a page, convert it, keep your Bricks site untouched. Whole sites and WooCommerce with Pro.',
+    href: '/plugins/bricks-to-divi-5',
+    icon: 'sync_alt',
+    chip: 'Free on wordpress.org · Pro $25/yr',
+    tone: 'green',
+  },
+  {
     name: 'Divi → Elementor',
     desc: 'Batch-convert Divi sites the other way.',
     href: '/plugins/divi-to-elementor',
