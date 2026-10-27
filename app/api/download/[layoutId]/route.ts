@@ -3,9 +3,12 @@ import { auth } from '@/lib/auth';
 import { readCaptureEmail } from '@/lib/capture/cookie';
 import {
   getLayoutForDownload,
+  getLayoutPackContext,
+  getEntitlementsForUser,
   getUserIdByEmail,
   recordDownload,
 } from '@/lib/account/queries';
+import { canDownloadLayout, isPaidOnlyLayout } from '@/lib/stripe/entitlements';
 import { fetchAsset } from '@/lib/blob';
 import { buildLayoutZip } from '@/lib/download/zip';
 import { readLicense } from '@/lib/license';
@@ -29,10 +32,16 @@ export async function GET(req: Request, { params }: { params: Promise<{ layoutId
   const sessionEmail = session?.user?.email ?? null;
   const userId = sessionEmail ? await getUserIdByEmail(sessionEmail) : null;
 
-  // Marketplace demotion (Task 6): every layout is a free lead magnet now, so no more
-  // paid-only gate. A captured email or a session is all that's required.
-  const email = sessionEmail ?? capturedEmail;
-  if (!email) {
+  // A layout that lives only inside paid pack(s) is sold with the pack, not a free lead magnet: a captured
+  // email is not enough. It needs a real entitlement of a SIGNED-IN user (ownership of a pack it belongs to, or
+  // active all-access). Layouts in no pack, or in at least one free pack, only need a captured email or a session.
+  const { packIds, packKindById } = await getLayoutPackContext(layout.id);
+  if (isPaidOnlyLayout({ packIds, packKindById })) {
+    const userEntitlements = userId ? await getEntitlementsForUser(userId) : [];
+    if (!canDownloadLayout({ layoutPackIds: packIds, packKindById, userEntitlements })) {
+      return NextResponse.json({ error: 'forbidden' }, { status: 403 });
+    }
+  } else if (!(sessionEmail ?? capturedEmail)) {
     return NextResponse.json({ error: 'capture_required' }, { status: 403 });
   }
 

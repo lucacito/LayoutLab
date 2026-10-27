@@ -12,9 +12,9 @@ import { itemListJsonLd, collectionPageJsonLd, breadcrumbJsonLd } from '@/lib/se
 export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
-  title: 'Divi 5 Themes & Packs: Free Multi-Page Website Kits',
+  title: 'Divi 5 Themes & Packs: Multi-Page Website Kits',
   description:
-    'Free multi-page Divi 5 theme packs and curated section collections. Every page shares one brand, with senior-level copy, validated JSON, and a commercial license. Launch a whole site in an afternoon, no charge.',
+    'Multi-page Divi 5 theme packs and curated section collections. Every page shares one brand, with senior-level copy, validated JSON, and a commercial license. Launch a whole site in an afternoon.',
   alternates: { canonical: '/packs' },
 };
 
@@ -41,13 +41,13 @@ export default async function PacksPage() {
       {/* Hero */}
       <section className="border-b border-border bg-ink text-paper">
         <Container className="py-16 text-center md:py-20">
-          <h1 className="mx-auto max-w-3xl text-h1 text-paper">Complete Divi 5 themes &amp; packs, free</h1>
+          <h1 className="mx-auto max-w-3xl text-h1 text-paper">Complete Divi 5 themes &amp; packs</h1>
           <p className="mx-auto mt-4 max-w-2xl text-lead text-paper/85">
             Multi-page website themes where every page already speaks the same language, plus curated section
-            collections. Swap in your brand and go live. No blank page, no cleanup, no charge.
+            collections. Swap in your brand and go live. No blank page, no cleanup.
           </p>
           <div className="mt-8 flex flex-wrap justify-center gap-3">
-            <Button href="/browse">Get the free layouts</Button>
+            <Button href="/browse">Browse the layouts</Button>
           </div>
         </Container>
       </section>
@@ -56,7 +56,7 @@ export default async function PacksPage() {
         <section className="py-16">
           <Container>
             <SectionTitle eyebrow="Themes" title="Multi-page theme packs">
-              One brand, every page. Free, and yours with just an email.
+              One brand, every page. One simple price, a commercial license and unlimited sites.
             </SectionTitle>
             <div className="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {paid.map((p) => <PackCard key={p.id} pack={p} />)}

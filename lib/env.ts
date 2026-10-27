@@ -10,6 +10,8 @@ const schema = z.object({
   // Optional in Phase 0, required by their owning features later.
   STRIPE_SECRET_KEY: z.string().optional(),
   STRIPE_WEBHOOK_SECRET: z.string().optional(),
+  // Price id of the one-time theme pack price (every paid theme pack is sold on it).
+  STRIPE_THEME_PACK: z.string().optional(),
   STRIPE_PRICE_MEMBERSHIP_MONTHLY: z.string().optional(),
   STRIPE_PRICE_MEMBERSHIP_YEARLY: z.string().optional(),
   STRIPE_PRICE_ELEM2DIVI_PRO: z.string().optional(),

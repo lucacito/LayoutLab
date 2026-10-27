@@ -5,6 +5,7 @@ import {
   PLUGIN_MENU,
   LAYOUT_MENU_COLUMNS,
   LAYOUT_MENU_CTA,
+  LAYOUT_MENU_PACKS_CTA,
 } from '@/lib/nav/menu-data';
 
 describe('menu-data', () => {
@@ -48,5 +49,11 @@ describe('menu-data', () => {
     expect(all.every((l) => /^\/(type|niche|style)\/[a-z_]+$/.test(l.href))).toBe(true);
     expect(all.find((l) => l.href === '/type/hero')?.label).toBe('Hero sections');
     expect(LAYOUT_MENU_CTA.href).toBe('/browse');
+  });
+
+  it('puts the theme packs in the layouts menu, next to Browse all layouts', () => {
+    expect(LAYOUT_MENU_PACKS_CTA.href).toBe('/packs');
+    expect(LAYOUT_MENU_PACKS_CTA.label).toBe('Theme packs');
+    expect(LAYOUT_MENU_PACKS_CTA.blurb).toMatch(/multi-page|complete/i);
   });
 });

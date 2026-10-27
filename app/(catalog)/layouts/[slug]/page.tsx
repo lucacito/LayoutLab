@@ -3,7 +3,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { env } from '@/lib/env';
-import { getLayoutBySlug, getPacksForLayout, listRelatedLayouts, listVariantSiblings } from '@/lib/catalog/public-queries';
+import { getLayoutBySlug, getPacksForLayout, getLayoutsForPack, listRelatedLayouts, listVariantSiblings } from '@/lib/catalog/public-queries';
 import { assetUrl } from '@/lib/blob';
 import { buildLayoutMetadata, productJsonLd, breadcrumbJsonLd, faqJsonLd } from '@/lib/seo';
 import { LayoutArticle, SHARED_LAYOUT_FAQ } from '@/components/LayoutArticle';
@@ -18,7 +18,11 @@ import { Card } from '@/components/ui/Card';
 import { Icon } from '@/components/ui/Icon';
 import { readCaptureEmail } from '@/lib/capture/cookie';
 import { auth } from '@/lib/auth';
+import { getUserIdByEmail, getEntitlementsForUser } from '@/lib/account/queries';
+import { canDownloadLayout, isPaidOnlyLayout } from '@/lib/stripe/entitlements';
 import { FreeDownloadGate } from '@/components/FreeDownloadGate';
+import { PaidLayoutCta } from '@/components/PaidLayoutCta';
+import { DownloadButton } from '@/components/DownloadButton';
 import { BookmarkButton } from '@/components/bookmarks/BookmarkButton';
 import { RelatedElements } from '@/components/RelatedElements';
 import { RequiresWooBadge } from '@/components/RequiresWooBadge';
@@ -53,6 +57,21 @@ export default async function LayoutPage({ params }: { params: Promise<{ slug: s
   const siblings = layout.variant?.group ? await listVariantSiblings(layout.variant.group) : [];
   const [captureEmail, session] = await Promise.all([readCaptureEmail(), auth()]);
   const captured = Boolean(captureEmail || session?.user);
+
+  // A layout that lives only in paid packs is not a free download: the page stays public for preview and SEO,
+  // the JSON is sold with the pack (the download route enforces this too).
+  const packKindById = Object.fromEntries(packs.map((p) => [p.id, p.kind])) as Record<string, 'free' | 'paid'>;
+  const paidOnly = isPaidOnlyLayout({ packIds: packs.map((p) => p.id), packKindById });
+  let entitled = false;
+  if (paidOnly && session?.user?.email) {
+    const uid = await getUserIdByEmail(session.user.email);
+    const ents = uid ? await getEntitlementsForUser(uid) : [];
+    entitled = canDownloadLayout({ layoutPackIds: packs.map((p) => p.id), packKindById, userEntitlements: ents });
+  }
+  const upsellPack = paidOnly
+    ? [...packs].filter((p) => p.kind === 'paid').sort((a, b) => (a.priceCents ?? 0) - (b.priceCents ?? 0))[0]
+    : undefined;
+  const upsellPageCount = upsellPack && !entitled ? (await getLayoutsForPack(upsellPack.id)).length : 0;
   const site = env.NEXT_PUBLIC_SITE_URL;
   const url = `${site}/layouts/${layout.slug}`;
   const cover = layout.previewImageKeys[0] ? assetUrl(layout.previewImageKeys[0]) : undefined;
@@ -125,7 +144,13 @@ export default async function LayoutPage({ params }: { params: Promise<{ slug: s
           </div>
           <div className="flex shrink-0 items-center gap-3">
             <BookmarkButton slug={layout.slug} />
-            <FreeDownloadGate layoutId={layout.id} slug={layout.slug} captured={captured} />
+            {paidOnly && !entitled && upsellPack ? (
+              <PaidLayoutCta pack={{ id: upsellPack.id, slug: upsellPack.slug, title: upsellPack.title, priceCents: upsellPack.priceCents ?? 0 }} pageCount={upsellPageCount} />
+            ) : paidOnly && entitled ? (
+              <DownloadButton layoutId={layout.id} slug={layout.slug} />
+            ) : (
+              <FreeDownloadGate layoutId={layout.id} slug={layout.slug} captured={captured} />
+            )}
           </div>
         </Card>
 

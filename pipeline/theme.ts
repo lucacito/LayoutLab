@@ -39,6 +39,8 @@ export interface ThemePage {
   roleLabel: string;
   /** Persuasion spine for this page (groundable section types only). */
   flow: Step[];
+  /** Optional page composed outside the pipeline: a `{post_title, post_content}` JSON string. */
+  precomposed?: string;
 }
 
 export interface ThemeSpec {
@@ -98,6 +100,7 @@ export function themePageItem(spec: ThemeSpec, page: ThemePage): PipelineItem {
   return {
     target: { type: 'full_landing', niche: spec.niche, style: spec.style, color: spec.color },
     composeExtras: { brief: spec.brief, brandFacts: spec.brandFacts, flow: page.flow },
+    precomposed: page.precomposed,
     pins: {
       slug: themePageSlug(spec.brief, spec, page),
       title: themePageTitle(spec.brief, spec, page),

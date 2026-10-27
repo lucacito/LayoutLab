@@ -23,6 +23,8 @@ describe('PrimaryNav', () => {
     expect(getByText('Hero sections').closest('a')?.getAttribute('href')).toBe('/type/hero');
     // The "Browse all layouts" CTA inside the panel points to the catalog.
     expect(getByText('Browse all layouts').closest('a')?.getAttribute('href')).toBe('/browse');
+    // The theme packs sit in the same panel.
+    expect(getByText('Theme packs').closest('a')?.getAttribute('href')).toBe('/packs');
   });
 
   it('hangs each mega panel from the nav with no empty gap (padding bridge, never a margin)', () => {

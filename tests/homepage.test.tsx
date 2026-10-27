@@ -46,6 +46,12 @@ describe('homepage (validator spine)', () => {
     expect(screen.getByLabelText('Oxygen')).toBeTruthy();
     expect(screen.queryByLabelText('Bricks')).toBeNull();
   });
+  it('has a theme packs section that links to /packs', async () => {
+    render(await HomePage());
+    expect(screen.getByRole('heading', { name: /complete divi 5 websites/i })).toBeTruthy();
+    const links = Array.from(document.querySelectorAll('a')).map((a) => a.getAttribute('href'));
+    expect(links).toContain('/packs');
+  });
   it('keeps a free-layouts band', async () => {
     render(await HomePage());
     expect(screen.getByText(/free divi 5 layouts/i)).toBeTruthy();

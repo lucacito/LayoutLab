@@ -70,7 +70,7 @@ export default async function PackPage({ params }: { params: Promise<{ slug: str
           <div className="text-right">
             <div className="text-h3 text-action">{price}</div>
             <div className="mt-2">
-              <PackCta pack={{ id: pack.id, slug: pack.slug, kind: pack.kind }} entitled={entitled} />
+              <PackCta pack={{ id: pack.id, slug: pack.slug, kind: pack.kind }} entitled={entitled} priceLabel={price || undefined} />
             </div>
           </div>
         </div>

@@ -18,7 +18,7 @@ export function PackCard({ pack }: { pack: PackRow }) {
         className="aspect-[3/2]"
       />
       <div className="flex items-center justify-between p-5">
-        <h3 className="truncate text-body font-semibold text-navy">{pack.title}</h3>
+        <h3 className="line-clamp-2 text-body font-semibold text-navy">{pack.title}</h3>
         <span className="ml-2 shrink-0 text-body font-bold text-action">{price}</span>
       </div>
     </Link>
