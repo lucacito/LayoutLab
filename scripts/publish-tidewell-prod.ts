@@ -31,8 +31,8 @@ const DESCRIPTION =
 const PACK_SEO = {
   metaTitle: 'Tidewell: Pilates & Yoga Studio Theme for Divi 5 (6 Pages) | Divi5Lab',
   metaDescription:
-    'A free, complete six-page Divi 5 website theme for a Pilates, yoga or wellness studio: Home, Classes, Memberships, ' +
-    'Teachers, The Studio and Contact. One warm brand, real copy, pricing and booking sections. Free download.',
+    'A complete six-page Divi 5 website theme for a Pilates, yoga or wellness studio: Home, Classes, Memberships, ' +
+    'Teachers, The Studio and Contact. One warm brand, real copy, pricing and booking sections.',
   keywords: [
     'divi 5 yoga studio theme', 'pilates studio website template', 'divi wellness template', 'yoga website divi 5',
     'fitness studio divi theme', 'divi 5 multi-page theme',
@@ -47,7 +47,7 @@ async function main() {
   const localUrl = process.env.POSTGRES_URL || process.env.DATABASE_URL;
   if (!prodUrl || prodUrl.length < 30 || prodUrl.includes('SENSITIVE')) throw new Error('PROD_DATABASE_URL is not a real connection string (a placeholder from a Vercel pull?)');
   if (!localUrl || !/localhost|127\.0\.0\.1/.test(localUrl)) throw new Error('local POSTGRES_URL must point at the local dev database');
-  console.log(`[publish] target=PROD (free pack, no Stripe)  confirm=${CONFIRM}`);
+  console.log(`[publish] target=PROD (paid theme pack, sold on STRIPE_THEME_PACK)  confirm=${CONFIRM}`);
 
   const localPool = new Pool({ connectionString: localUrl });
   const prodPool = new Pool({ connectionString: prodUrl });
@@ -108,8 +108,8 @@ async function main() {
     // 2) The free pack (home page's first preview becomes the cover).
     const cover = bySlug.get(SLUGS[0])!.previewImageKeys?.[0] ?? null;
     const common = {
-      title: PACK_TITLE, description: DESCRIPTION, kind: 'free' as const,
-      priceCents: 0, stripePriceId: null, coverImageKey: cover, seo: PACK_SEO, status: 'published' as const,
+      title: PACK_TITLE, description: DESCRIPTION, kind: 'paid' as const,
+      priceCents: 1200, stripePriceId: null, coverImageKey: cover, seo: PACK_SEO, status: 'published' as const,
     };
     let packId: string;
     if (existingPack) {
@@ -121,7 +121,7 @@ async function main() {
     }
     await prod.delete(packLayouts).where(eq(packLayouts.packId, packId));
     await prod.insert(packLayouts).values(SLUGS.map((s, i) => ({ packId, layoutId: idBySlug.get(s)!, position: i })));
-    console.log(`\n[publish] DONE -> https://divi5lab.com/packs/${PACK_SLUG}  (free, ${SLUGS.length} pages)`);
+    console.log(`\n[publish] DONE -> https://divi5lab.com/packs/${PACK_SLUG}  (paid \$12, ${SLUGS.length} pages)`);
   } finally {
     await localPool.end();
     await prodPool.end();
