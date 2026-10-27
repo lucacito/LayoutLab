@@ -76,3 +76,11 @@ describe('homepage (validator spine)', () => {
     expect(screen.getByText(/ai editing, layout conversion, and more\./i)).toBeTruthy();
   });
 });
+
+import { revalidate } from '@/app/(marketing)/page';
+describe('homepage freshness', () => {
+  it('is revalidated (not frozen at build time) so new theme packs appear', () => {
+    expect(revalidate).toBeGreaterThan(0);
+    expect(revalidate).toBeLessThanOrEqual(600);
+  });
+});
