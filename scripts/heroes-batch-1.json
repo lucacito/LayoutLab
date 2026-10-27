@@ -1,0 +1,142 @@
+[
+    {
+        "slug": "candlelit-restaurant-hero-section-for-divi-5-farm-to-table-dinner",
+        "title": "Candlelit Restaurant Hero Section for Divi 5: Farm-to-Table Dinner",
+        "niche": "restaurant",
+        "style": "elegant",
+        "color": "orange"
+    },
+    {
+        "slug": "dark-music-festival-hero-section-for-divi-5-night-events-layout",
+        "title": "Dark Music Festival Hero Section for Divi 5: Night Events Layout",
+        "niche": "events",
+        "style": "dark",
+        "color": "purple"
+    },
+    {
+        "slug": "minimal-photographer-portfolio-hero-section-for-divi-5-editorial-layout",
+        "title": "Minimal Photographer Portfolio Hero Section for Divi 5: Editorial Layout",
+        "niche": "portfolio",
+        "style": "minimal",
+        "color": "monochrome"
+    },
+    {
+        "slug": "dark-developer-saas-hero-section-for-divi-5-logs-and-tracing",
+        "title": "Dark Developer SaaS Hero Section for Divi 5: Logs and Tracing Landing",
+        "niche": "saas",
+        "style": "dark",
+        "color": "green"
+    },
+    {
+        "slug": "corporate-real-estate-hero-section-for-divi-5-split-image-home-search",
+        "title": "Corporate Real Estate Hero Section for Divi 5: Split Image Home Search",
+        "niche": "real_estate",
+        "style": "corporate",
+        "color": "blue"
+    },
+    {
+        "slug": "luxe-watch-ecommerce-hero-section-for-divi-5-elegant-split-layout",
+        "title": "Luxe Watch Ecommerce Hero Section for Divi 5: Elegant Split Layout",
+        "niche": "ecommerce",
+        "style": "elegant",
+        "color": "monochrome"
+    },
+    {
+        "slug": "playful-life-coach-hero-section-for-divi-5-pastel-overlap-layout",
+        "title": "Playful Life Coach Hero Section for Divi 5: Pastel Overlap Layout",
+        "niche": "coaching",
+        "style": "playful",
+        "color": "pastel"
+    },
+    {
+        "slug": "organic-trail-running-club-hero-section-for-divi-5-fitness-overlap-layout",
+        "title": "Organic Trail Running Club Hero Section for Divi 5: Fitness Overlap Layout",
+        "niche": "fitness",
+        "style": "minimal",
+        "color": "green"
+    },
+    {
+        "slug": "bold-street-food-festival-hero-section-for-divi-5-events-image-layout",
+        "title": "Bold Street Food Festival Hero Section for Divi 5: Events Image Layout",
+        "niche": "events",
+        "style": "bold",
+        "color": "orange"
+    },
+    {
+        "slug": "editorial-nonprofit-hero-section-for-divi-5-beach-cleanup-charity",
+        "title": "Editorial Nonprofit Hero Section for Divi 5: Beach Cleanup Charity",
+        "niche": "nonprofit",
+        "style": "minimal",
+        "color": "blue"
+    },
+    {
+        "slug": "dark-nonprofit-hero-section-for-divi-5-impact-statistics-gradient",
+        "title": "Dark Nonprofit Hero Section for Divi 5: Impact Statistics Gradient",
+        "niche": "nonprofit",
+        "style": "dark",
+        "color": "purple"
+    },
+    {
+        "slug": "corporate-growth-agency-hero-section-for-divi-5-results-stats-gradient",
+        "title": "Corporate Growth Agency Hero Section for Divi 5: Results Stats Gradient",
+        "niche": "agency",
+        "style": "corporate",
+        "color": "blue"
+    },
+    {
+        "slug": "minimal-architecture-studio-portfolio-hero-for-divi-5-editorial-typography",
+        "title": "Minimal Architecture Studio Portfolio Hero for Divi 5: Editorial Typography",
+        "niche": "portfolio",
+        "style": "minimal",
+        "color": "monochrome"
+    },
+    {
+        "slug": "luxe-private-estates-real-estate-hero-for-divi-5-editorial-minimal",
+        "title": "Luxe Private Estates Real Estate Hero for Divi 5: Editorial Minimal",
+        "niche": "real_estate",
+        "style": "elegant",
+        "color": "monochrome"
+    },
+    {
+        "slug": "brutalist-hot-sauce-ecommerce-hero-section-for-divi-5-bordered-cells",
+        "title": "Brutalist Hot Sauce Ecommerce Hero Section for Divi 5: Bordered Cells",
+        "niche": "ecommerce",
+        "style": "bold",
+        "color": "red"
+    },
+    {
+        "slug": "bold-first-10k-running-coach-hero-section-for-divi-5-fitness-bordered-cells",
+        "title": "Bold First 10K Running Coach Hero Section for Divi 5: Fitness Bordered Cells",
+        "niche": "fitness",
+        "style": "bold",
+        "color": "green"
+    },
+    {
+        "slug": "dark-web-studio-agency-hero-section-for-divi-5-spec-card-layout",
+        "title": "Dark Web Studio Agency Hero Section for Divi 5: Spec Card Layout",
+        "niche": "agency",
+        "style": "dark",
+        "color": "green"
+    },
+    {
+        "slug": "editorial-executive-coaching-hero-section-for-divi-5-programme-sheet",
+        "title": "Editorial Executive Coaching Hero Section for Divi 5: Programme Sheet",
+        "niche": "coaching",
+        "style": "minimal",
+        "color": "monochrome"
+    },
+    {
+        "slug": "soft-saas-meeting-notes-hero-section-for-divi-5-product-glow",
+        "title": "Soft SaaS Meeting Notes Hero Section for Divi 5: Product Glow Layout",
+        "niche": "saas",
+        "style": "minimal",
+        "color": "purple"
+    },
+    {
+        "slug": "dark-restaurant-booking-software-hero-section-for-divi-5-product-glow",
+        "title": "Dark Restaurant Booking Software Hero Section for Divi 5: Product Glow Layout",
+        "niche": "restaurant",
+        "style": "dark",
+        "color": "orange"
+    }
+]
