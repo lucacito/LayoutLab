@@ -1,0 +1,142 @@
+[
+    {
+        "slug": "minimal-photographer-portfolio-features-layout-for-divi-5-three-zigzag-rows",
+        "title": "Minimal Photographer Portfolio Features Layout for Divi 5: Three Zigzag Rows",
+        "niche": "portfolio",
+        "style": "minimal",
+        "color": "monochrome"
+    },
+    {
+        "slug": "corporate-real-estate-features-layout-for-divi-5-three-zigzag-rows",
+        "title": "Corporate Real Estate Features Layout for Divi 5: Three Zigzag Rows",
+        "niche": "real_estate",
+        "style": "corporate",
+        "color": "blue"
+    },
+    {
+        "slug": "luxe-boutique-ecommerce-features-layout-for-divi-5-three-zigzag-rows",
+        "title": "Luxe Boutique Ecommerce Features Layout for Divi 5: Three Zigzag Rows",
+        "niche": "ecommerce",
+        "style": "elegant",
+        "color": "monochrome"
+    },
+    {
+        "slug": "dark-saas-reliability-features-layout-for-divi-5-icon-list-with-dividers",
+        "title": "Dark SaaS Reliability Features Layout for Divi 5: Icon List with Dividers",
+        "niche": "saas",
+        "style": "dark",
+        "color": "green"
+    },
+    {
+        "slug": "brutalist-agency-services-features-layout-for-divi-5-icon-list-with-dividers",
+        "title": "Brutalist Agency Services Features Layout for Divi 5: Icon List with Dividers",
+        "niche": "agency",
+        "style": "bold",
+        "color": "monochrome"
+    },
+    {
+        "slug": "luxe-executive-coaching-features-layout-for-divi-5-icon-list-with-dividers",
+        "title": "Luxe Executive Coaching Features Layout for Divi 5: Icon List with Dividers",
+        "niche": "coaching",
+        "style": "elegant",
+        "color": "monochrome"
+    },
+    {
+        "slug": "organic-wellbeing-coaching-features-layout-for-divi-5-two-column-checklist",
+        "title": "Organic Wellbeing Coaching Features Layout for Divi 5: Two-Column Checklist",
+        "niche": "coaching",
+        "style": "minimal",
+        "color": "green"
+    },
+    {
+        "slug": "bold-fitness-membership-features-layout-for-divi-5-two-column-checklist",
+        "title": "Bold Fitness Membership Features Layout for Divi 5: Two-Column Checklist",
+        "niche": "fitness",
+        "style": "bold",
+        "color": "red"
+    },
+    {
+        "slug": "editorial-nonprofit-donor-questions-features-layout-for-divi-5-accordion-with-image",
+        "title": "Editorial Nonprofit Donor Questions Features Layout for Divi 5: Accordion with Image",
+        "niche": "nonprofit",
+        "style": "minimal",
+        "color": "blue"
+    },
+    {
+        "slug": "dark-saas-product-benefits-features-layout-for-divi-5-accordion-with-image",
+        "title": "Dark SaaS Product Benefits Features Layout for Divi 5: Accordion with Image",
+        "niche": "saas",
+        "style": "dark",
+        "color": "purple"
+    },
+    {
+        "slug": "bold-kids-party-planner-features-layout-for-divi-5-accordion-with-image",
+        "title": "Bold Kids Party Planner Features Layout for Divi 5: Accordion with Image",
+        "niche": "events",
+        "style": "bold",
+        "color": "orange"
+    },
+    {
+        "slug": "brutalist-clothing-ecommerce-comparison-features-layout-for-divi-5-two-panels",
+        "title": "Brutalist Clothing Ecommerce Comparison Features Layout for Divi 5: Two Panels",
+        "niche": "ecommerce",
+        "style": "bold",
+        "color": "monochrome"
+    },
+    {
+        "slug": "dark-studio-agency-comparison-features-layout-for-divi-5-two-panels",
+        "title": "Dark Studio Agency Comparison Features Layout for Divi 5: Two Panels",
+        "niche": "agency",
+        "style": "dark",
+        "color": "green"
+    },
+    {
+        "slug": "soft-saas-workspace-features-layout-for-divi-5-bento-feature-grid",
+        "title": "Soft SaaS Workspace Features Layout for Divi 5: Bento Feature Grid",
+        "niche": "saas",
+        "style": "minimal",
+        "color": "purple"
+    },
+    {
+        "slug": "dark-conference-tracks-features-layout-for-divi-5-carousel-cards",
+        "title": "Dark Conference Tracks Features Layout for Divi 5: Carousel Cards",
+        "niche": "events",
+        "style": "dark",
+        "color": "purple"
+    },
+    {
+        "slug": "organic-restaurant-kitchen-values-features-layout-for-divi-5-accordion-with-image",
+        "title": "Organic Restaurant Kitchen Values Features Layout for Divi 5: Accordion with Image",
+        "niche": "restaurant",
+        "style": "elegant",
+        "color": "orange"
+    },
+    {
+        "slug": "playful-craft-workshop-features-layout-for-divi-5-two-column-checklist",
+        "title": "Playful Craft Workshop Features Layout for Divi 5: Two-Column Checklist",
+        "niche": "portfolio",
+        "style": "playful",
+        "color": "pastel"
+    },
+    {
+        "slug": "bold-nonprofit-impact-features-layout-for-divi-5-four-icon-features",
+        "title": "Bold Nonprofit Impact Features Layout for Divi 5: Four Icon Features",
+        "niche": "nonprofit",
+        "style": "bold",
+        "color": "red"
+    },
+    {
+        "slug": "soft-fitness-member-perks-features-layout-for-divi-5-four-icon-blurbs",
+        "title": "Soft Fitness Member Perks Features Layout for Divi 5: Four Icon Blurbs",
+        "niche": "fitness",
+        "style": "minimal",
+        "color": "purple"
+    },
+    {
+        "slug": "luxe-private-estates-principles-features-layout-for-divi-5-three-icon-values",
+        "title": "Luxe Private Estates Principles Features Layout for Divi 5: Three Icon Values",
+        "niche": "real_estate",
+        "style": "elegant",
+        "color": "monochrome"
+    }
+]
