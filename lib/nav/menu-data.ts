@@ -194,3 +194,10 @@ export const LAYOUT_MENU_CTA: MegaLink = {
   icon: 'grid_view',
   blurb: 'The full validated catalog. Filter by type, industry, style and colour.',
 };
+
+export const LAYOUT_MENU_PACKS_CTA: MegaLink = {
+  href: '/packs',
+  label: 'Theme packs',
+  icon: 'web_asset',
+  blurb: 'Complete multi-page Divi 5 websites, one price.',
+};

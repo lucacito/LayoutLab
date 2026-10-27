@@ -9,6 +9,7 @@ import {
   PLUGIN_MENU,
   LAYOUT_MENU_COLUMNS,
   LAYOUT_MENU_CTA,
+  LAYOUT_MENU_PACKS_CTA,
   type MegaKey,
 } from '@/lib/nav/menu-data';
 
@@ -27,6 +28,7 @@ const SUBLINKS: Record<MegaKey, { href: string; label: string; icon: string }[]>
   layouts: [
     ...LAYOUT_MENU_COLUMNS.flatMap((c) => c.links.map((l) => ({ href: l.href, label: l.label, icon: l.icon }))),
     { href: LAYOUT_MENU_CTA.href, label: LAYOUT_MENU_CTA.label, icon: LAYOUT_MENU_CTA.icon },
+    { href: LAYOUT_MENU_PACKS_CTA.href, label: LAYOUT_MENU_PACKS_CTA.label, icon: LAYOUT_MENU_PACKS_CTA.icon },
   ],
 };
 

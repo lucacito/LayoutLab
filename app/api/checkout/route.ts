@@ -10,19 +10,59 @@ import { PRICING } from '@/lib/pricing/config';
 import { isProductPaused } from '@/lib/site/pro-status';
 import { priceIdForTier, lifetimePriceId, foundingCouponId, foundingAvailable, lifetimeAvailable, tierForPriceId } from '@/lib/pricing/stripe';
 import { dbStore } from '@/lib/stripe/fulfillment-store';
+import { resolvePackForCheckout, themePackPriceProblem } from '@/lib/stripe/pack-checkout';
 
-// Marketplace demotion (Task 6): layouts/packs are free-with-capture now, so only the
-// shipped WordPress plugin is still sold through this route. `pack` and `membership`
-// are deliberately absent from this union (not just unreachable branches) so any
-// caller still POSTing them gets a clean 400 `invalid_request`, exactly like any
-// other malformed body.
-const bodySchema = z.object({
+// This route sells the shipped WordPress plugins and the paid theme packs. `membership` is
+// deliberately absent from the union (not just an unreachable branch) so a caller still
+// POSTing it gets a clean 400 `invalid_request`, like any other malformed body.
+const pluginSchema = z.object({
   kind: z.literal('plugin'),
   product: z.enum(PLUGIN_PRODUCTS),
   tier: z.enum(['personal', 'freelancer', 'agency']).optional(),
   lifetime: z.boolean().optional(),
   trial: z.boolean().optional(),
 });
+const packSchema = z.object({ kind: z.literal('pack'), packId: z.string().min(1) });
+const bodySchema = z.union([pluginSchema, packSchema]);
+
+/**
+ * A paid theme pack: one-time payment on the single STRIPE_THEME_PACK price. Checked before any session exists:
+ * the pack is published and paid, the price is configured, and Stripe's price equals the pack's own price.
+ */
+async function packCheckout(packId: string): Promise<Response> {
+  const pack = await resolvePackForCheckout(packId);
+  const priceId = env.STRIPE_THEME_PACK;
+  if (!pack || pack.status !== 'published' || pack.kind !== 'paid' || !priceId) {
+    return NextResponse.json({ error: 'pack_unavailable' }, { status: 400 });
+  }
+  try {
+    const problem = themePackPriceProblem(await stripe.prices.retrieve(priceId), pack.priceCents);
+    if (problem) {
+      console.error('[checkout] theme pack price refused:', problem, 'pack', pack.slug);
+      return NextResponse.json({ error: 'pack_price_mismatch' }, { status: 409 });
+    }
+  } catch (err) {
+    console.error('[checkout] could not read the theme pack price', err);
+    return NextResponse.json({ error: 'checkout_failed' }, { status: 502 });
+  }
+  const requireTermsConsent = env.STRIPE_TERMS_CONSENT === '1' || env.STRIPE_TERMS_CONSENT === 'true';
+  let tax = true;
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      const session = await stripe.checkout.sessions.create(
+        buildCheckoutSessionParams({ kind: 'pack', packId: pack.id }, { siteUrl: env.NEXT_PUBLIC_SITE_URL, packPriceId: priceId, automaticTax: tax, requireTermsConsent }),
+      );
+      if (!session.url) return NextResponse.json({ error: 'session_url_missing' }, { status: 500 });
+      return NextResponse.json({ url: session.url });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      if (tax && /tax/i.test(msg)) { console.warn('[checkout] automatic_tax failed; retrying without tax:', msg); tax = false; continue; }
+      console.error('[checkout] pack session create failed', err);
+      return NextResponse.json({ error: 'checkout_failed', detail: msg }, { status: 502 });
+    }
+  }
+  return NextResponse.json({ error: 'checkout_failed' }, { status: 502 });
+}
 
 export async function POST(req: Request): Promise<Response> {
   // Starting a checkout session (and above all a no-card trial) is cheap to repeat: keep it to a human pace per address.
@@ -36,6 +76,7 @@ export async function POST(req: Request): Promise<Response> {
   try { body = await req.json(); } catch { return NextResponse.json({ error: 'invalid_json' }, { status: 400 }); }
   const parsed = bodySchema.safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: 'invalid_request' }, { status: 400 });
+  if (parsed.data.kind === 'pack') return packCheckout(parsed.data.packId);
   const input: Extract<CheckoutInput, { kind: 'plugin' }> = parsed.data;
   // Paused product (lib/site/pro-status.ts): refuse before any Stripe call.
   if (isProductPaused(input.product)) return NextResponse.json({ error: 'This product is not currently available.' }, { status: 410 });

@@ -15,6 +15,8 @@ import { ValidatorChatDemo, type ChatStep } from '@/components/marketing/Validat
 import { ProductDoors } from '@/components/marketing/ProductDoors';
 import { CtaBand } from '@/components/marketing/CtaBand';
 import { FreeLayoutsBand } from '@/components/marketing/FreeLayoutsBand';
+import { ThemePacksBand } from '@/components/marketing/ThemePacksBand';
+import { listPacks, type PackRow } from '@/lib/catalog/public-queries';
 import { NextConverterBand } from '@/components/marketing/NextConverterBand';
 
 const DEMO_STEPS: ChatStep[] = [
@@ -39,6 +41,9 @@ function MiniPanel({ label, children }: { label: string; children: React.ReactNo
 
 export default async function HomePage() {
   const guides = listGuides().filter((g) => FEATURED_GUIDES.includes(g.slug)).slice(0, 3);
+  // A database hiccup must never take the homepage down: the band renders without cards.
+  let packs: PackRow[] = [];
+  try { packs = await listPacks(); } catch { packs = []; }
 
   return (
     <main>
@@ -165,7 +170,10 @@ export default async function HomePage() {
         </Container>
       </SectionShell>
 
-      {/* 5. Vote for the next converter (lead capture) */}
+      {/* 5. Theme packs: complete multi-page websites */}
+      <ThemePacksBand packs={packs} />
+
+      {/* 5b. Vote for the next converter (lead capture) */}
       <NextConverterBand />
 
       {/* 6. Free layouts (lead capture) */}

@@ -29,5 +29,6 @@ describe('MobileNav', () => {
     fireEvent.click(getByLabelText('Toggle Free layouts submenu'));
     expect(getByText('Hero sections').closest('a')?.getAttribute('href')).toBe('/type/hero');
     expect(getByText('Browse all layouts').closest('a')?.getAttribute('href')).toBe('/browse');
+    expect(getByText('Theme packs').closest('a')?.getAttribute('href')).toBe('/packs');
   });
 });

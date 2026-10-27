@@ -7,6 +7,7 @@ import {
   PLUGIN_MENU,
   LAYOUT_MENU_COLUMNS,
   LAYOUT_MENU_CTA,
+  LAYOUT_MENU_PACKS_CTA,
   type MegaKey,
 } from '@/lib/nav/menu-data';
 
@@ -110,17 +111,22 @@ export function PrimaryNav({ inverted = false }: { inverted?: boolean }) {
             </div>
           ))}
         </div>
-        <Link
-          href={LAYOUT_MENU_CTA.href}
-          onClick={() => setOpen(null)}
-          className="mt-2 flex items-center justify-between gap-3 rounded-card border-t border-border bg-mist px-4 py-3 transition hover:bg-fog"
-        >
-          <span>
-            <span className="text-body font-semibold text-navy">{LAYOUT_MENU_CTA.label}</span>
-            <span className="mt-0.5 block text-small text-muted">{LAYOUT_MENU_CTA.blurb}</span>
-          </span>
-          <Icon name="arrow_forward" size={18} className="shrink-0 text-action" />
-        </Link>
+        <div className="mt-2 grid grid-cols-2 gap-2 border-t border-border pt-2">
+          {[LAYOUT_MENU_CTA, LAYOUT_MENU_PACKS_CTA].map((cta) => (
+            <Link
+              key={cta.href}
+              href={cta.href}
+              onClick={() => setOpen(null)}
+              className="flex items-center justify-between gap-3 rounded-card bg-mist px-4 py-3 transition hover:bg-fog"
+            >
+              <span>
+                <span className="text-body font-semibold text-navy">{cta.label}</span>
+                <span className="mt-0.5 block text-small text-muted">{cta.blurb}</span>
+              </span>
+              <Icon name="arrow_forward" size={18} className="shrink-0 text-action" />
+            </Link>
+          ))}
+        </div>
       </MegaPanel>
     </nav>
   );
