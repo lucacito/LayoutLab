@@ -71,7 +71,8 @@ export async function getLayoutBySlug(slug: string): Promise<LayoutRow | null> {
 }
 
 export async function listPacks(): Promise<PackRow[]> {
-  return db.select().from(packs).where(eq(packs.status, 'published')).orderBy(asc(packs.title));
+  // Newest first: the latest pack leads the list, the homepage band and the menus; the title only breaks ties.
+  return db.select().from(packs).where(eq(packs.status, 'published')).orderBy(desc(packs.createdAt), asc(packs.title));
 }
 
 export async function getPackBySlug(slug: string): Promise<PackRow | null> {
