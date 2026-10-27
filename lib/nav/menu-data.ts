@@ -151,7 +151,7 @@ export const PLUGIN_MENU: PluginMenuItem[] = [
 ];
 
 // ── Free-layouts mega-menu ──────────────────────────────────────────────────
-export type MegaLink = { href: string; label: string; icon: string; blurb: string };
+export type MegaLink = { href: string; label: string; icon: string; blurb: string; facet?: { axis: NavAxis; value: string } };
 export type MegaColumn = { title: string; links: MegaLink[] };
 
 const typeLink = (v: string): MegaLink => ({
@@ -159,18 +159,21 @@ const typeLink = (v: string): MegaLink => ({
   label: TYPE_LABELS[v] ?? v,
   icon: AXIS_META.type[v]?.icon ?? 'grid_view',
   blurb: AXIS_META.type[v]?.blurb ?? '',
+  facet: { axis: 'type', value: v },
 });
 const nicheLink = (v: string): MegaLink => ({
   href: `/niche/${v}`,
   label: NICHE_LABELS[v] ?? v,
   icon: AXIS_META.niche[v]?.icon ?? 'grid_view',
   blurb: AXIS_META.niche[v]?.blurb ?? '',
+  facet: { axis: 'niche', value: v },
 });
 const styleLink = (v: string): MegaLink => ({
   href: `/style/${v}`,
   label: v.charAt(0).toUpperCase() + v.slice(1),
   icon: AXIS_META.style[v]?.icon ?? 'grid_view',
   blurb: AXIS_META.style[v]?.blurb ?? '',
+  facet: { axis: 'style', value: v },
 });
 
 export const LAYOUT_MENU_COLUMNS: MegaColumn[] = [
