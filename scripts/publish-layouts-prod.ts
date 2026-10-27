@@ -1,9 +1,9 @@
-// Publish the free hero batch to PROD, straight to the production database (no ingest token needed).
+// Publish a free layout batch to PROD, straight to the production database (no ingest token needed).
 // Copies the hero layout rows + their tags from the LOCAL database (already validated; JSON and screenshots are in the
 // Blob store local and prod share), published immediately like /api/ingest. Idempotent, nothing is deleted.
 //
-// Usage: bash scripts/publish-heroes-prod.sh            (dry run: reads both DBs, writes nothing)
-//        bash scripts/publish-heroes-prod.sh --confirm  (writes prod)
+// Usage: bash scripts/publish-layouts-prod.sh            (dry run: reads both DBs, writes nothing)
+//        bash scripts/publish-layouts-prod.sh --confirm  (writes prod)
 import { randomUUID } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { Pool } from 'pg';
@@ -13,14 +13,14 @@ import * as schema from '@/db/schema';
 import { layouts, tags, layoutTags } from '@/db/schema';
 
 const CONFIRM = process.argv.includes('--confirm');
-const SLUGS = (JSON.parse(readFileSync(process.env.HERO_META ?? 'scripts/heroes-batch-1.json', 'utf8')) as { slug: string }[]).map((h) => h.slug);
+const SLUGS = (JSON.parse(readFileSync(process.env.HERO_META ?? (() => { throw new Error('set HERO_META to the batch meta.json'); })(), 'utf8')) as { slug: string }[]).map((h) => h.slug);
 
 async function main() {
   const prodUrl = process.env.PROD_DATABASE_URL;
   const localUrl = process.env.POSTGRES_URL || process.env.DATABASE_URL;
   if (!prodUrl || prodUrl.length < 30 || prodUrl.includes('SENSITIVE')) throw new Error('PROD_DATABASE_URL is not a real connection string (a placeholder from a Vercel pull?)');
   if (!localUrl || !/localhost|127\.0\.0\.1/.test(localUrl)) throw new Error('local POSTGRES_URL must point at the local dev database');
-  console.log(`[publish] target=PROD (free hero layouts)  confirm=${CONFIRM}`);
+  console.log(`[publish] target=PROD (free layouts)  confirm=${CONFIRM}`);
 
   const localPool = new Pool({ connectionString: localUrl });
   const prodPool = new Pool({ connectionString: prodUrl });
@@ -30,7 +30,7 @@ async function main() {
     const rows = await local.select().from(layouts).where(inArray(layouts.slug, SLUGS));
     const bySlug = new Map(rows.map((r) => [r.slug, r]));
     for (const s of SLUGS) console.log(`   local ${bySlug.has(s) ? 'ok     ' : 'MISSING'} ${s}`);
-    if (rows.length !== SLUGS.length) throw new Error(`only ${rows.length}/${SLUGS.length} heroes are in the local database, aborting`);
+    if (rows.length !== SLUGS.length) throw new Error(`only ${rows.length}/${SLUGS.length} layouts are in the local database, aborting`);
     for (const r of rows) {
       if (r.validatorPassed !== true) throw new Error(`${r.slug} was not validated, aborting`);
       if (!/^https:\/\//.test(r.diviJsonBlobKey) || !(r.previewImageKeys ?? []).every((k) => /^https:\/\//.test(k)))
@@ -76,7 +76,7 @@ async function main() {
       console.log(`[publish] added ${s} (${tagRows.length} tags)`);
     }
 
-    console.log(`\n[publish] DONE: ${SLUGS.length} free heroes live on https://divi5lab.com/browse?type=hero`);
+    console.log(`\n[publish] DONE: ${SLUGS.length} free layouts live on https://divi5lab.com/browse`);
   } finally {
     await localPool.end();
     await prodPool.end();

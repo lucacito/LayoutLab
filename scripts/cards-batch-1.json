@@ -1,0 +1,72 @@
+[
+    {
+        "slug": "minimal-design-studio-services-cards-layout-for-divi-5-four-icon-blurbs",
+        "title": "Minimal Design Studio Services Cards Layout for Divi 5: Four Icon Blurbs",
+        "niche": "agency",
+        "style": "minimal",
+        "color": "monochrome"
+    },
+    {
+        "slug": "bold-fitness-programs-cards-layout-for-divi-5-four-class-blurbs",
+        "title": "Bold Fitness Programs Cards Layout for Divi 5: Four Class Blurbs",
+        "niche": "fitness",
+        "style": "bold",
+        "color": "orange"
+    },
+    {
+        "slug": "organic-restaurant-feature-cards-bento-layout-for-divi-5-tasting-table",
+        "title": "Organic Restaurant Feature Cards Bento Layout for Divi 5: Tasting Table",
+        "niche": "restaurant",
+        "style": "elegant",
+        "color": "orange"
+    },
+    {
+        "slug": "soft-case-study-cards-layout-for-divi-5-project-grid",
+        "title": "Soft Case Study Cards Layout for Divi 5: Project Grid",
+        "niche": "portfolio",
+        "style": "minimal",
+        "color": "purple"
+    },
+    {
+        "slug": "soft-nonprofit-values-cards-layout-for-divi-5-three-icon-values",
+        "title": "Soft Nonprofit Values Cards Layout for Divi 5: Three Icon Values",
+        "niche": "nonprofit",
+        "style": "minimal",
+        "color": "purple"
+    },
+    {
+        "slug": "dark-developer-platform-feature-cards-bento-layout-for-divi-5",
+        "title": "Dark Developer Platform Feature Cards Bento Layout for Divi 5",
+        "niche": "saas",
+        "style": "dark",
+        "color": "green"
+    },
+    {
+        "slug": "brutalist-coffee-gear-ecommerce-feature-cards-bento-layout-for-divi-5",
+        "title": "Brutalist Coffee Gear Ecommerce Feature Cards Bento Layout for Divi 5",
+        "niche": "ecommerce",
+        "style": "bold",
+        "color": "orange"
+    },
+    {
+        "slug": "playful-summer-camp-events-feature-cards-carousel-layout-for-divi-5",
+        "title": "Playful Summer Camp Events Feature Cards Carousel Layout for Divi 5",
+        "niche": "events",
+        "style": "playful",
+        "color": "pastel"
+    },
+    {
+        "slug": "dark-digital-agency-capabilities-cards-carousel-layout-for-divi-5",
+        "title": "Dark Digital Agency Capabilities Cards Carousel Layout for Divi 5",
+        "niche": "agency",
+        "style": "dark",
+        "color": "purple"
+    },
+    {
+        "slug": "luxe-real-estate-agent-profile-cards-layout-for-divi-5-team-grid",
+        "title": "Luxe Real Estate Agent Profile Cards Layout for Divi 5: Team Grid",
+        "niche": "real_estate",
+        "style": "elegant",
+        "color": "monochrome"
+    }
+]
