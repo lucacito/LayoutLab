@@ -303,6 +303,11 @@ export interface PipelineItem {
    * `full_landing` target. Absent for the matrix path (its `full_landing`
    * targets generate their own brief). */
   composeExtras?: { brief?: Brief; brandFacts?: string; flow?: Step[] };
+  /** Theme-only: a page already composed outside the pipeline (e.g. by the AI Editor
+   * plugin's recipes). A `{post_title, post_content}` JSON string; composeLanding is
+   * skipped and every downstream gate (validate, images, design lint, mobile stack,
+   * dedupe, SEO, render, critics, ingest) runs on it exactly as on a generated page. */
+  precomposed?: string;
   /** Theme-only: fixed ingest slug/title/axes (deterministic brand+role, pinned
    * niche/style) so the SEO step doesn't rename pages of a coherent pack. Absent
    * for the matrix path, where these come from the SEO result + `variantSlug`. */
@@ -610,7 +615,9 @@ export async function processItem(item: PipelineItem, ctx: RunContext): Promise<
     // this fix silently papers over.
     const runPhaseA = async (): Promise<{ json: string; hash: string; seo: LayoutSeo; article?: GenerateArticleResult; layoutText: string } | undefined> => {
       let { json } =
-        target.type === 'full_landing'
+        item.precomposed
+          ? { json: item.precomposed }
+          : target.type === 'full_landing'
           ? await composeLanding(target, {
               llm: meteredLlm,
               guide: deps.guide,
