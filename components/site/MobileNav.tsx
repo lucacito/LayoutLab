@@ -11,7 +11,9 @@ import {
   LAYOUT_MENU_CTA,
   LAYOUT_MENU_PACKS_CTA,
   type MegaKey,
+  type MegaLink,
 } from '@/lib/nav/menu-data';
+import { useMenuCounts, countFor } from '@/lib/nav/use-menu-counts';
 
 const ICONS: Record<string, string> = {
   plugins: 'extension',
@@ -20,13 +22,13 @@ const ICONS: Record<string, string> = {
 };
 
 // Flattened sub-links per mega-menu, for the mobile accordion.
-const SUBLINKS: Record<MegaKey, { href: string; label: string; icon: string }[]> = {
+const SUBLINKS: Record<MegaKey, { href: string; label: string; icon: string; facet?: MegaLink['facet'] }[]> = {
   plugins: [
     ...PLUGIN_MENU.map((p) => ({ href: p.href, label: p.name, icon: p.icon })),
     { href: '/plugins', label: 'All plugins', icon: 'apps' },
   ],
   layouts: [
-    ...LAYOUT_MENU_COLUMNS.flatMap((c) => c.links.map((l) => ({ href: l.href, label: l.label, icon: l.icon }))),
+    ...LAYOUT_MENU_COLUMNS.flatMap((c) => c.links.map((l) => ({ href: l.href, label: l.label, icon: l.icon, facet: l.facet }))),
     { href: LAYOUT_MENU_CTA.href, label: LAYOUT_MENU_CTA.label, icon: LAYOUT_MENU_CTA.icon },
     { href: LAYOUT_MENU_PACKS_CTA.href, label: LAYOUT_MENU_PACKS_CTA.label, icon: LAYOUT_MENU_PACKS_CTA.icon },
   ],
@@ -36,6 +38,7 @@ export function MobileNav({ inverted = false }: { inverted?: boolean }) {
   const [open, setOpen] = useState(false);
   const [expanded, setExpanded] = useState<MegaKey | null>(null);
   const { data: session } = useSession();
+  const counts = useMenuCounts();
   const user = session?.user as { role?: string } | undefined;
   const close = () => {
     setOpen(false);
@@ -80,7 +83,12 @@ export function MobileNav({ inverted = false }: { inverted?: boolean }) {
                         onClick={close}
                         className="flex items-center gap-2 rounded-button py-2 pl-9 pr-2 text-small font-medium text-muted hover:text-action"
                       >
-                        <Icon name={s.icon} size={17} /> {s.label}
+                        <Icon name={s.icon} size={17} /> <span className="flex-1">{s.label}</span>
+                        {countFor(counts, s) !== undefined && (
+                          <span className="rounded-full bg-fog px-1.5 text-[11px] font-semibold tabular-nums text-muted" data-menu-count="">
+                            {countFor(counts, s)}
+                          </span>
+                        )}
                       </Link>
                     ))}
                   </div>

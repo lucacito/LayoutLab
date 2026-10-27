@@ -10,6 +10,7 @@ import {
   LAYOUT_MENU_PACKS_CTA,
   type MegaKey,
 } from '@/lib/nav/menu-data';
+import { useMenuCounts, countFor } from '@/lib/nav/use-menu-counts';
 
 const CHIP_TONE: Record<'green' | 'amber', string> = {
   green: 'bg-green-50 text-green-700 border-green-200',
@@ -21,6 +22,7 @@ const CHIP_TONE: Record<'green' | 'amber', string> = {
 // CSS) so links remain crawlable and testable.
 export function PrimaryNav({ inverted = false }: { inverted?: boolean }) {
   const [open, setOpen] = useState<MegaKey | null>(null);
+  const counts = useMenuCounts();
 
   // Over the canvas hero the nav is light-on-gradient; once the header
   // solidifies it reverts to navy-on-paper.
@@ -105,7 +107,12 @@ export function PrimaryNav({ inverted = false }: { inverted?: boolean }) {
                   className="group flex items-center gap-2.5 rounded-button px-3 py-2 transition hover:bg-mist"
                 >
                   <Icon name={l.icon} size={18} className="text-muted group-hover:text-action" />
-                  <span className="text-small font-medium text-navy group-hover:text-action">{l.label}</span>
+                  <span className="flex-1 text-small font-medium text-navy group-hover:text-action">{l.label}</span>
+                  {countFor(counts, l) !== undefined && (
+                    <span className="rounded-full bg-fog px-1.5 text-[11px] font-semibold tabular-nums text-muted" data-menu-count="">
+                      {countFor(counts, l)}
+                    </span>
+                  )}
                 </Link>
               ))}
             </div>
