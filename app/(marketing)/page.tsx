@@ -39,6 +39,9 @@ function MiniPanel({ label, children }: { label: string; children: React.ReactNo
   );
 }
 
+// The homepage lists the live theme packs, so it must not be frozen at build time: re-render at most every 5 minutes.
+export const revalidate = 300;
+
 export default async function HomePage() {
   const guides = listGuides().filter((g) => FEATURED_GUIDES.includes(g.slug)).slice(0, 3);
   // A database hiccup must never take the homepage down: the band renders without cards.
