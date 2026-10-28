@@ -26,4 +26,8 @@ describe('toDiviPortability', () => {
     const out = JSON.parse(toDiviPortability(bare, { globalColors: [['gcid-kiln-ink', { color: '#2b2622', label: 'Kiln ink', status: 'active' }]] }));
     expect(out.global_colors).toEqual([['gcid-kiln-ink', { color: '#2b2622', label: 'Kiln ink', status: 'active' }]]);
   });
+  it('carries module presets when given', () => {
+    const presets = { module: { 'divi/text': { default: '', items: { p1: { id: 'p1', name: 'Kiln Body' } } } }, group: [] };
+    expect(JSON.parse(toDiviPortability(bare, { presets })).presets).toEqual(presets);
+  });
 });

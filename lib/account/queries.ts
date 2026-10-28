@@ -26,8 +26,8 @@ export async function getEntitlementsForUser(userId: string): Promise<UserEntitl
     .from(entitlements).where(eq(entitlements.userId, userId));
 }
 
-export async function getLayoutForDownload(layoutId: string): Promise<{ id: string; slug: string; title: string; diviJsonBlobKey: string } | null> {
-  const rows = await db.select({ id: layouts.id, slug: layouts.slug, title: layouts.title, diviJsonBlobKey: layouts.diviJsonBlobKey })
+export async function getLayoutForDownload(layoutId: string): Promise<{ id: string; slug: string; title: string; diviJsonBlobKey: string; contentHash: string } | null> {
+  const rows = await db.select({ id: layouts.id, slug: layouts.slug, title: layouts.title, diviJsonBlobKey: layouts.diviJsonBlobKey, contentHash: layouts.contentHash })
     .from(layouts).where(and(eq(layouts.id, layoutId), eq(layouts.status, 'published'))).limit(1);
   return rows[0] ?? null;
 }
@@ -93,8 +93,8 @@ export async function getPackForDownload(packId: string): Promise<{ id: string; 
   return rows[0] ?? null;
 }
 
-export async function getPackLayoutsForDownload(packId: string): Promise<{ id: string; slug: string; diviJsonBlobKey: string }[]> {
-  return db.select({ id: layouts.id, slug: layouts.slug, diviJsonBlobKey: layouts.diviJsonBlobKey })
+export async function getPackLayoutsForDownload(packId: string): Promise<{ id: string; slug: string; diviJsonBlobKey: string; contentHash: string }[]> {
+  return db.select({ id: layouts.id, slug: layouts.slug, diviJsonBlobKey: layouts.diviJsonBlobKey, contentHash: layouts.contentHash })
     .from(packLayouts).innerJoin(layouts, eq(packLayouts.layoutId, layouts.id))
     .where(and(eq(packLayouts.packId, packId), eq(layouts.status, 'published')));
 }

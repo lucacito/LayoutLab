@@ -7,7 +7,7 @@ const h = vi.hoisted(() => ({
   getPackForDownload: vi.fn(async (): Promise<{ id: string; slug: string } | null> => ({ id: 'p1', slug: 'agency-essentials' })),
   getPackLayoutsForDownload: vi.fn(async () => [{ id: 'l1', slug: 'a-hero', diviJsonBlobKey: 'k1' }, { id: 'l2', slug: 'b-cta', diviJsonBlobKey: 'k2' }]),
   recordDownload: vi.fn(async () => {}),
-  fetchAsset: vi.fn(async (): Promise<Buffer | null> => Buffer.from('{"x":1}')),
+  fetchAsset: vi.fn(async (_key?: string): Promise<Buffer | null> => Buffer.from('{"x":1}')),
 }));
 vi.mock('@/lib/auth/admin', () => ({ requireUser: h.requireUser }));
 vi.mock('@/lib/account/queries', () => ({ getUserIdByEmail: h.getUserIdByEmail, getEntitlementsForUser: h.getEntitlementsForUser, getPackForDownload: h.getPackForDownload, getPackLayoutsForDownload: h.getPackLayoutsForDownload, recordDownload: h.recordDownload }));
@@ -52,5 +52,27 @@ describe('GET /api/download/pack/[packId]', () => {
     h.fetchAsset.mockResolvedValue(null);
     const res = await GET(req(), ctx('p1'));
     expect(res.status).toBe(404);
+  });
+  it('serves the published import file (colors + presets) and adds the import notes', async () => {
+    const H = 'a5473a42a5af0123456789abcdef0123456789abcdef0123456789abcdef0123';
+    const base = 'https://store123.public.blob.vercel-storage.com';
+    const portable = JSON.stringify({ context: 'et_builder', data: { '1': { post_title: 't', post_content: '<!-- wp:divi/section {} /-->' } }, presets: { module: {}, group: [] }, global_colors: [['gcid-x', { color: '#000000' }]] });
+    h.getEntitlementsForUser.mockResolvedValue([{ scope: 'pack:p1', source: 'order', expiresAt: null }]);
+    h.getPackLayoutsForDownload.mockResolvedValueOnce([{ id: 'l1', slug: 'kiln-home', diviJsonBlobKey: `${base}/layouts/${H}/x.json`, contentHash: H } as any]);
+    h.fetchAsset.mockImplementation(async (k?: string) => Buffer.from((k ?? '').includes('/portable/') ? portable : '{"post_title":"t","post_content":"<!-- wp:divi/section {} /-->"}'));
+    const res = await GET(req(), ctx('p1'));
+    expect(res.status).toBe(200);
+    const JSZip = (await import('jszip')).default;
+    const zip = await JSZip.loadAsync(Buffer.from(await res.arrayBuffer()));
+    expect(await zip.file('kiln-home.json')!.async('string')).toBe(portable);
+    expect(zip.file('HOW-TO-IMPORT.txt')).not.toBeNull();
+    h.fetchAsset.mockReset().mockResolvedValue(Buffer.from('{"x":1}'));
+  });
+  it('a pack with no published import files gets plain wrapped pages and no notes', async () => {
+    h.getEntitlementsForUser.mockResolvedValue([{ scope: 'pack:p1', source: 'order', expiresAt: null }]);
+    const res = await GET(req(), ctx('p1'));
+    const JSZip = (await import('jszip')).default;
+    const zip = await JSZip.loadAsync(Buffer.from(await res.arrayBuffer()));
+    expect(zip.file('HOW-TO-IMPORT.txt')).toBeNull();
   });
 });
