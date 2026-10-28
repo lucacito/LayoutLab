@@ -14,14 +14,14 @@
 //        bash scripts/portable-publish.sh <id> --remove        (deletes the uploaded files again: the pack goes back to plain pages)
 // Needs the validator checkout (VALIDATOR_DIR, default ../Divi 5 Deterministic Validator) with scripts/theme-packs/<id>.php.
 import { execFileSync } from 'node:child_process';
-import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { Pool } from 'pg';
 import { drizzle } from 'drizzle-orm/node-postgres';
-import { inArray } from 'drizzle-orm';
+import { eq, inArray } from 'drizzle-orm';
 import { del, put } from '@vercel/blob';
 import * as schema from '@/db/schema';
-import { layouts } from '@/db/schema';
+import { layouts, packLayouts, packs } from '@/db/schema';
 import { slugify } from '@/pipeline/seo';
 import { fetchAsset } from '@/lib/blob';
 import { toDiviPortability, type PortabilityExtras } from '@/lib/download/portability';
@@ -32,10 +32,20 @@ const CONFIRM = process.argv.includes('--confirm');
 const REMOVE = process.argv.includes('--remove');
 const ID = process.env.PACK;
 if (!ID) throw new Error('set PACK=<id>');
-const CFG = JSON.parse(readFileSync(`scripts/packs/${ID}.json`, 'utf8')) as PackConfig;
+// Packs made from a scripts/packs/<id>.json config find their pages by the config's slug formula. The older packs were made by
+// their own create-<id>-pack.ts scripts and have no config: their pages are found through the pack's slug in the database, and
+// <id> is the name of the validator spec (scripts/theme-packs/<id>.php).
+const OLDER_PACK_SLUGS: Record<string, string> = {
+  tidewell: 'tidewell-wellness-studio-theme', haldenrow: 'halden-row-interior-design-theme', ironbound: 'ironbound-strength-gym-theme',
+  wagtail: 'wagtail-veterinary-clinic-theme', copperline: 'copperline-plumbing-theme', anvil: 'anvil-commercial-plumbing-theme',
+  fieldnote: 'fieldnote-coffee-roaster-theme', larkfield: 'larkfield-private-school-theme', nullbyte: 'nullbyte-cybersecurity-theme',
+  bureau: 'bureau-creative-agency-theme', nightshift: 'nightshift-creative-studio-theme',
+};
+const CFG = existsSync(`scripts/packs/${ID}.json`) ? (JSON.parse(readFileSync(`scripts/packs/${ID}.json`, 'utf8')) as PackConfig) : null;
+if (!CFG && !OLDER_PACK_SLUGS[ID]) throw new Error(`no scripts/packs/${ID}.json and ${ID} is not a known older pack`);
 const VALIDATOR = resolve(process.env.VALIDATOR_DIR ?? '../Divi 5 Deterministic Validator');
 const WORK = `${VALIDATOR}/dist/portable/${ID}`;
-const ROLES = CFG.roles.map((r) => ({ role: r.role, slug: slugify(`${CFG.businessName} ${CFG.style} ${CFG.niche} ${r.role} page for divi 5`) }));
+let ROLES: { role: string; slug: string }[] = (CFG?.roles ?? []).map((r) => ({ role: r.role, slug: slugify(`${CFG!.businessName} ${CFG!.style} ${CFG!.niche} ${r.role} page for divi 5`) }));
 
 function php(script: string, args: string[]): void {
   console.log(execFileSync('php', [`${VALIDATOR}/scripts/theme-packs/${script}`, ...args], { cwd: VALIDATOR, encoding: 'utf8' }).trim().split('\n').slice(-1)[0]);
@@ -47,6 +57,13 @@ async function main() {
   const pool = new Pool({ connectionString: localUrl });
   const db = drizzle(pool, { schema });
   try {
+    if (!CFG) {
+      const inPack = await db.select({ slug: layouts.slug }).from(packLayouts)
+        .innerJoin(packs, eq(packLayouts.packId, packs.id)).innerJoin(layouts, eq(packLayouts.layoutId, layouts.id))
+        .where(eq(packs.slug, OLDER_PACK_SLUGS[ID!]));
+      if (inPack.length === 0) throw new Error(`pack ${OLDER_PACK_SLUGS[ID!]} has no pages in the local database`);
+      ROLES = inPack.map((r) => ({ role: r.slug.replace(/-page-for-divi-5$/, '').slice(-60), slug: r.slug })).sort((a, b) => a.slug.localeCompare(b.slug));
+    }
     const rows = await db.select().from(layouts).where(inArray(layouts.slug, ROLES.map((r) => r.slug)));
     const bySlug = new Map(rows.map((r) => [r.slug, r]));
     const missing = ROLES.filter((r) => !bySlug.has(r.slug));
