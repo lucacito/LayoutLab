@@ -1,0 +1,32 @@
+{
+  "id": "halcyon",
+  "businessName": "Halcyon Dental",
+  "tagline": "A dentist you will actually look forward to seeing.",
+  "audience": "families, nervous patients and busy professionals who want gentle, modern dental care with clear prices and same-week appointments",
+  "conversionGoal": "book a visit",
+  "primaryCta": "Book a visit",
+  "accentColorHex": "#0F7C80",
+  "voice": "calm, kind and plainly funny. Short sentences, reassuring detail, no clinical jargon and no scare tactics.",
+  "palette": { "primary": "#0f7c80", "secondary": "#4c6a6e", "tint": "#eaf6f3", "dark": "#10343a", "heading": "#10343a", "body": "#4c6a6e" },
+  "designNotes": "Soft-saas design language recoloured to mint backgrounds and deep teal, Manrope headings and Nunito body, white rounded cards with soft shadows and soft-rounded buttons.",
+  "brandFacts": "Halcyon Dental, 2201 Larimer Street, Denver, CO 80205. Phone (303) 555-0119. hello@halcyondental.com. Sample copy: names, prices and reviews are examples to replace.",
+  "roles": [
+    { "role": "home", "roleLabel": "Home" },
+    { "role": "treatments", "roleLabel": "Treatments" },
+    { "role": "membership", "roleLabel": "Membership" },
+    { "role": "team", "roleLabel": "The Team" },
+    { "role": "patients", "roleLabel": "New Patients" },
+    { "role": "contact", "roleLabel": "Contact" }
+  ],
+  "niche": "dental",
+  "style": "minimal",
+  "color": "green",
+  "packSlug": "halcyon-dental-clinic-theme",
+  "packTitle": "Halcyon: Dental Clinic Theme (6 Pages)",
+  "description": "A complete six-page Divi 5 website for a dental practice, orthodontist, clinic, physio or any friendly healthcare provider, ready to make your own. Home, Treatments, Membership, The Team, New Patients and Contact share one calm, clean identity: mint backgrounds, a deep teal accent, Manrope headings and soft rounded cards. Every section is built from proven, validated recipes and a single design language and style kit, so buttons, accordions, forms and type match on every page, on desktop, tablet and phone. A split-image hero, a three-promise values row, a scrolling treatments strip, patient quotes, a booking form, a treatments accordion, a first-visit list, membership plans with a comparison table, insurance versus plan panels, a dentist team grid, a founder note, a first-visit steps and checklist and a what-happens-next timeline are all in place. Names, prices and reviews are sample copy: swap in your own and publish. No lorem ipsum, no broken layouts. One simple commercial license, unlimited client sites.",
+  "seo": {
+    "metaTitle": "Halcyon: Dental Clinic Theme for Divi 5 (6 Pages) | Divi5Lab",
+    "metaDescription": "A complete six-page calm Divi 5 website theme for a dental practice or clinic: Home, Treatments, Membership, Team, New Patients and Contact. Mint and teal, real copy.",
+    "keywords": ["divi 5 dental theme", "dentist website template", "clinic divi 5 theme", "healthcare website template", "divi 5 multi-page theme"]
+  }
+}

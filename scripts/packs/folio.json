@@ -1,0 +1,32 @@
+{
+  "id": "folio",
+  "businessName": "Folio & Fable",
+  "tagline": "A bookshop for people who still browse.",
+  "audience": "readers, book-club members, gift buyers and neighbours who want an independent bookshop with a reading café, a calendar of events and booksellers who actually read",
+  "conversionGoal": "plan a visit",
+  "primaryCta": "Plan a visit",
+  "accentColorHex": "#9A5F00",
+  "voice": "wry, warm and bookish. Short sentences, specific details, a little self-mockery, never twee and never shouty.",
+  "palette": { "primary": "#9a5f00", "secondary": "#5a6a5c", "tint": "#f4efe3", "dark": "#17301f", "heading": "#17301f", "body": "#5a6a5c" },
+  "designNotes": "Editorial design language recoloured to parchment backgrounds with deep forest-green text and a mustard accent, Libre Baskerville headings and Karla body, underlined link-style buttons.",
+  "brandFacts": "Folio & Fable, 21 Candlemaker Row, Edinburgh EH1 2QA. Phone 0131 555 0118. hello@foliofable.co.uk. Sample copy: names, prices and reviews are examples to replace.",
+  "roles": [
+    { "role": "home", "roleLabel": "Home" },
+    { "role": "shop", "roleLabel": "The Shop" },
+    { "role": "events", "roleLabel": "Events" },
+    { "role": "cafe", "roleLabel": "The Café" },
+    { "role": "about", "roleLabel": "About" },
+    { "role": "contact", "roleLabel": "Contact" }
+  ],
+  "niche": "bookshop",
+  "style": "elegant",
+  "color": "green",
+  "packSlug": "folio-independent-bookshop-theme",
+  "packTitle": "Folio & Fable: Independent Bookshop Theme (6 Pages)",
+  "description": "A complete six-page Divi 5 website for an independent bookshop, library, café, publisher or literary festival, ready to make your own. Home, The Shop, Events, The Café, About and Contact share one warm, bookish identity: parchment backgrounds, deep forest-green type, a mustard accent, Libre Baskerville headings and underlined link buttons. Every section is built from proven, validated recipes and a single design language and style kit, so buttons, accordions, forms and type match on every page, on desktop, tablet and phone. A split-image hero, four icon blurbs, a staff-picks grid, a full-bleed reader quote, a newsletter form, a floor-by-floor accordion, a gallery of corners, an events timeline, two book-club plans, member quotes, a café menu zigzag, a founder note and a contact page with a form are all in place. Names, prices and reviews are sample copy: swap in your own and publish. No lorem ipsum, no broken layouts. One simple commercial license, unlimited client sites.",
+  "seo": {
+    "metaTitle": "Folio & Fable: Bookshop Theme for Divi 5 (6 Pages) | Divi5Lab",
+    "metaDescription": "A complete six-page warm Divi 5 website theme for an independent bookshop or reading café: Home, Shop, Events, Café, About and Contact. Parchment, forest green and mustard.",
+    "keywords": ["divi 5 bookshop theme", "bookstore website template", "library divi 5 theme", "cafe website template", "divi 5 multi-page theme"]
+  }
+}

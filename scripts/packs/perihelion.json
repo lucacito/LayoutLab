@@ -1,0 +1,32 @@
+{
+  "id": "perihelion",
+  "businessName": "Perihelion Observatory",
+  "tagline": "Look up. Then look closer.",
+  "audience": "families, school groups, hobbyists and curious adults who want guided telescope nights, a planetarium show and honest astronomy from working scientists",
+  "conversionGoal": "book a telescope night",
+  "primaryCta": "Book a night",
+  "accentColorHex": "#FFB454",
+  "voice": "curious, calm and quietly awed. Short sentences, precise facts, a little wonder, never twee and never jargon-heavy.",
+  "palette": { "primary": "#ffb454", "secondary": "#a8a3c8", "tint": "#12102a", "dark": "#080714", "heading": "#f1eefc", "body": "#a8a3c8" },
+  "designNotes": "Glass-dark design language recoloured to deep-space violet with a warm amber accent, Sora headings and Inter body, hairline halos around buttons and cards.",
+  "brandFacts": "Perihelion Observatory, Sentinel Ridge Road, Tucson, AZ 85745. Phone (520) 555-0171. hello@perihelion.observatory. Sample copy: names, prices and reviews are examples to replace.",
+  "roles": [
+    { "role": "home", "roleLabel": "Home" },
+    { "role": "tonight", "roleLabel": "Sky Tonight" },
+    { "role": "tickets", "roleLabel": "Visit and Tickets" },
+    { "role": "learn", "roleLabel": "Learn" },
+    { "role": "about", "roleLabel": "About" },
+    { "role": "contact", "roleLabel": "Contact" }
+  ],
+  "niche": "observatory",
+  "style": "dark",
+  "color": "purple",
+  "packSlug": "perihelion-observatory-theme",
+  "packTitle": "Perihelion: Observatory & Planetarium Theme (6 Pages)",
+  "description": "A complete six-page Divi 5 website for an observatory, planetarium, science museum, space-tourism or any dark, wonder-led venue, ready to make your own. Home, Sky Tonight, Visit and Tickets, Learn, About and Contact share one deep-space identity: violet-black backgrounds, a warm amber accent, Sora headings and glowing hairline cards. Every section is built from proven, validated recipes and a single design language and style kit, so buttons, accordions, forms and type match on every page, on desktop, tablet and phone. A stats-gradient hero, a what-you-might-see feature grid, a bento of evening options, a single guest testimonial, a scrolling monthly sky guide, a naked-eye versus telescope comparison, three-tier tickets, a what-to-bring checklist, a group-booking form, learning programmes, an astronomer team grid, a story timeline and a full-bleed quote are all in place. Names, prices and reviews are sample copy: swap in your own and publish. No lorem ipsum, no broken layouts. One simple commercial license, unlimited client sites.",
+  "seo": {
+    "metaTitle": "Perihelion: Observatory Theme for Divi 5 (6 Pages) | Divi5Lab",
+    "metaDescription": "A complete six-page dark Divi 5 website theme for an observatory or planetarium: Home, Sky Tonight, Tickets, Learn, About and Contact. Deep violet, amber glow, real copy.",
+    "keywords": ["divi 5 observatory theme", "planetarium website template", "science museum divi 5 theme", "dark astronomy website template", "divi 5 multi-page theme"]
+  }
+}
