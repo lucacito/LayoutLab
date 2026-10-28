@@ -1,0 +1,32 @@
+{
+  "id": "northwind",
+  "businessName": "Northwind Architects",
+  "tagline": "We build things that outlast the brief.",
+  "audience": "developers, public clients and private owners who want an architecture studio that designs, details and supervises buildings in honest materials",
+  "conversionGoal": "talk to the studio",
+  "primaryCta": "Talk to the studio",
+  "accentColorHex": "#D4FF2A",
+  "voice": "direct, dry and craft-obsessed. Short declarative sentences, concrete numbers, no architect-speak and a little deadpan humour.",
+  "palette": { "primary": "#d4ff2a", "secondary": "#404040", "tint": "#d6d8d3", "dark": "#0d0d0d", "heading": "#0d0d0d", "body": "#404040" },
+  "designNotes": "Brutalist-flat design language recoloured to poured-concrete grey with an acid-lime accent, black frames, heavy grotesque headings and thick-frame capital buttons.",
+  "brandFacts": "Northwind Architects, Havenstraat 12, 3011 Rotterdam. Phone +31 10 555 0183. studio@northwind.nl. Sample copy: names, fees and project details are examples to replace.",
+  "roles": [
+    { "role": "home", "roleLabel": "Home" },
+    { "role": "projects", "roleLabel": "Projects" },
+    { "role": "studio", "roleLabel": "The Studio" },
+    { "role": "services", "roleLabel": "Services" },
+    { "role": "journal", "roleLabel": "Journal" },
+    { "role": "contact", "roleLabel": "Contact" }
+  ],
+  "niche": "architecture",
+  "style": "bold",
+  "color": "monochrome",
+  "packSlug": "northwind-architecture-studio-theme",
+  "packTitle": "Northwind: Architecture Studio Theme (6 Pages)",
+  "description": "A complete six-page Divi 5 website for an architecture studio, interior designer, construction firm or any serious, material-led practice, ready to make your own. Home, Projects, The Studio, Services, Journal and Contact share one blunt, confident identity: poured-concrete grey, an acid-lime accent, black frames and heavy grotesque headings. Every section is built from proven, validated recipes and a single design language and style kit, so buttons, accordions, forms and type match on every page, on desktop, tablet and phone. A full-bleed image hero, a big-numbers band, a selected-work grid, a bento of services, a gallery wall, three in-depth project cases, a before-and-after of a transformed site, a partner team grid with a founder note, a fee comparison table, a materials comparison and a visit-the-studio page are all in place. Names, fees and project details are sample copy: swap in your own and publish. No lorem ipsum, no broken layouts. One simple commercial license, unlimited client sites.",
+  "seo": {
+    "metaTitle": "Northwind: Architecture Studio Theme for Divi 5 (6 Pages) | Divi5Lab",
+    "metaDescription": "A complete six-page bold Divi 5 website theme for an architecture studio or construction firm: Home, Projects, Studio, Services, Journal and Contact. Concrete grey, acid lime.",
+    "keywords": ["divi 5 architecture theme", "architect website template", "construction divi 5 theme", "interior design website template", "divi 5 multi-page theme"]
+  }
+}

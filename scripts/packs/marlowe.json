@@ -1,0 +1,32 @@
+{
+  "id": "marlowe",
+  "businessName": "Marlowe & Finch",
+  "tagline": "Counsel for the questions that keep you awake.",
+  "audience": "founders, families and employers who want a small law firm where a partner handles the matter, explains it plainly and agrees the fee up front",
+  "conversionGoal": "request a consultation",
+  "primaryCta": "Request a consultation",
+  "accentColorHex": "#7A1E2C",
+  "voice": "measured, candid and warm. Plain English, short sentences, no legalese and no bluster, specific about fees and timelines.",
+  "palette": { "primary": "#7a1e2c", "secondary": "#55616f", "tint": "#eceff3", "dark": "#14202e", "heading": "#14202e", "body": "#55616f" },
+  "designNotes": "Editorial design language recoloured to cool grey with an oxblood accent, Spectral serif headings, Source Sans body and formal double-rule buttons.",
+  "brandFacts": "Marlowe & Finch, 100 State Street, Suite 910, Boston, MA 02109. Phone (617) 555-0142. advice@marlowefinch.com. Sample copy: names, fees and reviews are examples to replace.",
+  "roles": [
+    { "role": "home", "roleLabel": "Home" },
+    { "role": "practice", "roleLabel": "Practice Areas" },
+    { "role": "approach", "roleLabel": "Our Approach" },
+    { "role": "partners", "roleLabel": "The Partners" },
+    { "role": "guides", "roleLabel": "Client Guides" },
+    { "role": "contact", "roleLabel": "Contact" }
+  ],
+  "niche": "law_firm",
+  "style": "elegant",
+  "color": "monochrome",
+  "packSlug": "marlowe-law-firm-theme",
+  "packTitle": "Marlowe & Finch: Law Firm Theme (6 Pages)",
+  "description": "A complete six-page Divi 5 website for a law firm, solicitors, notary, accountancy or any serious professional practice, ready to make your own. Home, Practice Areas, Our Approach, The Partners, Client Guides and Contact share one measured, formal identity: cool grey backgrounds, a deep oxblood accent, Spectral serif headings and double-rule buttons. Every section is built from proven, validated recipes and a single design language and style kit, so buttons, accordions, forms and type match on every page, on desktop, tablet and phone. A type-led editorial hero, a figures band, practice-area blurbs, a client quote, fee options, a first-meeting checklist, a four-step method, a month-by-month matter timeline, partner profiles with a founder note, directory quotes and client guides are all in place. Names, fees and reviews are sample copy: swap in your own and publish. No lorem ipsum, no broken layouts. One simple commercial license, unlimited client sites.",
+  "seo": {
+    "metaTitle": "Marlowe & Finch: Law Firm Theme for Divi 5 (6 Pages) | Divi5Lab",
+    "metaDescription": "A complete six-page formal Divi 5 website theme for a law firm or professional practice: Home, Practice Areas, Approach, Partners, Guides and Contact. Grey and oxblood, real copy.",
+    "keywords": ["divi 5 law firm theme", "solicitor website template", "lawyer divi 5 theme", "professional services website template", "divi 5 multi-page theme"]
+  }
+}
