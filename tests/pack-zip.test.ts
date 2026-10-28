@@ -11,3 +11,15 @@ describe('buildPackZip', () => {
     expect(await zip.file('LICENSE.txt')!.async('string')).toBe('LICENSE BODY');
   });
 });
+
+describe('buildPackZip import notes', () => {
+  it('adds HOW-TO-IMPORT.txt only when notes are given', async () => {
+    const JSZip = (await import('jszip')).default;
+    const { buildPackZip, PORTABLE_NOTES } = await import('@/lib/download/zip');
+    const plain = await JSZip.loadAsync(await buildPackZip([{ slug: 'a', json: '{}' }], 'L'));
+    expect(Object.keys(plain.files).sort()).toEqual(['LICENSE.txt', 'a.json']);
+    const withNotes = await JSZip.loadAsync(await buildPackZip([{ slug: 'a', json: '{}' }], 'L', PORTABLE_NOTES));
+    expect(Object.keys(withNotes.files)).toContain('HOW-TO-IMPORT.txt');
+    expect(await withNotes.file('HOW-TO-IMPORT.txt')!.async('string')).toContain('Include global presets');
+  });
+});

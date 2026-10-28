@@ -10,6 +10,8 @@
 export interface PortabilityExtras {
   /** Divi global colors as Divi's exporter writes them: a list of [ 'gcid-…', { color, label, status } ] pairs. */
   globalColors?: [string, { color: string; label?: string; status?: 'active' | 'inactive' }][];
+  /** Divi module presets as Divi's exporter writes them: { module: { 'divi/text': { default, items } }, group: [] }. */
+  presets?: object;
 }
 
 export function toDiviPortability(json: string, extras: PortabilityExtras = {}): string {
@@ -25,7 +27,7 @@ export function toDiviPortability(json: string, extras: PortabilityExtras = {}):
   return JSON.stringify({
     context: 'et_builder',
     data: { '1': { post_title: typeof l.post_title === 'string' ? l.post_title : '', post_content: l.post_content } },
-    presets: '',
+    presets: extras.presets ?? '',
     global_colors: extras.globalColors ?? '',
     global_variables: '',
     images: [],
