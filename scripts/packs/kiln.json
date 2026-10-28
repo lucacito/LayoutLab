@@ -1,0 +1,32 @@
+{
+  "id": "kiln",
+  "businessName": "Kiln & Clay",
+  "tagline": "Pots made by hand, and by you.",
+  "audience": "beginners, hobbyists, gift buyers and makers who want pottery classes, a studio membership and handmade ceramics from a friendly neighbourhood studio",
+  "conversionGoal": "book a class",
+  "primaryCta": "Book a class",
+  "accentColorHex": "#A8481F",
+  "voice": "warm, grounded and gently funny. Short sentences, tactile detail, plenty of reassurance for beginners, no craft-fair clichés.",
+  "palette": { "primary": "#a8481f", "secondary": "#6a5d51", "tint": "#efe6d8", "dark": "#2b2622", "heading": "#2b2622", "body": "#6a5d51" },
+  "designNotes": "Organic-warm design language recoloured to oatmeal backgrounds with charcoal text and a terracotta accent, DM Serif Display headings and Work Sans body, square rimmed buttons.",
+  "brandFacts": "Kiln & Clay, 118 Haywood Road, Asheville, NC 28806. Phone (828) 555-0146. hello@kilnandclay.com. Sample copy: names, prices and reviews are examples to replace.",
+  "roles": [
+    { "role": "home", "roleLabel": "Home" },
+    { "role": "classes", "roleLabel": "Classes" },
+    { "role": "shop", "roleLabel": "The Shop" },
+    { "role": "membership", "roleLabel": "Studio Membership" },
+    { "role": "about", "roleLabel": "Our Story" },
+    { "role": "visit", "roleLabel": "Visit" }
+  ],
+  "niche": "pottery_studio",
+  "style": "minimal",
+  "color": "orange",
+  "packSlug": "kiln-pottery-studio-theme",
+  "packTitle": "Kiln & Clay: Pottery Studio Theme (6 Pages)",
+  "description": "A complete six-page Divi 5 website for a pottery studio, ceramics shop, craft school, maker space or art class, ready to make your own. Home, Classes, The Shop, Studio Membership, Our Story and Visit share one earthy, handmade identity: oatmeal backgrounds, charcoal type, a terracotta accent, DM Serif Display headings and square rimmed buttons. Every section is built from proven, validated recipes and a single design language and style kit, so buttons, accordions, forms and type match on every page, on desktop, tablet and phone. A full-bleed studio hero, three icon values, a bento of what you can do, a raw-versus-glazed slider, student quotes, a class comparison table, a six-week method, an accordion of beginner questions, a party booking form, a shop grid, three membership tiers, a potter team grid, a founder note and a visit page with a form are all in place. Names, prices and reviews are sample copy: swap in your own and publish. No lorem ipsum, no broken layouts. One simple commercial license, unlimited client sites.",
+  "seo": {
+    "metaTitle": "Kiln & Clay: Pottery Studio Theme for Divi 5 (6 Pages) | Divi5Lab",
+    "metaDescription": "A complete six-page earthy Divi 5 website theme for a pottery studio or craft school: Home, Classes, Shop, Membership, Story and Visit. Oatmeal, charcoal and terracotta.",
+    "keywords": ["divi 5 pottery theme", "ceramics studio website template", "craft school divi 5 theme", "art class website template", "divi 5 multi-page theme"]
+  }
+}

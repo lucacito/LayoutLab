@@ -1,0 +1,32 @@
+{
+  "id": "sundrop",
+  "businessName": "Sundrop Solar",
+  "tagline": "Turn your roof into your cheapest power plant.",
+  "audience": "homeowners who want lower electric bills from rooftop solar installed by a local crew, with a clear price, honest payback and a long warranty",
+  "conversionGoal": "get a free solar quote",
+  "primaryCta": "Get a free solar quote",
+  "accentColorHex": "#C2410C",
+  "voice": "warm, practical and plain-spoken. Concrete numbers, honest caveats, short sentences, no green-washing and no hard sell.",
+  "palette": { "primary": "#c2410c", "secondary": "#566079", "tint": "#fffaf0", "dark": "#1b2a4a", "heading": "#1b2a4a", "body": "#566079" },
+  "designNotes": "Corporate-trust design language recoloured to warm cream, midnight navy and burnt orange, Poppins headings and body, rounded keycap-style buttons that press and lift.",
+  "brandFacts": "Sundrop Solar, 4400 East Camelback Road, Phoenix, AZ 85018. Phone (602) 555-0137. hello@sundropsolar.com. Sample copy: names, prices, savings and reviews are examples to replace.",
+  "roles": [
+    { "role": "home", "roleLabel": "Home" },
+    { "role": "solar", "roleLabel": "Solar Panels" },
+    { "role": "pricing", "roleLabel": "Savings and Pricing" },
+    { "role": "installs", "roleLabel": "Installations" },
+    { "role": "about", "roleLabel": "About" },
+    { "role": "contact", "roleLabel": "Contact" }
+  ],
+  "niche": "solar",
+  "style": "corporate",
+  "color": "orange",
+  "packSlug": "sundrop-solar-installer-theme",
+  "packTitle": "Sundrop: Solar Installer Theme (6 Pages)",
+  "description": "A complete six-page Divi 5 website for a solar installer, electrician, roofing company, home-energy or any trade that sells a big home upgrade, ready to make your own. Home, Solar Panels, Savings and Pricing, Installations, About and Contact share one warm, trustworthy identity: cream backgrounds, midnight navy text, a burnt-orange accent, Poppins type and keycap buttons that press on hover. Every section is built from proven, validated recipes and a single design language and style kit, so buttons, accordions, forms and type match on every page, on desktop, tablet and phone. A full-bleed photo hero, benefit icons, a system bento, customer quotes, a four-step explainer, buy-versus-lease comparison, three priced packages, a savings band, installation gallery, before-and-after, quote slider, team grid and a company story are all in place. Names, prices, savings and reviews are sample copy: swap in your own and publish. No lorem ipsum, no broken layouts. One simple commercial license, unlimited client sites.",
+  "seo": {
+    "metaTitle": "Sundrop: Solar Installer Theme for Divi 5 (6 Pages) | Divi5Lab",
+    "metaDescription": "A complete six-page warm Divi 5 website theme for a solar installer or home-energy company: Home, Solar, Pricing, Installations, About and Contact. Cream, navy and orange.",
+    "keywords": ["divi 5 solar theme", "solar installer website template", "renewable energy divi 5 theme", "electrician website template", "divi 5 multi-page theme"]
+  }
+}

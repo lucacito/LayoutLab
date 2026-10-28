@@ -1,0 +1,32 @@
+{
+  "id": "lantern",
+  "businessName": "The Lantern House",
+  "tagline": "A quiet house on a cobbled street.",
+  "audience": "couples, small families and slow travellers who want a characterful twelve-room hotel with a great breakfast, direct booking and a warm welcome",
+  "conversionGoal": "reserve a room",
+  "primaryCta": "Reserve a room",
+  "accentColorHex": "#C9A45C",
+  "voice": "warm, understated and quietly wry. Short sentences, concrete details, a host's voice, no hotel clichés and no exclamation marks.",
+  "palette": { "primary": "#c9a45c", "secondary": "#b4b9a8", "tint": "#16241d", "dark": "#0f1a15", "heading": "#f2ede1", "body": "#b4b9a8" },
+  "designNotes": "Luxe design language recoloured to deep bottle green with brass accents and ivory text, Cormorant Garamond headings and Jost body, thin gilt hairline buttons.",
+  "brandFacts": "The Lantern House, 14 Ropewalk Lane, Old Town. Phone +33 1 555 0192. stay@lanternhouse.eu. Sample copy: names, rates and reviews are examples to replace.",
+  "roles": [
+    { "role": "home", "roleLabel": "Home" },
+    { "role": "rooms", "roleLabel": "Rooms" },
+    { "role": "dining", "roleLabel": "Breakfast and Dining" },
+    { "role": "explore", "roleLabel": "The Town" },
+    { "role": "about", "roleLabel": "About" },
+    { "role": "contact", "roleLabel": "Contact" }
+  ],
+  "niche": "boutique_hotel",
+  "style": "elegant",
+  "color": "green",
+  "packSlug": "lantern-boutique-hotel-theme",
+  "packTitle": "The Lantern House: Boutique Hotel Theme (6 Pages)",
+  "description": "A complete six-page Divi 5 website for a boutique hotel, bed and breakfast, guesthouse or inn, ready to make your own. Home, Rooms, Breakfast and Dining, The Town, About and Contact share one warm, understated identity: deep bottle-green backgrounds, brass accents, ivory type in Cormorant Garamond and thin gilt hairline buttons. Every section is built from proven, validated recipes and a single design language and style kit, so buttons, accordions, forms and type match on every page, on desktop, tablet and phone. A full-bleed street hero, press quotes, a split house story, a scrolling services row, a guest quote, room rates in three tiers, a gallery, breakfast and supper stories, a day timeline, a things-to-do guide, a seasonal accordion, a family story and a contact page with a form are all in place. Names, rates and reviews are sample copy: swap in your own and publish. No lorem ipsum, no broken layouts. One simple commercial license, unlimited client sites.",
+  "seo": {
+    "metaTitle": "The Lantern House: Boutique Hotel Theme for Divi 5 (6 Pages) | Divi5Lab",
+    "metaDescription": "A complete six-page warm Divi 5 website theme for a boutique hotel or B&B: Home, Rooms, Dining, Town, About and Contact. Bottle green and brass, real copy and rates.",
+    "keywords": ["divi 5 hotel theme", "boutique hotel website template", "bed and breakfast divi 5 theme", "guesthouse website template", "divi 5 multi-page theme"]
+  }
+}

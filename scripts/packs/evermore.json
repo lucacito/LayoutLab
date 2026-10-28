@@ -1,0 +1,32 @@
+{
+  "id": "evermore",
+  "businessName": "Evermore Weddings",
+  "tagline": "Your day, exactly as you imagined it.",
+  "audience": "engaged couples who want a boutique wedding planner to handle the details of a small, personal wedding with calm and good taste",
+  "conversionGoal": "book a free call",
+  "primaryCta": "Book a free call",
+  "accentColorHex": "#8DA7C4",
+  "voice": "warm, calm and quietly witty. Short sentences, specific details, a little romance, never saccharine and never salesy.",
+  "palette": { "primary": "#8da7c4", "secondary": "#5a6372", "tint": "#f6f1ec", "dark": "#2f3a4a", "heading": "#2f3a4a", "body": "#5a6372" },
+  "designNotes": "Playful-pastel design language recoloured to warm cream with dusty blue and champagne borders, Cormorant Garamond headings and Lora body, pill buttons with dotted outlines.",
+  "brandFacts": "Evermore Weddings, 12 Church Street, Charleston, SC 29401. Phone (843) 555-0164. hello@evermoreweddings.com. Sample copy: names, prices and reviews are examples to replace.",
+  "roles": [
+    { "role": "home", "roleLabel": "Home" },
+    { "role": "weddings", "roleLabel": "Real Weddings" },
+    { "role": "planning", "roleLabel": "Planning" },
+    { "role": "venues", "roleLabel": "Venues" },
+    { "role": "about", "roleLabel": "About" },
+    { "role": "contact", "roleLabel": "Contact" }
+  ],
+  "niche": "wedding_planner",
+  "style": "elegant",
+  "color": "pastel",
+  "packSlug": "evermore-wedding-planner-theme",
+  "packTitle": "Evermore: Wedding Planner Theme (6 Pages)",
+  "description": "A complete six-page Divi 5 website for a wedding planner, florist, event stylist, venue or photographer, ready to make your own. Home, Real Weddings, Planning, Venues, About and Contact share one soft, romantic identity: warm cream, dusty blue, champagne borders, Cormorant Garamond headings and pill buttons with dotted outlines. Every section is built from proven, validated recipes and a single design language and style kit, so buttons, accordions, forms and type match on every page, on desktop, tablet and phone. An overlapping photo hero, a ratings strip, a scrolling services row, a three-step gallery, a full-bleed couple quote, a real-weddings grid, a detail gallery, a quote slider, three planning packages, a before-and-after of a transformed barn, venue stories, indoor-versus-outdoor panels, a planner team and a founder note are all in place. Names, prices and reviews are sample copy: swap in your own and publish. No lorem ipsum, no broken layouts. One simple commercial license, unlimited client sites.",
+  "seo": {
+    "metaTitle": "Evermore: Wedding Planner Theme for Divi 5 (6 Pages) | Divi5Lab",
+    "metaDescription": "A complete six-page romantic Divi 5 website theme for a wedding planner or florist: Home, Real Weddings, Planning, Venues, About and Contact. Dusty blue, cream and champagne.",
+    "keywords": ["divi 5 wedding theme", "wedding planner website template", "florist divi 5 theme", "event stylist website template", "divi 5 multi-page theme"]
+  }
+}
