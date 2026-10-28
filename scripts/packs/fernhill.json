@@ -1,0 +1,32 @@
+{
+  "id": "fernhill",
+  "businessName": "Fernhill Botanicals",
+  "tagline": "Bring something green home.",
+  "audience": "city dwellers, new plant parents and gift buyers who want healthy plants, seasonal flowers and friendly advice from a neighbourhood shop that grows its own",
+  "conversionGoal": "visit the shop or book a workshop",
+  "primaryCta": "Plan your visit",
+  "accentColorHex": "#B83D63",
+  "voice": "warm, plain-spoken and quietly funny. Short sentences, practical advice, a little gardener's humour, no jargon.",
+  "palette": { "primary": "#b83d63", "secondary": "#566558", "tint": "#eef1e8", "dark": "#1f2b22", "heading": "#1f2b22", "body": "#566558" },
+  "designNotes": "Organic-warm design language recoloured to soft sage backgrounds with a deep rose accent, Newsreader headings and Karla body, rounded cards and soft-solid buttons.",
+  "brandFacts": "Fernhill Botanicals, 48 Mill Lane, Portland, OR 97214. Phone (503) 555-0126. hello@fernhillbotanicals.com. Sample copy: names, prices and reviews are examples to replace.",
+  "roles": [
+    { "role": "home", "roleLabel": "Home" },
+    { "role": "plants", "roleLabel": "The Plants" },
+    { "role": "workshops", "roleLabel": "Workshops" },
+    { "role": "care", "roleLabel": "Care Guides" },
+    { "role": "about", "roleLabel": "Our Story" },
+    { "role": "visit", "roleLabel": "Visit" }
+  ],
+  "niche": "plant_shop",
+  "style": "minimal",
+  "color": "green",
+  "packSlug": "fernhill-plant-shop-theme",
+  "packTitle": "Fernhill: Plant Shop & Florist Theme (6 Pages)",
+  "description": "A complete six-page Divi 5 website for a plant shop, florist, garden centre or nursery, ready to make your own. Home, The Plants, Workshops, Care Guides, Our Story and Visit share one warm, leafy identity: soft sage backgrounds, a deep rose accent, Newsreader headings and rounded cards. Every section is built from proven, validated recipes and a single design language and style kit, so buttons, accordions, forms and type match on every page, on desktop, tablet and phone. An overlapping photo hero, a scrolling row of what you sell, a fresh-this-week gallery, a quote slider, best-seller cards with light and water notes, a light-matching comparison, workshop tickets and a zigzag of what guests make, a seasonal care calendar, a plant-troubleshooting FAQ, a founder note and a visit page with a form are all in place. Names, prices and reviews are sample copy: swap in your own and publish. No lorem ipsum, no broken layouts. One simple commercial license, unlimited client sites.",
+  "seo": {
+    "metaTitle": "Fernhill: Plant Shop Theme for Divi 5 (6 Pages) | Divi5Lab",
+    "metaDescription": "A complete six-page leafy Divi 5 website theme for a plant shop or florist: Home, Plants, Workshops, Care Guides, Story and Visit. Sage and rose, real copy, class tickets.",
+    "keywords": ["divi 5 plant shop theme", "florist website template", "nursery divi 5 theme", "garden centre website template", "divi 5 multi-page theme"]
+  }
+}
