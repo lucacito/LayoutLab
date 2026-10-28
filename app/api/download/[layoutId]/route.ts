@@ -10,6 +10,7 @@ import {
 } from '@/lib/account/queries';
 import { canDownloadLayout, isPaidOnlyLayout } from '@/lib/stripe/entitlements';
 import { fetchAsset } from '@/lib/blob';
+import { toDiviPortability } from '@/lib/download/portability';
 import { buildLayoutZip } from '@/lib/download/zip';
 import { readLicense } from '@/lib/license';
 import { rateLimit } from '@/lib/rate-limit';
@@ -47,7 +48,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ layoutId
 
   const bytes = await fetchAsset(layout.diviJsonBlobKey);
   if (!bytes) return NextResponse.json({ error: 'asset_unavailable' }, { status: 404 });
-  const zip = await buildLayoutZip(bytes.toString('utf8'), layout.slug, readLicense());
+  const zip = await buildLayoutZip(toDiviPortability(bytes.toString('utf8')), layout.slug, readLicense());
   const downloaderEmail = sessionEmail ?? capturedEmail ?? null;
   // Audit + notification are BEST-EFFORT. A logging failure (e.g. a prod DB that
   // hasn't run the downloads.email migration) must never turn a valid download into a 500.
