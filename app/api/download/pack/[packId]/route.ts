@@ -9,6 +9,7 @@ import {
 } from '@/lib/account/queries';
 import { canDownloadPack } from '@/lib/stripe/entitlements';
 import { fetchAsset } from '@/lib/blob';
+import { toDiviPortability } from '@/lib/download/portability';
 import { buildPackZip } from '@/lib/download/zip';
 import { readLicense } from '@/lib/license';
 import { rateLimit } from '@/lib/rate-limit';
@@ -41,7 +42,7 @@ export async function GET(
   const items: { id: string; slug: string; json: string }[] = [];
   for (const r of rows) {
     const bytes = await fetchAsset(r.diviJsonBlobKey);
-    if (bytes) items.push({ id: r.id, slug: r.slug, json: bytes.toString('utf8') });
+    if (bytes) items.push({ id: r.id, slug: r.slug, json: toDiviPortability(bytes.toString('utf8')) });
   }
   if (items.length === 0) {
     return NextResponse.json({ error: 'asset_unavailable' }, { status: 404 });
