@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { AXIS_VALUES, PAGE_SIZE } from '@/lib/catalog/filters';
-import { listLayouts, countLayouts, facetCounts } from '@/lib/catalog/public-queries';
+import { listCatalogItems, facetCounts } from '@/lib/catalog/public-queries';
 import { env } from '@/lib/env';
 import { TaxonomyLanding } from '@/components/TaxonomyLanding';
 import type { TaxonomyAxis } from '@/lib/seo/taxonomy';
@@ -35,12 +35,11 @@ export function makeTaxonomyPage(axis: TaxonomyAxis) {
   async function resolve(value: string, page: number) {
     if (!VALUES[axis].includes(value)) notFound();
     const filters = { ...emptyFilters(page), [axis]: [value] };
-    const [layouts, total, copy] = await Promise.all([
-      listLayouts(filters),
-      countLayouts(filters),
+    const [{ layouts, packs, total }, copy] = await Promise.all([
+      listCatalogItems(filters),
       loadCopy(axis, value),
     ]);
-    return { layouts, totalPages: Math.max(1, Math.ceil(total / PAGE_SIZE)), copy };
+    return { layouts, packs, totalPages: Math.max(1, Math.ceil(total / PAGE_SIZE)), copy };
   }
 
   async function generateMetadata({ params }: { params: Promise<{ value: string }> }): Promise<Metadata> {
@@ -61,7 +60,7 @@ export function makeTaxonomyPage(axis: TaxonomyAxis) {
     const { value } = await params;
     const sp = (await searchParams) ?? {};
     const page = readPage(sp);
-    const { layouts, totalPages, copy } = await resolve(value, page);
+    const { layouts, packs, totalPages, copy } = await resolve(value, page);
     const guides = listGuides().slice(0, 3).map((g) => ({ slug: g.slug, title: g.title }));
     return (
       <TaxonomyLanding
@@ -70,6 +69,7 @@ export function makeTaxonomyPage(axis: TaxonomyAxis) {
         siteUrl={env.NEXT_PUBLIC_SITE_URL}
         copy={copy}
         layouts={layouts}
+        packs={packs}
         searchParams={sp}
         currentPage={page}
         totalPages={totalPages}

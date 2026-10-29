@@ -1,4 +1,4 @@
-import { and, eq, ne, asc, desc, sql } from 'drizzle-orm';
+import { and, eq, ne, asc, desc, sql, inArray } from 'drizzle-orm';
 import { db } from '@/db/client';
 import { layouts, packs, packLayouts } from '@/db/schema';
 import { buildLayoutFilters } from './query-builder';
@@ -9,7 +9,8 @@ export type PackRow = typeof packs.$inferSelect;
 
 export async function listLayouts(f: CatalogFilters): Promise<LayoutRow[]> {
   const { where, orderBy, limit, offset } = buildLayoutFilters(f);
-  return db.select().from(layouts).where(where).orderBy(orderBy).limit(limit).offset(offset);
+  // id breaks ties: many layouts share one created_at, and an unstable order repeats or skips items across pages.
+  return db.select().from(layouts).where(where).orderBy(orderBy, asc(layouts.id)).limit(limit).offset(offset);
 }
 
 /** Total published layouts matching the same filters (for pagination). */
@@ -44,24 +45,76 @@ export async function listVariantSiblings(group: string): Promise<LayoutRow[]> {
     .where(and(eq(layouts.status, 'published'), sql`${layouts.variant}->>'group' = ${group}`));
 }
 
+// A layout is "paid-only" when it belongs to a published paid pack and to no published free pack
+// (the SQL twin of isPaidOnlyLayout in lib/stripe/entitlements). Such a layout is sold with its pack.
+const inPaidPack = sql`EXISTS (
+  SELECT 1 FROM pack_layouts pl JOIN packs p ON p.id = pl.pack_id
+  WHERE pl.layout_id = ${layouts.id} AND p.status = 'published' AND p.kind = 'paid')`;
+const inFreePack = sql`EXISTS (
+  SELECT 1 FROM pack_layouts pl JOIN packs p ON p.id = pl.pack_id
+  WHERE pl.layout_id = ${layouts.id} AND p.status = 'published' AND p.kind = 'free')`;
+const paidOnlyLayout = sql`(${inPaidPack} AND NOT ${inFreePack})`;
+
 /**
  * Layouts downloadable for free: the complement of isPaidOnlyLayout
  * (lib/stripe/entitlements): a layout is free unless EVERY published pack it
  * belongs to is paid. So: no paid pack, or at least one free pack.
  */
 export async function listFreeLayouts(limit = 48): Promise<LayoutRow[]> {
-  const paidExists = sql`EXISTS (
-    SELECT 1 FROM pack_layouts pl JOIN packs p ON p.id = pl.pack_id
-    WHERE pl.layout_id = ${layouts.id} AND p.status = 'published' AND p.kind = 'paid')`;
-  const freeExists = sql`EXISTS (
-    SELECT 1 FROM pack_layouts pl JOIN packs p ON p.id = pl.pack_id
-    WHERE pl.layout_id = ${layouts.id} AND p.status = 'published' AND p.kind = 'free')`;
   return db
     .select()
     .from(layouts)
-    .where(and(eq(layouts.status, 'published'), sql`(NOT ${paidExists} OR ${freeExists})`))
+    .where(and(eq(layouts.status, 'published'), sql`NOT ${paidOnlyLayout}`))
     .orderBy(desc(layouts.publishedAt), desc(layouts.createdAt))
     .limit(limit);
+}
+
+export type PackItem = { pack: PackRow; pageCount: number };
+
+/**
+ * One page of a catalog listing in which a paid pack appears ONCE, as a pack card, instead of as
+ * its individual pages (the pages stay public at /layouts/<slug> for preview and SEO, they are just
+ * not listed one by one: the pack is the product). A pack is listed when at least one of its
+ * paid-only pages matches the filters; every other layout is listed as before. Packs come first,
+ * then layouts, and `page` slices the combined list, so `total` counts packs + layouts.
+ */
+export async function listCatalogItems(f: CatalogFilters): Promise<{ packs: PackItem[]; layouts: LayoutRow[]; total: number }> {
+  const { conditions, orderBy, limit, offset } = buildLayoutFilters(f);
+  const where = and(...conditions);
+
+  const packOrder = f.sort === 'oldest' ? [asc(packs.createdAt), asc(packs.title), asc(packs.id)]
+    : f.sort === 'title' ? [asc(packs.title), asc(packs.id)]
+    : [desc(packs.createdAt), asc(packs.title), asc(packs.id)];
+  const matchesPack = sql`EXISTS (
+    SELECT 1 FROM pack_layouts pl WHERE pl.pack_id = ${packs.id} AND pl.layout_id IN (
+      SELECT ${layouts.id} FROM ${layouts} WHERE ${where} AND ${paidOnlyLayout}))`;
+  const matched = await db.select().from(packs)
+    .where(and(eq(packs.status, 'published'), eq(packs.kind, 'paid'), matchesPack))
+    .orderBy(...packOrder);
+
+  const packSlice = matched.slice(offset, offset + limit);
+  const layoutLimit = limit - packSlice.length;
+  const layoutWhere = and(where, sql`NOT ${paidOnlyLayout}`);
+
+  const [layoutRows, [totalRow], countRows] = await Promise.all([
+    layoutLimit > 0
+      ? db.select().from(layouts).where(layoutWhere).orderBy(orderBy, asc(layouts.id))
+          .limit(layoutLimit).offset(Math.max(0, offset - matched.length))
+      : Promise.resolve([] as LayoutRow[]),
+    db.select({ n: sql<number>`count(*)::int` }).from(layouts).where(layoutWhere),
+    packSlice.length
+      ? db.select({ packId: packLayouts.packId, n: sql<number>`count(*)::int` }).from(packLayouts)
+          .innerJoin(layouts, eq(packLayouts.layoutId, layouts.id))
+          .where(and(inArray(packLayouts.packId, packSlice.map((p) => p.id)), eq(layouts.status, 'published')))
+          .groupBy(packLayouts.packId)
+      : Promise.resolve([] as { packId: string; n: number }[]),
+  ]);
+  const pageCounts = new Map(countRows.map((r) => [r.packId, r.n]));
+  return {
+    packs: packSlice.map((pack) => ({ pack, pageCount: pageCounts.get(pack.id) ?? 0 })),
+    layouts: layoutRows,
+    total: matched.length + (totalRow?.n ?? 0),
+  };
 }
 
 export async function getLayoutBySlug(slug: string): Promise<LayoutRow | null> {

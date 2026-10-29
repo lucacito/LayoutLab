@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { Container } from '@/components/ui/Container';
-import { LayoutCard } from '@/components/LayoutCard';
+import { CatalogGrid } from '@/components/CatalogGrid';
 import { Pagination } from '@/components/Pagination';
 import { JsonLd } from '@/components/JsonLd';
 import { Markdown } from '@/components/Markdown';
@@ -9,10 +9,12 @@ import { axisLabel } from '@/lib/seo/taxonomy-copy';
 import { hubLinkGroups } from '@/lib/seo/internal-links';
 import { AXIS_VALUES } from '@/lib/catalog/filters';
 import type { TaxonomyAxis, TaxonomyCopy } from '@/lib/seo/taxonomy';
-import type { LayoutRow } from '@/lib/catalog/queries';
+import type { LayoutRow, PackItem } from '@/lib/catalog/queries';
 
-export function TaxonomyLanding({ axis, value, siteUrl, copy, layouts, searchParams, currentPage, totalPages, guides = [] }: {
+export function TaxonomyLanding({ axis, value, siteUrl, copy, layouts, packs = [], searchParams, currentPage, totalPages, guides = [] }: {
   axis: TaxonomyAxis; value: string; siteUrl: string; copy: TaxonomyCopy; layouts: LayoutRow[];
+  /** Paid packs listed once instead of page by page (listCatalogItems). */
+  packs?: PackItem[];
   searchParams: Record<string, string | string[] | undefined>; currentPage: number; totalPages: number;
   /** Latest guides for the cross-link block (passed by the page, which keeps this component fs-free). */
   guides?: { slug: string; title: string }[];
@@ -32,13 +34,11 @@ export function TaxonomyLanding({ axis, value, siteUrl, copy, layouts, searchPar
         <h1 className="mt-4 text-h2 text-navy">{label} Divi 5 Layouts</h1>
         <p className="mt-3 max-w-2xl text-body text-muted">{copy.intro}</p>
 
-        {layouts.length === 0 ? (
+        {layouts.length === 0 && packs.length === 0 ? (
           <p className="mt-10 text-body text-muted">No layouts here yet. Check back soon.</p>
         ) : (
           <>
-            <div className="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {layouts.map((l) => <LayoutCard key={l.id} layout={l} />)}
-            </div>
+            <CatalogGrid packs={packs} layouts={layouts} className="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3" />
             <Pagination
               basePath={`/${axis}/${value}`}
               searchParams={searchParams}
@@ -100,7 +100,10 @@ export function TaxonomyLanding({ axis, value, siteUrl, copy, layouts, searchPar
         { name: 'Browse', url: `${siteUrl}/browse` },
         { name: `${label} Layouts`, url: pageUrl },
       ])} />
-      <JsonLd data={itemListJsonLd(layouts.map((l) => ({ name: l.title, url: `${siteUrl}/layouts/${l.slug}` })))} />
+      <JsonLd data={itemListJsonLd([
+        ...packs.map((p) => ({ name: p.pack.title, url: `${siteUrl}/packs/${p.pack.slug}` })),
+        ...layouts.map((l) => ({ name: l.title, url: `${siteUrl}/layouts/${l.slug}` })),
+      ])} />
     </main>
   );
 }

@@ -8,12 +8,12 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { env } from '@/lib/env';
 import { getKeywordPage, listKeywordPages } from '@/lib/seo/keyword-pages';
-import { listLayouts, listFreeLayouts, listPacks } from '@/lib/catalog/public-queries';
+import { listCatalogItems, listFreeLayouts, listPacks } from '@/lib/catalog/public-queries';
 import { collectionPageJsonLd, breadcrumbJsonLd, faqJsonLd, itemListJsonLd } from '@/lib/seo';
 import { hubLinkGroups } from '@/lib/seo/internal-links';
 import { JsonLd } from '@/components/JsonLd';
 import { Breadcrumbs } from '@/components/Breadcrumbs';
-import { LayoutCard } from '@/components/LayoutCard';
+import { CatalogGrid } from '@/components/CatalogGrid';
 import { PackCard } from '@/components/PackCard';
 import { Markdown } from '@/components/Markdown';
 import { Container } from '@/components/ui/Container';
@@ -60,10 +60,12 @@ export default async function KeywordLandingPage({ params }: { params: Promise<{
     sort: 'newest' as const,
     page: 1,
   };
-  const [layouts, packs] = await Promise.all([
+  const [{ layouts, paidPacks }, packs] = await Promise.all([
     // Free pages show genuinely free layouts (not paid-only ones). The page's
     // promise is "every card here is a free download".
-    page.freeOnly ? listFreeLayouts(GRID_SIZE) : listLayouts(filters).then((rows) => rows.slice(0, GRID_SIZE)),
+    page.freeOnly
+      ? listFreeLayouts(GRID_SIZE).then((rows) => ({ layouts: rows, paidPacks: [] }))
+      : listCatalogItems(filters).then((r) => ({ layouts: r.layouts, paidPacks: r.packs })),
     page.freeOnly ? listPacks().then((ps) => ps.filter((p) => p.kind === 'free')) : Promise.resolve([]),
   ]);
 
@@ -79,7 +81,10 @@ export default async function KeywordLandingPage({ params }: { params: Promise<{
         <JsonLd data={collectionPageJsonLd({ name: page.h1, description: page.metaDescription, url })} />
         <JsonLd data={breadcrumbJsonLd([{ name: 'Home', url: site }, { name: page.h1, url }])} />
         <JsonLd data={faqJsonLd(page.faq)} />
-        <JsonLd data={itemListJsonLd(layouts.map((l) => ({ name: l.title, url: `${site}/layouts/${l.slug}` })))} />
+        <JsonLd data={itemListJsonLd([
+          ...paidPacks.map((p) => ({ name: p.pack.title, url: `${site}/packs/${p.pack.slug}` })),
+          ...layouts.map((l) => ({ name: l.title, url: `${site}/layouts/${l.slug}` })),
+        ])} />
 
         <h1 className="mt-4 max-w-3xl text-h2 text-navy">{page.h1}</h1>
         <Markdown content={page.intro} className="mt-6 max-w-3xl" />
@@ -95,12 +100,10 @@ export default async function KeywordLandingPage({ params }: { params: Promise<{
 
         <section className="mt-12">
           <h2 className="mb-4 text-section text-navy">Newest layouts</h2>
-          {layouts.length === 0 ? (
+          {layouts.length === 0 && paidPacks.length === 0 ? (
             <p className="text-body text-muted">No layouts here yet. Check back soon.</p>
           ) : (
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {layouts.map((l) => <LayoutCard key={l.id} layout={l} />)}
-            </div>
+            <CatalogGrid packs={paidPacks} layouts={layouts} />
           )}
           <div className="mt-8">
             <Link href={browseHref(page)} className="inline-flex items-center gap-1.5 font-semibold text-action hover:underline">
