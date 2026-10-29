@@ -2,11 +2,11 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { parseFilters, PAGE_SIZE } from '@/lib/catalog/filters';
-import { listLayouts, countLayouts, facetCounts } from '@/lib/catalog/public-queries';
+import { listCatalogItems, facetCounts } from '@/lib/catalog/public-queries';
 import { FacetFilters } from '@/components/FacetFilters';
 import { SearchSort } from '@/components/SearchSort';
 import { Pagination } from '@/components/Pagination';
-import { LayoutCard } from '@/components/LayoutCard';
+import { CatalogGrid } from '@/components/CatalogGrid';
 import { Container } from '@/components/ui/Container';
 import { JsonLd } from '@/components/JsonLd';
 import { collectionPageJsonLd, breadcrumbJsonLd } from '@/lib/seo';
@@ -29,9 +29,8 @@ export default async function BrowsePage({
 }) {
   const sp = await searchParams;
   const filters = parseFilters(sp);
-  const [layouts, total, counts] = await Promise.all([
-    listLayouts(filters),
-    countLayouts(filters),
+  const [{ layouts, packs, total }, counts] = await Promise.all([
+    listCatalogItems(filters),
     facetCounts(),
   ]);
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
@@ -67,13 +66,11 @@ export default async function BrowsePage({
           <FacetFilters counts={counts} />
           <section>
             <div className="mb-4"><SearchSort /></div>
-            {layouts.length === 0 ? (
+            {layouts.length === 0 && packs.length === 0 ? (
               <p className="py-16 text-center text-muted">No layouts match these filters.</p>
             ) : (
               <>
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                  {layouts.map((l) => <LayoutCard key={l.id} layout={l} />)}
-                </div>
+                <CatalogGrid packs={packs} layouts={layouts} className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3" />
                 <Pagination
                   basePath="/browse"
                   searchParams={sp}

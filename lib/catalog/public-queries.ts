@@ -2,9 +2,10 @@
 import * as live from './queries';
 import { cachePublicRead } from './cache-public-read';
 
-export type { LayoutRow, PackRow } from './queries';
+export type { LayoutRow, PackRow, PackItem } from './queries';
 
 export const listLayouts = cachePublicRead('listLayouts', live.listLayouts);
+export const listCatalogItems = cachePublicRead('listCatalogItems', live.listCatalogItems);
 export const countLayouts = cachePublicRead('countLayouts', live.countLayouts);
 export const listPublishedLayouts = cachePublicRead('listPublishedLayouts', live.listPublishedLayouts);
 export const listRelatedLayouts = cachePublicRead('listRelatedLayouts', live.listRelatedLayouts);
