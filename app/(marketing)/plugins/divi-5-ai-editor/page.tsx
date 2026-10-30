@@ -36,7 +36,7 @@ const DEMO_STEPS: ChatStep[] = [
   { role: 'validator-pass', text: 'Valid. 21 blocks, 0 violations. Saved to "Services".' },
 ];
 
-const ASSISTANTS = ['Claude Desktop', 'Claude Code', 'Cursor', 'Windsurf', 'VS Code Copilot', 'ChatGPT (Actions)'];
+const ASSISTANTS = ['Claude Desktop', 'Claude Code', 'Cursor', 'Windsurf', 'VS Code Copilot', 'ChatGPT (custom connector)'];
 
 const USE_CASES = [
   {
@@ -176,7 +176,7 @@ const FAQ = [
   {
     question: 'Which AI assistants work?',
     answer:
-      'Claude Desktop, Claude Code, Cursor, Windsurf, and VS Code Copilot connect via MCP. ChatGPT connects via OpenAPI actions. Any HTTP client can call the REST API directly.',
+      'Claude Desktop, Claude Code, Cursor, Windsurf, and VS Code Copilot connect via MCP. ChatGPT connects as a custom connector that signs in with your WordPress login (needs a paid plan with Developer mode; not yet confirmed by us with a real account). Any HTTP client can call the REST API directly.',
   },
   {
     question: 'Do I need to bring my own AI?',
