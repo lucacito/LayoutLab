@@ -19,7 +19,7 @@ import { PRICING, OFFER, formatUsd, lowestTier, siteLabel } from '@/lib/pricing/
 
 const PRODUCT_NAME = 'AI Editor for Divi 5';
 const PRODUCT_DESCRIPTION =
-  'Connect Claude, Cursor, or ChatGPT to your Divi 5 site and edit pages in plain English. Every change passes a deterministic validator before it is saved, so a broken page is never saved by an AI edit. Free plugin with 21 tools, Pro add-on with 21 advanced tools from ' + formatUsd(lowestTier().priceCents) + '/year.';
+  'Connect Claude, Cursor, or ChatGPT to your Divi 5 site and edit pages in plain English. Every change passes a deterministic validator before it is saved, so a broken page is never saved by an AI edit. Free plugin with 21 tools, Pro add-on with 22 advanced tools from ' + formatUsd(lowestTier().priceCents) + '/year.';
 
 export const metadata: Metadata = {
   title: 'AI Editor for Divi 5: edit Divi with AI, validated',
@@ -215,7 +215,7 @@ const FAQ = [
   {
     question: 'What does the Pro add-on add?',
     answer:
-      'Twenty-one advanced tools: set the front page and primary menu, publish pages, add custom CSS and PHP proposals, edit live Divi headers and footers, find and replace text site-wide, audit for problems and broken links, create and edit your global colors, number and text variables and module presets, set custom field values on a page, Divi Project or post, create and change WooCommerce products, change prices in bulk, and build a whole Divi 5 site as one undoable batch. Every change is undoable. The global-style tools, the custom field tool and the three WooCommerce tools work over MCP and the REST API, not through ChatGPT Actions.',
+      'Twenty-two advanced tools: set the front page and primary menu, publish pages, add custom CSS and PHP proposals, edit live Divi headers and footers, find and replace text site-wide, audit for problems and broken links, create and edit your global colors, number and text variables and module presets, set custom field values on a page, Divi Project or post, create and change WooCommerce products, change prices in bulk, build a whole Divi 5 site as one undoable batch, and restyle pages to another design language and style kit in one previewed, undoable step. Every change is undoable. The global-style tools, the custom field tool and the design switch work over MCP and the REST API, not through ChatGPT Actions. The three WooCommerce tools work over MCP and the REST API, not through ChatGPT Actions.',
   },
   {
     question: 'How much does the Pro add-on cost?',
@@ -390,7 +390,7 @@ export default function AiEditorPage() {
               </div>
             </Card>
             <Card className="border-dashed p-8">
-              <p className="text-small font-semibold uppercase tracking-wide text-muted">Pro add-on: 21 tools that work across your whole site</p>
+              <p className="text-small font-semibold uppercase tracking-wide text-muted">Pro add-on: 22 tools that work across your whole site</p>
               <h3 className="mt-2 text-section text-navy">AI Editor for Divi 5 Pro</h3>
               <p className="mt-2 text-body text-muted">
                 Set your front page and menu, publish pages, add CSS, manage your live header and footer, find and replace across your site, audit for problems, and build whole sites as one undoable batch.
@@ -412,7 +412,7 @@ export default function AiEditorPage() {
       {/* Pro capabilities */}
       <SectionShell tone="mist" pad="lg">
         <Container>
-          <h2 className="text-h2 text-navy">Pro add-on: 21 advanced tools</h2>
+          <h2 className="text-h2 text-navy">Pro add-on: 22 advanced tools</h2>
           <p className="mt-3 max-w-2xl text-lead text-muted">
             Unlock editing and automation across your whole site. Try free for {OFFER.trialDays} days.
           </p>
@@ -455,7 +455,7 @@ export default function AiEditorPage() {
 
       <CtaBand
         title="Your assistant already knows Divi. Now it can edit it safely."
-        body={`Free plugin with 21 tools, Pro add-on with 21 more. ${PRICING.trial.requireCard ? '' : `No credit card for the free version or the ${OFFER.trialDays}-day trial.`}`}
+        body={`Free plugin with 21 tools, Pro add-on with 22 more. ${PRICING.trial.requireCard ? '' : `No credit card for the free version or the ${OFFER.trialDays}-day trial.`}`}
         cta={{ label: 'Get the free plugin', href: '#free' }}
         secondary={{ label: `Try Pro free for ${OFFER.trialDays} days`, href: '/pricing' }}
       />

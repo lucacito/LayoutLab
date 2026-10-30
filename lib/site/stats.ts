@@ -19,7 +19,7 @@ export const STATS = {
   /** E_* violation-code constants in Divi5Validator/src/Validator.php. */
   validatorViolationClasses: 15,
   /** divi/* block types modeled in Divi5Validator/src/SchemaRules.php. */
-  validatorBlockTypes: 61,
+  validatorBlockTypes: 90,
   /** Floor of published layouts on prod (198 on 2026-07-12, via sitemap). */
   freeLayoutsPublished: 190,
   /** wordpress.org active installs floor for the E→D5 free plugin. */
