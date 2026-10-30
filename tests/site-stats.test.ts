@@ -8,7 +8,7 @@ describe('marketing stats', () => {
   });
   it('carries the verified validator and catalog numbers', () => {
     expect(STATS.validatorViolationClasses).toBe(15);
-    expect(STATS.validatorBlockTypes).toBe(61);
+    expect(STATS.validatorBlockTypes).toBe(90);
     expect(STATS.freeLayoutsPublished).toBeGreaterThanOrEqual(190);
   });
 });

@@ -51,7 +51,7 @@ The plugin is free, and nothing in it is locked. Your agent can list and read pa
 
 It also includes a built-in pack of 44 original images, read-only access to your Media Library and, when WooCommerce is active, to your products (list, count and read one in detail), and the style, landing-page, site and image guides plus 17 section recipes. It doesn't set your front page, edit menus, or save custom CSS or PHP. Full list on the [plugin page](/plugins/divi-5-ai-editor).
 
-The free plugin is complete on its own. A separate Pro add-on adds 21 more tools: whole-site build with one-step undo, Theme Builder editing, site-wide find and replace, a site audit, your global colors, variables and presets, and WooCommerce product and price tools. See the [pricing](/pricing).
+The free plugin is complete on its own. A separate Pro add-on adds 22 more tools: whole-site build with one-step undo, Theme Builder editing, site-wide find and replace, a site audit, your global colors, variables and presets, and WooCommerce product and price tools. See the [pricing](/pricing).
 
 ## Troubleshooting
 

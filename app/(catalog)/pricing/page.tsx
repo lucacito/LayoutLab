@@ -34,7 +34,7 @@ function buildFaq(foundingOpen: boolean) {
   {
     question: 'What does the AI Editor Pro add-on include?',
     answer:
-      'Twenty-one advanced tools: set the front page and primary menu, publish pages, add custom CSS, propose PHP, edit the live Divi header and footer, find and replace text across your site, audit for problems and broken links, create and edit your global colors, variables and presets, set custom field values, create and change WooCommerce products, change prices in bulk, and build a whole Divi 5 site in one undoable step. Each edit the plugin saves can be undone from the page history. The free plugin has 21 tools for reading, editing and creating pages, and for reading your WooCommerce products.',
+      'Twenty-two advanced tools: set the front page and primary menu, publish pages, add custom CSS, propose PHP, edit the live Divi header and footer, find and replace text across your site, audit for problems and broken links, create and edit your global colors, variables and presets, set custom field values, create and change WooCommerce products, change prices in bulk, build a whole Divi 5 site in one undoable step, and restyle pages to another design language and style kit. Each edit the plugin saves can be undone from the page history. The free plugin has 21 tools for reading, editing and creating pages, and for reading your WooCommerce products.',
   },
   {
     question: 'Does an AI Editor Pro licence include your other plugins?',
@@ -206,7 +206,7 @@ export default async function PricingPage() {
                   {tier.sites === null ? 'Unlimited sites' : `${tier.sites} site${tier.sites !== 1 ? 's' : ''}`}
                 </p>
                 <p className="mt-4 text-body text-muted">
-                  All 21 Pro tools, 21 free tools, theme builder editing, whole-site builds, undo every change.
+                  All 22 Pro tools, 21 free tools, theme builder editing, whole-site builds, undo every change.
                 </p>
                 <div className="mt-6 flex-1">
                   <ul className="space-y-2">
@@ -263,7 +263,7 @@ export default async function PricingPage() {
                   <ul className="space-y-2">
                     <li className="flex items-start gap-2 text-body text-navy">
                       <Icon name="check_circle" size={18} className="mt-0.5 shrink-0 text-action" />
-                      All 21 Pro tools
+                      All 22 Pro tools
                     </li>
                     <li className="flex items-start gap-2 text-body text-navy">
                       <Icon name="check_circle" size={18} className="mt-0.5 shrink-0 text-action" />
@@ -302,7 +302,7 @@ export default async function PricingPage() {
             <h3 className="text-section text-navy">Try the Pro add-on free for {OFFER.trialDays} days</h3>
             <p className="mt-2 text-body text-muted">
               {PRICING.trial.requireCard ? '' : 'No credit card required. '}
-              The trial is the {trialTierLabel} tier and unlocks all 21 Pro tools.
+              The trial is the {trialTierLabel} tier and unlocks all 22 Pro tools.
             </p>
             {isPriceEnvSet(trialTier.priceEnv) && (
               <div className="mt-6 flex justify-center">

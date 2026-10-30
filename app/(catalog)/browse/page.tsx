@@ -8,6 +8,7 @@ import { SearchSort } from '@/components/SearchSort';
 import { Pagination } from '@/components/Pagination';
 import { CatalogGrid } from '@/components/CatalogGrid';
 import { Container } from '@/components/ui/Container';
+import { CtaBand } from '@/components/marketing/CtaBand';
 import { JsonLd } from '@/components/JsonLd';
 import { collectionPageJsonLd, breadcrumbJsonLd } from '@/lib/seo';
 import { hubLinkGroups } from '@/lib/seo/internal-links';
@@ -37,6 +38,7 @@ export default async function BrowsePage({
   const groups = hubLinkGroups();
 
   return (
+    <>
     <main className="py-12">
       <JsonLd
         data={[
@@ -60,6 +62,14 @@ export default async function BrowsePage({
             Browse our growing library of validated, import-ready Divi 5 layouts: heroes, pricing
             tables, CTAs, testimonials and full landing pages. Download the JSON, import into the Divi 5
             builder, and customize. Every layout ships with a commercial license.
+          </p>
+          <p className="mt-3 text-body text-muted">
+            Every layout in this library was built with our own plugin,{' '}
+            <Link href="/plugins/divi-5-ai-editor" className="text-action underline-offset-2 hover:underline">
+              JHMG AI Editor for Divi 5
+            </Link>
+            , and passed its deterministic validator before we published it. The same free plugin lets
+            your own AI assistant (Claude, ChatGPT or Cursor) build and edit pages like these on your site.
           </p>
         </div>
         <div className="grid grid-cols-1 gap-8 md:grid-cols-[220px_1fr]">
@@ -104,5 +114,12 @@ export default async function BrowsePage({
         </section>
       </Container>
     </main>
+    <CtaBand
+      title="Build layouts like these on your own site"
+      body="Install the free JHMG AI Editor for Divi 5, connect Claude, ChatGPT or Cursor, and describe the page you want. Every change is validated before it is saved, and you can undo it."
+      cta={{ label: 'Get the free plugin', href: '/plugins/divi-5-ai-editor' }}
+      secondary={{ label: 'See how it works', href: '/guides/connect-claude-to-divi-5' }}
+    />
+    </>
   );
 }
