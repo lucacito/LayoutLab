@@ -1,0 +1,72 @@
+[
+    {
+        "slug": "bold-boxing-club-landing-page-for-divi-5-trial-week",
+        "title": "Bold Boxing Club Landing Page for Divi 5: Trial Week at Ferris Street",
+        "niche": "fitness",
+        "style": "bold",
+        "color": "red"
+    },
+    {
+        "slug": "corporate-real-estate-landing-page-for-divi-5-coastal-lakeside-brokerage",
+        "title": "Corporate Real Estate Landing Page for Divi 5: Coastal and Lakeside Brokerage",
+        "niche": "real_estate",
+        "style": "corporate",
+        "color": "green"
+    },
+    {
+        "slug": "warm-community-kitchen-landing-page-for-divi-5-hot-lunch-and-pantry",
+        "title": "Warm Community Kitchen Landing Page for Divi 5: Hot Lunch and Pantry",
+        "niche": "nonprofit",
+        "style": "elegant",
+        "color": "orange"
+    },
+    {
+        "slug": "elegant-furniture-maker-portfolio-landing-page-for-divi-5-ashdown-workshop",
+        "title": "Elegant Furniture Maker Portfolio Landing Page for Divi 5: Ashdown Workshop",
+        "niche": "portfolio",
+        "style": "elegant",
+        "color": "monochrome"
+    },
+    {
+        "slug": "playful-small-batch-preserves-landing-page-for-divi-5-little-jars",
+        "title": "Playful Small-Batch Preserves Landing Page for Divi 5: Little Jars",
+        "niche": "ecommerce",
+        "style": "playful",
+        "color": "pastel"
+    },
+    {
+        "slug": "bold-studio-landing-page-for-divi-5-motion-and-brand-design",
+        "title": "Bold Studio Landing Page for Divi 5: Motion and Brand Design",
+        "niche": "agency",
+        "style": "bold",
+        "color": "monochrome"
+    },
+    {
+        "slug": "elegant-restaurant-landing-page-for-divi-5-ten-seat-omakase-counter",
+        "title": "Elegant Restaurant Landing Page for Divi 5: Ten-Seat Omakase Counter",
+        "niche": "restaurant",
+        "style": "elegant",
+        "color": "monochrome"
+    },
+    {
+        "slug": "dark-glass-two-day-conference-landing-page-for-divi-5-signal-summit",
+        "title": "Dark Glass Conference Landing Page for Divi 5: Signal Summit",
+        "niche": "events",
+        "style": "dark",
+        "color": "purple"
+    },
+    {
+        "slug": "elegant-coaching-landing-page-for-divi-5-founder-burnout-recovery",
+        "title": "Elegant Coaching Landing Page for Divi 5: Founder Burnout Recovery",
+        "niche": "coaching",
+        "style": "elegant",
+        "color": "purple"
+    },
+    {
+        "slug": "dark-developer-tool-landing-page-for-divi-5-log-tracing-platform",
+        "title": "Dark Developer Tool Landing Page for Divi 5: Log Tracing Platform",
+        "niche": "saas",
+        "style": "dark",
+        "color": "orange"
+    }
+]
