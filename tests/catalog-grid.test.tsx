@@ -20,6 +20,15 @@ describe('CatalogGrid', () => {
     expect(getByText('$12')).toBeTruthy();
   });
 
+  it('with items, shows a newer layout before an older pack', () => {
+    const { container } = render(
+      <CatalogGrid layouts={[layout]} items={[{ kind: 'layout', layout }, { kind: 'pack', pack, pageCount: 6 }]} />,
+      { wrapper: BookmarksProvider },
+    );
+    const links = Array.from(container.querySelectorAll('a')).map((a) => a.getAttribute('href'));
+    expect(links.indexOf('/layouts/free-hero')).toBeLessThan(links.indexOf('/packs/kiln-pottery-studio-theme'));
+  });
+
   it('renders layouts alone when there are no packs', () => {
     const { container } = render(<CatalogGrid layouts={[layout]} />, { wrapper: BookmarksProvider });
     expect(container.querySelectorAll('a[href^="/packs/"]').length).toBe(0);

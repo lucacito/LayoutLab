@@ -3,6 +3,7 @@ import { db } from '@/db/client';
 import { layouts, packs, packLayouts } from '@/db/schema';
 import { buildLayoutFilters } from './query-builder';
 import { type CatalogFilters } from './filters';
+import { mergeCatalogOrder } from './merge-order';
 
 export type LayoutRow = typeof layouts.$inferSelect;
 export type PackRow = typeof packs.$inferSelect;
@@ -71,14 +72,20 @@ export async function listFreeLayouts(limit = 48): Promise<LayoutRow[]> {
 
 export type PackItem = { pack: PackRow; pageCount: number };
 
+export type CatalogItem =
+  | { kind: 'pack'; pack: PackRow; pageCount: number }
+  | { kind: 'layout'; layout: LayoutRow };
+
 /**
  * One page of a catalog listing in which a paid pack appears ONCE, as a pack card, instead of as
  * its individual pages (the pages stay public at /layouts/<slug> for preview and SEO, they are just
  * not listed one by one: the pack is the product). A pack is listed when at least one of its
- * paid-only pages matches the filters; every other layout is listed as before. Packs come first,
- * then layouts, and `page` slices the combined list, so `total` counts packs + layouts.
+ * paid-only pages matches the filters; every other layout is listed as before. Packs and layouts
+ * are ordered TOGETHER by the chosen sort (newest first by default), so a new free layout is not
+ * pushed below every older pack; `items` is that combined page, `packs` and `layouts` are the same
+ * rows split by kind. `page` slices the combined list, so `total` counts packs + layouts.
  */
-export async function listCatalogItems(f: CatalogFilters): Promise<{ packs: PackItem[]; layouts: LayoutRow[]; total: number }> {
+export async function listCatalogItems(f: CatalogFilters): Promise<{ items: CatalogItem[]; packs: PackItem[]; layouts: LayoutRow[]; total: number }> {
   const { conditions, orderBy, limit, offset } = buildLayoutFilters(f);
   const where = and(...conditions);
 
@@ -92,27 +99,46 @@ export async function listCatalogItems(f: CatalogFilters): Promise<{ packs: Pack
     .where(and(eq(packs.status, 'published'), eq(packs.kind, 'paid'), matchesPack))
     .orderBy(...packOrder);
 
-  const packSlice = matched.slice(offset, offset + limit);
-  const layoutLimit = limit - packSlice.length;
   const layoutWhere = and(where, sql`NOT ${paidOnlyLayout}`);
-
-  const [layoutRows, [totalRow], countRows] = await Promise.all([
-    layoutLimit > 0
-      ? db.select().from(layouts).where(layoutWhere).orderBy(orderBy, asc(layouts.id))
-          .limit(layoutLimit).offset(Math.max(0, offset - matched.length))
-      : Promise.resolve([] as LayoutRow[]),
+  // The first `offset + limit` layouts, as light keys: the merged page can hold at most that many
+  // of them, and which ones is only known after the merge.
+  const [layoutKeys, [totalRow]] = await Promise.all([
+    db.select({ id: layouts.id, createdAt: layouts.createdAt, title: layouts.title }).from(layouts)
+      .where(layoutWhere).orderBy(orderBy, asc(layouts.id)).limit(offset + limit),
     db.select({ n: sql<number>`count(*)::int` }).from(layouts).where(layoutWhere),
-    packSlice.length
+  ]);
+
+  const window = mergeCatalogOrder(matched, layoutKeys, f.sort).slice(offset, offset + limit);
+  const packIds = window.filter((r) => r.kind === 'pack').map((r) => r.id);
+  const layoutIds = window.filter((r) => r.kind === 'layout').map((r) => r.id);
+
+  const [layoutRows, countRows] = await Promise.all([
+    layoutIds.length ? db.select().from(layouts).where(inArray(layouts.id, layoutIds)) : Promise.resolve([] as LayoutRow[]),
+    packIds.length
       ? db.select({ packId: packLayouts.packId, n: sql<number>`count(*)::int` }).from(packLayouts)
           .innerJoin(layouts, eq(packLayouts.layoutId, layouts.id))
-          .where(and(inArray(packLayouts.packId, packSlice.map((p) => p.id)), eq(layouts.status, 'published')))
+          .where(and(inArray(packLayouts.packId, packIds), eq(layouts.status, 'published')))
           .groupBy(packLayouts.packId)
       : Promise.resolve([] as { packId: string; n: number }[]),
   ]);
   const pageCounts = new Map(countRows.map((r) => [r.packId, r.n]));
+  const packById = new Map(matched.map((p) => [p.id, p]));
+  const layoutById = new Map(layoutRows.map((l) => [l.id, l]));
+
+  const items: CatalogItem[] = [];
+  for (const ref of window) {
+    if (ref.kind === 'pack') {
+      const pack = packById.get(ref.id);
+      if (pack) items.push({ kind: 'pack', pack, pageCount: pageCounts.get(pack.id) ?? 0 });
+    } else {
+      const layout = layoutById.get(ref.id);
+      if (layout) items.push({ kind: 'layout', layout });
+    }
+  }
   return {
-    packs: packSlice.map((pack) => ({ pack, pageCount: pageCounts.get(pack.id) ?? 0 })),
-    layouts: layoutRows,
+    items,
+    packs: items.flatMap((i) => (i.kind === 'pack' ? [{ pack: i.pack, pageCount: i.pageCount }] : [])),
+    layouts: items.flatMap((i) => (i.kind === 'layout' ? [i.layout] : [])),
     total: matched.length + (totalRow?.n ?? 0),
   };
 }

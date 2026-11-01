@@ -35,11 +35,11 @@ export function makeTaxonomyPage(axis: TaxonomyAxis) {
   async function resolve(value: string, page: number) {
     if (!VALUES[axis].includes(value)) notFound();
     const filters = { ...emptyFilters(page), [axis]: [value] };
-    const [{ layouts, packs, total }, copy] = await Promise.all([
+    const [{ items, layouts, packs, total }, copy] = await Promise.all([
       listCatalogItems(filters),
       loadCopy(axis, value),
     ]);
-    return { layouts, packs, totalPages: Math.max(1, Math.ceil(total / PAGE_SIZE)), copy };
+    return { items, layouts, packs, totalPages: Math.max(1, Math.ceil(total / PAGE_SIZE)), copy };
   }
 
   async function generateMetadata({ params }: { params: Promise<{ value: string }> }): Promise<Metadata> {
@@ -60,7 +60,7 @@ export function makeTaxonomyPage(axis: TaxonomyAxis) {
     const { value } = await params;
     const sp = (await searchParams) ?? {};
     const page = readPage(sp);
-    const { layouts, packs, totalPages, copy } = await resolve(value, page);
+    const { items, layouts, packs, totalPages, copy } = await resolve(value, page);
     const guides = listGuides().slice(0, 3).map((g) => ({ slug: g.slug, title: g.title }));
     return (
       <TaxonomyLanding
@@ -70,6 +70,7 @@ export function makeTaxonomyPage(axis: TaxonomyAxis) {
         copy={copy}
         layouts={layouts}
         packs={packs}
+        items={items}
         searchParams={sp}
         currentPage={page}
         totalPages={totalPages}

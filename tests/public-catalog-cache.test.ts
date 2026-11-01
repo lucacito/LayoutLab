@@ -32,7 +32,7 @@ describe('public catalog cache', () => {
     state.now = 301;
     await cached('hero');
     expect(read).toHaveBeenCalledTimes(3);
-    expect(state.registrations).toEqual([{ keys: ['public-catalog-v1', 'test-layout'], revalidate: 300 }]);
+    expect(state.registrations).toEqual([{ keys: ['public-catalog-v2', 'test-layout'], revalidate: 300 }]);
   });
 
   it('preserves database Dates, nulls, and ISO strings through JSON cache storage', async () => {

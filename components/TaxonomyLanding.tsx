@@ -9,12 +9,14 @@ import { axisLabel } from '@/lib/seo/taxonomy-copy';
 import { hubLinkGroups } from '@/lib/seo/internal-links';
 import { AXIS_VALUES } from '@/lib/catalog/filters';
 import type { TaxonomyAxis, TaxonomyCopy } from '@/lib/seo/taxonomy';
-import type { LayoutRow, PackItem } from '@/lib/catalog/queries';
+import type { CatalogItem, LayoutRow, PackItem } from '@/lib/catalog/queries';
 
-export function TaxonomyLanding({ axis, value, siteUrl, copy, layouts, packs = [], searchParams, currentPage, totalPages, guides = [] }: {
+export function TaxonomyLanding({ axis, value, siteUrl, copy, layouts, packs = [], items, searchParams, currentPage, totalPages, guides = [] }: {
   axis: TaxonomyAxis; value: string; siteUrl: string; copy: TaxonomyCopy; layouts: LayoutRow[];
   /** Paid packs listed once instead of page by page (listCatalogItems). */
   packs?: PackItem[];
+  /** The same packs and layouts in one newest-first order (listCatalogItems). */
+  items?: CatalogItem[];
   searchParams: Record<string, string | string[] | undefined>; currentPage: number; totalPages: number;
   /** Latest guides for the cross-link block (passed by the page, which keeps this component fs-free). */
   guides?: { slug: string; title: string }[];
@@ -38,7 +40,7 @@ export function TaxonomyLanding({ axis, value, siteUrl, copy, layouts, packs = [
           <p className="mt-10 text-body text-muted">No layouts here yet. Check back soon.</p>
         ) : (
           <>
-            <CatalogGrid packs={packs} layouts={layouts} className="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3" />
+            <CatalogGrid items={items} packs={packs} layouts={layouts} className="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3" />
             <Pagination
               basePath={`/${axis}/${value}`}
               searchParams={searchParams}
