@@ -53,7 +53,13 @@ describe.skipIf(!hasDb)('catalog queries (integration — needs a seeded POSTGRE
     expect(total).toBeLessThanOrEqual(await q.countLayouts(f));
   });
 
-  it('listCatalogItems pages across packs then layouts without repeating or losing an item', async () => {
+  it('listCatalogItems orders packs and layouts together, newest first', async () => {
+    const { items } = await q.listCatalogItems(parseFilters({}));
+    const stamps = items.map((i) => (i.kind === 'pack' ? i.pack.createdAt : i.layout.createdAt).getTime());
+    for (let n = 1; n < stamps.length; n++) expect(stamps[n - 1]).toBeGreaterThanOrEqual(stamps[n]);
+  });
+
+  it('listCatalogItems pages across the combined list without repeating or losing an item', async () => {
     const f = parseFilters({});
     // Other integration suites insert and delete layouts on this DB while the files run in parallel,
     // so a pass only counts when the total did not move during it; retry a few times.

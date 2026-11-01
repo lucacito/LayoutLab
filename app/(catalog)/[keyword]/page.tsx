@@ -60,12 +60,12 @@ export default async function KeywordLandingPage({ params }: { params: Promise<{
     sort: 'newest' as const,
     page: 1,
   };
-  const [{ layouts, paidPacks }, packs] = await Promise.all([
+  const [{ layouts, paidPacks, items }, packs] = await Promise.all([
     // Free pages show genuinely free layouts (not paid-only ones). The page's
     // promise is "every card here is a free download".
     page.freeOnly
-      ? listFreeLayouts(GRID_SIZE).then((rows) => ({ layouts: rows, paidPacks: [] }))
-      : listCatalogItems(filters).then((r) => ({ layouts: r.layouts, paidPacks: r.packs })),
+      ? listFreeLayouts(GRID_SIZE).then((rows) => ({ layouts: rows, paidPacks: [], items: undefined }))
+      : listCatalogItems(filters).then((r) => ({ layouts: r.layouts, paidPacks: r.packs, items: r.items })),
     page.freeOnly ? listPacks().then((ps) => ps.filter((p) => p.kind === 'free')) : Promise.resolve([]),
   ]);
 
@@ -103,7 +103,7 @@ export default async function KeywordLandingPage({ params }: { params: Promise<{
           {layouts.length === 0 && paidPacks.length === 0 ? (
             <p className="text-body text-muted">No layouts here yet. Check back soon.</p>
           ) : (
-            <CatalogGrid packs={paidPacks} layouts={layouts} />
+            <CatalogGrid items={items} packs={paidPacks} layouts={layouts} />
           )}
           <div className="mt-8">
             <Link href={browseHref(page)} className="inline-flex items-center gap-1.5 font-semibold text-action hover:underline">

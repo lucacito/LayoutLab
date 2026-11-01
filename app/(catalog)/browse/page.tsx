@@ -30,7 +30,7 @@ export default async function BrowsePage({
 }) {
   const sp = await searchParams;
   const filters = parseFilters(sp);
-  const [{ layouts, packs, total }, counts] = await Promise.all([
+  const [{ items, layouts, packs, total }, counts] = await Promise.all([
     listCatalogItems(filters),
     facetCounts(),
   ]);
@@ -80,7 +80,7 @@ export default async function BrowsePage({
               <p className="py-16 text-center text-muted">No layouts match these filters.</p>
             ) : (
               <>
-                <CatalogGrid packs={packs} layouts={layouts} className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3" />
+                <CatalogGrid items={items} packs={packs} layouts={layouts} className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3" />
                 <Pagination
                   basePath="/browse"
                   searchParams={sp}

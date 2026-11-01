@@ -15,7 +15,7 @@ export function cachePublicRead<Args extends unknown[], Result>(
       const original = this[key];
       return original instanceof Date ? { __publicCatalogDate: original.toISOString() } : value;
     });
-  }, ['public-catalog-v1', name], { revalidate: 300 });
+  }, ['public-catalog-v2', name], { revalidate: 300 });
 
   return async (...args: Args) => JSON.parse(await cached(...args), (_key, value) => {
     if (value && typeof value === 'object' && Object.keys(value).length === 1
