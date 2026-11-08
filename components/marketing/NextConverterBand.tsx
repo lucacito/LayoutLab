@@ -9,7 +9,7 @@ import { NextConverterForm } from './NextConverterForm';
 export function NextConverterBand() {
   return (
     <div id="next-converter">
-      <SectionShell tone="paper" pad="lg">
+      <SectionShell tone="mist" pad="lg">
         <Container>
           <SectionTitle eyebrow="You decide what ships next" title="Which builder should we convert next?">
             Elementor, Beaver Builder, WPBakery and Bricks are done. Oxygen, Breakdance and block builders are on

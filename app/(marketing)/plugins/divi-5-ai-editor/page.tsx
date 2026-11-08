@@ -6,7 +6,12 @@ import { SectionShell, EDGE } from '@/components/ui/SectionShell';
 import { Eyebrow } from '@/components/ui/Eyebrow';
 import { Card } from '@/components/ui/Card';
 import { JsonLd } from '@/components/JsonLd';
-import { productJsonLd, faqJsonLd } from '@/lib/seo/jsonld';
+import { productJsonLd, faqJsonLd, softwareApplicationJsonLd, breadcrumbJsonLd } from '@/lib/seo/jsonld';
+import { organizationId } from '@/lib/seo';
+import { AI_EDITOR } from '@/lib/site/ai-editor-facts';
+import { FEATURE_GROUPS } from '@/lib/site/features';
+import { TestimonialBand } from '@/components/marketing/TestimonialBand';
+import { MARVA_LORD } from '@/lib/site/testimonials';
 import { BuyProButton } from '@/components/plugins/BuyProButton';
 import { Icon } from '@/components/ui/Icon';
 import { FREE_PLUGIN_LINKS, freePluginAnchorProps } from '@/lib/site/free-downloads';
@@ -19,13 +24,13 @@ import { PRICING, OFFER, formatUsd, lowestTier, siteLabel } from '@/lib/pricing/
 
 const PRODUCT_NAME = 'AI Editor for Divi 5';
 const PRODUCT_DESCRIPTION =
-  'Connect Claude, Cursor, or ChatGPT to your Divi 5 site and edit pages in plain English. Every change passes a deterministic validator before it is saved, so a broken page is never saved by an AI edit. Free plugin with 21 tools, Pro add-on with 22 advanced tools from ' + formatUsd(lowestTier().priceCents) + '/year.';
+  'Connect Claude, Cursor, or ChatGPT to your Divi 5 site and edit pages in plain English. Every change passes a deterministic validator before it is saved, so a broken page is never saved by an AI edit. Free plugin with 21 tools, Pro add-on with 23 advanced tools from ' + formatUsd(lowestTier().priceCents) + '/year.';
 
 export const metadata: Metadata = {
-  title: 'AI Editor for Divi 5: edit Divi with AI, validated',
-  description: `Let Claude, ChatGPT or Cursor edit your Divi 5 pages in plain English. Free plugin, every change validated. Pro from ${formatUsd(lowestTier().priceCents)}/yr.`,
+  title: 'AI Editor for Divi 5: the MCP server for Claude & ChatGPT',
+  description: `Free MCP server for Divi 5. Claude, ChatGPT or Cursor edit pages and build loops in plain English, every change validated and undoable. Pro from ${formatUsd(lowestTier().priceCents)}/yr.`,
   alternates: { canonical: `${env.NEXT_PUBLIC_SITE_URL}/plugins/divi-5-ai-editor` },
-  openGraph: { type: 'website', url: `${env.NEXT_PUBLIC_SITE_URL}/plugins/divi-5-ai-editor`, title: 'AI Editor for Divi 5: edit Divi with AI, validated' },
+  openGraph: { type: 'website', url: `${env.NEXT_PUBLIC_SITE_URL}/plugins/divi-5-ai-editor`, title: 'AI Editor for Divi 5: the MCP server for Claude & ChatGPT' },
 };
 
 const DEMO_STEPS: ChatStep[] = [
@@ -93,6 +98,11 @@ const FREE_CAPABILITIES = [
     body: 'Your assistant reads your global colors, presets and number and text variables and reuses them, and the check flags any that do not exist. In the free plugin these stay read-only.',
   },
   {
+    icon: 'repeat',
+    title: 'Builds lists that fill themselves',
+    body: 'Divi 5 Loop Builder support: the newest posts, all posts in pages with Next and Previous links, your categories and your newest products, as cards that repeat once per item. Before saving, your assistant sees what each loop will list on your site, and settings that would break the page are refused.',
+  },
+  {
     icon: 'undo',
     title: 'Undo any AI edit',
     body: 'The previous version of each page the AI changes is kept (the last 10). Restore one from the plugin Dashboard, or ask your assistant to undo.',
@@ -105,7 +115,7 @@ const FREE_CAPABILITIES = [
   {
     icon: 'menu_book',
     title: 'Guides and section recipes',
-    body: 'Style, landing-page, site and image guides plus 71 proven section recipes, ten design languages and 40 style kits steer the assistant toward real, good-looking Divi 5 pages.',
+    body: 'Style, landing-page, site and image guides plus 75 proven section recipes, ten design languages and 40 style kits steer the assistant toward real, good-looking Divi 5 pages.',
   },
 ];
 
@@ -122,8 +132,18 @@ const PRO_CAPABILITIES = [
   },
   {
     icon: 'layers',
-    title: 'Edit headers and footers',
-    body: 'Edit your live Divi Theme Builder header and footer layouts with the same validation and undo as pages.',
+    title: 'Edit headers, footers and the body layout',
+    body: 'Edit your live Divi Theme Builder header, footer and body layouts with the same validation and undo as pages.',
+  },
+  {
+    icon: 'auto_awesome',
+    title: 'Restyle pages to another look',
+    body: 'Switch a page, or up to 25, to another design language and style kit in one call. It is previewed first, uses no AI, and one undo puts every page back.',
+  },
+  {
+    icon: 'menu_open',
+    title: 'Mega menu layouts',
+    body: 'Fourteen ready-made mega menu layouts for your header, applied in one click and still editable in Divi. Undo is one step.',
   },
   {
     icon: 'find_replace',
@@ -215,7 +235,7 @@ const FAQ = [
   {
     question: 'What does the Pro add-on add?',
     answer:
-      'Twenty-two advanced tools: set the front page and primary menu, publish pages, add custom CSS and PHP proposals, edit live Divi headers and footers, find and replace text site-wide, audit for problems and broken links, create and edit your global colors, number and text variables and module presets, set custom field values on a page, Divi Project or post, create and change WooCommerce products, change prices in bulk, build a whole Divi 5 site as one undoable batch, and restyle pages to another design language and style kit in one previewed, undoable step. Every change is undoable. The global-style tools, the custom field tool and the design switch work over MCP and the REST API, not through ChatGPT Actions. The three WooCommerce tools work over MCP and the REST API, not through ChatGPT Actions.',
+      'Twenty-three advanced tools: set the front page and primary menu, publish pages, add custom CSS and PHP proposals, edit live Divi headers and footers, find and replace text site-wide, audit for problems and broken links, create and edit your global colors, number and text variables and module presets, set custom field values on a page, Divi Project or post, create and change WooCommerce products, change prices in bulk, build a whole Divi 5 site as one undoable batch, and restyle pages to another design language and style kit in one previewed, undoable step. Every change is undoable. The global-style tools, the custom field tool and the design switch work over MCP and the REST API, not through ChatGPT Actions. The three WooCommerce tools work over MCP and the REST API, not through ChatGPT Actions.',
   },
   {
     question: 'How much does the Pro add-on cost?',
@@ -269,10 +289,30 @@ export default function AiEditorPage() {
       <JsonLd
         data={productJsonLd({
           name: `${PRODUCT_NAME} Pro`,
-          description: `The Pro add-on: 21 site-wide tools for ${PRODUCT_NAME}. Annual licence by number of sites.`,
+          description: `The Pro add-on: 23 tools across the whole site for ${PRODUCT_NAME}. Annual licence by number of sites.`,
           url,
           offer: { priceCents: lowestTier().priceCents, currency: PRICING.currency },
         })}
+      />
+      <JsonLd
+        data={softwareApplicationJsonLd({
+          name: PRODUCT_NAME,
+          description: PRODUCT_DESCRIPTION,
+          url,
+          version: AI_EDITOR.freeVersion,
+          downloadUrl: AI_EDITOR.wordpressOrgUrl,
+          requirements: 'WordPress 6.0+, Divi 5, PHP 8.1+',
+          featureList: FEATURE_GROUPS.flatMap((g) => g.features.filter((f) => f.tier === 'free').map((f) => f.title)),
+          publisherId: organizationId(site),
+          offer: { priceCents: 0, currency: 'USD' },
+        })}
+      />
+      <JsonLd
+        data={breadcrumbJsonLd([
+          { name: 'Divi5Lab', url: site },
+          { name: 'Plugins', url: `${site}/plugins` },
+          { name: PRODUCT_NAME, url },
+        ])}
       />
       <JsonLd data={faqJsonLd(FAQ)} />
 
@@ -390,7 +430,7 @@ export default function AiEditorPage() {
               </div>
             </Card>
             <Card className="border-dashed p-8">
-              <p className="text-small font-semibold uppercase tracking-wide text-muted">Pro add-on: 22 tools that work across your whole site</p>
+              <p className="text-small font-semibold uppercase tracking-wide text-muted">Pro add-on: 23 tools that work across your whole site</p>
               <h3 className="mt-2 text-section text-navy">AI Editor for Divi 5 Pro</h3>
               <p className="mt-2 text-body text-muted">
                 Set your front page and menu, publish pages, add CSS, manage your live header and footer, find and replace across your site, audit for problems, and build whole sites as one undoable batch.
@@ -412,7 +452,7 @@ export default function AiEditorPage() {
       {/* Pro capabilities */}
       <SectionShell tone="mist" pad="lg">
         <Container>
-          <h2 className="text-h2 text-navy">Pro add-on: 22 advanced tools</h2>
+          <h2 className="text-h2 text-navy">Pro add-on: 23 advanced tools</h2>
           <p className="mt-3 max-w-2xl text-lead text-muted">
             Unlock editing and automation across your whole site. Try free for {OFFER.trialDays} days.
           </p>
@@ -429,6 +469,8 @@ export default function AiEditorPage() {
           </div>
         </Container>
       </SectionShell>
+
+      <TestimonialBand items={[MARVA_LORD]} eyebrow="From a designer who uses it" title="Used on real client sites." />
 
       {/* Use cases */}
       <SectionShell tone="paper" pad="lg">
@@ -455,7 +497,7 @@ export default function AiEditorPage() {
 
       <CtaBand
         title="Your assistant already knows Divi. Now it can edit it safely."
-        body={`Free plugin with 21 tools, Pro add-on with 22 more. ${PRICING.trial.requireCard ? '' : `No credit card for the free version or the ${OFFER.trialDays}-day trial.`}`}
+        body={`Free plugin with 21 tools, Pro add-on with 23 more. ${PRICING.trial.requireCard ? '' : `No credit card for the free version or the ${OFFER.trialDays}-day trial.`}`}
         cta={{ label: 'Get the free plugin', href: '#free' }}
         secondary={{ label: `Try Pro free for ${OFFER.trialDays} days`, href: '/pricing' }}
       />
