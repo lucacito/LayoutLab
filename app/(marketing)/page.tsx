@@ -18,6 +18,10 @@ import { FreeLayoutsBand } from '@/components/marketing/FreeLayoutsBand';
 import { ThemePacksBand } from '@/components/marketing/ThemePacksBand';
 import { listPacks, type PackRow } from '@/lib/catalog/public-queries';
 import { NextConverterBand } from '@/components/marketing/NextConverterBand';
+import { FeatureShowcase } from '@/components/marketing/FeatureShowcase';
+import { TestimonialBand } from '@/components/marketing/TestimonialBand';
+import { HOME_TESTIMONIALS } from '@/lib/site/testimonials';
+import { AI_EDITOR } from '@/lib/site/ai-editor-facts';
 
 const DEMO_STEPS: ChatStep[] = [
   { role: 'user', text: 'Change the hero headline to “Spring sale: 20% off everything” and center the button.' },
@@ -27,7 +31,7 @@ const DEMO_STEPS: ChatStep[] = [
   { role: 'validator-pass', text: 'Valid. 14 blocks, 0 violations. Saved to “Home”.' },
 ];
 
-const FEATURED_GUIDES = ['how-to-convert-elementor-to-divi-5', 'connect-claude-to-divi-5', 'elementor-to-divi-migration-checklist'];
+const FEATURED_GUIDES = ['connect-claude-to-divi-5', 'divi-5-loop-builder-with-ai', 'how-to-convert-elementor-to-divi-5'];
 
 /** Satellite panel for the hero's floating stack. */
 function MiniPanel({ label, children }: { label: string; children: React.ReactNode }) {
@@ -54,33 +58,30 @@ export default async function HomePage() {
       {/* `bottom="xl"` keeps the floating stack clear of the curved seam. */}
       <SectionShell tone="hero" underHeader bottom="xl" blooms curveBottom={EDGE.paper}>
         <Container className="text-center">
-          <Eyebrow tone="dark" className="mb-5">Specialized in Divi 5</Eyebrow>
-          <h1 className="mx-auto max-w-4xl text-display text-paper">An AI that edits your Divi pages safely.</h1>
+          <Eyebrow tone="dark" className="mb-5">The MCP server for Divi 5</Eyebrow>
+          <h1 className="mx-auto max-w-4xl text-display text-paper">Edit Divi 5 with AI. Safely.</h1>
           <p className="mx-auto mt-6 max-w-3xl text-lead text-paper/80">
-            We specialize in Divi 5, and our free plugin is one of the best AI tools for it on the market. Connect Claude, ChatGPT,
-            Cursor or VS Code Copilot over MCP, then give your AI a URL or a screenshot and have it rebuild that page in Divi 5.
-            Every edit passes a deterministic validator before it touches your database, so your AI assistant can be creative
-            and the layout is guaranteed valid. Undo every change.
+            A free WordPress plugin that lets Claude, ChatGPT, Cursor or VS Code Copilot read, edit and build your Divi 5 pages in plain
+            English. Every change passes a deterministic validator before it is saved, so your assistant can be creative and the layout
+            stays valid. New pages are drafts, previews show what would change, and every change can be undone.
           </p>
           <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
-            <Button href="/plugins/divi-5-ai-editor" size="lg" variant="primary">Get the AI Editor</Button>
-            <Button href="/pricing" size="lg" variant="onDark">See Pro plans</Button>
+            <Button href="/plugins/divi-5-ai-editor" size="lg" variant="primary">Get the free plugin</Button>
+            <Button href="#features" size="lg" variant="onDark">See everything it does</Button>
           </div>
           <p className="mt-5 text-small text-paper/70">
-            Free plugin on WordPress.org · Undo for every change · Theme Builder editing ·{' '}
-            <span className="mx-2">·</span>
-            Whole-site build · Works with Claude, ChatGPT, Cursor, VS Code
+            Free on WordPress.org · Validated before every save · Undo for AI edits · Loop Builder · Works with Claude, ChatGPT, Cursor, VS Code
           </p>
 
           <StatStrip
             className="mt-14"
             tone="dark"
             stats={[
-              { value: String(STATS.elementorWidgetsMapped), label: 'Elementor widget types mapped' },
-              { value: String(STATS.beaverModulesMapped), label: 'Beaver Builder module types mapped' },
-              { value: String(STATS.wpbakeryElementsMapped), label: 'WPBakery element types mapped' },
-              { value: String(STATS.validatorBlockTypes), label: 'Divi 5 block types modeled' },
-              { value: String(STATS.validatorViolationClasses), label: 'violation classes checked' },
+              { value: String(AI_EDITOR.freeTools), label: 'free tools for your AI' },
+              { value: String(AI_EDITOR.blockTypes), label: 'Divi 5 block types checked' },
+              { value: String(AI_EDITOR.sectionPatterns), label: 'proven section patterns' },
+              { value: String(AI_EDITOR.designLanguages), label: 'design languages' },
+              { value: String(AI_EDITOR.styleKits), label: 'style kits' },
             ]}
           />
 
@@ -161,8 +162,14 @@ export default async function HomePage() {
         </Container>
       </SectionShell>
 
+      {/* 4a. Every feature, grouped */}
+      <FeatureShowcase curveTop={EDGE.deepBottom} />
+
+      {/* 4b. A designer who uses it (verbatim, with permission) */}
+      <TestimonialBand items={HOME_TESTIMONIALS} />
+
       {/* 4. Products section */}
-      <SectionShell tone="mist" pad="lg" curveTop={EDGE.deepBottom}>
+      <SectionShell tone="paper" pad="lg">
         <Container>
           <SectionTitle eyebrow="Our tools" title="AI editing, layout conversion, and more.">
             The AI Editor leads. Converters for Elementor, Beaver Builder, WPBakery and Bricks, plus the reverse converter. All backed by the same deterministic validator.

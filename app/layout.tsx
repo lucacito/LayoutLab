@@ -64,7 +64,7 @@ export const metadata: Metadata = {
   metadataBase: new URL(env.NEXT_PUBLIC_SITE_URL),
   title: { default: `${TITLE} | Divi5Lab`, template: '%s | Divi5Lab' },
   description: SITE_META_DESCRIPTION,
-  keywords: ['divi 5 ai', 'ai editor for divi 5', 'divi 5 mcp', 'claude divi 5', 'chatgpt divi 5', 'edit divi with ai', 'divi 5 validator', 'elementor to divi 5', 'divi 5 layouts', 'divi 5'],
+  keywords: ['divi 5 ai', 'ai editor for divi 5', 'divi 5 mcp', 'divi 5 mcp server', 'claude divi 5', 'chatgpt divi 5', 'cursor divi 5', 'edit divi with ai', 'divi 5 loop builder', 'divi 5 validator', 'elementor to divi 5', 'divi 5 layouts', 'divi 5'],
   alternates: { canonical: '/' },
   icons: { icon: '/favicon.png', shortcut: '/favicon.png', apple: '/favicon.png' },
   openGraph: { type: 'website', siteName: 'Divi5Lab', url: '/', title: TITLE, description: SITE_META_DESCRIPTION },

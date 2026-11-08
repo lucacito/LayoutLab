@@ -25,6 +25,8 @@ export function sitemapEntries(i: {
     // from PLUGIN_MENU below, so adding a converter never leaves it out of the
     // sitemap (Beaver Builder and WPBakery were missing until 2026-09-11).
     { url: `${base}/plugins`, lastModified: SHIFT_DATE, changeFrequency: 'weekly', priority: 0.8 },
+    // The keyword landing page for "divi 5 mcp" (the AI Editor's own MCP server).
+    { url: `${base}/divi-5-mcp`, changeFrequency: 'weekly', priority: 0.9 },
     { url: `${base}/about`, lastModified: SHIFT_DATE, changeFrequency: 'yearly', priority: 0.3 },
     { url: `${base}/contact`, changeFrequency: 'yearly', priority: 0.3 },
     { url: `${base}/license`, lastModified: SHIFT_DATE, changeFrequency: 'yearly', priority: 0.3 },

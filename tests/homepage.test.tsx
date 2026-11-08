@@ -8,7 +8,7 @@ describe('homepage (validator spine)', () => {
   it('leads with the AI Editor and links all products', async () => {
     render(await HomePage());
     const h1 = screen.getByRole('heading', { level: 1 });
-    expect(h1.textContent).toMatch(/an ai that edits your divi pages safely/i);
+    expect(h1.textContent).toMatch(/edit divi 5 with ai\. safely/i);
     const links = Array.from(document.querySelectorAll('a')).map((a) => a.getAttribute('href'));
     expect(links).toContain('/plugins/elementor-to-divi-5');
     expect(links).toContain('/plugins/beaver-builder-to-divi-5');
@@ -17,13 +17,30 @@ describe('homepage (validator spine)', () => {
     expect(links).toContain('/plugins/divi-5-ai-editor');
     expect(links).toContain('/pricing');
   });
-  it('says the site is specialized in Divi 5 and that a URL or a screenshot can be replicated', async () => {
+  it('calls the plugin the MCP server for Divi 5 and says what it does, with real counts', async () => {
     render(await HomePage());
-    expect(screen.getByText(/specialized in divi 5/i)).toBeTruthy();
-    expect(screen.getByText(/we specialize in divi 5/i).textContent).toMatch(/one of the best/i);
-    expect(screen.getByText(/give your ai a url or a screenshot and have it rebuild that page in divi 5/i)).toBeTruthy();
+    expect(screen.getByText(/the mcp server for divi 5/i)).toBeTruthy();
+    expect(screen.getByText(/lets claude, chatgpt, cursor or vs code copilot read, edit and build your divi 5 pages/i)).toBeTruthy();
     // the old hard-coded tool count is gone (it was stale: the plugin has 21 free tools)
     expect(screen.queryByText(/16 AI editing tools/i)).toBeNull();
+    expect(screen.getByText(/free tools for your ai/i)).toBeTruthy();
+  });
+  it('shows the full feature list and links to it from the hero', async () => {
+    render(await HomePage());
+    expect(document.getElementById('features')).toBeTruthy();
+    expect(screen.getByRole('heading', { name: /the complete ai toolkit for divi 5/i })).toBeTruthy();
+    const links = Array.from(document.querySelectorAll('a')).map((a) => a.getAttribute('href'));
+    expect(links).toContain('#features');
+  });
+  it("shows Marva Lord's words exactly, with her name and business and nothing personal", async () => {
+    render(await HomePage());
+    const text = document.body.textContent ?? '';
+    expect(text).toContain("I'm delighted with how much it has helped me, particularly with some quite complicated website builds.");
+    expect(text).toContain('The editor supports the person doing the work rather than attempting to replace them.');
+    expect(text).toContain('Marva Lord');
+    expect(text).toContain('Griots Arts Ltd');
+    // she asked to be asked first before anything about her diagnoses or circumstances is shown publicly
+    expect(text).not.toMatch(/adhd|autis|diagnos/i);
   });
   it('shows the proof strip with real numbers', async () => {
     render(await HomePage());

@@ -205,3 +205,45 @@ export function faqJsonLd(items: { question: string; answer: string }[]) {
     })),
   };
 }
+
+// The plugin as software, which is what search engines and AI answer engines understand better than a bare Product.
+// Free tier: price 0 (the Pro add-on has its own Offer elsewhere). Never add aggregateRating without real ratings.
+export function softwareApplicationJsonLd(a: {
+  name: string;
+  description: string;
+  url: string;
+  version: string;
+  downloadUrl: string;
+  /** e.g. 'WordPress 6.0+ with Divi 5, PHP 8.1+' */
+  requirements: string;
+  featureList: string[];
+  publisherId?: string;
+  offer: { priceCents: number; currency?: string };
+}) {
+  const base: Record<string, unknown> = {
+    '@context': 'https://schema.org',
+    '@type': 'SoftwareApplication',
+    name: a.name,
+    description: a.description,
+    url: a.url,
+    applicationCategory: 'DeveloperApplication',
+    applicationSubCategory: 'WordPress plugin',
+    operatingSystem: 'WordPress',
+    softwareVersion: a.version,
+    softwareRequirements: a.requirements,
+    downloadUrl: a.downloadUrl,
+    featureList: a.featureList,
+    inLanguage: 'en',
+    isAccessibleForFree: a.offer.priceCents === 0,
+    license: 'https://www.gnu.org/licenses/gpl-2.0.html',
+    offers: {
+      '@type': 'Offer',
+      price: (a.offer.priceCents / 100).toFixed(2),
+      priceCurrency: a.offer.currency ?? 'USD',
+      availability: 'https://schema.org/InStock',
+      url: a.url,
+    },
+  };
+  if (a.publisherId) base.publisher = { '@id': a.publisherId };
+  return base;
+}
