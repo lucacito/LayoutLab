@@ -24,7 +24,7 @@ import { PRICING, OFFER, formatUsd, lowestTier, siteLabel } from '@/lib/pricing/
 
 const PRODUCT_NAME = 'AI Editor for Divi 5';
 const PRODUCT_DESCRIPTION =
-  'Connect Claude, Cursor, or ChatGPT to your Divi 5 site and edit pages in plain English. Every change passes a deterministic validator before it is saved, so a broken page is never saved by an AI edit. Free plugin with 21 tools, Pro add-on with 23 advanced tools from ' + formatUsd(lowestTier().priceCents) + '/year.';
+  'Connect Claude, Cursor, or ChatGPT to your Divi 5 site and edit pages in plain English. Every change passes a deterministic validator before it is saved, so a broken page is never saved by an AI edit. Free plugin with 22 tools, Pro add-on with 24 advanced tools from ' + formatUsd(lowestTier().priceCents) + '/year.';
 
 export const metadata: Metadata = {
   title: 'AI Editor for Divi 5: the MCP server for Claude & ChatGPT',
@@ -98,6 +98,11 @@ const FREE_CAPABILITIES = [
     body: 'Your assistant reads your global colors, presets and number and text variables and reuses them, and the check flags any that do not exist. In the free plugin these stay read-only.',
   },
   {
+    icon: 'dashboard_customize',
+    title: 'Lab: a draft page from a few questions',
+    body: 'New in 4.19. In the Lab tab you say what the page is for, choose the look and the sections, and add your words and pictures, with a live preview as you go. Saving creates a draft built from the plugin\'s proven section layouts and checked by the same validator as every other change. Your own assistant can also fill in the words of a Lab brief, or build a page from a short brief, with the lab_build tool; it is always a draft and never overwrites what you changed meanwhile. Lab is new, and results with any given assistant are not yet confirmed.',
+  },
+  {
     icon: 'repeat',
     title: 'Builds lists that fill themselves',
     body: 'Divi 5 Loop Builder support: the newest posts, all posts in pages with Next and Previous links, your categories and your newest products, as cards that repeat once per item. Before saving, your assistant sees what each loop will list on your site, and settings that would break the page are refused.',
@@ -141,6 +146,11 @@ const PRO_CAPABILITIES = [
     body: 'Switch a page, or up to 25, to another design language and style kit in one call. It is previewed first, uses no AI, and one undo puts every page back.',
   },
   {
+    icon: 'brush',
+    title: 'Restyle pages made in Lab',
+    body: 'New in Pro 0.15. Rebuild the pages Lab built in another design language or style kit. It is previewed first, undoable, and any page you edited since is skipped.',
+  },
+  {
     icon: 'menu_open',
     title: 'Mega menu layouts',
     body: 'Fourteen ready-made mega menu layouts for your header, applied in one click and still editable in Divi. Undo is one step.',
@@ -158,7 +168,7 @@ const PRO_CAPABILITIES = [
   {
     icon: 'rocket_launch',
     title: 'Build and launch whole sites',
-    body: 'Add multiple pages as one batch, set the menu and front page, and launch everything in one undoable step.',
+    body: 'Add multiple pages as one batch, set the menu and front page, and launch everything in one undoable step. Pages can come from Lab briefs, so the whole site shares one look and the pages show up in Lab.',
   },
   {
     icon: 'format_paint',
@@ -215,7 +225,7 @@ const FAQ = [
   {
     question: 'What can the free plugin do?',
     answer:
-      'Your assistant can list and read your Divi 5 pages and Divi Projects, validate a layout without saving, update a page or change a single piece of text, create new pages (always saved as drafts for you to review and publish), and undo any AI edit. It also includes a built-in image pack, read-only access to your Media Library, to your site\'s structure (custom post types, taxonomies, image sizes, ACF field groups and how many items each content type has) and, when WooCommerce is active, to your products (list, count and read one in detail), the style, landing, site and image guides, and the section recipes. It does not set your front page, edit menus, or save custom CSS or PHP. All 21 free tools work on unlimited sites.',
+      'Your assistant can list and read your Divi 5 pages and Divi Projects, validate a layout without saving, update a page or change a single piece of text, create new pages (always saved as drafts for you to review and publish), and undo any AI edit. It also includes a built-in image pack, read-only access to your Media Library, to your site\'s structure (custom post types, taxonomies, image sizes, ACF field groups and how many items each content type has) and, when WooCommerce is active, to your products (list, count and read one in detail), the style, landing, site and image guides, and the section recipes. It also includes Lab, a tab where you answer a few questions, watch a live preview and save the result as a draft page. It does not set your front page, edit menus, or save custom CSS or PHP. All 22 free tools work on unlimited sites.',
   },
   {
     question: 'Does it work with Advanced Custom Fields and custom post types?',
@@ -235,7 +245,7 @@ const FAQ = [
   {
     question: 'What does the Pro add-on add?',
     answer:
-      'Twenty-three advanced tools: set the front page and primary menu, publish pages, add custom CSS and PHP proposals, edit live Divi headers and footers, find and replace text site-wide, audit for problems and broken links, create and edit your global colors, number and text variables and module presets, set custom field values on a page, Divi Project or post, create and change WooCommerce products, change prices in bulk, build a whole Divi 5 site as one undoable batch, and restyle pages to another design language and style kit in one previewed, undoable step. Every change is undoable. The global-style tools, the custom field tool and the design switch work over MCP and the REST API, not through ChatGPT Actions. The three WooCommerce tools work over MCP and the REST API, not through ChatGPT Actions.',
+      'Twenty-four advanced tools: set the front page and primary menu, publish pages, add custom CSS and PHP proposals, edit live Divi headers and footers, find and replace text site-wide, audit for problems and broken links, create and edit your global colors, number and text variables and module presets, set custom field values on a page, Divi Project or post, create and change WooCommerce products, change prices in bulk, build a whole Divi 5 site as one undoable batch, restyle pages to another design language and style kit in one previewed, undoable step, and rebuild the pages Lab made in another look. Every change is undoable. The global-style tools, the custom field tool and the design switch work over MCP and the REST API, not through ChatGPT Actions. The three WooCommerce tools work over MCP and the REST API, not through ChatGPT Actions.',
   },
   {
     question: 'How much does the Pro add-on cost?',
@@ -289,7 +299,7 @@ export default function AiEditorPage() {
       <JsonLd
         data={productJsonLd({
           name: `${PRODUCT_NAME} Pro`,
-          description: `The Pro add-on: 23 tools across the whole site for ${PRODUCT_NAME}. Annual licence by number of sites.`,
+          description: `The Pro add-on: 24 tools across the whole site for ${PRODUCT_NAME}. Annual licence by number of sites.`,
           url,
           offer: { priceCents: lowestTier().priceCents, currency: PRICING.currency },
         })}
@@ -326,7 +336,7 @@ export default function AiEditorPage() {
               <p className="mt-6 max-w-xl text-lead text-paper/80">
                 Connect Claude, Cursor, or ChatGPT to your site and edit pages in plain English. Every change
                 passes a deterministic validator before it is saved, so a broken page is never saved by an AI
-                edit. Free plugin with 21 tools, or upgrade to Pro for tools that work across your whole site.
+                edit. Free plugin with 22 tools, or upgrade to Pro for tools that work across your whole site.
               </p>
               <div className="mt-10 flex flex-wrap items-center gap-3">
                 <a
@@ -397,7 +407,7 @@ export default function AiEditorPage() {
       {/* What the free plugin does */}
       <SectionShell tone="paper" pad="lg" className="scroll-mt-24" id="free">
         <Container>
-          <h2 className="text-h2 text-navy">Free plugin: 21 tools</h2>
+          <h2 className="text-h2 text-navy">Free plugin: 22 tools</h2>
           <p className="mt-3 max-w-2xl text-lead text-muted">
             Everything below is in the free plugin. Your assistant can do all of this on any Divi 5 site.
           </p>
@@ -416,7 +426,7 @@ export default function AiEditorPage() {
             <Card className="p-8">
               <h3 className="text-section text-navy">Download and install free</h3>
               <p className="mt-2 text-body text-muted">
-                JHMG AI Editor for Divi 5: all 21 tools included, no features locked, no credit card, no account needed. Install on one site or a hundred.
+                JHMG AI Editor for Divi 5: all 22 tools included, no features locked, no credit card, no account needed. Install on one site or a hundred.
               </p>
               <div className="mt-6">
                 <a
@@ -430,7 +440,7 @@ export default function AiEditorPage() {
               </div>
             </Card>
             <Card className="border-dashed p-8">
-              <p className="text-small font-semibold uppercase tracking-wide text-muted">Pro add-on: 23 tools that work across your whole site</p>
+              <p className="text-small font-semibold uppercase tracking-wide text-muted">Pro add-on: 24 tools that work across your whole site</p>
               <h3 className="mt-2 text-section text-navy">AI Editor for Divi 5 Pro</h3>
               <p className="mt-2 text-body text-muted">
                 Set your front page and menu, publish pages, add CSS, manage your live header and footer, find and replace across your site, audit for problems, and build whole sites as one undoable batch.
@@ -452,7 +462,7 @@ export default function AiEditorPage() {
       {/* Pro capabilities */}
       <SectionShell tone="mist" pad="lg">
         <Container>
-          <h2 className="text-h2 text-navy">Pro add-on: 23 advanced tools</h2>
+          <h2 className="text-h2 text-navy">Pro add-on: 24 advanced tools</h2>
           <p className="mt-3 max-w-2xl text-lead text-muted">
             Unlock editing and automation across your whole site. Try free for {OFFER.trialDays} days.
           </p>
@@ -497,7 +507,7 @@ export default function AiEditorPage() {
 
       <CtaBand
         title="Your assistant already knows Divi. Now it can edit it safely."
-        body={`Free plugin with 21 tools, Pro add-on with 23 more. ${PRICING.trial.requireCard ? '' : `No credit card for the free version or the ${OFFER.trialDays}-day trial.`}`}
+        body={`Free plugin with 22 tools, Pro add-on with 24 more. ${PRICING.trial.requireCard ? '' : `No credit card for the free version or the ${OFFER.trialDays}-day trial.`}`}
         cta={{ label: 'Get the free plugin', href: '#free' }}
         secondary={{ label: `Try Pro free for ${OFFER.trialDays} days`, href: '/pricing' }}
       />

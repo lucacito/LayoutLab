@@ -70,7 +70,7 @@ export default async function HomePage() {
             <Button href="#features" size="lg" variant="onDark">See everything it does</Button>
           </div>
           <p className="mt-5 text-small text-paper/70">
-            Free on WordPress.org · Validated before every save · Undo for AI edits · Loop Builder · Works with Claude, ChatGPT, Cursor, VS Code
+            Free on WordPress.org · Validated before every save · Undo for AI edits · Loop Builder · Lab: a draft page from a few questions · Works with Claude, ChatGPT, Cursor, VS Code
           </p>
 
           <StatStrip

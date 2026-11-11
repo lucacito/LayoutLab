@@ -21,9 +21,15 @@ describe('homepage (validator spine)', () => {
     render(await HomePage());
     expect(screen.getByText(/the mcp server for divi 5/i)).toBeTruthy();
     expect(screen.getByText(/lets claude, chatgpt, cursor or vs code copilot read, edit and build your divi 5 pages/i)).toBeTruthy();
-    // the old hard-coded tool count is gone (it was stale: the plugin has 21 free tools)
+    // the old hard-coded tool count is gone (it was stale: the plugin has 22 free tools)
     expect(screen.queryByText(/16 AI editing tools/i)).toBeNull();
     expect(screen.getByText(/free tools for your ai/i)).toBeTruthy();
+  });
+  it('mentions Lab in the hero line and in the feature list, without naming an assistant that works with it', async () => {
+    render(await HomePage());
+    expect(screen.getByText(/lab: a draft page from a few questions/i)).toBeTruthy();
+    expect(screen.getByRole('heading', { name: /answer a few questions\. get a draft page/i })).toBeTruthy();
+    expect(screen.getByText(/results with any given assistant are not yet confirmed/i)).toBeTruthy();
   });
   it('shows the full feature list and links to it from the hero', async () => {
     render(await HomePage());

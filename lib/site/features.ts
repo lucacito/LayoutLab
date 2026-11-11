@@ -1,5 +1,5 @@
 // Every feature of the AI Editor for Divi 5, grouped, in one place: the homepage showcase, the plugin page and the
-// /divi-5-mcp page read this list. Each line is a fact about the shipped plugin (free 4.18.0, Pro 0.14.1); if a feature
+// /divi-5-mcp page read this list. Each line is a fact about the shipped plugin (free 4.19.0, Pro 0.15.0); if a feature
 // changes, change it here and in the plugin's readme together. Wording rules: say what it does, name its limit, never
 // claim a result nobody measured (no "in minutes"), keep ChatGPT as "not yet confirmed with a real account".
 import { AI_EDITOR } from './ai-editor-facts';
@@ -36,6 +36,18 @@ export const FEATURE_GROUPS: FeatureGroup[] = [
       { icon: 'note_add', tier: 'free', title: 'New pages are always drafts', body: 'Nothing goes live until you publish it yourself. Create a page, review it, then publish.' },
       { icon: 'code', tier: 'free', title: 'Turn HTML into Divi 5', body: 'Hand over HTML and get a Divi 5 layout back with an honest report of what was kept and what was left out. No AI and no network involved.' },
       { icon: 'view_in_ar', tier: 'free', title: 'Divi 5.15 Components aware', body: 'The assistant sees which sections are shared Components and warns when an edit would change every page that uses one.' },
+    ],
+  },
+  {
+    id: 'lab',
+    eyebrow: 'Lab',
+    title: 'Answer a few questions. Get a draft page.',
+    lead: 'Lab is a tab in the plugin for building a page without writing a prompt. It is new in 4.19, and it uses the same proven section layouts and the same validator as everything else.',
+    features: [
+      { icon: 'dashboard_customize', tier: 'free', flag: 'New in 4.19', title: 'A guided page builder', body: 'Say what the page is for, choose the look and the sections, then add your words and pictures. Lab builds the page from the plugin\'s proven section layouts.' },
+      { icon: 'preview', tier: 'free', flag: 'New in 4.19', title: 'A live preview while you answer', body: 'See the page take shape before anything is saved. Saving creates a draft; nothing is published until you publish it.' },
+      { icon: 'verified', tier: 'free', flag: 'New in 4.19', title: 'Checked like every other change', body: 'A page built in Lab passes the same validator as an edit made by your assistant, so a broken layout is not saved.' },
+      { icon: 'forum', tier: 'free', flag: 'New in 4.19', title: 'Let your assistant write the words', body: 'The lab_build tool lets your own AI assistant fill in the words of a Lab brief, or build a page from a short brief. It is always a draft and never overwrites what you changed meanwhile. Lab is new, and results with any given assistant are not yet confirmed.' },
     ],
   },
   {
@@ -105,7 +117,8 @@ export const FEATURE_GROUPS: FeatureGroup[] = [
     title: 'Work across the whole site',
     lead: `${AI_EDITOR.proTools} more tools for the work around the page. Every change is one undoable step, with the limits stated.`,
     features: [
-      { icon: 'rocket_launch', tier: 'pro', title: 'Build and launch a whole site', body: 'Add pages one by one as checked drafts, then launch: publish, set the front page and build the main menu in one previewed step.' },
+      { icon: 'rocket_launch', tier: 'pro', title: 'Build and launch a whole site', body: 'Add pages one by one as checked drafts, then launch: publish, set the front page and build the main menu in one previewed step. Pages can come from Lab briefs, so the whole site shares one look and the pages show up in Lab.', flag: 'Updated in 0.15' },
+      { icon: 'brush', tier: 'pro', flag: 'New in 0.15', title: 'Restyle Lab pages', body: 'Rebuild the pages Lab made in another design language or style kit. Previewed first, undoable, and any page you edited since is skipped.' },
       { icon: 'auto_awesome', tier: 'pro', title: 'Restyle in one call', body: 'Switch a page, or up to 25, to another design language and style kit. Previewed first, no AI involved, and one undo puts every page back.' },
       { icon: 'web', tier: 'pro', title: 'Theme Builder header, footer and body', body: 'Edit the live header, footer and body layouts and assign templates, checked and undoable like any page.' },
       { icon: 'menu_open', tier: 'pro', title: 'Mega menu layouts', body: '14 ready-made mega menu layouts for your header, applied in one click and still editable in Divi.' },
