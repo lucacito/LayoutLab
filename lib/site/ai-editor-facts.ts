@@ -1,16 +1,16 @@
 // Verifiable numbers about the AI Editor for Divi 5 that more than one page quotes. Source: the plugin repo
-// ("Divi 5 Deterministic Validator") at the free 4.18.0 / Pro 0.14.1 release. Update the source, then this file; never invent.
+// ("Divi 5 Deterministic Validator") at the free 4.19.0 / Pro 0.15.0 release. Update the source, then this file; never invent.
 import { STATS } from './stats';
 
 export const AI_EDITOR = {
   /** Free plugin on WordPress.org (readme Stable tag). */
-  freeVersion: '4.18.0',
+  freeVersion: '4.19.0',
   /** Pro add-on in the divi5lab store. */
-  proVersion: '0.14.1',
+  proVersion: '0.15.0',
   /** Tools in the free plugin (wp-plugin/readme.txt). */
-  freeTools: 21,
+  freeTools: 22,
   /** Tools in the Pro add-on (pro-addon/README.md, src/Tools/). */
-  proTools: 23,
+  proTools: 24,
   /** divi/* block types the validator models (SchemaRules). */
   blockTypes: STATS.validatorBlockTypes,
   /** Ready-made section patterns (SectionRecipes::count()). */

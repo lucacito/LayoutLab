@@ -11,11 +11,19 @@ describe('/plugins/divi-5-ai-editor', () => {
     // expects separate section headings for free and Pro - check with getAllByText since text appears multiple places
     const freePluginMatches = screen.getAllByText(/free plugin/i);
     expect(freePluginMatches.length).toBeGreaterThan(0);
-    expect(Array.from(freePluginMatches).some(el => el.textContent?.match(/21 tools/i))).toBe(true);
+    expect(Array.from(freePluginMatches).some(el => el.textContent?.match(/22 tools/i))).toBe(true);
 
     const proAddOnMatches = screen.getAllByText(/pro add-on/i);
     expect(proAddOnMatches.length).toBeGreaterThan(0);
-    expect(Array.from(proAddOnMatches).some(el => el.textContent?.match(/21.*tools/i))).toBe(true);
+    expect(Array.from(proAddOnMatches).some(el => el.textContent?.match(/24.*tools/i))).toBe(true);
+  });
+  it('describes Lab and lab_restyle without claiming a named assistant works with Lab', () => {
+    const { container } = render(<AiEditorPage />);
+    const text = container.textContent ?? '';
+    expect(text).toContain('Lab: a draft page from a few questions');
+    expect(text).toContain('Restyle pages made in Lab');
+    expect(text).toContain('not yet confirmed');
+    expect(text).not.toMatch(/in minutes/i);
   });
   it('has metadata for both free plugin and Pro add-on', () => {
     expect(String(metadata.title)).toMatch(/AI Editor/i);
