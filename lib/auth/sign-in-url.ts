@@ -25,7 +25,9 @@ export async function createMagicSignInUrl(email: string, callbackPath: string, 
   const site = process.env.NEXT_PUBLIC_SITE_URL;
   if (!site) throw new Error('NEXT_PUBLIC_SITE_URL is required to mint a sign-in link');
   const params = new URLSearchParams({ callbackUrl: `${site}${callbackPath}`, token, email: identifier });
-  return `${site}/api/auth/callback/email?${params.toString()}`;
+  // Scanner-safe: the emailed link lands on the confirm page, which only spends
+  // the token when the button is pressed (see confirm-link.ts).
+  return `${site}/auth/confirm?${params.toString()}`;
 }
 
 export const signInUrlDeps: SignInUrlDeps = {

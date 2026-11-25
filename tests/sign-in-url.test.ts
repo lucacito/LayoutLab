@@ -6,7 +6,7 @@ beforeEach(() => { process.env.AUTH_SECRET = 'test-secret-test-secret-32chars!!'
 afterEach(() => { process.env = { ...ORIG }; });
 
 describe('createMagicSignInUrl', () => {
-  it('stores SHA-256(token+secret) and returns the Auth.js callback URL with the raw token', async () => {
+  it('stores SHA-256(token+secret) and returns the scanner-safe confirm-page URL with the raw token', async () => {
     const { createMagicSignInUrl } = await import('@/lib/auth/sign-in-url');
     let stored: { identifier: string; hashedToken: string; expires: Date } | null = null;
     const deps = {
@@ -16,7 +16,7 @@ describe('createMagicSignInUrl', () => {
     const url = await createMagicSignInUrl('  Buyer@Example.COM ', '/account/downloads', deps);
 
     const u = new URL(url);
-    expect(u.origin + u.pathname).toBe('https://divi5lab.com/api/auth/callback/email');
+    expect(u.origin + u.pathname).toBe('https://divi5lab.com/auth/confirm');
     expect(u.searchParams.get('callbackUrl')).toBe('https://divi5lab.com/account/downloads');
     expect(u.searchParams.get('email')).toBe('buyer@example.com');
     const rawToken = u.searchParams.get('token')!;
